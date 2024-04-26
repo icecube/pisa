@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.core.translation &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.core.translation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.core.translation</h1><div class="highlight"><pre>
+<span></span><span class="c1"># pylint: disable=unsubscriptable-object, too-many-function-args, not-callable, unexpected-keyword-arg, no-value-for-parameter, too-many-boolean-expressions</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module for data representation translation methods</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># TODO:</span>
+<span class="c1">#    - right now we distinguish on histogramming/lookup for scalars (normal) or array, which means that instead</span>
+<span class="c1">#    of just a single value per e.g. histogram bin, there can be an array of values</span>
+<span class="c1">#    This should be made more general that one function can handle everything...since now we have several</span>
+<span class="c1">#    functions doing similar things. not very pretty</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+
+<span class="kn">import</span> <span class="nn">numba</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span><span class="p">,</span> <span class="n">prange</span>
+<span class="c1"># When binnings are fully regular, we can use this for super speed</span>
+<span class="kn">import</span> <span class="nn">fast_histogram</span> <span class="k">as</span> <span class="nn">fh</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+
+<span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">PISA_NUM_THREADS</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">myjit</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">line_profile</span><span class="p">,</span> <span class="n">profile</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;resample&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;histogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;lookup&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;find_index&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;find_index_unsafe&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_histogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_find_index&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="n">FX</span> <span class="o">=</span> <span class="s1">&#39;f4&#39;</span> <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span> <span class="k">else</span> <span class="s1">&#39;f8&#39;</span>
+
+
+<span class="c1"># --------- resampling ------------</span>
+
+<div class="viewcode-block" id="resample">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.resample">[docs]</a>
+<span class="k">def</span> <span class="nf">resample</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">old_sample</span><span class="p">,</span> <span class="n">old_binning</span><span class="p">,</span> <span class="n">new_sample</span><span class="p">,</span> <span class="n">new_binning</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resample binned data with a given binning into any arbitrary</span>
+<span class="sd">    `new_binning`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    weights : np.ndarray</span>
+<span class="sd">    old_sample : list of np.ndarray</span>
+<span class="sd">    old_binning : PISA MultiDimBinning</span>
+<span class="sd">    new_sample : list of np.ndarray</span>
+<span class="sd">    new_binning : PISA MultiDimBinning</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_hist_vals</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">old_binning</span><span class="o">.</span><span class="n">names</span> <span class="o">!=</span> <span class="n">new_binning</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;cannot translate betwen </span><span class="si">{</span><span class="n">old_binning</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">new_binning</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># This is a two step process: first histogram the weights into the new binning</span>
+    <span class="c1"># and keep the flat_hist_counts</span>
+    <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">histogram_np</span><span class="p">(</span><span class="n">old_sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">new_binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">flat_hist_counts</span> <span class="o">=</span> <span class="n">histogram_np</span><span class="p">(</span><span class="n">old_sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">new_binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+        <span class="n">flat_hist</span> <span class="o">/=</span> <span class="n">flat_hist_counts</span>
+        <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">flat_hist</span><span class="p">)</span>
+
+    <span class="c1"># now do the inverse, a lookup of hist vals at `new_sample` points</span>
+    <span class="n">new_hist_vals</span> <span class="o">=</span> <span class="n">lookup</span><span class="p">(</span><span class="n">new_sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">old_binning</span><span class="p">)</span>
+
+    <span class="c1"># Now, for bin we have 1 or less counts, take the lookedup value instead:</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">flat_hist_counts</span> <span class="o">&gt;</span> <span class="mi">1</span>
+    <span class="n">new_hist_vals</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">new_hist_vals</span></div>
+
+
+
+<span class="c1"># --------- histogramming methods ---------------</span>
+
+<div class="viewcode-block" id="histogram">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.histogram">[docs]</a>
+<span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">averaged</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Histogram `sample` points, weighting by `weights`, according to `binning`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample : list of np.ndarray</span>
+
+<span class="sd">    weights : np.ndarray</span>
+
+<span class="sd">    binning : PISA MultiDimBinning</span>
+
+<span class="sd">    averaged : bool</span>
+<span class="sd">        If True, the histogram entries are averages of the numbers that end up</span>
+<span class="sd">        in a given bin. This for example must be used when oscillation</span>
+<span class="sd">        probabilities are translated, otherwise we end up with</span>
+<span class="sd">        probability*count per bin</span>
+
+<span class="sd">    apply_weights : bool</span>
+<span class="sd">        wether to use weights or not</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Binning should be a PISA MultiDimBinning&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">binning</span><span class="o">.</span><span class="n">is_irregular</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">binning</span><span class="o">.</span><span class="n">is_lin</span><span class="p">:</span>
+        <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">histogram_np</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">histogram_fh</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">averaged</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">binning</span><span class="o">.</span><span class="n">is_irregular</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">binning</span><span class="o">.</span><span class="n">is_lin</span><span class="p">:</span>
+            <span class="n">flat_hist_counts</span> <span class="o">=</span> <span class="n">histogram_np</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span>
+                                            <span class="n">apply_weights</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flat_hist_counts</span> <span class="o">=</span> <span class="n">histogram_fh</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span>
+                                            <span class="n">apply_weights</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+            <span class="n">flat_hist</span> <span class="o">/=</span> <span class="n">flat_hist_counts</span>
+            <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">flat_hist</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">flat_hist</span></div>
+
+
+<span class="k">def</span> <span class="nf">_threaded_fh_histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">bin_range</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fh</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="n">bin_range</span><span class="p">)</span>
+
+    <span class="n">splits</span> <span class="o">=</span> <span class="n">PISA_NUM_THREADS</span>
+
+    <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">splits</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+        <span class="n">chunk</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">//</span> <span class="n">splits</span>
+        <span class="n">chunked_sample</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">chunked_weights</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">splits</span><span class="p">):</span>
+            <span class="n">one_chunk</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span> <span class="o">*</span> <span class="n">chunk</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">chunk</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">))</span>
+            <span class="n">chunked_sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">one_chunk</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">chunked_weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">chunk</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">chunk</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">,</span> <span class="n">w</span><span class="p">:</span> <span class="n">fh</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="n">bin_range</span><span class="p">)</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">chunked_sample</span><span class="p">,</span> <span class="n">chunked_weights</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">fh</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="n">bin_range</span><span class="p">)</span>  
+            <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">chunked_sample</span><span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span>
+
+<span class="k">def</span> <span class="nf">histogram_fh</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># pylint: disable=missing-docstring</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function for fast_histogram historams.</span>
+<span class="sd">    </span>
+<span class="sd">    This requires binnings to be fully regular and linear.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">binning</span><span class="o">.</span><span class="n">is_irregular</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">binning</span><span class="o">.</span><span class="n">is_lin</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Binning should be linearly-regular to use the fast_histogram library.&quot;</span><span class="p">)</span>
+    <span class="n">ranges</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">m</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">]</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_bins</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">_sample</span> <span class="o">=</span> <span class="p">(</span><span class="n">sample</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_sample</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+        <span class="n">_sample</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sample</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sample should be either an (N, D) array, or an (N,) array, &quot;</span>
+                         <span class="s2">&quot;or a (D, N) array-like.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">weights</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># that means it&#39;s 1-dim data instead of scalars</span>
+        <span class="n">hists</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">apply_weights</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">hist</span> <span class="o">=</span> <span class="n">_threaded_fh_histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">_sample</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">bin_range</span><span class="o">=</span><span class="n">ranges</span><span class="p">)</span>
+            <span class="n">hists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hist</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+        <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hists</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">weights</span> <span class="k">if</span> <span class="n">apply_weights</span> <span class="k">else</span> <span class="kc">None</span>
+        
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">_threaded_fh_histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">_sample</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">bin_range</span><span class="o">=</span><span class="n">ranges</span><span class="p">)</span>
+        <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">flat_hist</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">histogram_np</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># pylint: disable=missing-docstring</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;helper function for numpy historams&quot;&quot;&quot;</span>
+
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">for</span> <span class="n">edges</span> <span class="ow">in</span> <span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">weights</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># that means it&#39;s 1-dim data instead of scalars</span>
+        <span class="n">hists</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">apply_weights</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">hist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
+            <span class="n">hists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hist</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+        <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hists</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">weights</span> <span class="k">if</span> <span class="n">apply_weights</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">hist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
+        <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">flat_hist</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+
+
+<span class="c1"># ---------- Lookup methods ---------------</span>
+
+<div class="viewcode-block" id="lookup">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.lookup">[docs]</a>
+<span class="k">def</span> <span class="nf">lookup</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The inverse of histograming: Extract the histogram values at `sample`</span>
+<span class="sd">    points.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample : num_dims list of length-num_samples np.ndarray</span>
+<span class="sd">        Points at which to find histogram&#39;s values</span>
+<span class="sd">    flat_hist : np.ndarray</span>
+<span class="sd">        Histogram values</span>
+<span class="sd">    binning : num_dims MultiDimBinning</span>
+<span class="sd">        Histogram&#39;s binning</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hist_vals : len-num_samples np.ndarray</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Handles up to 3D.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Binning should be a PISA MultiDimBinning&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;can only do up to 3D at the moment&#39;</span>
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">for</span> <span class="n">edges</span> <span class="ow">in</span> <span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">binning</span><span class="o">.</span><span class="n">is_irregular</span> <span class="ow">and</span> <span class="n">binning</span><span class="o">.</span><span class="n">is_lin</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">flat_hist</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">hist_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">lookup_regular_1d</span><span class="p">(</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">flat_hist</span><span class="p">,</span>
+                    <span class="n">xmin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">xmax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">nx</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">lookup_regular_2d</span><span class="p">(</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">flat_hist</span><span class="p">,</span>
+                    <span class="n">xmin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">xmax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">nx</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">ymin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">ymax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">ny</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">lookup_regular_3d</span><span class="p">(</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">flat_hist</span><span class="p">,</span>
+                    <span class="n">xmin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">xmax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">nx</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">ymin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">ymax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">ny</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">zmin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">zmax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">nz</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">hist_vals</span>
+        <span class="k">elif</span> <span class="n">flat_hist</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">hist_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">flat_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">hist_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">hist_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">lookup_regular_1d_array</span><span class="p">(</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">flat_hist</span><span class="p">,</span>
+                    <span class="n">xmin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">xmax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">nx</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">lookup_regular_2d_array</span><span class="p">(</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">flat_hist</span><span class="p">,</span>
+                    <span class="n">xmin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">xmax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">nx</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">ymin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">ymax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">ny</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">lookup_regular_3d_array</span><span class="p">(</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">flat_hist</span><span class="p">,</span>
+                    <span class="n">xmin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">xmax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">nx</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">ymin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">ymax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">ny</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">zmin</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">zmax</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">nz</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">hist_vals</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">flat_hist</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1">#print &#39;looking up 1D&#39;</span>
+
+        <span class="n">hist_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">lookup_vectorized_1d</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">flat_hist</span><span class="p">,</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">lookup_vectorized_2d</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">flat_hist</span><span class="p">,</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">lookup_vectorized_3d</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">flat_hist</span><span class="p">,</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">flat_hist</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1">#print &#39;looking up ND&#39;</span>
+        <span class="n">hist_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">flat_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">lookup_vectorized_1d_arrays</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">flat_hist</span><span class="p">,</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">lookup_vectorized_2d_arrays</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">flat_hist</span><span class="p">,</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">lookup_vectorized_3d_arrays</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">sample</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">flat_hist</span><span class="p">,</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">bin_edges</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">hist_vals</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">hist_vals</span></div>
+
+
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_regular_1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">xmin</span> <span class="ow">and</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">xmax</span><span class="p">:</span>
+            <span class="n">ix</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normx</span><span class="p">)</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+            <span class="k">continue</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_regular_2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
+    <span class="n">normy</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">/</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">xmin</span> <span class="ow">and</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">xmax</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ymin</span> <span class="ow">and</span> <span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">ymax</span><span class="p">:</span>
+                <span class="n">ix</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normx</span><span class="p">)</span>
+                <span class="n">iy</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normy</span><span class="p">)</span>
+                <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">iy</span> <span class="o">+</span> <span class="n">ny</span><span class="o">*</span><span class="n">ix</span><span class="p">]</span>
+                <span class="k">continue</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_regular_3d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span>
+                            <span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
+    <span class="n">normy</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">/</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span>
+    <span class="n">normz</span> <span class="o">=</span> <span class="n">nz</span> <span class="o">/</span> <span class="p">(</span><span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">xmin</span> <span class="ow">and</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">xmax</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ymin</span> <span class="ow">and</span> <span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">ymax</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">zmin</span> <span class="ow">and</span> <span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">zmax</span><span class="p">:</span>
+                    <span class="n">ix</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normx</span><span class="p">)</span>
+                    <span class="n">iy</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normy</span><span class="p">)</span>
+                    <span class="n">iz</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normz</span><span class="p">)</span>
+                    <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">iz</span> <span class="o">+</span> <span class="n">nz</span><span class="o">*</span><span class="n">iy</span> <span class="o">+</span> <span class="n">nz</span><span class="o">*</span><span class="n">ny</span><span class="o">*</span><span class="n">ix</span><span class="p">]</span>
+                    <span class="k">continue</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_regular_1d_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">xmin</span> <span class="ow">and</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">xmax</span><span class="p">:</span>
+            <span class="n">ix</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normx</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">flat_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">ix</span><span class="p">][</span><span class="n">d</span><span class="p">]</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">flat_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_regular_2d_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
+    <span class="n">normy</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">/</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">xmin</span> <span class="ow">and</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">xmax</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ymin</span> <span class="ow">and</span> <span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">ymax</span><span class="p">:</span>
+                <span class="n">ix</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normx</span><span class="p">)</span>
+                <span class="n">iy</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normy</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">flat_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">iy</span> <span class="o">+</span> <span class="n">ny</span><span class="o">*</span><span class="n">ix</span><span class="p">][</span><span class="n">d</span><span class="p">]</span>
+                <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">flat_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_regular_3d_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span>
+                            <span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
+    <span class="n">normy</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">/</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span>
+    <span class="n">normz</span> <span class="o">=</span> <span class="n">nz</span> <span class="o">/</span> <span class="p">(</span><span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">xmin</span> <span class="ow">and</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">xmax</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ymin</span> <span class="ow">and</span> <span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">ymax</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">zmin</span> <span class="ow">and</span> <span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">zmax</span><span class="p">:</span>
+                    <span class="n">ix</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normx</span><span class="p">)</span>
+                    <span class="n">iy</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normy</span><span class="p">)</span>
+                    <span class="n">iz</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)((</span><span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">normz</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">flat_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                        <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">iz</span> <span class="o">+</span> <span class="n">nz</span><span class="o">*</span><span class="n">iy</span> <span class="o">+</span> <span class="n">nz</span><span class="o">*</span><span class="n">ny</span><span class="o">*</span><span class="n">ix</span><span class="p">][</span><span class="n">d</span><span class="p">]</span>
+                    <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">flat_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="nd">@myjit</span>
+<span class="k">def</span> <span class="nf">find_index</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find index in binning for `val`. If `val` is below binning range or is</span>
+<span class="sd">    nan, return -1; if `val` is above binning range, return num_bins. Edge</span>
+<span class="sd">    inclusivity/exclusivity is defined as .. ::</span>
+
+<span class="sd">        [ bin 0 ) [ bin 1 ) ... [ bin num_bins-1 ]</span>
+
+<span class="sd">    Using these indices to produce histograms should yield identical results</span>
+<span class="sd">    (ignoring underflow and overflow, which `find_index` has) that are</span>
+<span class="sd">    equivalent to those produced by ``numpy.histogramdd``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    val : scalar</span>
+<span class="sd">        Value for which to find bin index</span>
+
+<span class="sd">    bin_edges : 1d numpy ndarray of 2 or more scalars</span>
+<span class="sd">        Must be monotonically increasing, and all bins are assumed to be</span>
+<span class="sd">        adjacent</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bin_idx : int in [-1, num_bins]</span>
+<span class="sd">        -1 is returned for underflow or if `val` is nan. `num_bins` is returned</span>
+<span class="sd">        for overflow. Otherwise, for bin_edges[0] &lt;= `val` &lt;= bin_edges[-1],</span>
+<span class="sd">        0 &lt;= `bin_idx` &lt;= num_bins - 1</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">num_edges</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span>
+    <span class="n">num_bins</span> <span class="o">=</span> <span class="n">num_edges</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">num_bins</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;bin_edges must define at least one bin&#39;</span>
+
+    <span class="n">underflow_idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">overflow_idx</span> <span class="o">=</span> <span class="n">num_bins</span>
+
+    <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">bin_idx</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">)</span>
+            <span class="c1"># Paranoia: In case of unforseen numerical issues, force clipping of</span>
+            <span class="c1"># returned bin index to [0, num_bins - 1] (any `val` outside of binning</span>
+            <span class="c1"># is already handled, so this should be valid)</span>
+            <span class="n">bin_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">),</span> <span class="n">num_bins</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bin_idx</span> <span class="o">=</span> <span class="n">overflow_idx</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># either value is below first bin or is NaN</span>
+        <span class="n">bin_idx</span> <span class="o">=</span> <span class="n">underflow_idx</span>
+
+    <span class="k">return</span> <span class="n">bin_idx</span>
+
+
+<span class="nd">@myjit</span>
+<span class="k">def</span> <span class="nf">find_index_unsafe</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find bin index of `val` within binning defined by `bin_edges`.</span>
+
+<span class="sd">    Validity of `val` and `bin_edges` is not checked.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    val : scalar</span>
+<span class="sd">        Assumed to be within range of `bin_edges` (including lower and upper</span>
+<span class="sd">        bin edges)</span>
+<span class="sd">    bin_edges : array</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    index</span>
+
+<span class="sd">    See also</span>
+<span class="sd">    --------</span>
+<span class="sd">    find_index : includes bounds checking and handling of special cases</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize to point to left-most edge</span>
+    <span class="n">left_edge_idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Initialize to point to right-most edge</span>
+    <span class="n">right_edge_idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="k">while</span> <span class="n">left_edge_idx</span> <span class="o">&lt;</span> <span class="n">right_edge_idx</span><span class="p">:</span>
+        <span class="c1"># See where value falls w.r.t. an edge ~midway between left and right edges</span>
+        <span class="c1"># ``&gt;&gt; 1``: integer division by 2 (i.e., divide w/ truncation)</span>
+        <span class="n">test_edge_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">left_edge_idx</span> <span class="o">+</span> <span class="n">right_edge_idx</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span>
+
+        <span class="c1"># ``&gt;=``: bin left edges are inclusive</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="n">test_edge_idx</span><span class="p">]:</span>
+            <span class="n">left_edge_idx</span> <span class="o">=</span> <span class="n">test_edge_idx</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">right_edge_idx</span> <span class="o">=</span> <span class="n">test_edge_idx</span>
+
+    <span class="c1"># break condition of while loop is that left_edge_idx points to the</span>
+    <span class="c1"># right edge of the bin that `val` is inside of; that is one more than</span>
+    <span class="c1"># that _bin&#39;s_ index</span>
+    <span class="k">return</span> <span class="n">left_edge_idx</span> <span class="o">-</span> <span class="mi">1</span>
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;(), (j), (k) -&gt; ()&#39;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_vectorized_1d</span><span class="p">(</span>
+    <span class="n">sample</span><span class="p">,</span>
+    <span class="n">flat_hist</span><span class="p">,</span>
+    <span class="n">bin_edges</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized gufunc to perform the lookup&quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">)</span>
+        <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># outside of binning or nan</span>
+        <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:, :], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;(), (j, d), (k) -&gt; (d)&#39;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_vectorized_1d_arrays</span><span class="p">(</span>
+    <span class="n">sample</span><span class="p">,</span>
+    <span class="n">flat_hist</span><span class="p">,</span>
+    <span class="n">bin_edges</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized gufunc to perform the lookup&quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># outside of binning or nan</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;(), (), (j), (k), (l) -&gt; ()&#39;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_vectorized_2d</span><span class="p">(</span>
+    <span class="n">sample_x</span><span class="p">,</span>
+    <span class="n">sample_y</span><span class="p">,</span>
+    <span class="n">flat_hist</span><span class="p">,</span>
+    <span class="n">bin_edges_x</span><span class="p">,</span>
+    <span class="n">bin_edges_y</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized gufunc to perform the lookup&quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">sample_y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">bin_edges_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">bin_edges_x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="n">bin_edges_y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="n">bin_edges_y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="n">idx_x</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">)</span>
+        <span class="n">idx_y</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">idx_x</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_y</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">idx_y</span>
+        <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># outside of binning or nan</span>
+        <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:, :], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;(), (), (j, d), (k), (l) -&gt; (d)&#39;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_vectorized_2d_arrays</span><span class="p">(</span>
+    <span class="n">sample_x</span><span class="p">,</span>
+    <span class="n">sample_y</span><span class="p">,</span>
+    <span class="n">flat_hist</span><span class="p">,</span>
+    <span class="n">bin_edges_x</span><span class="p">,</span>
+    <span class="n">bin_edges_y</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized gufunc to perform the lookup while flat hist and weights have</span>
+<span class="sd">    both a second dimension</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">sample_y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">bin_edges_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">bin_edges_x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="n">bin_edges_y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="n">bin_edges_y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="n">idx_x</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">)</span>
+        <span class="n">idx_y</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">idx_x</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_y</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">idx_y</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># outside of binning or nan</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;(), (), (), (j), (k), (l), (m) -&gt; ()&#39;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_vectorized_3d</span><span class="p">(</span>
+    <span class="n">sample_x</span><span class="p">,</span>
+    <span class="n">sample_y</span><span class="p">,</span>
+    <span class="n">sample_z</span><span class="p">,</span>
+    <span class="n">flat_hist</span><span class="p">,</span>
+    <span class="n">bin_edges_x</span><span class="p">,</span>
+    <span class="n">bin_edges_y</span><span class="p">,</span>
+    <span class="n">bin_edges_z</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized gufunc to perform the lookup&quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">sample_y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">sample_z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">bin_edges_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">bin_edges_x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="n">bin_edges_y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="n">bin_edges_y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">z</span> <span class="o">&gt;=</span> <span class="n">bin_edges_z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">z</span> <span class="o">&lt;=</span> <span class="n">bin_edges_z</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="n">idx_x</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">)</span>
+        <span class="n">idx_y</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">)</span>
+        <span class="n">idx_z</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">bin_edges_z</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">idx_x</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_y</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">idx_y</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_z</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">idx_z</span>
+        <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># outside of binning or nan</span>
+        <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:, :], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;(), (), (), (j, d), (k), (l), (m) -&gt; (d)&#39;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_vectorized_3d_arrays</span><span class="p">(</span>
+    <span class="n">sample_x</span><span class="p">,</span>
+    <span class="n">sample_y</span><span class="p">,</span>
+    <span class="n">sample_z</span><span class="p">,</span>
+    <span class="n">flat_hist</span><span class="p">,</span>
+    <span class="n">bin_edges_x</span><span class="p">,</span>
+    <span class="n">bin_edges_y</span><span class="p">,</span>
+    <span class="n">bin_edges_z</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized gufunc to perform the lookup while flat hist and weights have</span>
+<span class="sd">    both a second dimension&quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">sample_y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">sample_z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">bin_edges_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">bin_edges_x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="n">bin_edges_y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="n">bin_edges_y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">z</span> <span class="o">&gt;=</span> <span class="n">bin_edges_z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">z</span> <span class="o">&lt;=</span> <span class="n">bin_edges_z</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="n">idx_x</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">)</span>
+        <span class="n">idx_y</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">)</span>
+        <span class="n">idx_z</span> <span class="o">=</span> <span class="n">find_index_unsafe</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">bin_edges_z</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">idx_x</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_y</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">idx_y</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_z</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">idx_z</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_hist</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># outside of binning or nan</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+
+<div class="viewcode-block" id="test_histogram">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.test_histogram">[docs]</a>
+<span class="k">def</span> <span class="nf">test_histogram</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `histogram` function.</span>
+
+<span class="sd">    Correctness is defined as matching the histogram produced by</span>
+<span class="sd">    numpy.histogramdd.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">all_num_bins</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+    <span class="n">n_evts</span> <span class="o">=</span> <span class="mi">10000</span>
+    <span class="n">rand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">rand</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_evts</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">binning</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">num_dims</span><span class="p">,</span> <span class="n">num_bins</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_num_bins</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">binning</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">OneDimBinning</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;dim</span><span class="si">{</span><span class="n">num_dims</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">num_bins</span><span class="o">=</span><span class="n">num_bins</span><span class="p">,</span>
+                <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">s</span> <span class="o">=</span> <span class="n">rand</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_evts</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_bins</span>
+        <span class="n">sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+        <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">edge_magnitudes</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">]</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">binning</span><span class="p">),</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ref</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">test:</span><span class="se">\n</span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="se">\n\n</span><span class="s1">ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="n">test_avg</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">binning</span><span class="p">),</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">ref_counts</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">ref_counts</span> <span class="o">=</span> <span class="n">ref_counts</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">ref_avg</span> <span class="o">=</span> <span class="p">(</span><span class="n">ref</span> <span class="o">/</span> <span class="n">ref_counts</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">test_avg</span><span class="p">,</span> <span class="n">ref_avg</span><span class="p">),</span> \
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">test_avg:</span><span class="se">\n</span><span class="si">{</span><span class="n">test_avg</span><span class="si">}</span><span class="se">\n\n</span><span class="s1">ref_avg:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref_avg</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_histogram &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="test_find_index">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.test_find_index">[docs]</a>
+<span class="k">def</span> <span class="nf">test_find_index</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `find_index` function.</span>
+
+<span class="sd">    Correctness is defined as producing the same histogram as numpy.histogramdd</span>
+<span class="sd">    by using the output of `find_index` (ignoring underflow and overflow values).</span>
+<span class="sd">    Additionally, -1 should be returned if a value is below the range</span>
+<span class="sd">    (underflow) or is nan, and num_bins should be returned for a value above</span>
+<span class="sd">    the range (overflow).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Negative, positive, integer, non-integer, binary-unrepresentable (0.1) edges</span>
+    <span class="n">basic_bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+
+    <span class="n">failures</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">basic_bin_edges</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="c1"># Negative, positive, integer, non-integer, binary-unrepresentable (0.1) edges</span>
+        <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+
+        <span class="c1"># A single infinite bin: [-np.inf, np.inf]</span>
+        <span class="p">[],</span>
+
+        <span class="c1"># Half-infinite bins (lower or upper edge) &amp; [-inf, .1, +inf]</span>
+        <span class="p">[</span><span class="mf">0.1</span><span class="p">],</span>
+
+        <span class="c1"># Single bin with finite edges &amp; +/-inf-edge(s)-added variants</span>
+        <span class="p">[</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">]:</span>
+        <span class="c1"># Bin edges from above, w/ and w/o +/-inf as left and/or right edges</span>
+        <span class="k">for</span> <span class="n">le</span><span class="p">,</span> <span class="n">re</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="p">]:</span>
+            <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">basic_bin_edges</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">le</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">le</span><span class="p">]</span> <span class="o">+</span> <span class="n">bin_edges</span>
+            <span class="k">if</span> <span class="n">re</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">bin_edges</span> <span class="o">+</span> <span class="p">[</span><span class="n">re</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;bin_edges being tested: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">)</span>
+            <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+            <span class="n">num_bins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">underflow_idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">overflow_idx</span> <span class="o">=</span> <span class="n">num_bins</span>
+
+            <span class="c1">#</span>
+            <span class="c1"># Construct test values to try out</span>
+            <span class="c1">#</span>
+
+            <span class="n">non_finite_vals</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span>
+
+            <span class="c1"># Values within bins (i.e., not on edges)</span>
+            <span class="n">inbin_vals</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">lower_be</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="n">upper_be</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lower_be</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">upper_be</span><span class="p">):</span>
+                        <span class="n">inbin_val</span> <span class="o">=</span> <span class="p">(</span><span class="n">lower_be</span> <span class="o">+</span> <span class="n">upper_be</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">inbin_val</span> <span class="o">=</span> <span class="n">lower_be</span> <span class="o">+</span> <span class="mf">10.5</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">upper_be</span><span class="p">):</span>
+                        <span class="n">inbin_val</span> <span class="o">=</span> <span class="n">upper_be</span> <span class="o">-</span> <span class="mf">10.5</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">inbin_val</span> <span class="o">=</span> <span class="mf">10.5</span>
+                <span class="n">inbin_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inbin_val</span><span class="p">)</span>
+
+            <span class="c1"># Values above/below bin edges by one unit of floating point</span>
+            <span class="c1"># accuracy</span>
+            <span class="n">eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>  <span class="c1"># pylint: disable=no-member</span>
+            <span class="n">below_edges_vals</span> <span class="o">=</span> <span class="p">[</span><span class="n">FTYPE</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span><span class="o">*</span><span class="n">be</span><span class="p">)</span> <span class="k">for</span> <span class="n">be</span> <span class="ow">in</span> <span class="n">bin_edges</span><span class="p">]</span>
+            <span class="n">above_edges_vals</span> <span class="o">=</span> <span class="p">[</span><span class="n">FTYPE</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span><span class="o">*</span><span class="n">be</span><span class="p">)</span> <span class="k">for</span> <span class="n">be</span> <span class="ow">in</span> <span class="n">bin_edges</span><span class="p">]</span>
+
+            <span class="n">test_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">non_finite_vals</span><span class="p">,</span>
+                    <span class="n">bin_edges</span><span class="p">,</span>
+                    <span class="n">inbin_vals</span><span class="p">,</span>
+                    <span class="n">below_edges_vals</span><span class="p">,</span>
+                    <span class="n">above_edges_vals</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;test_vals = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">test_vals</span><span class="p">)</span>
+
+            <span class="c1">#</span>
+            <span class="c1"># Run tests</span>
+            <span class="c1">#</span>
+            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">test_vals</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+                <span class="n">np_histvals</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">([</span><span class="n">val</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">))</span>
+                <span class="n">nonzero_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">np_histvals</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># select first &amp; only dim</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+                    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">nonzero_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nonzero_indices</span><span class="p">))</span>
+                    <span class="n">expected_idx</span> <span class="o">=</span> <span class="n">underflow_idx</span>
+                <span class="k">elif</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">nonzero_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nonzero_indices</span><span class="p">))</span>
+                    <span class="n">expected_idx</span> <span class="o">=</span> <span class="n">underflow_idx</span>
+                <span class="k">elif</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="n">bin_edges</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">nonzero_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nonzero_indices</span><span class="p">))</span>
+                    <span class="n">expected_idx</span> <span class="o">=</span> <span class="n">overflow_idx</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">nonzero_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nonzero_indices</span><span class="p">))</span>
+                    <span class="n">expected_idx</span> <span class="o">=</span> <span class="n">nonzero_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">found_idx</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">found_idx</span> <span class="o">!=</span> <span class="n">expected_idx</span><span class="p">:</span>
+                    <span class="n">failures</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;val=</span><span class="si">{}</span><span class="s1">, edges=</span><span class="si">{}</span><span class="s1">: Expected idx=</span><span class="si">{}</span><span class="s1">, found idx=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">val</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">,</span> <span class="n">expected_idx</span><span class="p">,</span> <span class="n">found_idx</span>
+                    <span class="p">)</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">failures</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">failures</span><span class="si">}</span><span class="s2"> failures, inspect ERROR messages above for info&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_find_index &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_find_index</span><span class="p">()</span>
+    <span class="n">test_histogram</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

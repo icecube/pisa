@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.spline &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.spline</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.spline</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Classes to store and handle the evaluation of splines.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">flavInt</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spline&#39;</span><span class="p">,</span> <span class="s1">&#39;CombinedSpline&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Mandalia&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<div class="viewcode-block" id="Spline">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.Spline">[docs]</a>
+<span class="k">class</span> <span class="nc">Spline</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encapsulation of spline evaluation and other operations.</span>
+
+<span class="sd">    Provides methods to evaluate the spline object over a given binning.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : string</span>
+<span class="sd">        Name for the spline object. Used to identify the object.</span>
+
+<span class="sd">    tex : None or string</span>
+<span class="sd">        TeX string that can be used for e.g. plotting.</span>
+
+<span class="sd">    spline:</span>
+<span class="sd">        Splines used for evaluation.</span>
+
+<span class="sd">    eval_spl: function</span>
+<span class="sd">        Function prescribing how to obtain values for the input spline object</span>
+<span class="sd">        from a given binning.</span>
+
+<span class="sd">    validate_spl: function</span>
+<span class="sd">        Function performing validation test on a given binning used to evaluate</span>
+<span class="sd">        the spline.</span>
+
+<span class="sd">    hash : None, or immutable object (typically an integer)</span>
+<span class="sd">        Hash value to attach to the spline.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO(shivesh): required?</span>
+    <span class="c1"># TODO(shivesh): hashing?</span>
+    <span class="n">_state_attrs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span> <span class="s1">&#39;spline&#39;</span><span class="p">,</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">spline</span><span class="p">,</span> <span class="n">eval_spl</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">validate_spl</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="nb">hash</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Set Read/write attributes via their defined setters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spline</span> <span class="o">=</span> <span class="n">spline</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="nb">hash</span>
+
+        <span class="k">if</span> <span class="n">tex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tex</span> <span class="o">=</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">tex</span>
+
+        <span class="c1"># Ensure eval_spl has correct structure</span>
+        <span class="n">eval_args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargspec</span><span class="p">(</span><span class="n">eval_spl</span><span class="p">)</span><span class="o">.</span><span class="n">args</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eval_args</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Evaluation function does not contain the &#39;</span>
+                             <span class="s1">&#39;minimum number of input parameters (2)</span><span class="se">\n</span><span class="s1">&#39;</span>
+                             <span class="s1">&#39;Input function keywords: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">eval_args</span><span class="p">))</span>
+        <span class="k">if</span> <span class="s1">&#39;spline&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">eval_args</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Evaluation function does not contain the &#39;</span> <span class="o">+</span>
+                             <span class="s2">&quot;&#39;spline&#39;&quot;</span> <span class="o">+</span> <span class="s1">&#39; keyword as its first argument</span><span class="se">\n</span><span class="s1">&#39;</span>
+                             <span class="s1">&#39;Input function keywords: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">eval_args</span><span class="p">))</span>
+        <span class="k">if</span> <span class="s1">&#39;binning&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">eval_args</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Evaluation function does not contain the &#39;</span> <span class="o">+</span>
+                             <span class="s2">&quot;&#39;binning&#39;&quot;</span> <span class="o">+</span> <span class="s1">&#39; keyword as its second &#39;</span>
+                             <span class="s1">&#39;argument</span><span class="se">\n</span><span class="s1">Input function keywords: &#39;</span>
+                             <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">eval_args</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eval_spl</span> <span class="o">=</span> <span class="n">eval_spl</span>
+
+        <span class="c1"># Ensure validate_spl has correct structure</span>
+        <span class="n">validate_args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargspec</span><span class="p">(</span><span class="n">validate_spl</span><span class="p">)</span><span class="o">.</span><span class="n">args</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">validate_args</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Binning validation function contains more than &#39;</span>
+                             <span class="s1">&#39;the maximum number of input parameters (1)</span><span class="se">\n</span><span class="s1">&#39;</span>
+                             <span class="s1">&#39;Input function keywords: &#39;</span>
+                             <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">validate_args</span><span class="p">))</span>
+        <span class="k">if</span><span class="s1">&#39;binning&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">validate_args</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Binning validation function does not contain &#39;</span>
+                             <span class="s1">&#39;the &#39;</span> <span class="o">+</span> <span class="s2">&quot;&#39;binning&#39;&quot;</span> <span class="o">+</span> <span class="s1">&#39; keyword argument</span><span class="se">\n</span><span class="s1">&#39;</span>
+                             <span class="s1">&#39;Input function keywords: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">eval_args</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_spl</span> <span class="o">=</span> <span class="n">validate_spl</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tex</span>
+
+    <span class="nd">@tex</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tex</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">spline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span>
+
+    <span class="nd">@hash</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash must be an immutable type (i.e., have a __hash__ method)&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;__hash__&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="Spline.get_map">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.Spline.get_map">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a map of the spline evaluated at the centers of the</span>
+<span class="sd">        given binning.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+                <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="n">binning</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="o">**</span><span class="n">binning</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Do not know what to do with `binning`=</span><span class="si">%s</span><span class="s1"> of&#39;</span>
+                                 <span class="s1">&#39; type </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">binning</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_spl</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_spl</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_spl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spline</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Spline.get_integrated_map">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.Spline.get_integrated_map">[docs]</a>
+    <span class="nd">@profile</span>
+    <span class="k">def</span> <span class="nf">get_integrated_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">bw_units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the spline map integrated over the input binning values</span>
+<span class="sd">        in output units specified by `bw_units`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">spline_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_map</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">binning</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="o">**</span><span class="n">bw_units</span><span class="p">)</span>
+        <span class="n">bin_widths</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">bin_volumes</span><span class="p">(</span><span class="n">attach_units</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">spline_map</span> <span class="o">*</span> <span class="n">bin_widths</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No hash defined.&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CombinedSpline">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline">[docs]</a>
+<span class="k">class</span> <span class="nc">CombinedSpline</span><span class="p">(</span><span class="n">flavInt</span><span class="o">.</span><span class="n">FlavIntData</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Contained class for operating on Spline objects for various neutrino</span>
+<span class="sd">    flavours.</span>
+
+<span class="sd">    Inherits from FlavIntData object. Provides methods to allow</span>
+<span class="sd">    evaluation of the splines for all neutrino flavours.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    --------</span>
+<span class="sd">    inSpline : Spline or tuple of Spline</span>
+<span class="sd">        Spline objects with `name` entry corresponding to a neutrino flavour</span>
+<span class="sd">        `nue`, `numu`, `nuebar`, `numubar` and also corresponding to an</span>
+<span class="sd">        interaction type `cc` and `nc` if the flag `interactions` is True.</span>
+
+<span class="sd">    interactions: Bool</span>
+<span class="sd">        Default = True</span>
+<span class="sd">        Flag to specifiy whether to store flavours or flavour+interaction</span>
+<span class="sd">        signatures.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inSpline</span><span class="p">,</span> <span class="n">interactions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span> <span class="o">=</span> <span class="n">interactions</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inSpline</span><span class="p">,</span> <span class="n">Spline</span><span class="p">):</span>
+            <span class="n">inSpline</span> <span class="o">=</span> <span class="p">[</span><span class="n">inSpline</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Spline</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">inSpline</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Argument/object unhandled type: &#39;</span>
+                            <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">inSpline</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">interactions</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlavInt</span><span class="p">(</span><span class="n">flavint</span><span class="o">.</span><span class="n">name</span><span class="p">):</span> <span class="n">flavint</span>
+                                 <span class="k">for</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="n">inSpline</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlavInt</span><span class="p">(</span><span class="n">flavint</span><span class="o">.</span><span class="n">name</span><span class="p">):</span> <span class="kc">None</span>
+                                 <span class="k">for</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="n">inSpline</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlav</span><span class="p">(</span><span class="n">flav</span><span class="o">.</span><span class="n">name</span><span class="p">):</span> <span class="n">flav</span>
+                                 <span class="k">for</span> <span class="n">flav</span> <span class="ow">in</span> <span class="n">inSpline</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlav</span><span class="p">(</span><span class="n">flav</span><span class="o">.</span><span class="n">name</span><span class="p">):</span> <span class="kc">None</span>
+                                 <span class="k">for</span> <span class="n">flav</span> <span class="ow">in</span> <span class="n">inSpline</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_data_dict</span><span class="p">()</span>
+
+<div class="viewcode-block" id="CombinedSpline.return_mapset">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.return_mapset">[docs]</a>
+    <span class="k">def</span> <span class="nf">return_mapset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a MapSet of stored spline maps.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">],</span> <span class="n">Map</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error: map </span><span class="si">{0}</span><span class="s1"> has not yet been &#39;</span>
+                                 <span class="s1">&#39;computed&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">signature</span><span class="p">))</span>
+        <span class="n">maps</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">maps</span><span class="o">=</span><span class="n">maps</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CombinedSpline.get_spline">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.get_spline">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_spline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="p">,</span> <span class="n">centers</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the spline of a given signature and bins.&quot;&quot;&quot;</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_NuFlav</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span><span class="o">.</span><span class="n">get_spline</span><span class="p">(</span><span class="n">centers</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CombinedSpline.get_map">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.get_map">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a map of spline values for a given signature and</span>
+<span class="sd">        binning.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_NuFlav</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span><span class="o">.</span><span class="n">get_map</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CombinedSpline.get_integrated_map">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.get_integrated_map">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_integrated_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a map of spline values for a given signature integrated</span>
+<span class="sd">        over the input binning.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_NuFlav</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span><span class="o">.</span><span class="n">get_integrated_map</span><span class="p">(</span>
+            <span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CombinedSpline.compute_maps">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.compute_maps">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_maps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the map of spline values for a given signature and binning,</span>
+<span class="sd">        then store it internally.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_map</span><span class="p">(</span>
+                <span class="n">signature</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_data_dict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CombinedSpline.compute_integrated_maps">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.compute_integrated_maps">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_integrated_maps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the map of spline values for a given signature integrated</span>
+<span class="sd">        over the input binning, then store it internally.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_integrated_map</span><span class="p">(</span>
+                <span class="n">signature</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_data_dict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CombinedSpline.scale_map">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.scale_map">[docs]</a>
+    <span class="k">def</span> <span class="nf">scale_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scale a specific spline map by an input value.&quot;&quot;&quot;</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_signature</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">],</span> <span class="n">Map</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error: maps have not yet been computed&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span> <span class="o">*=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_data_dict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CombinedSpline.scale_maps">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.scale_maps">[docs]</a>
+    <span class="k">def</span> <span class="nf">scale_maps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scale the stored spline maps by an input value.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span> <span class="o">*=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_data_dict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CombinedSpline.reset">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the flux maps to the original input maps.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_data_dict</span><span class="p">()</span></div>
+
+
+    <span class="c1"># TODO(shivesh): too slow!</span>
+<div class="viewcode-block" id="CombinedSpline.validate_spline">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.spline.CombinedSpline.validate_spline">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">validate_spline</span><span class="p">(</span><span class="n">spline</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate spline data.&quot;&quot;&quot;</span>
+        <span class="k">return</span></div>
+
+        <span class="c1"># spline = flavInt.FlavIntData(spline)</span>
+        <span class="c1"># for k in flavInt.ALL_NUFLAVINTS:</span>
+        <span class="c1">#     f = spline[k]</span>
+        <span class="c1">#     if f is not None:</span>
+        <span class="c1">#         assert np.sum(np.isnan(f.hist)) == 0</span>
+        <span class="c1"># for k in flavInt.ALL_NUFLAVS:</span>
+        <span class="c1">#     f = spline[k]</span>
+        <span class="c1">#     if f is not None:</span>
+        <span class="c1">#         assert np.all(f[&#39;nc&#39;] == f[&#39;cc&#39;])</span>
+
+    <span class="k">def</span> <span class="nf">_update_data_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">with</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">BarSep</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+            <span class="n">spline</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">):</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">it</span><span class="p">):</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">ALL_NUINT_TYPES</span><span class="p">}</span>
+                      <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">ALL_NUFLAVS</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">ALL_NUINT_TYPES</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">:</span>
+                        <span class="n">spline</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlav</span><span class="p">(</span><span class="n">x</span><span class="p">))][</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)]</span> <span class="o">=</span> \
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">x</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">spline</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">x</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">spline</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_spline</span><span class="p">(</span><span class="n">spline</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">spline</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">:</span>
+                <span class="n">sign</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlavInt</span><span class="p">(</span><span class="n">attr</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sign</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlav</span><span class="p">(</span><span class="n">attr</span><span class="p">))</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is not a value signature&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">attr</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">sign</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_data</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">sign</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_validate_NuFlav</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlavInt</span><span class="p">):</span>
+                <span class="n">signature</span> <span class="o">=</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlavInt</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlav</span><span class="p">):</span>
+                <span class="n">signature</span> <span class="o">=</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlav</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">signature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;signature </span><span class="si">{0}</span><span class="s1"> not loaded, choices are: &#39;</span>
+                             <span class="s1">&#39;</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="n">signature</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spline</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spline</span><span class="p">,</span> <span class="n">Spline</span><span class="p">):</span>
+            <span class="n">inSpline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="n">spline</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">CombinedSpline</span><span class="p">(</span><span class="n">inSpline</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spline</span><span class="p">,</span> <span class="n">CombinedSpline</span><span class="p">):</span>
+            <span class="n">inSpline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spline_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="o">+</span> \
+                <span class="n">spline</span><span class="o">.</span><span class="n">_spline_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">CombinedSpline</span><span class="p">(</span><span class="n">inSpline</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Argument/object unhandled type: &#39;</span>
+                            <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">spline</span><span class="p">)))</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">test_Spline</span><span class="p">():</span>
+    <span class="c1"># TODO(shivesh): tests</span>
+    <span class="k">pass</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">test_Spline</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

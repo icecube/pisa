@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages package &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pisa.stages.absorption package" href="pisa.stages.absorption.html" />
+    <link rel="prev" title="pisa.scripts package" href="pisa.scripts.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pisa.html">pisa package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pisa.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pisa.stages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.utils.html">pisa.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.html#module-pisa">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pisa</a></li>
+          <li class="breadcrumb-item"><a href="pisa.html">pisa package</a></li>
+      <li class="breadcrumb-item active">pisa.stages package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pisa.stages.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pisa-stages-package">
+<h1>pisa.stages package<a class="headerlink" href="#pisa-stages-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.absorption.html">pisa.stages.absorption package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.absorption.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.absorption.html#module-pisa.stages.absorption.earth_absorption">pisa.stages.absorption.earth_absorption module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.FLAV_BAR_STR_MAPPING"><code class="docutils literal notranslate"><span class="pre">FLAV_BAR_STR_MAPPING</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.calculate_survivalprob"><code class="docutils literal notranslate"><span class="pre">calculate_survivalprob()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption"><code class="docutils literal notranslate"><span class="pre">earth_absorption</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.apply_function"><code class="docutils literal notranslate"><span class="pre">earth_absorption.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.calculate_xsections"><code class="docutils literal notranslate"><span class="pre">earth_absorption.calculate_xsections()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.compute_function"><code class="docutils literal notranslate"><span class="pre">earth_absorption.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.setup_function"><code class="docutils literal notranslate"><span class="pre">earth_absorption.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.absorption.html#module-pisa.stages.absorption">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.aeff.html">pisa.stages.aeff package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.aeff.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.aeff.html#module-pisa.stages.aeff.aeff">pisa.stages.aeff.aeff module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.aeff.html#pisa.stages.aeff.aeff.aeff"><code class="docutils literal notranslate"><span class="pre">aeff</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.aeff.html#pisa.stages.aeff.aeff.aeff.apply_function"><code class="docutils literal notranslate"><span class="pre">aeff.apply_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.aeff.html#module-pisa.stages.aeff.weight">pisa.stages.aeff.weight module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.aeff.html#pisa.stages.aeff.weight.weight"><code class="docutils literal notranslate"><span class="pre">weight</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.aeff.html#pisa.stages.aeff.weight.weight.apply_function"><code class="docutils literal notranslate"><span class="pre">weight.apply_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.aeff.html#module-pisa.stages.aeff.weight_hnl">pisa.stages.aeff.weight_hnl module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.aeff.html#pisa.stages.aeff.weight_hnl.re_weight_hnl"><code class="docutils literal notranslate"><span class="pre">re_weight_hnl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.aeff.html#pisa.stages.aeff.weight_hnl.weight_hnl"><code class="docutils literal notranslate"><span class="pre">weight_hnl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.aeff.html#pisa.stages.aeff.weight_hnl.weight_hnl.apply_function"><code class="docutils literal notranslate"><span class="pre">weight_hnl.apply_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.aeff.html#module-pisa.stages.aeff">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.background.html">pisa.stages.background package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.background.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.background.html#module-pisa.stages.background.atm_muons">pisa.stages.background.atm_muons module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.background.html#pisa.stages.background.atm_muons.atm_muons"><code class="docutils literal notranslate"><span class="pre">atm_muons</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.background.html#pisa.stages.background.atm_muons.atm_muons.apply_function"><code class="docutils literal notranslate"><span class="pre">atm_muons.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.background.html#pisa.stages.background.atm_muons.atm_muons.setup_function"><code class="docutils literal notranslate"><span class="pre">atm_muons.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.background.html#module-pisa.stages.background">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.data.html">pisa.stages.data package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.csv_data_hist">pisa.stages.data.csv_data_hist module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.csv_data_hist.csv_data_hist"><code class="docutils literal notranslate"><span class="pre">csv_data_hist</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.csv_data_hist.csv_data_hist.setup_function"><code class="docutils literal notranslate"><span class="pre">csv_data_hist.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.csv_icc_hist">pisa.stages.data.csv_icc_hist module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.csv_icc_hist.csv_icc_hist"><code class="docutils literal notranslate"><span class="pre">csv_icc_hist</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.csv_icc_hist.csv_icc_hist.apply_function"><code class="docutils literal notranslate"><span class="pre">csv_icc_hist.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.csv_icc_hist.csv_icc_hist.setup_function"><code class="docutils literal notranslate"><span class="pre">csv_icc_hist.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.csv_loader">pisa.stages.data.csv_loader module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.csv_loader.csv_loader"><code class="docutils literal notranslate"><span class="pre">csv_loader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.csv_loader.csv_loader.apply_function"><code class="docutils literal notranslate"><span class="pre">csv_loader.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.csv_loader.csv_loader.setup_function"><code class="docutils literal notranslate"><span class="pre">csv_loader.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.freedom_hdf5_loader">pisa.stages.data.freedom_hdf5_loader module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader"><code class="docutils literal notranslate"><span class="pre">freedom_hdf5_loader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.apply_cuts"><code class="docutils literal notranslate"><span class="pre">freedom_hdf5_loader.apply_cuts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.apply_function"><code class="docutils literal notranslate"><span class="pre">freedom_hdf5_loader.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.calc_rho36"><code class="docutils literal notranslate"><span class="pre">freedom_hdf5_loader.calc_rho36()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.calc_uncertainties"><code class="docutils literal notranslate"><span class="pre">freedom_hdf5_loader.calc_uncertainties()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.fill_variable_dict"><code class="docutils literal notranslate"><span class="pre">freedom_hdf5_loader.fill_variable_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.load_hdf5_file"><code class="docutils literal notranslate"><span class="pre">freedom_hdf5_loader.load_hdf5_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.setup_function"><code class="docutils literal notranslate"><span class="pre">freedom_hdf5_loader.setup_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.unpack_file_data"><code class="docutils literal notranslate"><span class="pre">freedom_hdf5_loader.unpack_file_data()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.grid">pisa.stages.data.grid module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.grid.grid"><code class="docutils literal notranslate"><span class="pre">grid</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.grid.grid.apply_function"><code class="docutils literal notranslate"><span class="pre">grid.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.grid.grid.setup_function"><code class="docutils literal notranslate"><span class="pre">grid.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#pisa-stages-data-licloader-weighter-module">pisa.stages.data.licloader_weighter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.meows_loader">pisa.stages.data.meows_loader module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.meows_loader.meows_loader"><code class="docutils literal notranslate"><span class="pre">meows_loader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.meows_loader.meows_loader.apply_function"><code class="docutils literal notranslate"><span class="pre">meows_loader.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.meows_loader.meows_loader.setup_function"><code class="docutils literal notranslate"><span class="pre">meows_loader.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.simple_data_loader">pisa.stages.data.simple_data_loader module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader"><code class="docutils literal notranslate"><span class="pre">simple_data_loader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.apply_cuts_to_events"><code class="docutils literal notranslate"><span class="pre">simple_data_loader.apply_cuts_to_events()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.apply_function"><code class="docutils literal notranslate"><span class="pre">simple_data_loader.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.load_events"><code class="docutils literal notranslate"><span class="pre">simple_data_loader.load_events()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.record_event_properties"><code class="docutils literal notranslate"><span class="pre">simple_data_loader.record_event_properties()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.setup_function"><code class="docutils literal notranslate"><span class="pre">simple_data_loader.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.simple_signal">pisa.stages.data.simple_signal module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.simple_signal.simple_signal"><code class="docutils literal notranslate"><span class="pre">simple_signal</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.simple_signal.simple_signal.apply_function"><code class="docutils literal notranslate"><span class="pre">simple_signal.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.simple_signal.simple_signal.setup_function"><code class="docutils literal notranslate"><span class="pre">simple_signal.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.sqlite_loader">pisa.stages.data.sqlite_loader module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader"><code class="docutils literal notranslate"><span class="pre">sqlite_loader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_aeff_weight"><code class="docutils literal notranslate"><span class="pre">sqlite_loader.add_aeff_weight()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_reco"><code class="docutils literal notranslate"><span class="pre">sqlite_loader.add_reco()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_truth"><code class="docutils literal notranslate"><span class="pre">sqlite_loader.add_truth()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.apply_function"><code class="docutils literal notranslate"><span class="pre">sqlite_loader.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.get_pid_and_interaction_type"><code class="docutils literal notranslate"><span class="pre">sqlite_loader.get_pid_and_interaction_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.initialize_weights"><code class="docutils literal notranslate"><span class="pre">sqlite_loader.initialize_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.query_database"><code class="docutils literal notranslate"><span class="pre">sqlite_loader.query_database()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.setup_function"><code class="docutils literal notranslate"><span class="pre">sqlite_loader.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.toy_event_generator">pisa.stages.data.toy_event_generator module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.toy_event_generator.toy_event_generator"><code class="docutils literal notranslate"><span class="pre">toy_event_generator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.toy_event_generator.toy_event_generator.apply_function"><code class="docutils literal notranslate"><span class="pre">toy_event_generator.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa.stages.data.toy_event_generator.toy_event_generator.setup_function"><code class="docutils literal notranslate"><span class="pre">toy_event_generator.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.discr_sys.html">pisa.stages.discr_sys package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.discr_sys.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.discr_sys.html#module-pisa.stages.discr_sys.hypersurfaces">pisa.stages.discr_sys.hypersurfaces module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.discr_sys.html#pisa.stages.discr_sys.hypersurfaces.hypersurfaces"><code class="docutils literal notranslate"><span class="pre">hypersurfaces</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.discr_sys.html#pisa.stages.discr_sys.hypersurfaces.hypersurfaces.apply_function"><code class="docutils literal notranslate"><span class="pre">hypersurfaces.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.discr_sys.html#pisa.stages.discr_sys.hypersurfaces.hypersurfaces.compute_function"><code class="docutils literal notranslate"><span class="pre">hypersurfaces.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.discr_sys.html#pisa.stages.discr_sys.hypersurfaces.hypersurfaces.setup_function"><code class="docutils literal notranslate"><span class="pre">hypersurfaces.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.discr_sys.html#module-pisa.stages.discr_sys.ultrasurfaces">pisa.stages.discr_sys.ultrasurfaces module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.discr_sys.html#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces"><code class="docutils literal notranslate"><span class="pre">ultrasurfaces</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.discr_sys.html#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces.apply_function"><code class="docutils literal notranslate"><span class="pre">ultrasurfaces.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.discr_sys.html#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces.compute_function"><code class="docutils literal notranslate"><span class="pre">ultrasurfaces.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.discr_sys.html#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces.setup_function"><code class="docutils literal notranslate"><span class="pre">ultrasurfaces.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.discr_sys.html#module-pisa.stages.discr_sys">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.flux.html">pisa.stages.flux package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#pisa-stages-flux-airs-module">pisa.stages.flux.airs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#module-pisa.stages.flux.astrophysical">pisa.stages.flux.astrophysical module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.astrophysical.apply_sys_loop"><code class="docutils literal notranslate"><span class="pre">apply_sys_loop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.astrophysical.astrophysical"><code class="docutils literal notranslate"><span class="pre">astrophysical</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.astrophysical.astrophysical.apply_function"><code class="docutils literal notranslate"><span class="pre">astrophysical.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.astrophysical.astrophysical.compute_function"><code class="docutils literal notranslate"><span class="pre">astrophysical.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.astrophysical.astrophysical.setup_function"><code class="docutils literal notranslate"><span class="pre">astrophysical.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.astrophysical.spectral_index_scale"><code class="docutils literal notranslate"><span class="pre">spectral_index_scale()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#module-pisa.stages.flux.barr_simple">pisa.stages.flux.barr_simple module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple"><code class="docutils literal notranslate"><span class="pre">barr_simple</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple.compute_function"><code class="docutils literal notranslate"><span class="pre">barr_simple.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple.setup_function"><code class="docutils literal notranslate"><span class="pre">barr_simple.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#module-pisa.stages.flux.daemon_flux">pisa.stages.flux.daemon_flux module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.daemon_flux.daemon_flux"><code class="docutils literal notranslate"><span class="pre">daemon_flux</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.daemon_flux.daemon_flux.compute_function"><code class="docutils literal notranslate"><span class="pre">daemon_flux.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.daemon_flux.daemon_flux.setup_function"><code class="docutils literal notranslate"><span class="pre">daemon_flux.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.daemon_flux.evaluate_flux_map"><code class="docutils literal notranslate"><span class="pre">evaluate_flux_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.daemon_flux.make_2d_flux_map"><code class="docutils literal notranslate"><span class="pre">make_2d_flux_map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#module-pisa.stages.flux.hillasg">pisa.stages.flux.hillasg module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.hillasg.hillasg"><code class="docutils literal notranslate"><span class="pre">hillasg</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.hillasg.hillasg.compute_function"><code class="docutils literal notranslate"><span class="pre">hillasg.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.hillasg.hillasg.setup_function"><code class="docutils literal notranslate"><span class="pre">hillasg.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#module-pisa.stages.flux.honda_ip">pisa.stages.flux.honda_ip module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.honda_ip.honda_ip"><code class="docutils literal notranslate"><span class="pre">honda_ip</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.honda_ip.honda_ip.compute_function"><code class="docutils literal notranslate"><span class="pre">honda_ip.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.honda_ip.honda_ip.setup_function"><code class="docutils literal notranslate"><span class="pre">honda_ip.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#module-pisa.stages.flux.mceq_barr">pisa.stages.flux.mceq_barr module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr.mceq_barr"><code class="docutils literal notranslate"><span class="pre">mceq_barr</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr.mceq_barr.antipion_production"><code class="docutils literal notranslate"><span class="pre">mceq_barr.antipion_production()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr.mceq_barr.compute_function"><code class="docutils literal notranslate"><span class="pre">mceq_barr.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr.mceq_barr.setup_function"><code class="docutils literal notranslate"><span class="pre">mceq_barr.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#module-pisa.stages.flux.mceq_barr_red">pisa.stages.flux.mceq_barr_red module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr_red.apply_sys_loop"><code class="docutils literal notranslate"><span class="pre">apply_sys_loop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr_red.mceq_barr_red"><code class="docutils literal notranslate"><span class="pre">mceq_barr_red</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr_red.mceq_barr_red.antipion_production"><code class="docutils literal notranslate"><span class="pre">mceq_barr_red.antipion_production()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr_red.mceq_barr_red.compute_function"><code class="docutils literal notranslate"><span class="pre">mceq_barr_red.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr_red.mceq_barr_red.setup_function"><code class="docutils literal notranslate"><span class="pre">mceq_barr_red.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html#pisa.stages.flux.mceq_barr_red.spectral_index_scale"><code class="docutils literal notranslate"><span class="pre">spectral_index_scale()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.flux.html#module-pisa.stages.flux">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.likelihood.html">pisa.stages.likelihood package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.likelihood.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.likelihood.html#module-pisa.stages.likelihood.generalized_llh_params">pisa.stages.likelihood.generalized_llh_params module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.likelihood.html#pisa.stages.likelihood.generalized_llh_params.generalized_llh_params"><code class="docutils literal notranslate"><span class="pre">generalized_llh_params</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.likelihood.html#pisa.stages.likelihood.generalized_llh_params.generalized_llh_params.apply_function"><code class="docutils literal notranslate"><span class="pre">generalized_llh_params.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.likelihood.html#pisa.stages.likelihood.generalized_llh_params.generalized_llh_params.setup_function"><code class="docutils literal notranslate"><span class="pre">generalized_llh_params.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.likelihood.html#module-pisa.stages.likelihood">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.osc.html">pisa.stages.osc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.prob3numba.html">pisa.stages.osc.prob3numba package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html#module-pisa.stages.osc.prob3numba.numba_osc_hostfuncs">pisa.stages.osc.prob3numba.numba_osc_hostfuncs module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html#module-pisa.stages.osc.prob3numba.numba_osc_kernels">pisa.stages.osc.prob3numba.numba_osc_kernels module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html#module-pisa.stages.osc.prob3numba.numba_osc_tests">pisa.stages.osc.prob3numba.numba_osc_tests module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html#module-pisa.stages.osc.prob3numba.test_numba">pisa.stages.osc.prob3numba.test_numba module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html#module-pisa.stages.osc.prob3numba">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.decay_params">pisa.stages.osc.decay_params module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decay_params.DecayParams"><code class="docutils literal notranslate"><span class="pre">DecayParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decay_params.DecayParams.decay_alpha3"><code class="docutils literal notranslate"><span class="pre">DecayParams.decay_alpha3</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decay_params.DecayParams.decay_matrix"><code class="docutils literal notranslate"><span class="pre">DecayParams.decay_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id0"><code class="docutils literal notranslate"><span class="pre">DecayParams.decay_alpha3</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id1"><code class="docutils literal notranslate"><span class="pre">DecayParams.decay_matrix</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.decoherence">pisa.stages.osc.decoherence module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decoherence.DecoherenceParams"><code class="docutils literal notranslate"><span class="pre">DecoherenceParams</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decoherence.calc_decoherence_probs"><code class="docutils literal notranslate"><span class="pre">calc_decoherence_probs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence"><code class="docutils literal notranslate"><span class="pre">decoherence</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.apply_function"><code class="docutils literal notranslate"><span class="pre">decoherence.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.calc_probs"><code class="docutils literal notranslate"><span class="pre">decoherence.calc_probs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.compute_function"><code class="docutils literal notranslate"><span class="pre">decoherence.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.setup_function"><code class="docutils literal notranslate"><span class="pre">decoherence.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.globes">pisa.stages.osc.globes module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.globes.globes"><code class="docutils literal notranslate"><span class="pre">globes</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.globes.globes.apply_function"><code class="docutils literal notranslate"><span class="pre">globes.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.globes.globes.calc_prob_e_mu"><code class="docutils literal notranslate"><span class="pre">globes.calc_prob_e_mu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.globes.globes.calc_prob_nonsterile"><code class="docutils literal notranslate"><span class="pre">globes.calc_prob_nonsterile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.globes.globes.compute_function"><code class="docutils literal notranslate"><span class="pre">globes.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.globes.globes.setup_function"><code class="docutils literal notranslate"><span class="pre">globes.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.layers">pisa.stages.osc.layers module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers"><code class="docutils literal notranslate"><span class="pre">Layers</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.max_layers"><code class="docutils literal notranslate"><span class="pre">Layers.max_layers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.n_layers"><code class="docutils literal notranslate"><span class="pre">Layers.n_layers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.density"><code class="docutils literal notranslate"><span class="pre">Layers.density</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.distance"><code class="docutils literal notranslate"><span class="pre">Layers.distance</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.calcLayers"><code class="docutils literal notranslate"><span class="pre">Layers.calcLayers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.calcPathLength"><code class="docutils literal notranslate"><span class="pre">Layers.calcPathLength()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.computeMinLengthToLayers"><code class="docutils literal notranslate"><span class="pre">Layers.computeMinLengthToLayers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id2"><code class="docutils literal notranslate"><span class="pre">Layers.density</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id3"><code class="docutils literal notranslate"><span class="pre">Layers.distance</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id4"><code class="docutils literal notranslate"><span class="pre">Layers.n_layers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.scaling"><code class="docutils literal notranslate"><span class="pre">Layers.scaling()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.setElecFrac"><code class="docutils literal notranslate"><span class="pre">Layers.setElecFrac()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.Layers.weight_density_to_YeFrac"><code class="docutils literal notranslate"><span class="pre">Layers.weight_density_to_YeFrac()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.layers.extCalcLayers"><code class="docutils literal notranslate"><span class="pre">extCalcLayers()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.lri_params">pisa.stages.osc.lri_params module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.lri_params.LRIParams"><code class="docutils literal notranslate"><span class="pre">LRIParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.lri_params.LRIParams.potential_matrix_emu"><code class="docutils literal notranslate"><span class="pre">LRIParams.potential_matrix_emu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.lri_params.LRIParams.potential_matrix_etau"><code class="docutils literal notranslate"><span class="pre">LRIParams.potential_matrix_etau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.lri_params.LRIParams.potential_matrix_mutau"><code class="docutils literal notranslate"><span class="pre">LRIParams.potential_matrix_mutau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.lri_params.LRIParams.v_lri"><code class="docutils literal notranslate"><span class="pre">LRIParams.v_lri</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.nsi_params">pisa.stages.osc.nsi_params module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.NSIParams"><code class="docutils literal notranslate"><span class="pre">NSIParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.NSIParams.eps_matrix"><code class="docutils literal notranslate"><span class="pre">NSIParams.eps_matrix</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.StdNSIParams"><code class="docutils literal notranslate"><span class="pre">StdNSIParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.StdNSIParams.eps_matrix"><code class="docutils literal notranslate"><span class="pre">StdNSIParams.eps_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.StdNSIParams.eps_ee"><code class="docutils literal notranslate"><span class="pre">StdNSIParams.eps_ee</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.StdNSIParams.eps_emu"><code class="docutils literal notranslate"><span class="pre">StdNSIParams.eps_emu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.StdNSIParams.eps_etau"><code class="docutils literal notranslate"><span class="pre">StdNSIParams.eps_etau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id5"><code class="docutils literal notranslate"><span class="pre">StdNSIParams.eps_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.StdNSIParams.eps_mumu"><code class="docutils literal notranslate"><span class="pre">StdNSIParams.eps_mumu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.StdNSIParams.eps_mutau"><code class="docutils literal notranslate"><span class="pre">StdNSIParams.eps_mutau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.StdNSIParams.eps_tautau"><code class="docutils literal notranslate"><span class="pre">StdNSIParams.eps_tautau</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.alpha1"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.alpha1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.alpha2"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.alpha2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.deltansi"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.deltansi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_ee"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_ee</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_emu"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_emu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_etau"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_etau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_matrix"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_matrix_analytical"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_matrix_analytical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_mumu"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_mumu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_mutau"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_mutau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_prime"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_prime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_scale"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_scale</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.eps_tautau"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.eps_tautau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.phi12"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.phi12</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.phi13"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.phi13</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams.phi23"><code class="docutils literal notranslate"><span class="pre">VacuumLikeNSIParams.phi23</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#pisa-stages-osc-nusquids-module">pisa.stages.osc.nusquids module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.osc_params">pisa.stages.osc.osc_params module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams"><code class="docutils literal notranslate"><span class="pre">OscParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.deltacp"><code class="docutils literal notranslate"><span class="pre">OscParams.deltacp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.mix_matrix"><code class="docutils literal notranslate"><span class="pre">OscParams.mix_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.mix_matrix_complex"><code class="docutils literal notranslate"><span class="pre">OscParams.mix_matrix_complex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.mix_matrix_reparam"><code class="docutils literal notranslate"><span class="pre">OscParams.mix_matrix_reparam</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.mix_matrix_reparam_complex"><code class="docutils literal notranslate"><span class="pre">OscParams.mix_matrix_reparam_complex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.dm_matrix"><code class="docutils literal notranslate"><span class="pre">OscParams.dm_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id6"><code class="docutils literal notranslate"><span class="pre">OscParams.deltacp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id7"><code class="docutils literal notranslate"><span class="pre">OscParams.dm_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id8"><code class="docutils literal notranslate"><span class="pre">OscParams.mix_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id9"><code class="docutils literal notranslate"><span class="pre">OscParams.mix_matrix_complex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id10"><code class="docutils literal notranslate"><span class="pre">OscParams.mix_matrix_reparam</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#id11"><code class="docutils literal notranslate"><span class="pre">OscParams.mix_matrix_reparam_complex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.sin12"><code class="docutils literal notranslate"><span class="pre">OscParams.sin12</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.sin13"><code class="docutils literal notranslate"><span class="pre">OscParams.sin13</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.sin14"><code class="docutils literal notranslate"><span class="pre">OscParams.sin14</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.sin23"><code class="docutils literal notranslate"><span class="pre">OscParams.sin23</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.theta12"><code class="docutils literal notranslate"><span class="pre">OscParams.theta12</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.theta13"><code class="docutils literal notranslate"><span class="pre">OscParams.theta13</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.theta14"><code class="docutils literal notranslate"><span class="pre">OscParams.theta14</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams.theta23"><code class="docutils literal notranslate"><span class="pre">OscParams.theta23</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.prob3">pisa.stages.osc.prob3 module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.prob3.prob3"><code class="docutils literal notranslate"><span class="pre">prob3</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.apply_function"><code class="docutils literal notranslate"><span class="pre">prob3.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.calc_probs"><code class="docutils literal notranslate"><span class="pre">prob3.calc_probs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.compute_function"><code class="docutils literal notranslate"><span class="pre">prob3.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.gen_mat_pot_matrix_complex"><code class="docutils literal notranslate"><span class="pre">prob3.gen_mat_pot_matrix_complex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.nsi_type"><code class="docutils literal notranslate"><span class="pre">prob3.nsi_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.reparam_mix_matrix"><code class="docutils literal notranslate"><span class="pre">prob3.reparam_mix_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.setup_function"><code class="docutils literal notranslate"><span class="pre">prob3.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.scaling_params">pisa.stages.osc.scaling_params module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_w_constrain"><code class="docutils literal notranslate"><span class="pre">Core_scaling_w_constrain</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_w_constrain.core_density_scale"><code class="docutils literal notranslate"><span class="pre">Core_scaling_w_constrain.core_density_scale</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_w_constrain.is_descending"><code class="docutils literal notranslate"><span class="pre">Core_scaling_w_constrain.is_descending()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_w_constrain.is_positive"><code class="docutils literal notranslate"><span class="pre">Core_scaling_w_constrain.is_positive()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_w_constrain.scaling_array"><code class="docutils literal notranslate"><span class="pre">Core_scaling_w_constrain.scaling_array</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_wo_constrain"><code class="docutils literal notranslate"><span class="pre">Core_scaling_wo_constrain</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_wo_constrain.core_density_scale"><code class="docutils literal notranslate"><span class="pre">Core_scaling_wo_constrain.core_density_scale</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_wo_constrain.innermantle_density_scale"><code class="docutils literal notranslate"><span class="pre">Core_scaling_wo_constrain.innermantle_density_scale</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_wo_constrain.middlemantle_density_scale"><code class="docutils literal notranslate"><span class="pre">Core_scaling_wo_constrain.middlemantle_density_scale</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Core_scaling_wo_constrain.scaling_factor_array"><code class="docutils literal notranslate"><span class="pre">Core_scaling_wo_constrain.scaling_factor_array</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Mass_scaling"><code class="docutils literal notranslate"><span class="pre">Mass_scaling</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.scaling_params.Mass_scaling.density_scale"><code class="docutils literal notranslate"><span class="pre">Mass_scaling.density_scale</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc.two_nu_osc">pisa.stages.osc.two_nu_osc module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.two_nu_osc.two_nu_osc"><code class="docutils literal notranslate"><span class="pre">two_nu_osc</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.html#pisa.stages.osc.two_nu_osc.two_nu_osc.apply_function"><code class="docutils literal notranslate"><span class="pre">two_nu_osc.apply_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.osc.html#module-pisa.stages.osc">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.pid.html">pisa.stages.pid package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.pid.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.pid.html#module-pisa.stages.pid.shift_scale_pid">pisa.stages.pid.shift_scale_pid module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.shift_scale_pid"><code class="docutils literal notranslate"><span class="pre">shift_scale_pid</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.shift_scale_pid.apply_function"><code class="docutils literal notranslate"><span class="pre">shift_scale_pid.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.shift_scale_pid.compute_function"><code class="docutils literal notranslate"><span class="pre">shift_scale_pid.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.shift_scale_pid.setup_function"><code class="docutils literal notranslate"><span class="pre">shift_scale_pid.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.pid.html#module-pisa.stages.pid">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.reco.html">pisa.stages.reco package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.reco.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.reco.html#module-pisa.stages.reco.resolutions">pisa.stages.reco.resolutions module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.reco.html#pisa.stages.reco.resolutions.resolutions"><code class="docutils literal notranslate"><span class="pre">resolutions</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.reco.html#pisa.stages.reco.resolutions.resolutions.setup_function"><code class="docutils literal notranslate"><span class="pre">resolutions.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.reco.html#module-pisa.stages.reco.simple_param">pisa.stages.reco.simple_param module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_param"><code class="docutils literal notranslate"><span class="pre">simple_param</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_param.setup_function"><code class="docutils literal notranslate"><span class="pre">simple_param.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_pid_parameterization"><code class="docutils literal notranslate"><span class="pre">simple_pid_parameterization()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_reco_coszen_parameterization"><code class="docutils literal notranslate"><span class="pre">simple_reco_coszen_parameterization()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_reco_energy_parameterization"><code class="docutils literal notranslate"><span class="pre">simple_reco_energy_parameterization()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.reco.html#module-pisa.stages.reco">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.utils.html">pisa.stages.utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils.add_indices">pisa.stages.utils.add_indices module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.add_indices.add_indices"><code class="docutils literal notranslate"><span class="pre">add_indices</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.add_indices.add_indices.setup_function"><code class="docutils literal notranslate"><span class="pre">add_indices.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils.adhoc_sys">pisa.stages.utils.adhoc_sys module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys"><code class="docutils literal notranslate"><span class="pre">adhoc_sys</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys.apply_function"><code class="docutils literal notranslate"><span class="pre">adhoc_sys.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys.setup_function"><code class="docutils literal notranslate"><span class="pre">adhoc_sys.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils.bootstrap">pisa.stages.utils.bootstrap module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.bootstrap.bootstrap"><code class="docutils literal notranslate"><span class="pre">bootstrap</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.bootstrap.bootstrap.apply_function"><code class="docutils literal notranslate"><span class="pre">bootstrap.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.bootstrap.bootstrap.setup_function"><code class="docutils literal notranslate"><span class="pre">bootstrap.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.bootstrap.insert_bootstrap_after_data_loader"><code class="docutils literal notranslate"><span class="pre">insert_bootstrap_after_data_loader()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.bootstrap.test_bootstrap"><code class="docutils literal notranslate"><span class="pre">test_bootstrap()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils.fix_error">pisa.stages.utils.fix_error module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.fix_error.fix_error"><code class="docutils literal notranslate"><span class="pre">fix_error</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.fix_error.fix_error.apply_function"><code class="docutils literal notranslate"><span class="pre">fix_error.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.fix_error.fix_error.compute_function"><code class="docutils literal notranslate"><span class="pre">fix_error.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.fix_error.fix_error.setup_function"><code class="docutils literal notranslate"><span class="pre">fix_error.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils.hist">pisa.stages.utils.hist module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.hist.hist"><code class="docutils literal notranslate"><span class="pre">hist</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.hist.hist.apply_function"><code class="docutils literal notranslate"><span class="pre">hist.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.hist.hist.setup_function"><code class="docutils literal notranslate"><span class="pre">hist.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils.kde">pisa.stages.utils.kde module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.kde.kde"><code class="docutils literal notranslate"><span class="pre">kde</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.kde.kde.apply"><code class="docutils literal notranslate"><span class="pre">kde.apply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.kde.kde.setup_function"><code class="docutils literal notranslate"><span class="pre">kde.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils.kfold">pisa.stages.utils.kfold module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.kfold.kfold"><code class="docutils literal notranslate"><span class="pre">kfold</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.kfold.kfold.apply_function"><code class="docutils literal notranslate"><span class="pre">kfold.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.kfold.kfold.setup_function"><code class="docutils literal notranslate"><span class="pre">kfold.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils.resample">pisa.stages.utils.resample module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.resample.ResampleMode"><code class="docutils literal notranslate"><span class="pre">ResampleMode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.resample.ResampleMode.ARB"><code class="docutils literal notranslate"><span class="pre">ResampleMode.ARB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.resample.ResampleMode.DOWN"><code class="docutils literal notranslate"><span class="pre">ResampleMode.DOWN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.resample.ResampleMode.UP"><code class="docutils literal notranslate"><span class="pre">ResampleMode.UP</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.resample.resample"><code class="docutils literal notranslate"><span class="pre">resample</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.resample.resample.apply"><code class="docutils literal notranslate"><span class="pre">resample.apply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.resample.resample.setup_function"><code class="docutils literal notranslate"><span class="pre">resample.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.resample.test_resample"><code class="docutils literal notranslate"><span class="pre">test_resample()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils.set_variance">pisa.stages.utils.set_variance module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.set_variance.apply_floor"><code class="docutils literal notranslate"><span class="pre">apply_floor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.set_variance.set_constant"><code class="docutils literal notranslate"><span class="pre">set_constant()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance"><code class="docutils literal notranslate"><span class="pre">set_variance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance.apply_function"><code class="docutils literal notranslate"><span class="pre">set_variance.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance.compute_function"><code class="docutils literal notranslate"><span class="pre">set_variance.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance.setup_function"><code class="docutils literal notranslate"><span class="pre">set_variance.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.utils.html#module-pisa.stages.utils">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pisa.stages.xsec.html">pisa.stages.xsec package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.xsec.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.xsec.html#module-pisa.stages.xsec.dis_sys">pisa.stages.xsec.dis_sys module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.dis_sys.dis_sys"><code class="docutils literal notranslate"><span class="pre">dis_sys</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.dis_sys.dis_sys.apply_function"><code class="docutils literal notranslate"><span class="pre">dis_sys.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.dis_sys.dis_sys.setup_function"><code class="docutils literal notranslate"><span class="pre">dis_sys.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.xsec.html#module-pisa.stages.xsec.genie_sys">pisa.stages.xsec.genie_sys module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.genie_sys.apply_genie_sys"><code class="docutils literal notranslate"><span class="pre">apply_genie_sys()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.genie_sys.genie_sys"><code class="docutils literal notranslate"><span class="pre">genie_sys</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.genie_sys.genie_sys.apply_function"><code class="docutils literal notranslate"><span class="pre">genie_sys.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.genie_sys.genie_sys.setup_function"><code class="docutils literal notranslate"><span class="pre">genie_sys.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.xsec.html#module-pisa.stages.xsec.nutau_xsec">pisa.stages.xsec.nutau_xsec module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.nutau_xsec.nutau_xsec"><code class="docutils literal notranslate"><span class="pre">nutau_xsec</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.nutau_xsec.nutau_xsec.apply_function"><code class="docutils literal notranslate"><span class="pre">nutau_xsec.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.nutau_xsec.nutau_xsec.compute_function"><code class="docutils literal notranslate"><span class="pre">nutau_xsec.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.xsec.html#pisa.stages.xsec.nutau_xsec.nutau_xsec.setup_function"><code class="docutils literal notranslate"><span class="pre">nutau_xsec.setup_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.stages.xsec.html#module-pisa.stages.xsec">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="module-pisa.stages">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pisa.stages" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pisa.scripts.html" class="btn btn-neutral float-left" title="pisa.scripts package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pisa.stages.absorption.html" class="btn btn-neutral float-right" title="pisa.stages.absorption package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

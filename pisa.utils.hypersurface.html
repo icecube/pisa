@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.hypersurface package &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pisa.utils.llh_defs package" href="pisa.utils.llh_defs.html" />
+    <link rel="prev" title="pisa.utils package" href="pisa.utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pisa.html">pisa package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pisa.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.html">pisa.stages package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="pisa.utils.html">pisa.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.html#module-pisa">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pisa</a></li>
+          <li class="breadcrumb-item"><a href="pisa.html">pisa package</a></li>
+          <li class="breadcrumb-item"><a href="pisa.utils.html">pisa.utils package</a></li>
+      <li class="breadcrumb-item active">pisa.utils.hypersurface package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pisa.utils.hypersurface.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pisa-utils-hypersurface-package">
+<h1>pisa.utils.hypersurface package<a class="headerlink" href="#pisa-utils-hypersurface-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pisa.utils.hypersurface.hyper_interpolator">
+<span id="pisa-utils-hypersurface-hyper-interpolator-module"></span><h2>pisa.utils.hypersurface.hyper_interpolator module<a class="headerlink" href="#module-pisa.utils.hypersurface.hyper_interpolator" title="Link to this heading"></a></h2>
+<p>Classes and methods needed to do hypersurface interpolation over arbitrary parameters.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hyper_interpolator.</span></span><span class="sig-name descname"><span class="pre">HypersurfaceInterpolator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpolation_param_spec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hs_fits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_nan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#HypersurfaceInterpolator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Factory for interpolated hypersurfaces.</p>
+<p>After being initialized with a set of hypersurface fits produced at different
+parameters, it uses interpolation to produce a Hypersurface object
+at a given point in parameter space using scipy’s <cite>RegularGridInterpolator</cite>.</p>
+<p>The interpolation is piecewise-linear between points. All points must lie on a
+rectilinear ND grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interpolation_param_spec</strong> (<em>dict</em>) – <dl>
+<dt>Specification of interpolation parameter grid of the form::</dt><dd><dl class="simple">
+<dt>interpolation_param_spec = {</dt><dd><p>‘param1’: {“values”: [val1_1, val1_2, …], “scales_log”: True/False}
+‘param2’: {“values”: [val2_1, val2_2, …], “scales_log”: True/False}
+…
+‘paramN’: {“values”: [valN_1, valN_2, …], “scales_log”: True/False}</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>where values are given as <code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code>.</p>
+</p></li>
+<li><p><strong>hs_fits</strong> (<em>list</em><em> of </em><em>dict</em>) – list of dicts with hypersurfacesthat were fit at the points of the parameter mesh
+defined by interpolation_param_spec</p></li>
+<li><p><strong>ignore_nan</strong> (<em>bool</em>) – Ignore empty bins in hypersurfaces. The intercept in those bins is set to 1 and
+all slopes are set to 0.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Be sure to give a support that covers the entire relevant parameter range and a
+good distance beyond! To prevent minimization failure from NaNs, extrapolation
+is used if hypersurfaces outside the support are requested but needless to say
+these numbers are unreliable.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">scipy.interpolate.RegularGridInterpolator</span></code></dt><dd><p>class used for interpolation</p>
+</dd>
+</dl>
+</div>
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.binning">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">binning</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.binning" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.get_hypersurface">
+<span class="sig-name descname"><span class="pre">get_hypersurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#HypersurfaceInterpolator.get_hypersurface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.get_hypersurface" title="Link to this definition"></a></dt>
+<dd><p>Get a Hypersurface object with interpolated coefficients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**param_kw</strong> – Parameters are given as keyword arguments, where the names
+of the arguments must match the names of the parameters over
+which the hypersurfaces are interpolated. The values
+are given as <code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code> objects with units.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.interpolation_param_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">interpolation_param_names</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.interpolation_param_names" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.num_interp_params">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_interp_params</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.num_interp_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.param_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">param_names</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.param_names" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.plot_fits_in_bin">
+<span class="sig-name descname"><span class="pre">plot_fits_in_bin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bin_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#HypersurfaceInterpolator.plot_fits_in_bin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.plot_fits_in_bin" title="Link to this definition"></a></dt>
+<dd><p>Plot the coefficients as well as covariance matrix elements as a function
+of the interpolation parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bin_idx</strong> (<em>tuple</em>) – index of the bin for which to plot the fits</p></li>
+<li><p><strong>ax</strong> (<em>2D array</em><em> of </em><em>axes</em><em>, </em><em>optional</em>) – axes into which to place the plots. If None (default),
+appropriate axes will be generated. Must have at least
+size (n_coeff, n_coeff + 1).</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em><em>, </em><em>optional</em>) – number of steps to plot between minimum and maximum</p></li>
+<li><p><strong>**param_kw</strong> – Parameters to be fixed when producing slices. If the interpolation
+is in N-D, then (N-2) parameters need to be fixed to produce 2D plots
+of the remaining 2 parameters and (N-1) need to be fixed to produce a
+1D slice.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.assemble_interpolated_fits">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hyper_interpolator.</span></span><span class="sig-name descname"><span class="pre">assemble_interpolated_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_fit_maps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leftout_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leftout_surface</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#assemble_interpolated_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.assemble_interpolated_fits" title="Link to this definition"></a></dt>
+<dd><p>After all of the fits on the cluster are done, assemble the results to one JSON.</p>
+<p>The JSON produced by this function is what <cite>load_interpolated_hypersurfaces</cite>
+expects.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.get_incomplete_job_idx">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hyper_interpolator.</span></span><span class="sig-name descname"><span class="pre">get_incomplete_job_idx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_directory</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#get_incomplete_job_idx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.get_incomplete_job_idx" title="Link to this definition"></a></dt>
+<dd><p>Get job indices of fits that are not flagged as successful.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.load_interpolated_hypersurfaces">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hyper_interpolator.</span></span><span class="sig-name descname"><span class="pre">load_interpolated_hypersurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_binning</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#load_interpolated_hypersurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.load_interpolated_hypersurfaces" title="Link to this definition"></a></dt>
+<dd><p>Load a set of interpolated hypersurfaces from a file.</p>
+<p>Analogously to “load_hypersurfaces”, this function returns a
+collection with a HypersurfaceInterpolator object for each Map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_file</strong> (<em>str</em>) – <p>A JSON input file as produced by fit_hypersurfaces if interpolation params
+were given. It has the form:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">interpolation_param_spec</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;param1&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">val1_1</span><span class="p">,</span> <span class="n">val1_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+        <span class="s1">&#39;param2&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">val2_1</span><span class="p">,</span> <span class="n">val2_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+        <span class="o">...</span>
+        <span class="s1">&#39;paramN&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">valN_1</span><span class="p">,</span> <span class="n">valN_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;hs_fits&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="o">&lt;</span><span class="nb">list</span> <span class="n">of</span> <span class="n">dicts</span> <span class="n">where</span> <span class="n">keys</span> <span class="n">are</span> <span class="nb">map</span> <span class="n">names</span> <span class="n">such</span> <span class="k">as</span> <span class="s1">&#39;nue_cc&#39;</span> <span class="ow">and</span> <span class="n">values</span>
+        <span class="n">are</span> <span class="n">hypersurface</span> <span class="n">states</span><span class="o">&gt;</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dictionary with a <a class="reference internal" href="#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator" title="pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HypersurfaceInterpolator</span></code></a> for each map</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pisa.html#pisa.OrderedDict" title="collections.OrderedDict">collections.OrderedDict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.pipeline_cfg_from_states">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hyper_interpolator.</span></span><span class="sig-name descname"><span class="pre">pipeline_cfg_from_states</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#pipeline_cfg_from_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.pipeline_cfg_from_states" title="Link to this definition"></a></dt>
+<dd><p>Recover a pipeline cfg containing PISA objects from a raw state.</p>
+<p>When a pipeline configuration is stored to JSON, the PISA objects turn into
+their serialized states. This function looks through the dictionary returned by
+<cite>from_json</cite> and recovers the PISA objects such as <cite>ParamSet</cite> and <cite>MultiDimBinning</cite>.</p>
+<p>It should really become part of PISA file I/O functionality to read and write
+PISA objects inside dictionaries/lists into a JSON and be able to recover
+them…</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.prepare_interpolated_fit">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hyper_interpolator.</span></span><span class="sig-name descname"><span class="pre">prepare_interpolated_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nominal_dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sys_datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolation_param_spec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine_regex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimum_mc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">hypersurface_fit_kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#prepare_interpolated_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.prepare_interpolated_fit" title="Link to this definition"></a></dt>
+<dd><p>Writes steering files for fitting hypersurfaces on a grid of arbitrary parameters.
+The fits can then be run on a cluster with <cite>run_interpolated_fit</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nominal_dataset</strong> (<em>dict</em>) – <p>Definition of the nominal dataset. Specifies the pipleline with which the maps
+can be created, and the values of all systematic parameters used to produced the
+dataset.
+Format must be:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>nominal_dataset = {</dt><dd><p>“pipeline_cfg” = &lt;pipeline cfg file (either cfg file path or dict)&gt;),
+“sys_params” = { param_0_name : param_0_value_in_dataset, …, param_N_name : param_N_value_in_dataset }</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>Sys params must correspond to the provided HypersurfaceParam instances provided
+in the <cite>params</cite> arg.</p>
+</p></li>
+<li><p><strong>sys_datasets</strong> (<em>list</em><em> of </em><em>dicts</em>) – List of dicts, where each dict defines one of the systematics datasets to be
+fitted. The format of each dict is the same as explained for <cite>nominal_dataset</cite></p></li>
+<li><p><strong>params</strong> (<em>list</em><em> of </em><em>HypersurfaceParams</em>) – List of HypersurfaceParams instances that define the hypersurface. Note that
+this defined ALL hypersurfaces fitted in this function, e.g. only supports a
+single parameterisation for all maps (this is almost always what you want).</p></li>
+<li><p><strong>output_directory</strong> (<em>str</em>) – Directory in which the fits will be run. Steering files for the fits to be run
+will be stored here.</p></li>
+<li><p><strong>combine_regex</strong> (<em>list</em><em> of </em><em>str</em><em>, or </em><em>None</em>) – List of string regex expressions that will be used for merging maps. Used to
+combine similar species. Must be something that can be passed to the
+<cite>MapSet.combine_re</cite> function (see that functions docs for more details). Choose
+<cite>None</cite> is do not want to perform this merging.</p></li>
+<li><p><strong>interpolation_param_spec</strong> (<a class="reference internal" href="pisa.html#pisa.OrderedDict" title="collections.OrderedDict"><em>collections.OrderedDict</em></a>) – <p>Specification of parameter grid that hypersurfaces should be interpolated over.
+The dict should have the following form:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">interpolation_param_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;param1&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">val1_1</span><span class="p">,</span> <span class="n">val1_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+    <span class="s1">&#39;param2&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">val2_1</span><span class="p">,</span> <span class="n">val2_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+    <span class="o">...</span>
+    <span class="s1">&#39;paramN&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">valN_1</span><span class="p">,</span> <span class="n">valN_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The hypersurfaces will be fit on an N-dimensional rectilinear grid over
+parameters 1 to N. The flag <cite>scales_log</cite> indicates that the interpolation over
+that parameter should happen in log-space.</p>
+</p></li>
+<li><p><strong>minimum_mc</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum number of un-weighted MC events required in each bin.</p></li>
+<li><p><strong>hypersurface_fit_kw</strong> (<em>kwargs</em>) – kwargs will be passed on to the calls to <cite>Hypersurface.fit</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.run_interpolated_fit">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hyper_interpolator.</span></span><span class="sig-name descname"><span class="pre">run_interpolated_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_successful</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#run_interpolated_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.run_interpolated_fit" title="Link to this definition"></a></dt>
+<dd><p>Run the hypersurface fit for a grid point.</p>
+<p>If <cite>skip_successful</cite> is true, do not run if the <cite>fit_successful</cite> flag is already
+True.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hyper_interpolator.serialize_pipeline_cfg">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hyper_interpolator.</span></span><span class="sig-name descname"><span class="pre">serialize_pipeline_cfg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pipeline_cfg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hyper_interpolator.html#serialize_pipeline_cfg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hyper_interpolator.serialize_pipeline_cfg" title="Link to this definition"></a></dt>
+<dd><p>Turn a pipeline configuration into something we can store to JSON.</p>
+<p>It doesn’t work by default because tuples are not allowed as keys when storing to
+JSON. All we do is to turn the tuples into strings divided by a double underscore.</p>
+</dd></dl>
+
+</section>
+<section id="module-pisa.utils.hypersurface.hypersurface">
+<span id="pisa-utils-hypersurface-hypersurface-module"></span><h2>pisa.utils.hypersurface.hypersurface module<a class="headerlink" href="#module-pisa.utils.hypersurface.hypersurface" title="Link to this heading"></a></h2>
+<p>Tools for working with hypersurfaces, which are continuous functions in N-D
+with arbitrary functional forms.</p>
+<p>Hypersurfaces can be used to model systematic uncertainties derived from discrete
+simulation datasets, for example for detedctor uncertainties.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hypersurface.</span></span><span class="sig-name descname"><span class="pre">Hypersurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_intercept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#Hypersurface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class defining the hypersurface</p>
+<dl class="simple">
+<dt>Contains :</dt><dd><ul class="simple">
+<li><p>A single common intercept</p></li>
+<li><p>N systematic parameters, inside which the functional form is defined</p></li>
+</ul>
+</dd>
+</dl>
+<p>This class can be configured to hold both the functional form of the hypersurface
+and values (likely fitted from simulation datasets) for the free parameters of this
+functional form.</p>
+<p>Fitting functionality is provided to fit these free parameters.</p>
+<p>This class can simultaneously hold hypersurfaces for every bin in a histogram (Map).</p>
+<p>The functional form of the systematic parameters can be arbitrarily complex.</p>
+<p>The class has a fit method for fitting the hypersurface to some data (e.g.
+discrete systematics sets).</p>
+<p>Serialization functionality is included to allow fitted hypersurfaces to be stored
+to a file and re-loaded later (e.g. to be used in analysis).</p>
+<dl class="simple">
+<dt>The main use cases are:</dt><dd><ol class="arabic simple">
+<li><dl class="simple">
+<dt>Fit hypersurfaces</dt><dd><ul class="simple">
+<li><p>Define the desired HypersurfaceParams (functional form, intial coefficient guesses).</p></li>
+<li><p>Instantiate the <cite>Hypersurface</cite> class, providing the hypersurface params and initial intercept guess.</p></li>
+<li><p>Use <cite>Hypersurface.fit</cite> function (or more likely the <cite>fit_hypersurfaces</cite> helper function provided below),
+to fit the hypersurface coefficients to some provided datasets.</p></li>
+<li><p>Store to file</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Evaluate an existing hypersurface</dt><dd><ul class="simple">
+<li><p>Load existing fitted Hypersurface from a file (<cite>load_hypersurfaces</cite> helper function)</p></li>
+<li><p>Get the resulting hypersurface value for each bin for a given set of systemaic param
+values using the <cite>Hypersurface.evaluate</cite> method.</p></li>
+<li><p>Use the hypersurface value for each bin to re-weight events</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+<p>The class stores information about the datasets used to fit the hypersurfaces, including the Maps
+used and nominal and systematic parameter values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>list</em>) – A list of HypersurfaceParam instances defining the hypersurface.
+The <cite>initial_fit_coeffts</cite> values in this instances will be used as the starting
+point for any fits.</p></li>
+<li><p><strong>initial_intercept</strong> (<em>float</em>) – Starting point for the hypersurface intercept in any fits</p></li>
+<li><p><strong>log</strong> (<em>bool</em><em>, </em><em>optional</em>) – Set hypersurface to log mode. The surface is fit to the log of the bin counts.
+The fitted surface is exponentiated during evaluation. Default: False</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#Hypersurface.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the hypersurface, using the systematic parameter values provided.
+Uses the current internal values for all functional form coefficients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param_values</strong> (<em>dict</em>) – <p>A dict specifying the values of the systematic parameters to use in the evaluation.
+Format is :</p>
+<blockquote>
+<div><p>{ sys_param_name_0 : sys_param_0_val, …, sys_param_name_N : sys_param_N_val }.
+The keys must be string and correspond to the HypersurfaceParam instances.
+The values must be scalars.</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>bin_idx</strong> (<em>tuple</em><em> or </em><em>None</em>) – Optionally can specify a particular bin (using numpy indexing). d
+Othewise will evaluate all bins.</p></li>
+<li><p><strong>return_uncertainty</strong> (<em>bool</em><em>, </em><em>optional</em>) – return the uncertainty on the output (default: False)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nominal_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nominal_param_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sys_maps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sys_param_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'L-BFGS-B'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_intercept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intercept_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intercept_sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_empty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_maps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_bin_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#Hypersurface.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.fit" title="Link to this definition"></a></dt>
+<dd><p>Fit the hypersurface coefficients (in every bin) to best match the provided
+nominal and systematic datasets.</p>
+<p>Writes the results directly into this data structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nominal_map</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a>) – Map from the nominal dataset</p></li>
+<li><p><strong>nominal_param_values</strong> (<em>dict</em>) – Value of each systematic param used to generate the nominal dataset
+Format: { param_0_name : param_0_nom_val, …, param_N_name : param_N_nom_val }</p></li>
+<li><p><strong>sys_maps</strong> (<em>list</em><em> of </em><em>Maps</em>) – List containing the Map from each systematic dataset</p></li>
+<li><p><strong>sys_param_values</strong> (<em>list</em><em> of </em><em>dicts</em>) – List where each element if a dict containing the values of each systematic
+param used to generate the that dataset Each list element specified the
+parameters for the corresponding element in <cite>sys_maps</cite></p></li>
+<li><p><strong>norm</strong> (<em>bool</em>) – Normalise the maps to the nominal map. This is what you want to do when
+using the hypersurface to re-weight simulation (which is the main use case).
+In principal the hypersurfaces are more general though and could be used for
+other tasks too, hence this option.</p></li>
+<li><p><strong>method</strong> (<em>str</em>) – <cite>method</cite> arg to pass to <cite>scipy.optimize.minimiza</cite></p></li>
+<li><p><strong>fix_intercept</strong> (<em>bool</em>) – Fix intercept to the initial intercept.</p></li>
+<li><p><strong>intercept_bounds</strong> (<em>2-tuple</em><em>, </em><em>optional</em>) – Bounds on the intercept. Default is None (no bounds)</p></li>
+<li><p><strong>include_empty</strong> (<em>bool</em>) – Include empty bins in the fit. If True, empty bins are included with value 0
+and sigma 1.
+Default: False</p></li>
+<li><p><strong>keep_maps</strong> (<em>bool</em>) – Keep maps used to make the fit. If False, maps will be set to None after
+the fit is complete. This helps to reduce the size of JSONS if the
+Hypersurface is to be stored on disk.</p></li>
+<li><p><strong>ref_bin_idx</strong> (<em>tuple</em>) – An index specifying a reference bin that will be used for logging</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.fit_coefft_labels">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit_coefft_labels</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.fit_coefft_labels" title="Link to this definition"></a></dt>
+<dd><p>Return labels for each fit coefficient</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.fit_coeffts">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit_coeffts</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.fit_coeffts" title="Link to this definition"></a></dt>
+<dd><p>Return all coefficients, in all bins, as a single array
+This is the overall intercept, plus the coefficients for each individual param
+Dimensions are: [binning …, fit coeffts]</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.fit_maps">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit_maps</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.fit_maps" title="Link to this definition"></a></dt>
+<dd><p>Return the <a href="#id1"><span class="problematic" id="id2">`</span></a>Map instances used for fitting
+These will be normalised if the fit was performend to normalised maps.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.fit_param_values">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit_param_values</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.fit_param_values" title="Link to this definition"></a></dt>
+<dd><p>Return the stored systematic parameters from the datasets used for fitting
+Returns: { param_0_name : [ param_0_sys_val_0, …, param_0_sys_val_M ], …, param_N_name : [ param_N_sys_val_0, …, param_N_sys_val_M ] }</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.fluctuate">
+<span class="sig-name descname"><span class="pre">fluctuate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#Hypersurface.fluctuate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.fluctuate" title="Link to this definition"></a></dt>
+<dd><p>Return a new hypersurface object whose coefficients have been randomly fluctuated according
+to the fit covariance matrix.</p>
+<p>Used for testing the impact of statistical uncertainty in the hypersurfaces fits on
+downstream analyses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.from_state">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#Hypersurface.from_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.from_state" title="Link to this definition"></a></dt>
+<dd><p>Instantiate a new object from the contents of a serialized state dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>resource</strong> (<em>dict</em>) – A dict</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.get_nominal_mask">
+<span class="sig-name descname"><span class="pre">get_nominal_mask</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#Hypersurface.get_nominal_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.get_nominal_mask" title="Link to this definition"></a></dt>
+<dd><p>Return a mask indicating which datasets have nominal values for all parameters</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.get_on_axis_mask">
+<span class="sig-name descname"><span class="pre">get_on_axis_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#Hypersurface.get_on_axis_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.get_on_axis_mask" title="Link to this definition"></a></dt>
+<dd><p>Return a mask indicating which datasets are “on-axis” for a given parameter.</p>
+<p>“On-axis” means “generated using the nominal value for this parameter”. Parameters other
+than the one specified can have non-nominal values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>param_name</strong> (<em>str</em>) – The name of systematic parameter for which we want on-axis datasets</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.initialized">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initialized</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.initialized" title="Link to this definition"></a></dt>
+<dd><p>Return flag indicating if hypersurface has been initialized
+Not giving use direct write-access to the variable as they should nt be setting it themselves</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.nominal_values">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nominal_values</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.nominal_values" title="Link to this definition"></a></dt>
+<dd><p>Return the stored nominal parameter for each dataset
+Returns: { param_0_name : param_0_nom_val, …, param_N_name : param_N_nom_val }</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.num_fit_coeffts">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_fit_coeffts</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.num_fit_coeffts" title="Link to this definition"></a></dt>
+<dd><p>Return the total number of coefficients in the hypersurface fit
+This is the overall intercept, plus the coefficients for each individual param</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.num_fit_sets">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_fit_sets</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.num_fit_sets" title="Link to this definition"></a></dt>
+<dd><p>Return number of datasets used for fitting</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.param_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">param_names</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.param_names" title="Link to this definition"></a></dt>
+<dd><p>Return the (ordered) names of the systematic parameters</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.report">
+<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bin_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#Hypersurface.report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.report" title="Link to this definition"></a></dt>
+<dd><p>Return a string version of the hypersurface contents</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>bin_idx</strong> (<em>tuple</em><em> of </em><em>None</em>) – Specify a particular bin (using numpy indexing). In this case only report on that bin.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.Hypersurface.serializable_state">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">serializable_state</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.Hypersurface.serializable_state" title="Link to this definition"></a></dt>
+<dd><p>OrderedDict containing savable state attributes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.HypersurfaceParam">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hypersurface.</span></span><span class="sig-name descname"><span class="pre">HypersurfaceParam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_fit_coeffts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coeff_prior_sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#HypersurfaceParam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.HypersurfaceParam" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class representing one of the parameters (and corresponding functional forms) in
+the hypersurface.</p>
+<p>A user creates the initial instances of thse params, before passing the to the
+Hypersurface instance. Once this has happened, the user typically does not need to
+directly interact woth these HypersurfaceParam instances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Name of the parameter</p></li>
+<li><p><strong>func_name</strong> (<em>str</em>) – Name of the hypersurface function to use.
+See “Hypersurface functional forms” section for more details, including
+available functions.</p></li>
+<li><p><strong>initial_fit_coeffts</strong> (<em>array</em>) – Initial values for the coefficients of the functional form
+Number and meaning of coefficients depends on functional form</p></li>
+<li><p><strong>bounds</strong> (<em>2-tuple</em><em> of </em><em>array_like</em><em>, </em><em>optional</em>) – Lower and upper bounds on independent variables. Defaults to no bounds. Each
+element of the tuple must be either an array with the length equal to the number
+of parameters, or a scalar (in which case the bound is taken to be the same for
+all parameters.) Use <code class="docutils literal notranslate"><span class="pre">np.inf</span></code> with an appropriate sign to disable bounds on
+all or some parameters.</p></li>
+<li><p><strong>coeff_prior_sigma</strong> (<em>array</em><em>, </em><em>optional</em>) – Prior sigma values for the coefficients. If None (default), no regularization
+will be applied during the fit.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.HypersurfaceParam.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#HypersurfaceParam.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.HypersurfaceParam.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the functional form for the given <cite>param</cite> values.
+Uses the current values of the fit coefficients.</p>
+<p>By default evaluates all bins, but optionally can specify a particular bin (used
+when fitting).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.HypersurfaceParam.from_state">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#HypersurfaceParam.from_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.HypersurfaceParam.from_state" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.HypersurfaceParam.get_fit_coefft">
+<span class="sig-name descname"><span class="pre">get_fit_coefft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#HypersurfaceParam.get_fit_coefft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.HypersurfaceParam.get_fit_coefft" title="Link to this definition"></a></dt>
+<dd><p>Get a fit coefficient values from the matrix
+Basically just wrapping the indexing function</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.HypersurfaceParam.get_fit_coefft_idx">
+<span class="sig-name descname"><span class="pre">get_fit_coefft_idx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bin_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coefft_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#HypersurfaceParam.get_fit_coefft_idx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.HypersurfaceParam.get_fit_coefft_idx" title="Link to this definition"></a></dt>
+<dd><p>Indexing the fit_coefft matrix is a bit of a pain
+This helper function eases things</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.HypersurfaceParam.gradient">
+<span class="sig-name descname"><span class="pre">gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#HypersurfaceParam.gradient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.HypersurfaceParam.gradient" title="Link to this definition"></a></dt>
+<dd><p>Evaluate gradient of the functional form for the given <cite>param</cite> values.
+Uses the current values of the fit coefficients.</p>
+<p>By default evaluates all bins, but optionally can specify a particular bin (used when fitting).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.HypersurfaceParam.serializable_state">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">serializable_state</span></span><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.HypersurfaceParam.serializable_state" title="Link to this definition"></a></dt>
+<dd><p>OrderedDict containing savable state attributes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.fit_hypersurfaces">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hypersurface.</span></span><span class="sig-name descname"><span class="pre">fit_hypersurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nominal_dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sys_datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine_regex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimum_mc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimum_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">hypersurface_fit_kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#fit_hypersurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.fit_hypersurfaces" title="Link to this definition"></a></dt>
+<dd><p>A helper function that a user can use to fit hypersurfaces to a bunch of simulation
+datasets, and save the results to a file. Basically a wrapper of Hypersurface.fit,
+handling common pre-fitting tasks like producing mapsets from piplelines, merging
+maps from similar specifies, etc.</p>
+<p>Note that this supports fitting multiple hypersurfaces to the datasets, e.g. one per
+simulated species. Returns a dict with format: { map_0_key : map_0_hypersurface,
+…, map_N_key : map_N_hypersurface, }</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nominal_dataset</strong> (<em>dict</em>) – <p>Definition of the nominal dataset. Specifies the pipleline with which the maps
+can be created, and the values of all systematic parameters used to produced the
+dataset.
+Format must be:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>nominal_dataset = {</dt><dd><p>“pipeline_cfg” = &lt;pipeline cfg file (either cfg file path or dict)&gt;),
+“sys_params” = { param_0_name : param_0_value_in_dataset, …, param_N_name : param_N_value_in_dataset }</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>Sys params must correspond to the provided HypersurfaceParam instances provided
+in the <cite>params</cite> arg.</p>
+</p></li>
+<li><p><strong>sys_datasets</strong> (<em>list</em><em> of </em><em>dicts</em>) – List of dicts, where each dict defines one of the systematics datasets to be
+fitted. The format of each dict is the same as explained for <cite>nominal_dataset</cite></p></li>
+<li><p><strong>params</strong> (<em>list</em><em> of </em><em>HypersurfaceParams</em>) – List of HypersurfaceParams instances that define the hypersurface. Note that
+this defined ALL hypersurfaces fitted in this function, e.g. only supports a
+single parameterisation for all maps (this is almost almost what you want).</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – Path to directly to write results file in</p></li>
+<li><p><strong>tag</strong> (<em>str</em>) – A string identifier that will be included in the file name to help you make
+sense of the file in the future. Note that additional information on the
+contents will be added to the file name by this function.</p></li>
+<li><p><strong>combine_regex</strong> (<em>list</em><em> of </em><em>str</em><em>, or </em><em>None</em>) – List of string regex expressions that will be used for merging maps. Used to
+combine similar species. Must be something that can be passed to the
+<cite>MapSet.combine_re</cite> function (see that functions docs for more details). Choose
+<cite>None</cite> is do not want to perform this merging.</p></li>
+<li><p><strong>minimum_mc</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum number of unweighted MC events required in each bin. If the number
+of unweighted MC events in a bin in any MC set is less than this number, the
+value is set to exactly zero and will be excluded from the fit.</p></li>
+<li><p><strong>minimum_weight</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum weight per bin. Bins with a total summed weight of less than this
+number are excluded from the fit. Intended use is to exclude extremely small
+values from KDE histograms that would pull the fit to zero.</p></li>
+<li><p><strong>hypersurface_fit_kw</strong> (<em>kwargs</em>) – kwargs will be passed on to the calls to <cite>Hypersurface.fit</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface.load_hypersurfaces">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hypersurface.</span></span><span class="sig-name descname"><span class="pre">load_hypersurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_binning</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface.html#load_hypersurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface.load_hypersurfaces" title="Link to this definition"></a></dt>
+<dd><p>User function to load file containing hypersurface fits, as written using <cite>fit_hypersurfaces</cite>.
+Can be multiple hypersurfaces assosicated with different maps.</p>
+<p>Returns a dict with the format: { map_0_key : map_0_hypersurface, …, map_N_key : map_N_hypersurface, }</p>
+<dl class="simple">
+<dt>Hnadling the following input files cases:</dt><dd><ol class="arabic simple">
+<li><p>Load files produced using this code (recommended)</p></li>
+<li><p>Load files producing using older versions of PISA</p></li>
+<li><p>Load public data releases csv formatted files</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_file</strong> (<em>str</em>) – Path to the file contsaining the hypersurface fits.
+For the special case of the datareleases these needs to be the path to all
+relevent CSV fles, e.g. “&lt;path/to/datarelease&gt;/hyperplanes_*.csv”.</p></li>
+<li><p><strong>expected_binning</strong> (<em>One/MultiDimBinning</em>) – (Optional) Expected binning for hypersurface.
+It will checked enforced that this mathes the binning found in the parsed
+hypersurfaces. For certain legacy cases where binning info is not stored, this
+will be assumed to be the actual binning.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pisa.utils.hypersurface.hypersurface_plotting">
+<span id="pisa-utils-hypersurface-hypersurface-plotting-module"></span><h2>pisa.utils.hypersurface.hypersurface_plotting module<a class="headerlink" href="#module-pisa.utils.hypersurface.hypersurface_plotting" title="Link to this heading"></a></h2>
+<p>Hypersurface Plotting functions</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface_plotting.plot_bin_fits">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hypersurface_plotting.</span></span><span class="sig-name descname"><span class="pre">plot_bin_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypersurface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hs_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_nominal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_offaxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_onaxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_zero</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface_plotting.html#plot_bin_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface_plotting.plot_bin_fits" title="Link to this definition"></a></dt>
+<dd><p>Plot the hypersurface for a given bin, in 1D w.r.t. to a single specified parameter.
+Plots the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>on-axis data points used in the fit</p></li>
+<li><p>hypersurface w.r.t to the specified parameter (1D)</p></li>
+<li><p>nominal value of the specified parameter</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> (<em>matplotlib.Axes</em>) – matplotlib ax to draw the plot on</p></li>
+<li><p><strong>hypersurface</strong> (<a class="reference internal" href="#pisa.utils.hypersurface.hypersurface.Hypersurface" title="pisa.utils.hypersurface.hypersurface.Hypersurface"><em>Hypersurface</em></a>) – Hypersurface to make the plots from</p></li>
+<li><p><strong>bin_idx</strong> (<em>tuple</em>) – Index (numpy array indexing format) of the bin to plot</p></li>
+<li><p><strong>param_name</strong> (<em>str</em>) – Name of the parameter of interest</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – color to use for hypersurface curve</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – label to use for hypersurface curve</p></li>
+<li><p><strong>show_nominal</strong> (<em>bool</em>) – Indicate the nominal value of the param on the plot</p></li>
+<li><p><strong>show_uncertainty</strong> (<em>bool</em>) – Indicate the hypersurface uncertainty on the plot</p></li>
+<li><p><strong>show_onaxis</strong> (<em>bool</em>) – Plot the “on-axis” input datasets (meaning those whose only
+off-nominal parameter is the one being plotter).</p></li>
+<li><p><strong>show_offaxis</strong> (<em>bool</em>) – Plot the “off-axis” input datasets (meaning those with multiple
+off-nominal parameter values).</p></li>
+<li><p><strong>xlim</strong> (<em>tuple</em><em> or </em><em>None</em>) – Optionally, specify the xlim to span when plotting the hypersurface
+If not specified, will span all input datasets</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.hypersurface.hypersurface_plotting.plot_bin_fits_2d">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.hypersurface.hypersurface_plotting.</span></span><span class="sig-name descname"><span class="pre">plot_bin_fits_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypersurface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/hypersurface/hypersurface_plotting.html#plot_bin_fits_2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.hypersurface.hypersurface_plotting.plot_bin_fits_2d" title="Link to this definition"></a></dt>
+<dd><p>Plot the hypersurface for a given bin, in 2D w.r.t. to a pair of params
+Plots the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>All data points used in the fit</p></li>
+<li><p>hypersurface w.r.t to the specified parameters (2D)</p></li>
+<li><p>nominal value of the specified parameters</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> (<em>matplotlib.Axes</em>) – matplotlib ax to draw the plot on</p></li>
+<li><p><strong>hypersurface</strong> (<a class="reference internal" href="#pisa.utils.hypersurface.hypersurface.Hypersurface" title="pisa.utils.hypersurface.hypersurface.Hypersurface"><em>Hypersurface</em></a>) – Hypersurface to make the plots from</p></li>
+<li><p><strong>bin_idx</strong> (<em>tuple</em>) – Index (numpy array indexing format) of the bin to plot</p></li>
+<li><p><strong>param_names</strong> (<em>list</em><em> of </em><em>str</em>) – List containing the names of the two parameters of interest</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pisa.utils.hypersurface">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pisa.utils.hypersurface" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pisa.utils.html" class="btn btn-neutral float-left" title="pisa.utils package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pisa.utils.llh_defs.html" class="btn btn-neutral float-right" title="pisa.utils.llh_defs package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

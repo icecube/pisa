@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.random_numbers &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.random_numbers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.random_numbers</h1><div class="highlight"><pre>
+<span></span><span class="ch">#! /usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Utilities to handle random numbers needed by PISA in a consistent and</span>
+<span class="sd">reproducible manner.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;get_random_state&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;test_get_random_state&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<div class="viewcode-block" id="get_random_state">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.random_numbers.get_random_state">[docs]</a>
+<span class="k">def</span> <span class="nf">get_random_state</span><span class="p">(</span><span class="n">random_state</span><span class="p">,</span> <span class="n">jumpahead</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Derive a `numpy.random.RandomState` object (usable to generate random</span>
+<span class="sd">    numbers and distributions) from a flexible specification..</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    random_state : None, RandomState, string, int, state vector, or seq of int</span>
+<span class="sd">        * If instantiated RandomState object is passed, it is used directly</span>
+<span class="sd">        * If string : must be either &#39;rand&#39; or &#39;random&#39;; random state is</span>
+<span class="sd">          instantiated at random from either /dev/urandom or (if that is not</span>
+<span class="sd">          present) the clock. This creates an irreproducibly-random number.</span>
+<span class="sd">        * If int or sequence of lenth one: This is used as the `seed` value;</span>
+<span class="sd">          must be in [0, 2**32).</span>
+<span class="sd">        * If sequence of two integers: first must be in [0, 32768): 15</span>
+<span class="sd">          most-significant bits. Second must be in [0, 131072): 17</span>
+<span class="sd">          least-significant bits.</span>
+<span class="sd">        * If sequence of three integers: first must be in [0, 4): 2</span>
+<span class="sd">          most-significant bits. Second must be in [0, 8192): next 13</span>
+<span class="sd">          (less-significant) bits. Third must be in [0, 131072): 17</span>
+<span class="sd">          least-significant bits.</span>
+<span class="sd">        * If a &quot;state vector&quot; (sequence of length five usable by</span>
+<span class="sd">          `numpy.random.RandomState.set_state`), set the random state using</span>
+<span class="sd">          this method.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    random_state : numpy.random.RandomState</span>
+<span class="sd">        Object callable like `numpy.random` (e.g. `random_state.rand((10,10))`),</span>
+<span class="sd">        but with __exclusively local__ state (whereas `numpy.random` has global</span>
+<span class="sd">        state).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">jumpahead</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span>
+            <span class="s1">&#39;`jumpahead` is deprecated since it does not result in an independent random sequence, simply use a different seed&#39;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">random_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">new_random_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">()</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">random_state</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
+        <span class="n">new_random_state</span> <span class="o">=</span> <span class="n">random_state</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">random_state</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">allowed_strings</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;rand&#39;</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">]</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="n">random_state</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">rs</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_strings</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;`random_state`=</span><span class="si">%s</span><span class="s1"> not a valid string. Must be one of </span><span class="si">%s</span><span class="s1">.&#39;</span>
+                <span class="o">%</span><span class="p">(</span><span class="n">random_state</span><span class="p">,</span> <span class="n">allowed_strings</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">new_random_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">()</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">random_state</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">new_random_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">random_state</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+        <span class="n">new_random_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">random_state</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">seed</span> <span class="o">=</span> <span class="n">random_state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">assert</span> <span class="n">seed</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">seed</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">17</span>
+                <span class="k">assert</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">b1</span> <span class="o">==</span> <span class="mi">32</span>
+                <span class="n">s0</span><span class="p">,</span> <span class="n">s1</span> <span class="o">=</span> <span class="n">random_state</span>
+                <span class="k">assert</span> <span class="n">s0</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">s0</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="n">b0</span>
+                <span class="k">assert</span> <span class="n">s1</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">s1</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="n">b1</span>
+                <span class="n">seed</span> <span class="o">=</span> <span class="p">(</span><span class="n">s0</span> <span class="o">&lt;&lt;</span> <span class="n">b1</span><span class="p">)</span> <span class="o">+</span> <span class="n">s1</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span><span class="p">,</span> <span class="n">b2</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">19</span>
+                <span class="k">assert</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">b2</span> <span class="o">==</span> <span class="mi">32</span>
+                <span class="n">s0</span><span class="p">,</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span> <span class="o">=</span> <span class="n">random_state</span>
+                <span class="k">assert</span> <span class="n">s0</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">s0</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="n">b0</span>
+                <span class="k">assert</span> <span class="n">s1</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">s1</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="n">b1</span>
+                <span class="k">assert</span> <span class="n">s2</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">s2</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="n">b2</span>
+                <span class="n">seed</span> <span class="o">=</span> <span class="p">(</span><span class="n">s0</span> <span class="o">&lt;&lt;</span> <span class="n">b1</span><span class="o">+</span><span class="n">b2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">s1</span> <span class="o">&lt;&lt;</span> <span class="n">b2</span><span class="p">)</span> <span class="o">+</span> <span class="n">s2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;`random_state` sequence of int must be length 1-3&#39;</span>
+                <span class="p">)</span>
+            <span class="n">new_random_state</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="n">new_random_state</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Do not know what to do with `random_state` Sequence </span><span class="si">%s</span><span class="s1">&#39;</span>
+                <span class="o">%</span><span class="p">(</span><span class="n">random_state</span><span class="p">,)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_random_state</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s1">&#39;Unhandled `random_state` of type </span><span class="si">%s</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span>
+            <span class="o">%</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">random_state</span><span class="p">),</span> <span class="n">random_state</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_random_state</span></div>
+
+
+
+<div class="viewcode-block" id="test_get_random_state">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.random_numbers.test_get_random_state">[docs]</a>
+<span class="k">def</span> <span class="nf">test_get_random_state</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for get_random_state function&quot;&quot;&quot;</span>
+    <span class="c1"># Instantiate random states in all legal ways</span>
+    <span class="n">rstates</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="n">get_random_state</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">get_random_state</span><span class="p">(</span><span class="s1">&#39;rand&#39;</span><span class="p">),</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">get_random_state</span><span class="p">(</span><span class="s1">&#39;random&#39;</span><span class="p">),</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="n">get_random_state</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">0</span><span class="p">)),</span>
+        <span class="mi">4</span><span class="p">:</span> <span class="n">get_random_state</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="mi">5</span><span class="p">:</span> <span class="n">get_random_state</span><span class="p">([</span><span class="mi">0</span><span class="p">,]),</span>
+        <span class="mi">6</span><span class="p">:</span> <span class="n">get_random_state</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+        <span class="mi">7</span><span class="p">:</span> <span class="n">get_random_state</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+    <span class="p">}</span>
+    <span class="n">rstates</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_random_state</span><span class="p">(</span><span class="n">rstates</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">get_state</span><span class="p">())</span>
+
+    <span class="c1"># rs 4-8 should be identical</span>
+    <span class="n">ref_id</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">rs_id</span><span class="p">,</span> <span class="n">rs</span> <span class="ow">in</span> <span class="n">rstates</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">rs_id</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ref_id</span> <span class="o">=</span> <span class="n">rs_id</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">rs</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">test</span> <span class="o">=</span> <span class="n">rs</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;rs</span><span class="si">{</span><span class="n">rs_id</span><span class="si">}</span><span class="s1"> != rs</span><span class="si">{</span><span class="n">ref_id</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="c1"># Already generated 1k, so generating 2k more gets us 3k; pick off last 1k</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">rstates</span><span class="p">[</span><span class="n">ref_id</span><span class="p">]</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2000</span><span class="p">)[</span><span class="mi">1000</span><span class="p">:]</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">get_random_state</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3000</span><span class="p">)[</span><span class="mi">2000</span><span class="p">:</span><span class="mi">3000</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;rsrand(3000)[2000:3000] != rs</span><span class="si">{</span><span class="n">ref_id</span><span class="si">}</span><span class="s1">rand(2000)[1000:][2000:3000]&#39;</span>
+
+    <span class="c1"># Test stability of random number generator over time; following were</span>
+    <span class="c1"># retrieved on 2020-03-19 using numpy 1.18.1 via .. ::</span>
+    <span class="c1">#</span>
+    <span class="c1">#   np.array2string(</span>
+    <span class="c1">#       np.random.RandomState(0).rand(100), precision=20, separator=&#39;, &#39;</span>
+    <span class="c1">#   )</span>
+    <span class="c1">#</span>
+
+    <span class="c1"># pylint: disable=bad-whitespace</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="mf">0.5488135039273248</span>  <span class="p">,</span> <span class="mf">0.7151893663724195</span>  <span class="p">,</span> <span class="mf">0.6027633760716439</span>  <span class="p">,</span>
+            <span class="mf">0.5448831829968969</span>  <span class="p">,</span> <span class="mf">0.4236547993389047</span>  <span class="p">,</span> <span class="mf">0.6458941130666561</span>  <span class="p">,</span>
+            <span class="mf">0.4375872112626925</span>  <span class="p">,</span> <span class="mf">0.8917730007820798</span>  <span class="p">,</span> <span class="mf">0.9636627605010293</span>  <span class="p">,</span>
+            <span class="mf">0.3834415188257777</span>  <span class="p">,</span> <span class="mf">0.7917250380826646</span>  <span class="p">,</span> <span class="mf">0.5288949197529045</span>  <span class="p">,</span>
+            <span class="mf">0.5680445610939323</span>  <span class="p">,</span> <span class="mf">0.925596638292661</span>   <span class="p">,</span> <span class="mf">0.07103605819788694</span> <span class="p">,</span>
+            <span class="mf">0.08712929970154071</span> <span class="p">,</span> <span class="mf">0.02021839744032572</span> <span class="p">,</span> <span class="mf">0.832619845547938</span>   <span class="p">,</span>
+            <span class="mf">0.7781567509498505</span>  <span class="p">,</span> <span class="mf">0.8700121482468192</span>  <span class="p">,</span> <span class="mf">0.978618342232764</span>   <span class="p">,</span>
+            <span class="mf">0.7991585642167236</span>  <span class="p">,</span> <span class="mf">0.46147936225293185</span> <span class="p">,</span> <span class="mf">0.7805291762864555</span>  <span class="p">,</span>
+            <span class="mf">0.11827442586893322</span> <span class="p">,</span> <span class="mf">0.6399210213275238</span>  <span class="p">,</span> <span class="mf">0.1433532874090464</span>  <span class="p">,</span>
+            <span class="mf">0.9446689170495839</span>  <span class="p">,</span> <span class="mf">0.5218483217500717</span>  <span class="p">,</span> <span class="mf">0.4146619399905236</span>  <span class="p">,</span>
+            <span class="mf">0.26455561210462697</span> <span class="p">,</span> <span class="mf">0.7742336894342167</span>  <span class="p">,</span> <span class="mf">0.45615033221654855</span> <span class="p">,</span>
+            <span class="mf">0.5684339488686485</span>  <span class="p">,</span> <span class="mf">0.018789800436355142</span><span class="p">,</span> <span class="mf">0.6176354970758771</span>  <span class="p">,</span>
+            <span class="mf">0.6120957227224214</span>  <span class="p">,</span> <span class="mf">0.6169339968747569</span>  <span class="p">,</span> <span class="mf">0.9437480785146242</span>  <span class="p">,</span>
+            <span class="mf">0.6818202991034834</span>  <span class="p">,</span> <span class="mf">0.359507900573786</span>   <span class="p">,</span> <span class="mf">0.43703195379934145</span> <span class="p">,</span>
+            <span class="mf">0.6976311959272649</span>  <span class="p">,</span> <span class="mf">0.06022547162926983</span> <span class="p">,</span> <span class="mf">0.6667667154456677</span>  <span class="p">,</span>
+            <span class="mf">0.6706378696181594</span>  <span class="p">,</span> <span class="mf">0.2103825610738409</span>  <span class="p">,</span> <span class="mf">0.1289262976548533</span>  <span class="p">,</span>
+            <span class="mf">0.31542835092418386</span> <span class="p">,</span> <span class="mf">0.3637107709426226</span>  <span class="p">,</span> <span class="mf">0.5701967704178796</span>  <span class="p">,</span>
+            <span class="mf">0.43860151346232035</span> <span class="p">,</span> <span class="mf">0.9883738380592262</span>  <span class="p">,</span> <span class="mf">0.10204481074802807</span> <span class="p">,</span>
+            <span class="mf">0.2088767560948347</span>  <span class="p">,</span> <span class="mf">0.16130951788499626</span> <span class="p">,</span> <span class="mf">0.6531083254653984</span>  <span class="p">,</span>
+            <span class="mf">0.2532916025397821</span>  <span class="p">,</span> <span class="mf">0.4663107728563063</span>  <span class="p">,</span> <span class="mf">0.24442559200160274</span> <span class="p">,</span>
+            <span class="mf">0.15896958364551972</span> <span class="p">,</span> <span class="mf">0.11037514116430513</span> <span class="p">,</span> <span class="mf">0.6563295894652734</span>  <span class="p">,</span>
+            <span class="mf">0.1381829513486138</span>  <span class="p">,</span> <span class="mf">0.1965823616800535</span>  <span class="p">,</span> <span class="mf">0.3687251706609641</span>  <span class="p">,</span>
+            <span class="mf">0.8209932298479351</span>  <span class="p">,</span> <span class="mf">0.09710127579306127</span> <span class="p">,</span> <span class="mf">0.8379449074988039</span>  <span class="p">,</span>
+            <span class="mf">0.09609840789396307</span> <span class="p">,</span> <span class="mf">0.9764594650133958</span>  <span class="p">,</span> <span class="mf">0.4686512016477016</span>  <span class="p">,</span>
+            <span class="mf">0.9767610881903371</span>  <span class="p">,</span> <span class="mf">0.604845519745046</span>   <span class="p">,</span> <span class="mf">0.7392635793983017</span>  <span class="p">,</span>
+            <span class="mf">0.039187792254320675</span><span class="p">,</span> <span class="mf">0.2828069625764096</span>  <span class="p">,</span> <span class="mf">0.1201965612131689</span>  <span class="p">,</span>
+            <span class="mf">0.29614019752214493</span> <span class="p">,</span> <span class="mf">0.11872771895424405</span> <span class="p">,</span> <span class="mf">0.317983179393976</span>   <span class="p">,</span>
+            <span class="mf">0.41426299451466997</span> <span class="p">,</span> <span class="mf">0.06414749634878436</span> <span class="p">,</span> <span class="mf">0.6924721193700198</span>  <span class="p">,</span>
+            <span class="mf">0.5666014542065752</span>  <span class="p">,</span> <span class="mf">0.2653894909394454</span>  <span class="p">,</span> <span class="mf">0.5232480534666997</span>  <span class="p">,</span>
+            <span class="mf">0.09394051075844168</span> <span class="p">,</span> <span class="mf">0.5759464955561793</span>  <span class="p">,</span> <span class="mf">0.9292961975762141</span>  <span class="p">,</span>
+            <span class="mf">0.31856895245132366</span> <span class="p">,</span> <span class="mf">0.6674103799636817</span>  <span class="p">,</span> <span class="mf">0.13179786240439217</span> <span class="p">,</span>
+            <span class="mf">0.7163272041185655</span>  <span class="p">,</span> <span class="mf">0.2894060929472011</span>  <span class="p">,</span> <span class="mf">0.18319136200711683</span> <span class="p">,</span>
+            <span class="mf">0.5865129348100832</span>  <span class="p">,</span> <span class="mf">0.020107546187493552</span><span class="p">,</span> <span class="mf">0.8289400292173631</span>  <span class="p">,</span>
+            <span class="mf">0.004695476192547066</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s1">&#39;random number generator changed!&#39;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_get_random_state &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">Levels</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="n">test_get_random_state</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.mcSimRunSettings &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.mcSimRunSettings</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.mcSimRunSettings</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;Handle Monte Carlo simulation run settings&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">pisa.utils.fileio</span> <span class="k">as</span> <span class="nn">fileio</span>
+<span class="kn">import</span> <span class="nn">pisa.utils.flavInt</span> <span class="k">as</span> <span class="nn">flavInt</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">resources</span> <span class="k">as</span> <span class="n">resources</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.cross_sections</span> <span class="kn">import</span> <span class="n">CrossSections</span>
+
+<span class="c1"># Following &quot;import *&quot; is intentionally done so that `eval` called in</span>
+<span class="c1"># translate_source_dict will execute with direct access to numpy namespace</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="o">*</span> <span class="c1"># pylint: disable=wildcard-import, unused-wildcard-import, redefined-builtin</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MCSimRunSettings&#39;</span><span class="p">,</span> <span class="s1">&#39;DetMCSimRunsSettings&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="c1"># TODO: make ability to serialize instantiated MCSimRunSettings and</span>
+<span class="c1"># DetMCSimRunsSettings objects back to JSON format from which they were</span>
+<span class="c1"># generated</span>
+
+<span class="c1"># TODO: put more thought into the MCSimRunSettings class</span>
+
+<span class="c1"># TODO: make sure user is forced to choose run &amp; detector here</span>
+
+<div class="viewcode-block" id="MCSimRunSettings">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings">[docs]</a>
+<span class="k">class</span> <span class="nc">MCSimRunSettings</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle Monte Carlo run settings</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    run_settings : string or dict</span>
+<span class="sd">    run</span>
+<span class="sd">    detector : string or None</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    run_settings dictionary format (and same for corresponding JSON file, e.g.</span>
+<span class="sd">    resources/events/mc_sim_run_settings.json); example is for PINGU but should</span>
+<span class="sd">    generalize to DeepCore, etc. Note that a JSON file will use null and not</span>
+<span class="sd">    None.</span>
+
+<span class="sd">    (Also note that expressions for numerical values utilizing the Python/numpy</span>
+<span class="sd">    namespace are valid, e.g. &quot;2*pi&quot; will be evaluated within the code to its</span>
+<span class="sd">    decimal value.)::</span>
+
+<span class="sd">        {</span>
+
+<span class="sd">          # Specify the detector name, lower case</span>
+<span class="sd">          &quot;pingu&quot;: {</span>
+
+<span class="sd">            # Monte Carlo run number for this detector</span>
+<span class="sd">            &quot;388&quot;: {</span>
+
+<span class="sd">              # Version of geometry, lower-case. E.g., ic86 for IceCube/DeepCore</span>
+<span class="sd">              &quot;geom&quot;: &quot;v36&quot;,</span>
+
+<span class="sd">              # A straightforward way of computing aeff/veff/meff is to keep all</span>
+<span class="sd">              # simulated events and compare the #analysis/#simulated. If all</span>
+<span class="sd">              # simulated events are kept, then the filename containing these is</span>
+<span class="sd">              # recorded here.</span>
+<span class="sd">              &quot;all_gen_events_file&quot;: None,</span>
+
+<span class="sd">              # Max and min azimuth angle simulated (rad)</span>
+<span class="sd">              &quot;azimuth_max&quot;: &quot;2*pi&quot;,</span>
+<span class="sd">              &quot;azimuth_min&quot;: 0,</span>
+
+<span class="sd">              # Max and min energy simulated (GeV)</span>
+<span class="sd">              &quot;energy_max&quot;: 80,</span>
+<span class="sd">              &quot;energy_min&quot;: 1,</span>
+
+<span class="sd">              # GENIE simulates some un-physica events (interactions that will not</span>
+<span class="sd">              # occur in nature). The number below was arrived at by Ken Clark, so</span>
+<span class="sd">              # ask him for more info.</span>
+<span class="sd">              &quot;physical_events_fract&quot;: 0.8095,</span>
+
+<span class="sd">              # GENIE has a prescale factor (TODO: generalize or eliminate for</span>
+<span class="sd">              # other xsec?)</span>
+<span class="sd">              &quot;genie_prescale_factor&quot;: 1.2,</span>
+
+<span class="sd">              # Neutrino flavors simulated</span>
+<span class="sd">              &quot;flavints&quot;: &quot;nutau,nutaubar&quot;,</span>
+
+<span class="sd">              # #nu / (#nu + #nubar) simulated</span>
+<span class="sd">              &quot;nu_to_total_fract&quot;: 0.5,</span>
+
+<span class="sd">              # Number of events simulated per I3 file</span>
+<span class="sd">              &quot;num_events_per_file&quot;: 250000,</span>
+
+<span class="sd">              # Number of I3 files used</span>
+<span class="sd">              &quot;num_i3_files&quot;: 195,</span>
+
+<span class="sd">              # Simulated spectral inde gamma; value of 1 =&gt; E*{-1}</span>
+<span class="sd">              &quot;sim_spectral_index&quot;: 1,</span>
+
+<span class="sd">              # Version of neutrino/ice cross sections used for the simulation</span>
+<span class="sd">              &quot;xsec_version&quot;: &quot;genie_2.6.4&quot;,</span>
+
+<span class="sd">              # Max and min zenith angle simulated (rad)</span>
+<span class="sd">              &quot;zenith_max&quot;: &quot;pi&quot;,</span>
+<span class="sd">              &quot;zenith_min&quot;: 0</span>
+<span class="sd">            }</span>
+<span class="sd">          }</span>
+<span class="sd">        }</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_settings</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># TODO: clean up this constructor!</span>
+        <span class="c1">#if isinstance(run_settings, str):</span>
+        <span class="c1">#    rsd = jsons.from_json(resources.find_resource(run_settings))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">run_settings</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">rsd</span> <span class="o">=</span> <span class="n">run_settings</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unhandled run_settings type passed in arg: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                            <span class="o">%</span><span class="nb">type</span><span class="p">(</span><span class="n">run_settings</span><span class="p">))</span>
+        <span class="c1">#if detector is not None:</span>
+        <span class="c1">#    try:</span>
+        <span class="c1">#        rsd = rsd[detector]</span>
+        <span class="c1">#    except:</span>
+        <span class="c1">#        pass</span>
+        <span class="n">rsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_source_dict</span><span class="p">(</span><span class="n">rsd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">detector</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">detector</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">detector</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span> <span class="o">=</span> <span class="n">detector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">run</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rsd</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MCSimRunSettings.translate_source_dict">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.translate_source_dict">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">translate_source_dict</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+        <span class="n">d</span><span class="p">[</span><span class="s1">&#39;tot_gen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;num_events_per_file&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;num_i3_files&#39;</span><span class="p">]</span>
+
+        <span class="c1"># TODO: does the following logic actually work with both old and new</span>
+        <span class="c1"># conventions?</span>
+
+        <span class="c1"># NOTE: the &#39;,&#39; --&gt; &#39;+&#39; mapping is necessary since some data files</span>
+        <span class="c1"># were saved prior to the convention that commas exclusively separate</span>
+        <span class="c1"># groups while plus signs indicate flav/ints grouped together</span>
+
+        <span class="n">d</span><span class="p">[</span><span class="s1">&#39;flavints&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;flavints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;+&#39;</span><span class="p">))</span>
+
+        <span class="c1"># Numeric fields are allowed to be expressions that get evaluated</span>
+        <span class="n">numeric_fields</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;azimuth_max&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;azimuth_min&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;energy_max&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;energy_min&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;physical_events_fract&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;genie_prescale_factor&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;nu_to_total_fract&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;num_events_per_file&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;num_i3_files&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;sim_spectral_index&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;zenith_max&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;zenith_min&#39;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">numeric_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">f</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">f</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">d</span></div>
+
+
+<div class="viewcode-block" id="MCSimRunSettings.consistency_checks">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.consistency_checks">[docs]</a>
+    <span class="k">def</span> <span class="nf">consistency_checks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># TODO: implement!</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="MCSimRunSettings.barnobarfract">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.barnobarfract">[docs]</a>
+    <span class="k">def</span> <span class="nf">barnobarfract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">flav_or_flavint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fraction of events generated (either particles or antiparticles).</span>
+
+<span class="sd">        Specifying whether you want the fraction for particle or</span>
+<span class="sd">        antiparticle is done by specifying one (and only one) of the three</span>
+<span class="sd">        parameters:</span>
+<span class="sd">            `barnobar`, `is_particle` or `flav_or_flavint`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        barnobar : None or int</span>
+<span class="sd">            -1 for antiparticle, +1 for particle</span>
+<span class="sd">        is_particle : None or bool</span>
+<span class="sd">            True for particle, false for antiparticle</span>
+<span class="sd">        flav_or_flavint : None or convertible to NuFlav or NuFlavInt</span>
+<span class="sd">            Particle or antiparticles is determined from the flavor or flavint</span>
+<span class="sd">            passed</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nargs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([(</span><span class="ow">not</span> <span class="n">barnobar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span>
+                     <span class="p">(</span><span class="ow">not</span> <span class="n">is_particle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span>
+                     <span class="p">(</span><span class="ow">not</span> <span class="n">flav_or_flavint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)])</span>
+        <span class="k">if</span> <span class="n">nargs</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;One and only one of `barnobar`, `is_particle`,&#39;</span>
+                             <span class="s1">&#39; and `flav_or_flavint` must be specified. Got&#39;</span>
+                             <span class="s1">&#39; </span><span class="si">%d</span><span class="s1"> non-None args instead.&#39;</span> <span class="o">%</span> <span class="n">nargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flav_or_flavint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">is_particle</span> <span class="o">=</span> <span class="n">flavInt</span><span class="o">.</span><span class="n">NuFlavInt</span><span class="p">(</span><span class="n">flav_or_flavint</span><span class="p">)</span><span class="o">.</span><span class="n">particle</span>
+        <span class="k">elif</span> <span class="n">barnobar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">is_particle</span> <span class="o">=</span> <span class="n">barnobar</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">is_particle</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;nu_to_total_fract&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;nu_to_total_fract&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="MCSimRunSettings.get_num_gen">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_num_gen">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_num_gen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">flav_or_flavint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_physical_fract</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of events generated.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        barnobar : None or int</span>
+<span class="sd">            -1 for antiparticle or +1 for particle</span>
+
+<span class="sd">        is_particle : None or bool</span>
+
+<span class="sd">        flav_or_flavint : None or convertible to NuFlav or NuFlavInt</span>
+<span class="sd">            If one of `barnobar`, `is_particle`, or `flav_or_flavint` is</span>
+<span class="sd">            specified, returns only the number of particles or antiparticles</span>
+<span class="sd">            generated. Otherwise (if none of those is specified), return the</span>
+<span class="sd">            total number of generated events.</span>
+
+<span class="sd">        include_physical_fract : bool</span>
+<span class="sd">            Whether to include the &quot;GENIE physical fraction&quot;, which accounts</span>
+<span class="sd">            for events that are generated but are un-physical and therefore</span>
+<span class="sd">            will never be detectable. These are removed to not penalize</span>
+<span class="sd">            detection efficiency.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nargs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([(</span><span class="ow">not</span> <span class="n">barnobar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span>
+                     <span class="p">(</span><span class="ow">not</span> <span class="n">is_particle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span>
+                     <span class="p">(</span><span class="ow">not</span> <span class="n">flav_or_flavint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)])</span>
+        <span class="k">if</span> <span class="n">flav_or_flavint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">flav_or_flavint</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_flavs</span><span class="p">()</span>
+                    <span class="ow">and</span> <span class="n">flav_or_flavint</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_flavints</span><span class="p">()):</span>
+                <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">barnobarfract</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">nargs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">barnobarfract</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">barnobarfract</span><span class="p">(</span>
+                <span class="n">barnobar</span><span class="o">=</span><span class="n">barnobar</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="n">is_particle</span><span class="p">,</span>
+                <span class="n">flav_or_flavint</span><span class="o">=</span><span class="n">flav_or_flavint</span>
+            <span class="p">)</span>
+        <span class="n">physical_fract</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">include_physical_fract</span><span class="p">:</span>
+            <span class="n">physical_fract</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;physical_events_fract&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;tot_gen&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">barnobarfract</span> <span class="o">*</span> <span class="n">physical_fract</span></div>
+
+
+<div class="viewcode-block" id="MCSimRunSettings.get_flavints">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_flavints">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;flavints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_flavints</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MCSimRunSettings.get_flavs">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_flavs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;flavints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_flavs</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MCSimRunSettings.get_energy_range">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_energy_range">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_energy_range</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;(min, max) energy in GeV&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;energy_min&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;energy_max&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="MCSimRunSettings.get_spectral_index">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_spectral_index">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_spectral_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Spectral index (positive number for negative powers of energy)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;sim_spectral_index&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="MCSimRunSettings.get_xsec_version">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_xsec_version">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_xsec_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cross sectons version name used in generating the MC&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;xsec_version&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="MCSimRunSettings.get_xsec">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_xsec">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_xsec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xsec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiated CrossSections object&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">xsec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">CrossSections</span><span class="p">(</span><span class="n">ver</span><span class="o">=</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;xsec_version&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">CrossSections</span><span class="p">(</span><span class="n">ver</span><span class="o">=</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;xsec_version&#39;</span><span class="p">],</span> <span class="n">xsec</span><span class="o">=</span><span class="n">xsec</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DetMCSimRunsSettings">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings">[docs]</a>
+<span class="k">class</span> <span class="nc">DetMCSimRunsSettings</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle Monte Carlo run settings for a detector (i.e., without specifying</span>
+<span class="sd">    which run as is required for the MCSimRunSettings object)</span>
+
+<span class="sd">    Since run is not specified at instantiation, method calls require the user</span>
+<span class="sd">    to specify a run ID.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    run_settings : string or dict</span>
+<span class="sd">    detector : string or None</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    MCSimRunSettings : Same, but specifies a specific run at instantiation; see</span>
+<span class="sd">                       class docstring for specification of run_settings dict /</span>
+<span class="sd">                       JSON file</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_settings</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">run_settings</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">rsd</span> <span class="o">=</span> <span class="n">fileio</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">resources</span><span class="o">.</span><span class="n">find_resource</span><span class="p">(</span><span class="n">run_settings</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">run_settings</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">rsd</span> <span class="o">=</span> <span class="n">run_settings</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unhandled run_settings type passed in arg: &#39;</span> <span class="o">+</span>
+                            <span class="nb">type</span><span class="p">(</span><span class="n">run_settings</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">detector</span><span class="p">:</span>
+            <span class="n">detector</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">detector</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span> <span class="o">=</span> <span class="n">detector</span>
+
+        <span class="c1"># Determine how deeply nested runs are in the dict to allow for</span>
+        <span class="c1"># user to specify a dict that has multiple detectors in it OR</span>
+        <span class="c1"># a dict with just a single detector in it</span>
+        <span class="k">if</span> <span class="s1">&#39;flavints&#39;</span> <span class="ow">in</span> <span class="n">rsd</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">runs_d</span> <span class="o">=</span> <span class="n">rsd</span>
+        <span class="k">elif</span> <span class="s1">&#39;flavints&#39;</span> <span class="ow">in</span> <span class="n">rsd</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rsd</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">runs_d</span> <span class="o">=</span> <span class="n">rsd</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Must specify which detector; detectors &#39;</span>
+                                     <span class="s1">&#39;found: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rsd</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">runs_d</span> <span class="o">=</span> <span class="n">rsd</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;dict must either be 3 levels: &#39;</span>
+                            <span class="s1">&#39;{DET:{RUN:{...}}}; or 2 levels: {RUN:{...}}&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Force run numbers to be strings (JSON files cannot have an int as</span>
+        <span class="c1"># a key, so it is a string upon import, and it&#39;s safest to keep it as</span>
+        <span class="c1"># a string considering how non-standardized naming is in IceCube) and</span>
+        <span class="c1"># convert actual run settings dict to MCSimRunSettings instances</span>
+        <span class="n">runs_d</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">MCSimRunSettings</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">runs_d</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="c1"># Save the runs_d to this object instance, which behaves like a dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">runs_d</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DetMCSimRunsSettings.consistency_checks">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.consistency_checks">[docs]</a>
+    <span class="k">def</span> <span class="nf">consistency_checks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DetMCSimRunsSettings.barnobarfract">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.barnobarfract">[docs]</a>
+    <span class="k">def</span> <span class="nf">barnobarfract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">flav_or_flavint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">barnobarfract</span><span class="p">(</span><span class="n">barnobar</span><span class="o">=</span><span class="n">barnobar</span><span class="p">,</span>
+                                            <span class="n">is_particle</span><span class="o">=</span><span class="n">is_particle</span><span class="p">,</span>
+                                            <span class="n">flav_or_flavint</span><span class="o">=</span><span class="n">flav_or_flavint</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DetMCSimRunsSettings.get_num_gen">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_num_gen">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_num_gen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">flav_or_flavint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_physical_fract</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the total number of events generated&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_num_gen</span><span class="p">(</span>
+            <span class="n">barnobar</span><span class="o">=</span><span class="n">barnobar</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="n">is_particle</span><span class="p">,</span>
+            <span class="n">flav_or_flavint</span><span class="o">=</span><span class="n">flav_or_flavint</span><span class="p">,</span>
+            <span class="n">include_physical_fract</span><span class="o">=</span><span class="n">include_physical_fract</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DetMCSimRunsSettings.get_flavints">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_flavints">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_flavints</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DetMCSimRunsSettings.get_flavs">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_flavs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_flavs</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DetMCSimRunsSettings.get_energy_range">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_energy_range">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_energy_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;(min, max) energy in GeV&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_energy_range</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DetMCSimRunsSettings.get_spectral_index">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_spectral_index">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_spectral_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Spectral index (positive number for negative powers of energy)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_spectral_index</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DetMCSimRunsSettings.get_xsec_version">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_xsec_version">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_xsec_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cross sectons version name used in generating the MC&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_xsec_version</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DetMCSimRunsSettings.get_xsec">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_xsec">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_xsec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">xsec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiated CrossSections object&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_xsec</span><span class="p">(</span><span class="n">xsec</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

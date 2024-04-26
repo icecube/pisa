@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.config_parser &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.config_parser</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.config_parser</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Parse a ConfigFile object into a dict containing an item for every analysis</span>
+<span class="sd">stage, that itself contains all necessary instantiation arguments/objects for</span>
+<span class="sd">that stage. for en example config file, please consider</span>
+<span class="sd">:file:`$PISA/pisa_examples/resources/settings/pipeline/example.cfg`</span>
+
+<span class="sd">Config File Structure</span>
+<span class="sd">=====================</span>
+
+<span class="sd">A pipeline config file is expected to contain something like the following,</span>
+<span class="sd">with the sections ``[pipeline]`` and corresponding ``[stage:service]``</span>
+<span class="sd">required, in addition to a ``[binning]`` section:</span>
+
+<span class="sd">.. code-block:: cfg</span>
+
+<span class="sd">    #include file_x.cfg as x</span>
+<span class="sd">    #include file_y.cfg as y</span>
+
+<span class="sd">    [pipeline]</span>
+
+<span class="sd">    order = stageA.serviceA, stageB.serviceB</span>
+
+<span class="sd">    output_binning = bining1</span>
+<span class="sd">    output_key = (&#39;weights&#39;, &#39;errors&#39;)</span>
+
+
+<span class="sd">    [binning]</span>
+
+<span class="sd">    #include generic_binning.cfg</span>
+
+<span class="sd">    binning1.order = axis1, axis2</span>
+<span class="sd">    binning1.axis1 = {</span>
+<span class="sd">        &#39;num_bins&#39;: 40, &#39;is_log&#39;: True, &#39;domain&#39;: [1,80] units.GeV, &#39;tex&#39;: r&#39;A_1&#39;</span>
+<span class="sd">        }</span>
+<span class="sd">    binning1.axis2 = {</span>
+<span class="sd">        &#39;num_bins&#39;: 10, &#39;is_lin&#39;: True, &#39;domain&#39;: [1,5], &#39;tex&#39;: r&#39;A_2&#39;</span>
+<span class="sd">        }</span>
+
+
+<span class="sd">    [stageA.serviceA]</span>
+
+<span class="sd">    input_binning = bining1</span>
+<span class="sd">    output_binning = binning1</span>
+<span class="sd">    error_method = None</span>
+<span class="sd">    debug_mode = False</span>
+
+<span class="sd">    param.p1 = 0.0 +/- 0.5 units.deg</span>
+<span class="sd">    param.p1.fixed = False</span>
+<span class="sd">    param.p1.range = nominal + [-2.0, +2.0] * sigma</span>
+
+<span class="sd">    param.selector1.p2 = 0.5 +/- 0.5 units.deg</span>
+<span class="sd">    param.selector1.p2.fixed = False</span>
+<span class="sd">    param.selector1.p2.range = nominal + [-2.0, +2.0] * sigma</span>
+
+<span class="sd">    param.selector2.p2 = -0.5 +/- 0.1 units.deg</span>
+<span class="sd">    param.selector2.p2.fixed = False</span>
+<span class="sd">    param.selector2.p2.range = nominal + [-2.0, +2.0] * sigma</span>
+
+
+<span class="sd">    [stageB.serviceB]</span>
+
+<span class="sd">    input_binning = bining1</span>
+<span class="sd">    output_binning = binning1</span>
+<span class="sd">    error_method = None</span>
+<span class="sd">    debug_mode = False</span>
+
+<span class="sd">    param.p1 = ${stageA.serviceA:param.p1}</span>
+<span class="sd">    param.selector1.p2 = ${stageA.serviceA:param.selector1.p2}</span>
+<span class="sd">    param.selector2.p2 = ${stageA.serviceA:param.selector2.p2}</span>
+<span class="sd">    ...</span>
+
+<span class="sd">* ``#include`` statements can be used to include other config files. The</span>
+<span class="sd">  #include statement must be the first non-whitespace on a line, and these</span>
+<span class="sd">  statements can be used anywhere within a config file.</span>
+<span class="sd">* ``#include resource as xyz`` statements behave similarly, but prepend the</span>
+<span class="sd">  included file&#39;s text with a setion header containing ``xyz`` in this case.</span>
+<span class="sd">* ``pipeline`` is the top-most section that defines the hierarchy of stages and</span>
+<span class="sd">  what services to be instantiated.</span>
+<span class="sd">* ``binning`` can contain different binning definitions, that are then later</span>
+<span class="sd">  referred to from within the ``stage.service`` sections.</span>
+<span class="sd">* ``stage.service`` one such section per stage.service is necessary. It</span>
+<span class="sd">  contains some options that are common for all stages (`binning`,</span>
+<span class="sd">  `error_method` and `debug_mode`) as well as all the necessary arguments and</span>
+<span class="sd">  parameters for a given stage.</span>
+<span class="sd">* Duplicate section headers and duplicate keys within a section are illegal.</span>
+
+
+<span class="sd">Param definitions</span>
+<span class="sd">-----------------</span>
+
+<span class="sd">Every key in a stage section that starts with `param.&lt;name&gt;` is interpreted and</span>
+<span class="sd">parsed into a PISA :class:`pisa.core.param.Param` object. These can be strings</span>
+<span class="sd">(e.g. a filename--but don&#39;t use any quotation marks) or quantities (numbers</span>
+<span class="sd">with units).</span>
+
+<span class="sd">Quantities expect an expression that can be converted by the</span>
+<span class="sd">:func:`parse_quantity` function. The expression for a quantity can optionally</span>
+<span class="sd">include a simple Gaussian prior and units. The simplest definition of a</span>
+<span class="sd">quantity with neither Gaussian prior nor units would look something like this:</span>
+
+<span class="sd">.. code-block:: cfg</span>
+
+<span class="sd">    param.p1 = 12.5</span>
+
+<span class="sd">Gaussian priors can be included for a quantity using ``+/-`` notation, where</span>
+<span class="sd">the number that follows ``+/-`` is the standard deviation. E.g.:</span>
+
+<span class="sd">.. code-block:: cfg</span>
+
+<span class="sd">    param.p1 = 12.5 +/- 2.3</span>
+
+<span class="sd">If no units are explicitly set for a quantity, it is taken to be a quantity</span>
+<span class="sd">with special units ``dimensionless``. Units can be set by multiplying (using</span>
+<span class="sd">``*``) by ``units.&lt;unit&gt;`` where ``&lt;unit&gt;`` is the short or long name</span>
+<span class="sd">(optionally including metric prefix) of a unit. E.g. the following set</span>
+<span class="sd">equivalent values for params `p1` and `p2`:</span>
+
+<span class="sd">.. code-block:: cfg</span>
+
+<span class="sd">    param.p1 = 12.5 * units.GeV</span>
+<span class="sd">    param.p2 = 12.5 * units.gigaelectronvolt</span>
+
+<span class="sd">and this can be combined with the Gaussian-prior ``+/-`` notation:</span>
+
+<span class="sd">.. code-block:: cfg</span>
+
+<span class="sd">    param.p1 = 12.5 +/- 2.3 * units.GeV</span>
+
+<span class="sd">Additional arguments to a parameter are passed in with the ``.`` notation, for</span>
+<span class="sd">example ``param.p1.fixed = False``, which makes p1 a free parameter in the</span>
+<span class="sd">fit (by default a parameter is fixed unless specified like this).</span>
+
+<span class="sd">Uniform and spline priors can also be set using the ``.prior`` attribute:</span>
+
+<span class="sd">.. code-block:: cfg</span>
+
+<span class="sd">    param.p1 = 12.5</span>
+<span class="sd">    param.p1.prior = uniform</span>
+
+<span class="sd">    param.p2 = 12.5</span>
+<span class="sd">    param.p2.prior = spline</span>
+<span class="sd">    param.p2.prior.data = resource_loc</span>
+
+<span class="sd">If no prior is specified, it is taken to have no prior (or, equivalently, a</span>
+<span class="sd">uniform prior with no penalty). A uniform prior can be explicitly set or</span>
+<span class="sd">arbitrary (Priors (including a Gaussian prior, as an alternative to the above</span>
+<span class="sd">notation) can be explicitly set using the ``.prior`` attribute of a ``param``:</span>
+
+<span class="sd">A range must be given for a free parameter. Either as absolute range `[x,y]` or</span>
+<span class="sd">in conjunction with the keywords `nominal` (= nominal parameter value) and</span>
+<span class="sd">`sigma` if the param was specified with the `+/-` notation.</span>
+
+<span class="sd">`.prior` is another argument, that can take the values `uniform` or `spline`,</span>
+<span class="sd">for the latter case a `.prior.data` will be expected, pointing to the spline</span>
+<span class="sd">data file.</span>
+
+<span class="sd">N.B.</span>
+<span class="sd">++++</span>
+<span class="sd">Params that have the same name in multiple stages of the pipeline are</span>
+<span class="sd">instantiated as references to a single param in memory, so updating one updates</span>
+<span class="sd">all of them.</span>
+
+<span class="sd">Note that this mechanism of synchronizing parameters holds only within the</span>
+<span class="sd">scope of a single pipeline; synchronization of parameters across pipelines is</span>
+<span class="sd">done by adding the pipelines to a single DistributionMaker object and updating</span>
+<span class="sd">params through the DistributionMaker&#39;s update_params method.</span>
+
+<span class="sd">If you DO NOT want parameters to be synchronized, provide a unique_id for them.</span>
+<span class="sd">This is imply done by setting `.unique_id`</span>
+
+
+<span class="sd">Param selector</span>
+<span class="sd">--------------</span>
+
+<span class="sd">A special mechanism allows the user to specify multiple, different values for</span>
+<span class="sd">the same param via the param selector method. This can be used for example for</span>
+<span class="sd">hypothesis testing, there for hypothesis A a param takes a certain value, while</span>
+<span class="sd">for hypothesis B a different value.</span>
+
+<span class="sd">A given param, say `foo`, then needs two definitions like the following,</span>
+<span class="sd">assuming we name our selections `A` and `B`:</span>
+
+<span class="sd">.. code-block:: cfg</span>
+
+<span class="sd">    param.A.foo = 1</span>
+<span class="sd">    param.B.foo = 2</span>
+
+<span class="sd">The default param selector needs to be spcified under section `pipeline` as e.g.</span>
+
+<span class="sd">.. code-block:: cfg</span>
+
+<span class="sd">    param_selections = A</span>
+
+<span class="sd">Which will default the value of 1 for param `foo`. An instatiated pipeline can</span>
+<span class="sd">dynamically switch to another selection after instantiation.</span>
+
+<span class="sd">Multiple different param selectors are allowed in a single config. In the</span>
+<span class="sd">default selection they must be separated by commas.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># TODO: consistency, etc.</span>
+<span class="c1"># * Order-independent hashing of the PISAConfigParser object (recursively sort</span>
+<span class="c1">#   contents?). This is still a worse idea than hashing on instantiated PISA</span>
+<span class="c1">#   objects since things like meaningless whitespace will modify the hash of</span>
+<span class="c1">#   the config.</span>
+<span class="c1"># * Add explicit gaussian prior (should NOT just rely on +/- notation to make</span>
+<span class="c1">#   consistent with other priors)</span>
+<span class="c1"># * Furthermore, all priors should be able to be defined in one line, e.g.:</span>
+<span class="c1">#     p1.prior = guassian: std_dev = 1.2</span>
+<span class="c1">#     p2.prior = uniform</span>
+<span class="c1">#     p3.prior = spline: data = resource/location/config.cfg</span>
+<span class="c1">#     p4.prior = None</span>
+<span class="c1"># * Make interoperable with pisa.utils.resources. I.e., able to work with</span>
+<span class="c1">#   Python package resources, not just filesystem files.</span>
+<span class="c1"># * Docstrings</span>
+<span class="c1"># * TODO: add try: except: blocks around class instantiation calls to give</span>
+<span class="c1">#   maximally useful error info to the user (spit out a good message, but then</span>
+<span class="c1">#   re-raise the exception)</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">abspath</span><span class="p">,</span> <span class="n">expanduser</span><span class="p">,</span> <span class="n">expandvars</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">join</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">RawConfigParser</span><span class="p">,</span> <span class="n">ExtendedInterpolation</span><span class="p">,</span> <span class="n">DuplicateOptionError</span><span class="p">,</span>
+    <span class="n">SectionProxy</span><span class="p">,</span> <span class="n">MissingSectionHeaderError</span><span class="p">,</span> <span class="n">DuplicateSectionError</span><span class="p">,</span>
+    <span class="n">NoSectionError</span>
+<span class="p">)</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">ufloat</span><span class="p">,</span> <span class="n">ufloat_fromstr</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">split</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PARAM_RE&#39;</span><span class="p">,</span> <span class="s1">&#39;PARAM_ATTRS&#39;</span><span class="p">,</span> <span class="s1">&#39;STAGE_SEP&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;parse_quantity&#39;</span><span class="p">,</span> <span class="s1">&#39;parse_string_literal&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;interpret_param_subfields&#39;</span><span class="p">,</span> <span class="s1">&#39;parse_param&#39;</span><span class="p">,</span> <span class="s1">&#39;parse_pipeline_config&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;MutableMultiFileIterator&#39;</span><span class="p">,</span> <span class="s1">&#39;PISAConfigParser&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;P. Eller, J. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="n">PARAM_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;^param\.(?P&lt;subfields&gt;(([^.\s]+)(\.|$))+)&#39;</span><span class="p">,</span>
+    <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span>
+<span class="p">)</span>
+
+<span class="n">PARAM_ATTRS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;range&#39;</span><span class="p">,</span> <span class="s1">&#39;prior&#39;</span><span class="p">,</span> <span class="s1">&#39;fixed&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span> <span class="s1">&#39;scales_as_log&#39;</span><span class="p">]</span>
+
+<span class="n">STAGE_SEP</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span>
+
+<span class="c1"># Define names that users can specify in configs such that the eval of those</span>
+<span class="c1"># strings works.</span>
+<span class="n">numpy</span> <span class="o">=</span> <span class="n">np</span> <span class="c1"># pylint: disable=invalid-name</span>
+<span class="n">inf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="c1"># pylint: disable=invalid-name</span>
+<span class="n">units</span> <span class="o">=</span> <span class="n">ureg</span> <span class="c1"># pylint: disable=invalid-name</span>
+
+
+<div class="viewcode-block" id="parse_quantity">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.parse_quantity">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_quantity</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a string into a pint/uncertainty quantity.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    string : string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value : pint.quantity of uncertainties.core.AffineScalarFunc</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; quant = parse_quantity(&#39;1.2 +/- 0.7 * units.meter&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; print(str(quant))</span>
+<span class="sd">    1.2+/-0.7 meter</span>
+<span class="sd">    &gt;&gt;&gt; print(&#39;{:~}&#39;.format(quant))</span>
+<span class="sd">    1.2+/-0.7 m</span>
+<span class="sd">    &gt;&gt;&gt; print(quant.magnitude)</span>
+<span class="sd">    1.2+/-0.7</span>
+<span class="sd">    &gt;&gt;&gt; print(quant.units)</span>
+<span class="sd">    meter</span>
+<span class="sd">    &gt;&gt;&gt; print(quant.nominal_value)</span>
+<span class="sd">    1.2</span>
+<span class="sd">    &gt;&gt;&gt; print(quant.std_dev)</span>
+<span class="sd">    0.7</span>
+
+<span class="sd">    Also note that spaces and the &quot;*&quot; are optional:</span>
+
+<span class="sd">    &gt;&gt;&gt; print(parse_quantity(&#39;1+/-1units.GeV&#39;))</span>
+<span class="sd">    1.0+/-1.0 gigaelectron_volt</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;units.&#39;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+        <span class="n">value</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;units.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;+/-&#39;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">ufloat_fromstr</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">ufloat</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">*=</span> <span class="n">ureg</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span></div>
+
+
+
+<div class="viewcode-block" id="parse_string_literal">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.parse_string_literal">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_string_literal</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate a string with certain special values, or return the string. Any</span>
+<span class="sd">    further parsing must be done outside this module, as this is as specialized</span>
+<span class="sd">    as we&#39;re willing to be in assuming/interpreting what a string is supposed</span>
+<span class="sd">    to mean.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    string : string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    val : bool, None, or str</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; print(parse_string_literal(&#39;true&#39;))</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &gt;&gt;&gt; print(parse_string_literal(&#39;False&#39;))</span>
+<span class="sd">    False</span>
+
+<span class="sd">    &gt;&gt;&gt; print(parse_string_literal(&#39;none&#39;))</span>
+<span class="sd">    None</span>
+
+<span class="sd">    &gt;&gt;&gt; print(parse_string_literal(&#39;something else&#39;))</span>
+<span class="sd">    &#39;something else&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;false&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">string</span></div>
+
+
+
+<div class="viewcode-block" id="interpret_param_subfields">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.interpret_param_subfields">[docs]</a>
+<span class="k">def</span> <span class="nf">interpret_param_subfields</span><span class="p">(</span><span class="n">subfields</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively interpret and parse parameter subfields.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    subfields : list of strings</span>
+<span class="sd">    selector : string</span>
+<span class="sd">    pname : string</span>
+<span class="sd">    attr : list of strings</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    infodict : dict</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; print(interpret_param_subfields(subfields=[&#39;nh&#39;, &#39;deltam31&#39;, &#39;range&#39;]))</span>
+<span class="sd">    {&#39;pname&#39;: &#39;deltam31&#39;, &#39;subfields&#39;: [], &#39;attr&#39;: [&#39;range&#39;], &#39;selector&#39;: &#39;nh&#39;}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">infodict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">subfields</span><span class="o">=</span><span class="n">subfields</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="n">selector</span><span class="p">,</span> <span class="n">pname</span><span class="o">=</span><span class="n">pname</span><span class="p">,</span>
+                    <span class="n">attr</span><span class="o">=</span><span class="n">attr</span><span class="p">)</span>
+
+    <span class="c1"># Everything has been parsed</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">infodict</span>
+
+    <span class="c1"># If only one field, this must be the param&#39;s name, and we&#39;re done</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;pname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">interpret_param_subfields</span><span class="p">(</span><span class="o">**</span><span class="n">infodict</span><span class="p">)</span>
+
+    <span class="c1"># Look for and remove attr field and any subsequent fields</span>
+    <span class="n">attr_indices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">PARAM_ATTRS</span><span class="p">:</span>
+            <span class="n">attr_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="c1"># TODO: not clear what&#39;s being done here; also, would slicing be more clear</span>
+    <span class="c1"># than iterating &amp; calling pop()?</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attr_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">attr_idx</span> <span class="o">=</span> <span class="n">attr_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;attr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">attr_idx</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">attr_idx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">]))</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">interpret_param_subfields</span><span class="p">(</span><span class="o">**</span><span class="n">infodict</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">attr_indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Found multiple attrs in config name &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span><span class="n">pname</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;pname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;selector&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">interpret_param_subfields</span><span class="p">(</span><span class="o">**</span><span class="n">infodict</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unable to parse param subfields </span><span class="si">%s</span><span class="s1">&#39;</span>
+                     <span class="o">%</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="parse_param">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.parse_param">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_param</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">selector</span><span class="p">,</span> <span class="n">fullname</span><span class="p">,</span> <span class="n">pname</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a param specification from a PISA config file.</span>
+
+<span class="sd">    Note that if the param sepcification does not include ``fixed``,</span>
+<span class="sd">    ``prior``, and/or ``range``, the defaults for these are:</span>
+<span class="sd">    ``fixed = True``, ``prior = None``, and ``range = None``.</span>
+
+<span class="sd">    If a prior is specified explicitly via ``.prior``, this takes precendence,</span>
+<span class="sd">    but if no ``.prior`` is specified and the param&#39;s value is parsed to be a</span>
+<span class="sd">    :class:`uncertainties.AffineScalarFunc` (i.e. have `std_dev` attribute), a</span>
+<span class="sd">    Gaussian prior is constructed from that and then the AffineScalarFunc is</span>
+<span class="sd">    stripped out of the param&#39;s value (such that it is just a</span>
+<span class="sd">    :class:`~pint.quantity.Quantity`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config : pisa.utils.config_parser.PISAConfigParser</span>
+<span class="sd">    section : string</span>
+<span class="sd">    selector : string or None</span>
+<span class="sd">    fullname : string</span>
+<span class="sd">    pname : string</span>
+<span class="sd">    value : string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    param : pisa.core.param.Param</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Note: imports placed here to avoid circular imports</span>
+    <span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">DerivedParam</span>
+    <span class="kn">from</span> <span class="nn">pisa.core.prior</span> <span class="kn">import</span> <span class="n">Prior</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">pname</span><span class="p">,</span> <span class="n">is_fixed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">parse_quantity</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">nominal_value</span> <span class="o">*</span> <span class="n">value</span><span class="o">.</span><span class="n">units</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">parse_string_literal</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="c1"># Search for explicit attr specifications</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.fixed&#39;</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;is_fixed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.fixed&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.scales_as_log&#39;</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;scales_as_log&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.scales_as_log&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.unique_id&#39;</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;unique_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.unique_id&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.tex&#39;</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tex&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.tex&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.range&#39;</span><span class="p">):</span>
+        <span class="n">range_</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.range&#39;</span><span class="p">)</span>
+        <span class="c1"># Note: `nominal` and `sigma` are called out in the `range_` string</span>
+        <span class="k">if</span> <span class="s1">&#39;nominal&#39;</span> <span class="ow">in</span> <span class="n">range_</span><span class="p">:</span>
+            <span class="n">nominal</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">n</span> <span class="o">*</span> <span class="n">value</span><span class="o">.</span><span class="n">units</span> <span class="c1"># pylint: disable=unused-variable</span>
+        <span class="k">if</span> <span class="s1">&#39;sigma&#39;</span> <span class="ow">in</span> <span class="n">range_</span><span class="p">:</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">s</span> <span class="o">*</span> <span class="n">value</span><span class="o">.</span><span class="n">units</span> <span class="c1"># pylint: disable=unused-variable</span>
+        <span class="n">range_</span> <span class="o">=</span> <span class="n">range_</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">,</span> <span class="s1">&#39;np.array([&#39;</span><span class="p">)</span>
+        <span class="n">range_</span> <span class="o">=</span> <span class="n">range_</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">,</span> <span class="s1">&#39;])&#39;</span><span class="p">)</span>
+        <span class="c1"># Strip out uncertainties from value itself (as we will rely on the</span>
+        <span class="c1"># prior from here on out)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">range_</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">units</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span><span class="o">+</span><span class="s2">&quot;.function_file&quot;</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;function_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span><span class="o">+</span><span class="s2">&quot;.function_file&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span><span class="o">+</span><span class="s2">&quot;.depends_names&quot;</span><span class="p">):</span>
+        <span class="c1"># this means this is a derived parameter, so we throw away the default `fixed` and `prior` kwargs</span>
+        <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;is_fixed&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;prior&#39;</span><span class="p">]</span>
+
+        <span class="n">depends</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span><span class="o">+</span><span class="s2">&quot;.depends_names&quot;</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;depends_names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">depends</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.prior&#39;</span><span class="p">):</span>
+        <span class="n">prior</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.prior&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">prior</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;prior&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;uniform&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">prior</span> <span class="o">==</span> <span class="s1">&#39;jeffreys&#39;</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;prior&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span>
+                <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;jeffreys&#39;</span><span class="p">,</span>
+                <span class="n">A</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;range&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>  <span class="c1"># pylint: disable=unsubscriptable-object</span>
+                <span class="n">B</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;range&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>  <span class="c1"># pylint: disable=unsubscriptable-object</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">prior</span> <span class="o">==</span> <span class="s1">&#39;spline&#39;</span><span class="p">:</span>
+            <span class="n">priorname</span> <span class="o">=</span> <span class="n">pname</span>
+            <span class="k">if</span> <span class="n">selector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">priorname</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">selector</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.prior.data&#39;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">priorname</span><span class="p">]</span>
+            <span class="n">knots</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;knots&#39;</span><span class="p">]),</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">])</span>
+            <span class="n">knots</span> <span class="o">=</span> <span class="n">knots</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+            <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">])</span>
+            <span class="n">deg</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;deg&#39;</span><span class="p">]</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;prior&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;spline&#39;</span><span class="p">,</span> <span class="n">knots</span><span class="o">=</span><span class="n">knots</span><span class="p">,</span> <span class="n">coeffs</span><span class="o">=</span><span class="n">coeffs</span><span class="p">,</span>
+                                    <span class="n">deg</span><span class="o">=</span><span class="n">deg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">prior</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;prior&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="s1">&#39;gauss&#39;</span> <span class="ow">in</span> <span class="n">prior</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Please use new style +/- notation for gaussian&#39;</span>
+                            <span class="s1">&#39; priors in config&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Prior type unknown&#39;</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;std_dev&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">std_dev</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;prior&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span>
+                                <span class="n">mean</span><span class="o">=</span><span class="n">value</span><span class="o">.</span><span class="n">nominal_value</span> <span class="o">*</span> <span class="n">value</span><span class="o">.</span><span class="n">units</span><span class="p">,</span>
+                                <span class="n">stddev</span><span class="o">=</span><span class="n">value</span><span class="o">.</span><span class="n">std_dev</span> <span class="o">*</span> <span class="n">value</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+
+    <span class="c1"># Strip out any uncertainties from value itself (an explicit ``.prior``</span>
+    <span class="c1"># specification takes precedence over this)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;std_dev&#39;</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">nominal_value</span> <span class="o">*</span> <span class="n">value</span><span class="o">.</span><span class="n">units</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;depends_names&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="n">DerivedParam</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Failed to instantiate new Param object with kwargs </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+                      <span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">raise</span>
+
+    <span class="k">return</span> <span class="n">param</span></div>
+
+
+
+<div class="viewcode-block" id="parse_pipeline_config">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.parse_pipeline_config">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_pipeline_config</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse pipeline config.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config : string or ConfigParser</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stage_dicts : OrderedDict</span>
+<span class="sd">        Keys are (stage_name, service_name) tuples and values are OrderedDicts</span>
+<span class="sd">        with keys the argnames and values the arguments&#39; values. Some known arg</span>
+<span class="sd">        values are parsed out fully into Python objects, while the rest remain</span>
+<span class="sd">        as strings that must be used or parsed elsewhere.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Note: imports placed here to avoid circular imports</span>
+    <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
+    <span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">ParamSelector</span><span class="p">,</span> <span class="n">DerivedParam</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">PISAConfigParser</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s1">&#39;`config` must either be a string or PISAConfigParser. Got </span><span class="si">%s</span><span class="s1"> &#39;</span>
+            <span class="s1">&#39;instead.&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s1">&#39;binning&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NoSectionError</span><span class="p">(</span>
+            <span class="s2">&quot;Could not find &#39;binning&#39;. Only found sections: </span><span class="si">%s</span><span class="s2">&quot;</span>
+            <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">sections</span><span class="p">()</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Create binning objects</span>
+    <span class="n">binning_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Loop over binning lines</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.order&#39;</span><span class="p">):</span>
+            <span class="c1"># Found the first line in a new binning, get the individual bin dimension definitions...</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;binning&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+            <span class="n">binning</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+            <span class="n">bins</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">bin_name</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">def_raw</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;binning&#39;</span><span class="p">,</span> <span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">bin_name</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">dims_defined</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">split</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span>
+                        <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span>
+                        <span class="n">dim</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span>
+                        <span class="n">dim</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.order&#39;</span><span class="p">)</span>
+                    <span class="p">]</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="s2">&quot;Failed to find definition of &#39;</span><span class="si">%s</span><span class="s2">&#39; dimension of &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
+                        <span class="s2">&quot; binning entry. Only found definition(s) of: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">bin_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">dims_defined</span>
+                    <span class="p">)</span>
+                    <span class="k">del</span> <span class="n">dims_defined</span>
+                    <span class="k">raise</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">def_raw</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="s2">&quot;Failed to evaluate definition of &#39;</span><span class="si">%s</span><span class="s2">&#39; dimension of&quot;</span>
+                        <span class="s2">&quot; &#39;</span><span class="si">%s</span><span class="s2">&#39; binning entry:</span><span class="se">\n</span><span class="s2">&#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                        <span class="n">bin_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">def_raw</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">bins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OneDimBinning</span><span class="p">(</span><span class="n">bin_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="s2">&quot;Failed to instantiate new `OneDimBinning` from &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
+                        <span class="s2">&quot; dimension of &#39;</span><span class="si">%s</span><span class="s2">&#39; binning entry with definition:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">bin_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">kwargs</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span>
+            <span class="c1"># Get the bin mask, if there is ome</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.mask&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+            <span class="c1"># Create the binning object</span>
+            <span class="n">binning_dict</span><span class="p">[</span><span class="n">binning</span><span class="p">]</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+
+
+    <span class="n">stage_dicts</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+    <span class="c1"># Pipeline section</span>
+    <span class="n">section</span> <span class="o">=</span> <span class="s1">&#39;pipeline&#39;</span>
+
+    <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Get and parse the order of the stages (and which services implement them)</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="n">split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">STAGE_SEP</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;order&#39;</span><span class="p">))]</span>
+
+    <span class="c1"># Name of pipeline</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">):</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;output_binning&#39;</span><span class="p">):</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_binning&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">binning_dict</span><span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;output_binning&#39;</span><span class="p">)]</span>
+        <span class="n">output_key</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;output_key&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Output key should be exactly one key, or a tuple (key, error_key), but is </span><span class="si">{</span><span class="n">output_key</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_binning&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">param_selections</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;param_selections&#39;</span><span class="p">):</span>
+        <span class="n">param_selections</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;param_selections&#39;</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;detector_name&#39;</span><span class="p">):</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;detector_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;detector_name&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;detector_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="c1"># Parse [stage.&lt;stage_name&gt;] sections and store to stage_dicts</span>
+    <span class="k">for</span> <span class="n">stage</span><span class="p">,</span> <span class="n">service</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>  <span class="c1"># pylint: disable=too-many-nested-blocks</span>
+        <span class="n">old_section_header</span> <span class="o">=</span> <span class="s1">&#39;stage</span><span class="si">%s%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">STAGE_SEP</span><span class="p">,</span> <span class="n">stage</span><span class="p">)</span>
+        <span class="n">new_section_header</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s%s%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">STAGE_SEP</span><span class="p">,</span> <span class="n">service</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">old_section_header</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot; is an old-style section header, in the future use &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+                <span class="n">old_section_header</span><span class="p">,</span> <span class="n">new_section_header</span>
+            <span class="p">)</span>
+            <span class="n">section</span> <span class="o">=</span> <span class="n">old_section_header</span>
+        <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">new_section_header</span><span class="p">):</span>
+            <span class="n">section</span> <span class="o">=</span> <span class="n">new_section_header</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span>
+                <span class="s1">&#39;missing section in cfg for stage &quot;</span><span class="si">%s</span><span class="s1">&quot; service &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">service</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Instantiate dict to store args to pass to this stage</span>
+        <span class="n">service_kwargs</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+        <span class="n">param_selector</span> <span class="o">=</span> <span class="n">ParamSelector</span><span class="p">(</span><span class="n">selections</span><span class="o">=</span><span class="n">param_selections</span><span class="p">)</span>
+        <span class="n">service_kwargs</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_selector</span>
+
+        <span class="n">n_params</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_derived_params</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">fullname</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s1">&#39;Unable to obtain value of option &quot;</span><span class="si">%s</span><span class="s1">&quot; in section &quot;</span><span class="si">%s</span><span class="s1">&quot;.&#39;</span><span class="p">,</span>
+                    <span class="n">fullname</span><span class="p">,</span> <span class="n">section</span>
+                <span class="p">)</span>
+                <span class="k">raise</span>
+            <span class="c1"># See if this matches a param specification</span>
+            <span class="n">param_match</span> <span class="o">=</span> <span class="n">PARAM_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">param_match</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">n_params</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="n">param_match_dict</span> <span class="o">=</span> <span class="n">param_match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+                <span class="n">param_subfields</span> <span class="o">=</span> <span class="n">param_match_dict</span><span class="p">[</span><span class="s1">&#39;subfields&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+                <span class="c1"># Figure out what the dotted fields represent...</span>
+                <span class="n">infodict</span> <span class="o">=</span> <span class="n">interpret_param_subfields</span><span class="p">(</span><span class="n">subfields</span><span class="o">=</span><span class="n">param_subfields</span><span class="p">)</span>
+
+                <span class="c1"># If field is an attr, skip since these are located manually</span>
+                <span class="k">if</span> <span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;attr&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Check if this param already exists in a previous stage; if</span>
+                <span class="c1"># so, make sure there are no specs for this param, but just a</span>
+                <span class="c1"># link to previous the param object that is already</span>
+                <span class="c1"># instantiated.</span>
+                <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">stage_dicts</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                    <span class="c1"># Stage did not get a `params` argument from config</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;params&#39;</span> <span class="ow">in</span> <span class="n">kw</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="c1"># Retrieve the param from the ParamSelector</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">param</span> <span class="o">=</span> <span class="n">kw</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                            <span class="n">name</span><span class="o">=</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;pname&#39;</span><span class="p">],</span>
+                            <span class="n">selector</span><span class="o">=</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;selector&#39;</span><span class="p">]</span>
+                        <span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="c1"># Make sure there are no other specs (in this section) for</span>
+                    <span class="c1"># the param defined defined in previous section</span>
+                    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">PARAM_ATTRS</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">fullname</span><span class="p">,</span> <span class="n">a</span><span class="p">)):</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parameter spec. &#39;</span><span class="si">%s</span><span class="s2">&#39; of &#39;</span><span class="si">%s</span><span class="s2">&#39; &quot;</span>
+                                             <span class="s2">&quot;found in section &#39;</span><span class="si">%s</span><span class="s2">&#39;, but &quot;</span>
+                                             <span class="s2">&quot;parameter exists in previous &quot;</span>
+                                             <span class="s2">&quot;stage!&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">fullname</span><span class="p">,</span> <span class="n">section</span><span class="p">))</span>
+
+                    <span class="k">break</span>
+
+                <span class="c1"># Param *not* found in a previous stage (i.e., no explicit</span>
+                <span class="c1"># `break` encountered in `for` loop above); therefore must</span>
+                <span class="c1"># instantiate it.</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">param</span> <span class="o">=</span> <span class="n">parse_param</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+                        <span class="n">section</span><span class="o">=</span><span class="n">section</span><span class="p">,</span>
+                        <span class="n">selector</span><span class="o">=</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;selector&#39;</span><span class="p">],</span>
+                        <span class="n">fullname</span><span class="o">=</span><span class="n">fullname</span><span class="p">,</span>
+                        <span class="n">pname</span><span class="o">=</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;pname&#39;</span><span class="p">],</span>
+                        <span class="n">value</span><span class="o">=</span><span class="n">value</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">DerivedParam</span><span class="p">):</span>
+                        <span class="n">n_derived_params</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="n">param_selector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;selector&#39;</span><span class="p">])</span>
+
+            <span class="c1"># If it is a binning defined in the &quot;binning&quot; section, use the parsed value</span>
+            <span class="k">elif</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">binning_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">service_kwargs</span><span class="p">[</span><span class="n">fullname</span><span class="p">]</span> <span class="o">=</span> <span class="n">binning_dict</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+
+            <span class="c1"># If it&#39;s not a param spec but contains &#39;binning&#39;, assume it&#39;s a</span>
+            <span class="c1"># binning spec for CAKE stages</span>
+            <span class="k">elif</span> <span class="s1">&#39;binning&#39;</span> <span class="ow">in</span> <span class="n">fullname</span><span class="p">:</span>
+                <span class="n">service_kwargs</span><span class="p">[</span><span class="n">fullname</span><span class="p">]</span> <span class="o">=</span> <span class="n">binning_dict</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+
+            <span class="c1"># it&#39;s gonna be a PI stage</span>
+            <span class="k">elif</span> <span class="n">fullname</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;output_format&#39;</span><span class="p">]:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">parse_string_literal</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="c1"># is it None?</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">service_kwargs</span><span class="p">[</span><span class="n">fullname</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="c1"># is it a binning?</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">binning_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">service_kwargs</span><span class="p">[</span><span class="n">fullname</span><span class="p">]</span> <span class="o">=</span> <span class="n">binning_dict</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+                <span class="c1"># whatever</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">service_kwargs</span><span class="p">[</span><span class="n">fullname</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+            <span class="c1"># it&#39;s a list on in/output names list</span>
+            <span class="k">elif</span> <span class="n">fullname</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_names&#39;</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">service_kwargs</span><span class="p">[</span><span class="n">fullname</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="c1"># Otherwise it&#39;s some other stage instantiation argument; identify</span>
+            <span class="c1"># this by its full name and try to interpret and instantiate a</span>
+            <span class="c1"># Python object using the string</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^a-z_]units\.[a-z]+&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">new_value</span> <span class="o">=</span> <span class="n">parse_quantity</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                        <span class="n">new_value</span> <span class="o">=</span> <span class="n">new_value</span><span class="o">.</span><span class="n">nominal_value</span> <span class="o">*</span> <span class="n">new_value</span><span class="o">.</span><span class="n">units</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="n">new_value</span> <span class="o">=</span> <span class="n">parse_string_literal</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_value</span> <span class="o">=</span> <span class="n">parse_string_literal</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">service_kwargs</span><span class="p">[</span><span class="n">fullname</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_value</span>
+
+        <span class="c1"># If no params actually specified in config, remove &#39;params&#39; from the</span>
+        <span class="c1"># service&#39;s keyword args</span>
+        <span class="k">if</span> <span class="n">n_params</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">service_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;params&#39;</span><span class="p">)</span>
+
+        <span class="c1"># finish setting up the derived parameters </span>
+        <span class="k">if</span> <span class="n">n_derived_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">param_selector</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">DerivedParam</span><span class="p">):</span>
+                    <span class="c1"># give the derived parameter references to the parameters it depends on </span>
+                    <span class="n">param</span><span class="o">.</span><span class="n">dependson</span> <span class="o">=</span> <span class="p">[</span><span class="n">param_selector</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">depends_names</span><span class="p">]</span>
+                    
+
+        <span class="c1"># Store the service&#39;s kwargs to the stage_dicts</span>
+        <span class="n">stage_dicts</span><span class="p">[(</span><span class="n">stage</span><span class="p">,</span> <span class="n">service</span><span class="p">)]</span> <span class="o">=</span> <span class="n">service_kwargs</span>
+
+    <span class="k">return</span> <span class="n">stage_dicts</span></div>
+
+
+<div class="viewcode-block" id="MutableMultiFileIterator">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.MutableMultiFileIterator">[docs]</a>
+<span class="k">class</span> <span class="nc">MutableMultiFileIterator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Iterate through the lines of an already-open file (`fp`) but then can pause</span>
+<span class="sd">    at any point and open and iterate through another file via the</span>
+<span class="sd">    `switch_to_file` method (and this file can be paused to iterate through</span>
+<span class="sd">    another, etc.).</span>
+
+<span class="sd">    This has the effect of in-lining files within files for e.g. parsing</span>
+<span class="sd">    multiple files as if they&#39;re a singe file. Which line comes from which file</span>
+<span class="sd">    is also tracked for generating maximally-useful error messages, via the</span>
+<span class="sd">    `location` method.</span>
+
+<span class="sd">    Note that circular references are not allowed.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fp : file-like object</span>
+<span class="sd">        The (opened) main config to be read. E.g. can be an opened file,</span>
+<span class="sd">        io.StringIO object, etc.</span>
+
+<span class="sd">    fpname : string</span>
+<span class="sd">        Identifier for the initially `fp` object</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fpname</span><span class="p">,</span> <span class="n">fpath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stack for storing dicts with &#39;fp&#39;, &#39;fpname&#39;, &#39;fpath&#39;, &#39;lineno&#39;, and</span>
+<span class="sd">        &#39;line&#39; for keeping track of the hierarchy of master config &amp; included</span>
+<span class="sd">        configs&quot;&quot;&quot;</span>
+
+        <span class="c1"># It&#39;s ok to not find the fpname / fpname to not be a file for the</span>
+        <span class="c1"># *master* config, since this could e.g. be a io.StringIO file-like</span>
+        <span class="c1"># object (`read_string`) which comes from no actual file/resource on</span>
+        <span class="c1"># disk.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fpname</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">):</span>
+            <span class="n">fpname</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">if</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">resource</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">fpname</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">resource</span><span class="p">):</span>
+                    <span class="n">fpath</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">expanduser</span><span class="p">(</span><span class="n">expandvars</span><span class="p">(</span><span class="n">fpname</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">resource</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">fpname</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">resource</span><span class="p">):</span>
+                    <span class="n">fpath</span> <span class="o">=</span> <span class="n">resource</span>
+
+        <span class="k">if</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fpaths_processed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fpaths_processed</span> <span class="o">=</span> <span class="p">[</span><span class="n">fpath</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fps_processed</span> <span class="o">=</span> <span class="p">[</span><span class="n">fp</span><span class="p">]</span>
+
+        <span class="n">record</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fp</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span> <span class="n">fpname</span><span class="o">=</span><span class="n">fpname</span><span class="p">,</span> <span class="n">fpath</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="n">lineno</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_hierarchy</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">fpname</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">())])</span>
+
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate through lines in the file(s).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        line : string</span>
+<span class="sd">            The next line from the current file.</span>
+
+<span class="sd">        fpname : string</span>
+<span class="sd">            The `fpname` of the file from which the line was gotten.</span>
+
+<span class="sd">        lineno : int</span>
+<span class="sd">            The line number in the file.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">record</span><span class="p">[</span><span class="s1">&#39;line&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;fp&#39;</span><span class="p">])</span>
+            <span class="n">record</span><span class="p">[</span><span class="s1">&#39;lineno&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">record</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">((</span><span class="s1">&#39;Finished processing &quot;</span><span class="si">{fpname:s}</span><span class="s1">&quot; with </span><span class="si">{lineno:d}</span><span class="s1">&#39;</span>
+                           <span class="s1">&#39; line(s)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">record</span><span class="p">))</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
+            <span class="k">raise</span>
+
+<div class="viewcode-block" id="MutableMultiFileIterator.switch_to_file">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.MutableMultiFileIterator.switch_to_file">[docs]</a>
+    <span class="k">def</span> <span class="nf">switch_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fpname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Switch iterator to a new resource location to continue processing.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : None or file-like object</span>
+<span class="sd">            If `fp` is specified, this takes precedence over `fpname`.</span>
+
+<span class="sd">        fpname : None or string</span>
+<span class="sd">            Path of the file or resource to read from. This resource will be</span>
+<span class="sd">            located and opened if `fp` is None.</span>
+
+<span class="sd">        encoding</span>
+<span class="sd">            Argument is passed to the builtin ``open`` function for opening</span>
+<span class="sd">            the file.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fpath</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">fp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">fpname</span>
+            <span class="n">resource</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">fpname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">resource</span><span class="p">):</span>
+                <span class="n">fpath</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">expanduser</span><span class="p">(</span><span class="n">expandvars</span><span class="p">(</span><span class="n">resource</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="n">fpath</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fpaths_processed</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s1">&#39;Circular reference; already processed &quot;</span><span class="si">%s</span><span class="s1">&quot; at path&#39;</span>
+                        <span class="s1">&#39; &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fpname</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`fpname` &quot;</span><span class="si">%s</span><span class="s1">&quot; is not a file&#39;</span><span class="p">)</span>
+            <span class="n">fp_</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fp_</span> <span class="o">=</span> <span class="n">fp</span>
+            <span class="k">if</span> <span class="n">fpname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">fp_</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">):</span>
+                    <span class="n">fpname</span> <span class="o">=</span> <span class="n">fp_</span><span class="o">.</span><span class="n">name</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">fpname</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">resource</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">fpname</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">resource</span><span class="p">):</span>
+                    <span class="n">fpath</span> <span class="o">=</span> <span class="n">resource</span>
+            <span class="k">if</span> <span class="n">fp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fps_processed</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Circular reference; already processed file pointer &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+                    <span class="s1">&#39; at path &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fp_</span><span class="p">,</span> <span class="n">fpname</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fpath</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fpaths_processed</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Circular reference; already processed &quot;</span><span class="si">%s</span><span class="s1">&quot; at path&#39;</span>
+                    <span class="s1">&#39; &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fpname</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fpaths_processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fps_processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fpaths_processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Switching to &quot;</span><span class="si">%s</span><span class="s1">&quot; at path &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fpname</span><span class="p">,</span> <span class="n">fpath</span><span class="p">))</span>
+
+        <span class="n">record</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fp</span><span class="o">=</span><span class="n">fp_</span><span class="p">,</span> <span class="n">fpname</span><span class="o">=</span><span class="n">fpname</span><span class="p">,</span> <span class="n">fpath</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="n">lineno</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">location</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;string : Full hierarchical location, formatted for display&quot;&quot;&quot;</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;File hierarchy (most recent last):</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">record_num</span><span class="p">,</span> <span class="n">record</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="p">):</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;  Line </span><span class="si">{lineno:d}</span><span class="s1">, fpname &quot;</span><span class="si">{fpname:s}</span><span class="s1">&quot;&#39;</span>
+            <span class="k">if</span> <span class="n">record_num</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39; at path &quot;</span><span class="si">{fpath:s}</span><span class="s1">&quot;&#39;</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">    </span><span class="si">{line:s}</span><span class="s1">&#39;</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">record</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Close all file handles opened by this object (i.e. all except the</span>
+<span class="sd">        first file pointer, which is provided as an argument to `__init__`)&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">record</span><span class="p">[</span><span class="s1">&#39;fp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="PISAConfigParser">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser">[docs]</a>
+<span class="k">class</span> <span class="nc">PISAConfigParser</span><span class="p">(</span><span class="n">RawConfigParser</span><span class="p">):</span>  <span class="c1"># pylint: disable=too-many-ancestors</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses a PISA config file, extending :class:`configparser.RawConfigParser`</span>
+<span class="sd">    (the backport of RawConfigParser from Python 3.x) by adding the ability to</span>
+<span class="sd">    include external files inline via, for example:</span>
+
+<span class="sd">    .. code-block:: cfg</span>
+
+<span class="sd">        #include /path/to/file.cfg</span>
+<span class="sd">        #include path/to/resource.cfg</span>
+<span class="sd">        #include path/to/resource2.cfg as section2</span>
+
+<span class="sd">        [section1]</span>
+<span class="sd">        key11 = value1</span>
+<span class="sd">        key12 = ${section2:key21}</span>
+<span class="sd">        key13 = value3</span>
+
+<span class="sd">    where the files or resources located at &quot;/path/to/file.cfg&quot;,</span>
+<span class="sd">    &quot;path/to/resource.cfg&quot;, and &quot;path/to/resource2.cfg&quot; are effectively inlined</span>
+<span class="sd">    wherever the #include statements occur.</span>
+
+<span class="sd">    The ``#include path/to/resource2.cfg as section_name`` syntax</span>
+<span class="sd">    prefixes the contents of ``resource2.cfg`` by a section header named</span>
+<span class="sd">    &quot;section2&quot;, expanding ``resource2.cfg`` as:</span>
+
+<span class="sd">    .. code-block:: cfg</span>
+
+<span class="sd">        [section2]</span>
+<span class="sd">        line1 of resource2.cfg</span>
+<span class="sd">        line2 of resource2.cfg</span>
+<span class="sd">        ... etc.</span>
+
+<span class="sd">    Special parsing rules we have added to make ``#include`` behavior sensible:</span>
+
+<span class="sd">    1. Using an ``#include file`` that contains a sction header</span>
+<span class="sd">       (``[section_name]``) *or* using ``#include file as section_name``</span>
+<span class="sd">       requires that the next non-blank / non-comment / non-#include line be a</span>
+<span class="sd">       new section header (``[section_name2]``).</span>
+<span class="sd">    2. Empty sections after fully parsing a config will raise a ``ValueError``.</span>
+<span class="sd">       This is likely never a desired behavior, and should alert the user to</span>
+<span class="sd">       inadvertent use of ``#include``.</span>
+
+<span class="sd">    Also note that, unlike the default :class:`~configparser.ConfigParser`</span>
+<span class="sd">    behavior, :class:`~configparser.ExtendedInterpolation` is used, whitespace</span>
+<span class="sd">    surrounding text in a section header is ignored, empty lines are *not*</span>
+<span class="sd">    allowed between multi-line values, and section names, keys, and values are</span>
+<span class="sd">    all case-sensitive.</span>
+
+<span class="sd">    All other options are taken as the defaults / default behaviors of</span>
+<span class="sd">    :class:`~configparser.ConfigParser`.</span>
+
+<span class="sd">    See help for :class:`configparser.ConfigParser` for further help on valid</span>
+<span class="sd">    config file syntax and parsing behavior.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_DEFAULT_INTERPOLATION</span> <span class="o">=</span> <span class="n">ExtendedInterpolation</span><span class="p">()</span>
+    <span class="n">INCLUDE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s*#include\s+(?P&lt;include&gt;\S.*)&#39;</span><span class="p">)</span>
+    <span class="n">INCLUDE_AS_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s*(?P&lt;file&gt;.+)((?:\s+as\s+)(?P&lt;as&gt;\S+))&#39;</span><span class="p">)</span>
+    <span class="n">SECTCRE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\[\s*(?P&lt;header&gt;[^]]+?)\s*\]&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#self.default_section = None #DEFAULTSECT</span>
+        <span class="c1"># Instantiate parent class with PISA-specific options</span>
+        <span class="c1">#super().__init__(</span>
+        <span class="n">RawConfigParser</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">interpolation</span><span class="o">=</span><span class="n">ExtendedInterpolation</span><span class="p">(),</span>
+            <span class="n">empty_lines_in_values</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_iterators</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="PISAConfigParser.set">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser.set">[docs]</a>
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set an option.  Extends RawConfigParser.set by validating type and</span>
+<span class="sd">        interpolation syntax on the value.&quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_value_types</span><span class="p">(</span><span class="n">option</span><span class="o">=</span><span class="n">option</span><span class="p">,</span>
+                                                      <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PISAConfigParser.add_section">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser.add_section">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new section in the configuration.  Extends</span>
+<span class="sd">        RawConfigParser.add_section by validating if the section name is</span>
+<span class="sd">        a string.&quot;&quot;&quot;</span>
+        <span class="n">section</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_value_types</span><span class="p">(</span><span class="n">section</span><span class="o">=</span><span class="n">section</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">section</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PISAConfigParser.optionxform">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser.optionxform">[docs]</a>
+    <span class="k">def</span> <span class="nf">optionxform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optionstr</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enable case-sensitive options in .cfg files, and force all values to</span>
+<span class="sd">        be ASCII strings.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">optionstr</span> <span class="c1">#.encode(&#39;ascii&#39;)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;int : Hash value of the contents (does not depend on order of</span>
+<span class="sd">        sections, but does depend on order of keys within each section)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__hash__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">hash_obj</span><span class="p">([(</span><span class="n">sec</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">sec</span><span class="p">)))</span>
+                         <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">())])</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_include_info</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="o">.</span><span class="n">INCLUDE_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">include</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()[</span><span class="s1">&#39;include&#39;</span><span class="p">]</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="o">.</span><span class="n">INCLUDE_AS_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">include</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;file&#39;</span><span class="p">:</span> <span class="n">include</span><span class="p">,</span> <span class="s1">&#39;as&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+
+<div class="viewcode-block" id="PISAConfigParser.read">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser.read">[docs]</a>
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Override `read` method to interpret `filenames` as PISA resource</span>
+<span class="sd">        locations, then call overridden `read` method. Also, IOError fails</span>
+<span class="sd">        here, whereas it is ignored in RawConfigParser.</span>
+
+<span class="sd">        For further help on this method and its arguments, see</span>
+<span class="sd">        :method:`~backports.configparser.configparser.read`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">filenames</span><span class="p">]</span>
+        <span class="n">resource_locations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+            <span class="n">resource_location</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">isfile</span><span class="p">(</span><span class="n">resource_location</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot; is not a file or could not be located&#39;</span> <span class="o">%</span> <span class="n">filename</span>
+                <span class="p">)</span>
+            <span class="n">resource_locations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resource_location</span><span class="p">)</span>
+
+        <span class="n">filenames</span> <span class="o">=</span> <span class="n">resource_locations</span>
+
+        <span class="c1"># NOTE: From here on, most of the `read` method is copied, but</span>
+        <span class="c1"># ignoring IOError exceptions is removed here. Python copyrights apply.</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">filenames</span><span class="p">]</span>
+        <span class="n">read_ok</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="n">read_ok</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">read_ok</span></div>
+
+
+    <span class="c1"># NOTE: the `_read` method is copy-pasted (then modified slightly) from</span>
+    <span class="c1"># Python&#39;s backports.configparser (version 3.5.0), and so any copyright</span>
+    <span class="c1"># notices at the top of this file might need modification to be compatible</span>
+    <span class="c1"># with copyrights on that module.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Also, diff this function with future releases in case something needs</span>
+    <span class="c1"># modification.</span>
+
+    <span class="c1"># pylint: disable=E,W,C,R</span>
+    <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fpname</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a sectioned configuration file.</span>
+
+<span class="sd">        Each section in a configuration file contains a header, indicated by</span>
+<span class="sd">        a name in square brackets (`[]&#39;), plus key/value options, indicated by</span>
+<span class="sd">        `name&#39; and `value&#39; delimited with a specific substring (`=&#39; or `:&#39; by</span>
+<span class="sd">        default).</span>
+
+<span class="sd">        Values can span multiple lines, as long as they are indented deeper</span>
+<span class="sd">        than the first line of the value. Depending on the parser&#39;s mode, blank</span>
+<span class="sd">        lines may be treated as parts of multiline values or ignored.</span>
+
+<span class="sd">        Configuration files may include comments, prefixed by specific</span>
+<span class="sd">        characters (`#&#39; and `;&#39; by default). Comments may appear on their own</span>
+<span class="sd">        in an otherwise empty line or may be entered in lines holding values or</span>
+<span class="sd">        section names.</span>
+
+<span class="sd">        This implementation is extended from the original to also accept</span>
+
+<span class="sd">        .. code:: ini</span>
+
+<span class="sd">          #include &lt;file or pisa_resource&gt;</span>
+
+<span class="sd">        or</span>
+
+<span class="sd">        .. code:: ini</span>
+
+<span class="sd">          #include &lt;file or pisa_resource&gt; as &lt;section_name&gt;</span>
+
+<span class="sd">        syntax anywhere in the file, which switches (via</span>
+<span class="sd">        :class:`MutableMultiFileIterator`) to the new file as if it were</span>
+<span class="sd">        in-lined within the original file. The latter syntax also prepends a</span>
+<span class="sd">        section header</span>
+
+<span class="sd">        .. code:: ini</span>
+
+<span class="sd">            [section_name]</span>
+
+<span class="sd">        before the text of the specified file or pisa_resource.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">elements_added</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">cursect</span> <span class="o">=</span> <span class="kc">None</span>                        <span class="c1"># None, or a dictionary</span>
+        <span class="n">sectname</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">optname</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">lineno</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">indent_level</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="kc">None</span>                              <span class="c1"># None, or an exception</span>
+
+        <span class="n">file_iter</span> <span class="o">=</span> <span class="n">MutableMultiFileIterator</span><span class="p">(</span><span class="n">fp</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span> <span class="n">fpname</span><span class="o">=</span><span class="n">fpname</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_iterators</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_iter</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">file_iter</span><span class="p">:</span>
+            <span class="n">fpname</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;fpname&#39;</span><span class="p">]</span>
+            <span class="n">lineno</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;lineno&#39;</span><span class="p">]</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;line&#39;</span><span class="p">]</span>
+
+            <span class="n">comment_start</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
+            <span class="c1"># strip inline comments</span>
+            <span class="n">inline_prefixes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inline_comment_prefixes</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">comment_start</span> <span class="o">==</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span> <span class="ow">and</span> <span class="n">inline_prefixes</span><span class="p">:</span>
+                <span class="n">next_prefixes</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">inline_prefixes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">index</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">next_prefixes</span><span class="p">[</span><span class="n">prefix</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+                    <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">index</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[</span><span class="n">index</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">isspace</span><span class="p">()):</span>
+                        <span class="n">comment_start</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">comment_start</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+                <span class="n">inline_prefixes</span> <span class="o">=</span> <span class="n">next_prefixes</span>
+            <span class="c1"># parse #include statement</span>
+            <span class="n">include_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_include_info</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">include_info</span><span class="p">:</span>
+                <span class="n">file_iter</span><span class="o">.</span><span class="n">switch_to_file</span><span class="p">(</span><span class="n">fpname</span><span class="o">=</span><span class="n">include_info</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">include_info</span><span class="p">[</span><span class="s1">&#39;as&#39;</span><span class="p">]:</span>
+                    <span class="n">as_header</span> <span class="o">=</span> <span class="s1">&#39;[</span><span class="si">%s</span><span class="s1">]</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">include_info</span><span class="p">[</span><span class="s1">&#39;as&#39;</span><span class="p">]</span>
+                    <span class="n">file_iter</span><span class="o">.</span><span class="n">switch_to_file</span><span class="p">(</span>
+                        <span class="c1"># Aaron Fienberg</span>
+                        <span class="c1"># commented out as part of python3 update</span>
+                        <span class="c1"># fp=StringIO(as_header.decode(&#39;utf-8&#39;))</span>
+                        <span class="n">fp</span><span class="o">=</span><span class="n">StringIO</span><span class="p">(</span><span class="n">as_header</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="c1"># strip full line comments</span>
+            <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comment_prefixes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+                    <span class="n">comment_start</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="n">comment_start</span> <span class="o">==</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span><span class="p">:</span>
+                <span class="n">comment_start</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">comment_start</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_empty_lines_in_values</span><span class="p">:</span>
+                    <span class="c1"># add empty line to the value, but only if there was no</span>
+                    <span class="c1"># comment on the line</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">comment_start</span> <span class="ow">is</span> <span class="kc">None</span>
+                            <span class="ow">and</span> <span class="n">cursect</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                            <span class="ow">and</span> <span class="n">optname</span>
+                            <span class="ow">and</span> <span class="n">cursect</span><span class="p">[</span><span class="n">optname</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+                        <span class="n">cursect</span><span class="p">[</span><span class="n">optname</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="c1"># newlines added at join</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># empty line marks end of value</span>
+                    <span class="n">indent_level</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
+                <span class="k">continue</span>
+            <span class="c1"># continuation line?</span>
+            <span class="n">first_nonspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NONSPACECRE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="n">cur_indent_level</span> <span class="o">=</span> <span class="n">first_nonspace</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">if</span> <span class="n">first_nonspace</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">cursect</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                    <span class="ow">and</span> <span class="n">optname</span>
+                    <span class="ow">and</span> <span class="n">cur_indent_level</span> <span class="o">&gt;</span> <span class="n">indent_level</span><span class="p">):</span>
+                <span class="n">cursect</span><span class="p">[</span><span class="n">optname</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="c1"># a section header or option header?</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">indent_level</span> <span class="o">=</span> <span class="n">cur_indent_level</span>
+                <span class="c1"># is it a section header?</span>
+                <span class="n">mo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SECTCRE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">mo</span><span class="p">:</span>
+                    <span class="n">sectname</span> <span class="o">=</span> <span class="n">mo</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;header&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">sectname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strict</span> <span class="ow">and</span> <span class="n">sectname</span> <span class="ow">in</span> <span class="n">elements_added</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="n">DuplicateSectionError</span><span class="p">(</span><span class="n">sectname</span><span class="p">,</span> <span class="n">fpname</span><span class="p">,</span>
+                                                        <span class="n">lineno</span><span class="p">)</span>
+                        <span class="n">cursect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="p">[</span><span class="n">sectname</span><span class="p">]</span>
+                        <span class="n">elements_added</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sectname</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">sectname</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_section</span><span class="p">:</span>
+                        <span class="n">cursect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_defaults</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cursect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_sections</span><span class="p">[</span><span class="n">sectname</span><span class="p">]</span> <span class="o">=</span> <span class="n">cursect</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_proxies</span><span class="p">[</span><span class="n">sectname</span><span class="p">]</span> <span class="o">=</span> <span class="n">SectionProxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sectname</span><span class="p">)</span>
+                        <span class="n">elements_added</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sectname</span><span class="p">)</span>
+                    <span class="c1"># So sections can&#39;t start with a continuation line</span>
+                    <span class="n">optname</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="c1"># no section header in the file?</span>
+                <span class="k">elif</span> <span class="n">cursect</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">MissingSectionHeaderError</span><span class="p">(</span><span class="n">fpname</span><span class="p">,</span> <span class="n">lineno</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                <span class="c1"># an option line?</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optcre</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">mo</span><span class="p">:</span>
+                        <span class="n">optname</span><span class="p">,</span> <span class="n">vi</span><span class="p">,</span> <span class="n">optval</span> <span class="o">=</span> <span class="n">mo</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;option&#39;</span><span class="p">,</span> <span class="s1">&#39;vi&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span> <span class="c1"># pylint: disable=unused-variable</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">optname</span><span class="p">:</span>
+                            <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_error</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">fpname</span><span class="p">,</span> <span class="n">lineno</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                        <span class="n">optname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optionxform</span><span class="p">(</span><span class="n">optname</span><span class="o">.</span><span class="n">rstrip</span><span class="p">())</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_strict</span>
+                                <span class="ow">and</span> <span class="p">(</span><span class="n">sectname</span><span class="p">,</span> <span class="n">optname</span><span class="p">)</span> <span class="ow">in</span> <span class="n">elements_added</span><span class="p">):</span>
+                            <span class="k">raise</span> <span class="n">DuplicateOptionError</span><span class="p">(</span><span class="n">sectname</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span>
+                                                       <span class="n">fpname</span><span class="p">,</span> <span class="n">lineno</span><span class="p">)</span>
+                        <span class="n">elements_added</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">sectname</span><span class="p">,</span> <span class="n">optname</span><span class="p">))</span>
+                        <span class="c1"># This check is fine because the OPTCRE cannot</span>
+                        <span class="c1"># match if it would set optval to None</span>
+                        <span class="k">if</span> <span class="n">optval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">optval</span> <span class="o">=</span> <span class="n">optval</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                            <span class="n">cursect</span><span class="p">[</span><span class="n">optname</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">optval</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c1"># valueless option handling</span>
+                            <span class="n">cursect</span><span class="p">[</span><span class="n">optname</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># a non-fatal parsing error occurred. set up the</span>
+                        <span class="c1"># exception but keep going. the exception will be</span>
+                        <span class="c1"># raised at the end of the file and will contain a</span>
+                        <span class="c1"># list of all bogus lines</span>
+                        <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_error</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">fpname</span><span class="p">,</span> <span class="n">lineno</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+        <span class="c1"># if any parsing errors occurred, raise an exception</span>
+        <span class="k">if</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_join_multiline_values</span><span class="p">()</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">test_parse_pipeline_config</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for function `parse_pipeline_config`&quot;&quot;&quot;</span>
+    <span class="c1"># Load via PISAConfigParser</span>
+    <span class="n">config0</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="p">()</span>
+    <span class="n">config0</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">config0</span> <span class="o">=</span> <span class="n">parse_pipeline_config</span><span class="p">(</span><span class="n">config0</span><span class="p">)</span>
+
+    <span class="c1"># Load directly</span>
+    <span class="n">config1</span> <span class="o">=</span> <span class="n">parse_pipeline_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Keys and values found in config:&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">config1</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">vals</span> <span class="o">==</span> <span class="n">config0</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">test_MutableMultiFileIterator</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for class `MutableMultiFileIterator`&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">shutil</span>
+    <span class="kn">import</span> <span class="nn">tempfile</span>
+
+    <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]</span>
+    <span class="n">file_len</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="n">reference_lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="c1"># start in file a</span>
+        <span class="s1">&#39;a0&#39;</span><span class="p">,</span> <span class="s1">&#39;a1&#39;</span><span class="p">,</span>
+        <span class="c1"># switch to file b after second line of a</span>
+        <span class="s1">&#39;b0&#39;</span><span class="p">,</span> <span class="s1">&#39;b1&#39;</span><span class="p">,</span>
+        <span class="c1"># switch to file c after second line of b</span>
+        <span class="s1">&#39;c0&#39;</span><span class="p">,</span> <span class="s1">&#39;c1&#39;</span><span class="p">,</span> <span class="s1">&#39;c2&#39;</span><span class="p">,</span> <span class="s1">&#39;c3&#39;</span><span class="p">,</span>
+        <span class="c1"># switch back to b after exhausting c</span>
+        <span class="s1">&#39;b2&#39;</span><span class="p">,</span> <span class="s1">&#39;b3&#39;</span><span class="p">,</span>
+        <span class="c1"># switch back to a after exhausting b</span>
+        <span class="s1">&#39;a2&#39;</span><span class="p">,</span> <span class="s1">&#39;a3&#39;</span>
+    <span class="p">]</span>
+
+    <span class="n">tempdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Create test files</span>
+        <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">join</span><span class="p">(</span><span class="n">tempdir</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span> <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">prefixes</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prefixes</span><span class="p">,</span> <span class="n">paths</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">file_len</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s%d</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">actual_lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">file_iter</span> <span class="o">=</span> <span class="n">MutableMultiFileIterator</span><span class="p">(</span><span class="n">fp</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span> <span class="n">fpname</span><span class="o">=</span><span class="n">paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="n">remaining_paths</span> <span class="o">=</span> <span class="n">paths</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+            <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">file_iter</span><span class="p">:</span>
+                <span class="n">actual_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;line&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">record</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;line&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">remaining_paths</span><span class="p">:</span>
+                        <span class="n">path</span> <span class="o">=</span> <span class="n">remaining_paths</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="n">file_iter</span><span class="o">.</span><span class="n">switch_to_file</span><span class="p">(</span><span class="n">fpname</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_iter</span><span class="o">.</span><span class="n">location</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">):</span>
+                            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">tempdir</span><span class="p">)</span>
+        <span class="k">raise</span>
+
+    <span class="k">if</span> <span class="n">actual_lines</span> <span class="o">!=</span> <span class="n">reference_lines</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; FAIL : test_MutableMultiFileIterator &gt;&gt;&#39;</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_MutableMultiFileIterator &gt;&gt;&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command line arguments&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Print contents of a parsed config file&#39;</span><span class="p">,</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;pipeline&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;CONFIGFILE&#39;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Pipeline config file to parse&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-v&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">Levels</span><span class="o">.</span><span class="n">WARN</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Set verbosity level&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">())</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">kwargs</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">test_parse_pipeline_config</span><span class="p">(</span><span class="o">**</span><span class="n">parse_args</span><span class="p">())</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

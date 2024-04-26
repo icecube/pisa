@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.core.bin_indexing &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.core.bin_indexing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.core.bin_indexing</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions to retrieve the bin index for a 1- to 3-dimensional sample.</span>
+
+<span class="sd">Functions were adapted from translation.py</span>
+
+
+<span class="sd">Notes</span>
+<span class="sd">-----</span>
+<span class="sd">The binning convention in PISA (from numpy.histogramdd) is that the lower edge</span>
+<span class="sd">is inclusive and upper edge is exclusive for a given bin, except for the</span>
+<span class="sd">upper-most bin whose upper edge is also inclusive. Visually, for 1D:</span>
+
+<span class="sd">    [ bin 0 ) [ bin 1 ) ... [ bin num_bins - 1 ]</span>
+
+<span class="sd">First bin is index = 0 and last bin is index = (num_bins - 1)</span>
+
+<span class="sd">* Values below the lowermost-edge of any dimension&#39;s binning return index = -1</span>
+<span class="sd">* NaN values return index = -1</span>
+<span class="sd">* Otherwise, values above the uppermost-edge of any dimension&#39;s binning return</span>
+<span class="sd">  index = num_bins</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.core.translation</span> <span class="kn">import</span> <span class="n">find_index</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;lookup_indices&quot;</span><span class="p">,</span> <span class="s2">&quot;test_lookup_indices&quot;</span><span class="p">]</span>
+
+
+<span class="n">FX</span> <span class="o">=</span> <span class="s2">&quot;f4&quot;</span> <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span> <span class="k">else</span> <span class="s2">&quot;f8&quot;</span>
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], i8[:])&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;(), (j) -&gt; ()&quot;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_indices_vectorized_1d</span><span class="p">(</span><span class="n">sample_x</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lookup bin indices for sample_x values, where binning is defined by</span>
+<span class="sd">    `bin_edges_x`.&quot;&quot;&quot;</span>
+    <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_x</span><span class="p">)</span>
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], i8[:])&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;(), (), (a), (b) -&gt; ()&quot;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_indices_vectorized_2d</span><span class="p">(</span><span class="n">sample_x</span><span class="p">,</span> <span class="n">sample_y</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Same as above, except we get back the index&quot;&quot;&quot;</span>
+    <span class="n">idx_x</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_x</span><span class="p">)</span>
+    <span class="n">idx_y</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_y</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_y</span><span class="p">)</span>
+
+    <span class="n">n_x_bins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">n_y_bins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_y</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">n_bins</span> <span class="o">=</span> <span class="n">n_x_bins</span> <span class="o">*</span> <span class="n">n_y_bins</span>
+
+    <span class="k">if</span> <span class="n">idx_x</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">idx_y</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># any dim underflowed</span>
+        <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">idx_x</span> <span class="o">==</span> <span class="n">n_x_bins</span> <span class="ow">or</span> <span class="n">idx_y</span> <span class="o">==</span> <span class="n">n_y_bins</span><span class="p">:</span>
+        <span class="c1"># any dim overflowed</span>
+        <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_bins</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx_x</span> <span class="o">*</span> <span class="n">n_y_bins</span> <span class="o">+</span> <span class="n">idx_y</span>
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], i8[:])&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;(), (), (), (a), (b), (c) -&gt; ()&quot;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">lookup_indices_vectorized_3d</span><span class="p">(</span>
+    <span class="n">sample_x</span><span class="p">,</span> <span class="n">sample_y</span><span class="p">,</span> <span class="n">sample_z</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">,</span> <span class="n">bin_edges_z</span><span class="p">,</span> <span class="n">out</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized gufunc to perform the lookup&quot;&quot;&quot;</span>
+    <span class="n">idx_x</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_x</span><span class="p">)</span>
+    <span class="n">idx_y</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_y</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_y</span><span class="p">)</span>
+    <span class="n">idx_z</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_z</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_z</span><span class="p">)</span>
+
+    <span class="n">n_x_bins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">n_y_bins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_y</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">n_z_bins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_edges_z</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">n_bins</span> <span class="o">=</span> <span class="n">n_x_bins</span> <span class="o">*</span> <span class="n">n_y_bins</span> <span class="o">*</span> <span class="n">n_z_bins</span>
+
+    <span class="k">if</span> <span class="n">idx_x</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">idx_y</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">idx_z</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># any dim underflowed</span>
+        <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">idx_x</span> <span class="o">==</span> <span class="n">n_x_bins</span> <span class="ow">or</span> <span class="n">idx_y</span> <span class="o">==</span> <span class="n">n_y_bins</span> <span class="ow">or</span> <span class="n">idx_z</span> <span class="o">==</span> <span class="n">n_z_bins</span><span class="p">:</span>
+        <span class="c1"># any dim overflowed</span>
+        <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_bins</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">idx_x</span> <span class="o">*</span> <span class="n">n_y_bins</span> <span class="o">+</span> <span class="n">idx_y</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_z_bins</span> <span class="o">+</span> <span class="n">idx_z</span>
+
+
+<div class="viewcode-block" id="lookup_indices">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.bin_indexing.lookup_indices">[docs]</a>
+<span class="k">def</span> <span class="nf">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lookup (flattened) bin index for sample points.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample : length-M_dimensions sequence of length-N_events arrays</span>
+<span class="sd">        All smart arrays must have the same lengths; corresponding elements of</span>
+<span class="sd">        the arrays are the coordinates of an event in the dimensions each array</span>
+<span class="sd">        represents.</span>
+
+<span class="sd">    binning : pisa.core.binning.MultiDimBinning or convertible thereto</span>
+<span class="sd">        `binning` is passed to instantiate ``MultiDimBinning``, so e.g., a</span>
+<span class="sd">        pisa.core.binning.OneDimBinning is valid to pass as `binning`</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    indices : length-N_events arrays</span>
+<span class="sd">        One for each event the index of the histogram in which it falls into</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    this method works for 1d, 2d and 3d histogram only</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert non-MultiDimBinning objects into MultiDimBinning if possible;</span>
+    <span class="c1"># if this fails, an error will result, as it should</span>
+    <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="o">!=</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;`binning` has </span><span class="si">{</span><span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span><span class="si">}</span><span class="s2"> dimension(s), but `sample`&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;contains </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="si">}</span><span class="s2"> arrays (so represents </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; dimensions)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">lookup_funcs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">lookup_indices_vectorized_1d</span><span class="p">,</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">lookup_indices_vectorized_2d</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="n">lookup_indices_vectorized_3d</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lookup_funcs</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;binning must have num_dims in </span><span class="si">{}</span><span class="s2">; got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">sorted</span><span class="p">(</span><span class="n">lookup_funcs</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">lookup_func</span> <span class="o">=</span> <span class="n">lookup_funcs</span><span class="p">[</span><span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span><span class="p">]</span>
+
+    <span class="n">lookup_func_args</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">sample</span><span class="p">]</span>
+        <span class="o">+</span> <span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">edge_magnitudes</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;lookup_func_args = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lookup_func_args</span><span class="p">))</span>
+
+    <span class="c1"># Create an array to store the results</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+    <span class="c1"># Perform the lookup</span>
+    <span class="n">lookup_func</span><span class="p">(</span><span class="o">*</span><span class="n">lookup_func_args</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">indices</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">indices</span></div>
+
+
+
+<div class="viewcode-block" id="test_lookup_indices">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.bin_indexing.test_lookup_indices">[docs]</a>
+<span class="k">def</span> <span class="nf">test_lookup_indices</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `lookup_indices` function&quot;&quot;&quot;</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Test a variety of points.</span>
+    <span class="c1"># Points falling exactly on the bound are included in the</span>
+    <span class="c1">#</span>
+    <span class="n">n_evts</span> <span class="o">=</span> <span class="mi">100</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">6.5</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">6.5</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_evts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="n">binning_x</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">])</span>
+    <span class="n">binning_y</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+    <span class="n">binning_z</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+    <span class="n">binning_1d</span> <span class="o">=</span> <span class="n">binning_x</span>
+    <span class="n">binning_2d</span> <span class="o">=</span> <span class="n">binning_x</span> <span class="o">*</span> <span class="n">binning_y</span>
+    <span class="n">binning_3d</span> <span class="o">=</span> <span class="n">binning_x</span> <span class="o">*</span> <span class="n">binning_y</span> <span class="o">*</span> <span class="n">binning_z</span>
+
+    <span class="c1"># 1D case: check that each event falls into its predicted bin</span>
+    <span class="c1">#</span>
+    <span class="c1"># All values higher or equal to the last bin edges are assigned an index of zero</span>
+    <span class="c1">#</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;TEST 1D:&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Total number of bins: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;array in 1D: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Binning: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">binning_1d</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">([</span><span class="n">x</span><span class="p">],</span> <span class="n">binning_1d</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;indices of each array element: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;*********************************&quot;</span><span class="p">)</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">indices</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s2">&quot;test=</span><span class="si">{}</span><span class="s2"> != ref=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+
+    <span class="c1"># 2D case:</span>
+    <span class="c1">#</span>
+    <span class="c1"># The binning edges are flattened as follows:</span>
+    <span class="c1">#   [(x=0, y=0), (x=0, y=1), (x=1, y=0), ...]</span>
+    <span class="c1">#</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;TEST 2D:&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Total number of bins: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;array in 2D: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Binning: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">binning_2d</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">))</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span> <span class="n">binning_2d</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;indices of each array element: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;*********************************&quot;</span><span class="p">)</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">indices</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">26</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s2">&quot;test=</span><span class="si">{}</span><span class="s2"> != ref=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+
+    <span class="c1"># 3D case:</span>
+    <span class="c1">#</span>
+    <span class="c1"># the binning edges are flattened as follows:</span>
+    <span class="c1">#   [(x=0, y=0, z=0), (x=0, y=0, z=1), (x=0, y=1, z=0)...]</span>
+    <span class="c1">#</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;TEST 3D:&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Total number of bins: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;array in 3D: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Binning: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">binning_3d</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">))</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">],</span> <span class="n">binning_3d</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;indices of each array element: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;*********************************&quot;</span><span class="p">)</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">indices</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">51</span><span class="p">,</span> <span class="mi">54</span><span class="p">,</span> <span class="mi">56</span><span class="p">,</span> <span class="mi">52</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s2">&quot;test=</span><span class="si">{}</span><span class="s2"> != ref=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;&lt; PASS : test_lookup_indices &gt;&gt;&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_lookup_indices</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

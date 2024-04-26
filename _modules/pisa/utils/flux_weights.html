@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.flux_weights &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.flux_weights</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.flux_weights</h1><div class="highlight"><pre>
+<span></span><span class="ch">#! /usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A set of functions for calculating flux weights given an array of energy and</span>
+<span class="sd">cos(zenith) values based on the Honda atmospheric flux tables. A lot of this</span>
+<span class="sd">functionality will be copied from honda.py but since I don&#39;t want to initialise</span>
+<span class="sd">this as a stage it makes sense to copy it in to here so somebody can&#39;t</span>
+<span class="sd">accidentally do the wrong thing with that script.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="k">as</span> <span class="nn">interpolate</span>
+
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">open_resource</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;load_2d_honda_table&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;load_2d_bartol_table&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;load_2d_table&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;calculate_2d_flux_weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;load_3d_honda_table&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;load_3d_table&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;calculate_3d_flux_weights&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;S. Wren&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> you may not use this file except in compliance with the License.</span>
+<span class="s2"> You may obtain a copy of the License at</span>
+
+<span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s2"> See the License for the specific language governing permissions and</span>
+<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+
+
+<span class="n">PRIMARIES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;numu&quot;</span><span class="p">,</span> <span class="s2">&quot;numubar&quot;</span><span class="p">,</span> <span class="s2">&quot;nue&quot;</span><span class="p">,</span> <span class="s2">&quot;nuebar&quot;</span><span class="p">]</span>
+<span class="n">T_MODE_PRIMARIES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;numu&quot;</span><span class="p">,</span> <span class="s2">&quot;numubar&quot;</span><span class="p">,</span> <span class="s2">&quot;nue&quot;</span><span class="p">,</span> <span class="s2">&quot;nuebar&quot;</span><span class="p">,</span> <span class="s2">&quot;nutau&quot;</span><span class="p">,</span> <span class="s2">&quot;nutaubar&quot;</span><span class="p">]</span>
+<span class="n">TEXPRIMARIES</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s2">&quot;$\nu_{\mu}$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\bar{\nu}_{\mu}$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\nu_</span><span class="si">{e}</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\bar{\nu}_</span><span class="si">{e}</span><span class="s2">$&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="load_2d_honda_table">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_2d_honda_table">[docs]</a>
+<span class="k">def</span> <span class="nf">load_2d_honda_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hg_taumode</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Added &quot;hg_taumode&quot; to load in hillas gaisser h3a tables made with tau neutrino contributions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading atmospheric flux table </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flux_file</span><span class="p">)</span>
+
+    <span class="c1"># columns in Honda files are in the same order</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]</span>
+    <span class="n">cols</span> <span class="o">+=</span> <span class="n">T_MODE_PRIMARIES</span> <span class="k">if</span> <span class="n">hg_taumode</span> <span class="k">else</span> <span class="n">PRIMARIES</span>
+
+    <span class="c1"># Load the data table</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">open_resource</span><span class="p">(</span><span class="n">flux_file</span><span class="p">),</span> <span class="n">usecols</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cols</span><span class="p">))))</span>
+    <span class="k">if</span> <span class="n">hg_taumode</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">all</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">table</span><span class="p">)[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">table</span><span class="p">))])</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">table</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">table</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">flux_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">cols</span><span class="p">,</span> <span class="n">table</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">flux_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># There are 20 lines per zenith range</span>
+        <span class="n">flux_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">flux_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="mi">100</span> <span class="k">if</span> <span class="n">hg_taumode</span> <span class="k">else</span> <span class="mi">20</span><span class="p">))</span>
+
+    <span class="c1"># Set the zenith and energy range as they are in the tables</span>
+    <span class="c1"># The energy may change, but the zenith should always be</span>
+    <span class="c1"># 20 bins, full sky.</span>
+    <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">hg_taumode</span><span class="p">:</span>
+        <span class="n">_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+        <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">_edges</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+
+    <span class="c1"># Now get a spline representation of the flux table.</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Make spline representation of flux&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Doing this integral-preserving.&quot;</span><span class="p">)</span>
+
+    <span class="n">spline_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Do integral-preserving method as in IceCube&#39;s NuFlux</span>
+    <span class="c1"># This one will be based purely on SciPy rather than ROOT</span>
+    <span class="c1"># Stored splines will be 1D in integrated flux over energy</span>
+    <span class="n">int_flux_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Energy and CosZenith bins needed for integral-preserving</span>
+    <span class="c1"># method must be the edges of those of the normal tables</span>
+    <span class="k">if</span> <span class="n">hg_taumode</span><span class="p">:</span>
+        <span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;logenergy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+        <span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;logenergy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.025</span><span class="p">,</span> <span class="mf">4.025</span><span class="p">,</span> <span class="mi">102</span><span class="p">)</span>
+        <span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">nutype</span> <span class="ow">in</span> <span class="n">T_MODE_PRIMARIES</span> <span class="k">if</span> <span class="n">hg_taumode</span> <span class="k">else</span> <span class="n">PRIMARIES</span><span class="p">:</span>
+        <span class="c1"># spline_dict now wants to be a set of splines for</span>
+        <span class="c1"># every table cosZenith value.</span>
+        <span class="n">splines</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">cz_iter</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">energyfluxlist</span> <span class="ow">in</span> <span class="n">flux_dict</span><span class="p">[</span><span class="n">nutype</span><span class="p">]:</span>
+            <span class="n">int_flux</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">tot_flux</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">int_flux</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tot_flux</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">energyfluxval</span><span class="p">,</span> <span class="n">energyval</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">energyfluxlist</span><span class="p">,</span> <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]):</span>
+                <span class="c1"># Spline works best if you integrate flux * energy</span>
+                <span class="n">tot_flux</span> <span class="o">+=</span> <span class="n">energyfluxval</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">energyval</span><span class="p">,</span> <span class="n">enpow</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.05</span>
+                <span class="n">int_flux</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tot_flux</span><span class="p">)</span>
+
+            <span class="n">spline</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splrep</span><span class="p">(</span><span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;logenergy&quot;</span><span class="p">],</span> <span class="n">int_flux</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">cz_value</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mf">1.05</span> <span class="o">-</span> <span class="n">cz_iter</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">)</span>
+            <span class="n">splines</span><span class="p">[</span><span class="n">cz_value</span><span class="p">]</span> <span class="o">=</span> <span class="n">spline</span>
+            <span class="n">cz_iter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">spline_dict</span><span class="p">[</span><span class="n">nutype</span><span class="p">]</span> <span class="o">=</span> <span class="n">splines</span>
+
+    <span class="k">for</span> <span class="n">prim</span> <span class="ow">in</span> <span class="n">T_MODE_PRIMARIES</span> <span class="k">if</span> <span class="n">hg_taumode</span> <span class="k">else</span> <span class="n">PRIMARIES</span><span class="p">:</span>
+        <span class="n">flux_dict</span><span class="p">[</span><span class="n">prim</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux_dict</span><span class="p">[</span><span class="n">prim</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">return_table</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">spline_dict</span><span class="p">,</span> <span class="n">flux_dict</span>
+
+    <span class="k">return</span> <span class="n">spline_dict</span></div>
+
+
+
+<div class="viewcode-block" id="load_2d_bartol_table">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_2d_bartol_table">[docs]</a>
+<span class="k">def</span> <span class="nf">load_2d_bartol_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading atmospheric flux table </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flux_file</span><span class="p">)</span>
+
+    <span class="c1"># Bartol tables have been modified to look like Honda tables</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">PRIMARIES</span>
+
+    <span class="c1"># Load the data table</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">open_resource</span><span class="p">(</span><span class="n">flux_file</span><span class="p">),</span> <span class="n">usecols</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cols</span><span class="p">))))</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">table</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">flux_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">cols</span><span class="p">,</span> <span class="n">table</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">flux_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># There are 20 lines per zenith range</span>
+        <span class="n">flux_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">flux_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="mi">20</span><span class="p">))</span>
+
+    <span class="c1"># Set the zenith and energy range as they are in the tables</span>
+    <span class="c1"># The energy may change, but the zenith should always be</span>
+    <span class="c1"># 20 bins, full sky.</span>
+    <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+
+    <span class="c1"># Now get a spline representation of the flux table.</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Make spline representation of flux&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Doing this integral-preserving.&quot;</span><span class="p">)</span>
+
+    <span class="n">spline_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Do integral-preserving method as in IceCube&#39;s NuFlux</span>
+    <span class="c1"># This one will be based purely on SciPy rather than ROOT</span>
+    <span class="c1"># Stored splines will be 1D in integrated flux over energy</span>
+    <span class="n">int_flux_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Energy and CosZenith bins needed for integral-preserving</span>
+    <span class="c1"># method must be the edges of those of the normal tables</span>
+    <span class="n">low_log_energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">41</span><span class="p">)</span>
+    <span class="n">high_log_energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+    <span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;logenergy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">low_log_energy</span><span class="p">,</span> <span class="n">high_log_energy</span><span class="p">])</span>
+    <span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">nutype</span> <span class="ow">in</span> <span class="n">PRIMARIES</span><span class="p">:</span>
+        <span class="c1"># spline_dict now wants to be a set of splines for</span>
+        <span class="c1"># every table cosZenith value.</span>
+        <span class="n">splines</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">cz_iter</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">energyfluxlist</span> <span class="ow">in</span> <span class="n">flux_dict</span><span class="p">[</span><span class="n">nutype</span><span class="p">]:</span>
+            <span class="n">int_flux</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">tot_flux</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">int_flux</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tot_flux</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">energyfluxval</span><span class="p">,</span> <span class="n">energyval</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">energyfluxlist</span><span class="p">,</span> <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]):</span>
+                <span class="c1"># Spline works best if you integrate flux * energy</span>
+                <span class="k">if</span> <span class="n">energyval</span> <span class="o">&lt;</span> <span class="mf">10.0</span><span class="p">:</span>
+                    <span class="n">tot_flux</span> <span class="o">+=</span> <span class="n">energyfluxval</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">energyval</span><span class="p">,</span> <span class="n">enpow</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.05</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tot_flux</span> <span class="o">+=</span> <span class="n">energyfluxval</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">energyval</span><span class="p">,</span> <span class="n">enpow</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+                <span class="n">int_flux</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tot_flux</span><span class="p">)</span>
+
+            <span class="n">spline</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splrep</span><span class="p">(</span><span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;logenergy&quot;</span><span class="p">],</span> <span class="n">int_flux</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">cz_value</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mf">1.05</span> <span class="o">-</span> <span class="n">cz_iter</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">)</span>
+            <span class="n">splines</span><span class="p">[</span><span class="n">cz_value</span><span class="p">]</span> <span class="o">=</span> <span class="n">spline</span>
+            <span class="n">cz_iter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">spline_dict</span><span class="p">[</span><span class="n">nutype</span><span class="p">]</span> <span class="o">=</span> <span class="n">splines</span>
+
+    <span class="k">for</span> <span class="n">prim</span> <span class="ow">in</span> <span class="n">PRIMARIES</span><span class="p">:</span>
+        <span class="n">flux_dict</span><span class="p">[</span><span class="n">prim</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux_dict</span><span class="p">[</span><span class="n">prim</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">return_table</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">spline_dict</span><span class="p">,</span> <span class="n">flux_dict</span>
+
+    <span class="k">return</span> <span class="n">spline_dict</span></div>
+
+
+
+<div class="viewcode-block" id="load_2d_table">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_2d_table">[docs]</a>
+<span class="k">def</span> <span class="nf">load_2d_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manipulate 2 dimensional flux tables.</span>
+
+<span class="sd">    2D is expected to mean energy and cosZenith, where azimuth is averaged</span>
+<span class="sd">    over (before being stored in the table) and the zenith range should</span>
+<span class="sd">    include both hemispheres.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    flux_file : string</span>
+<span class="sd">        The location of the flux file you want to spline. Should be a honda</span>
+<span class="sd">        azimuth-averaged file.</span>
+<span class="sd">    enpow : integer</span>
+<span class="sd">        The power to which the energy will be raised in the construction of the</span>
+<span class="sd">        splines. If you don&#39;t know what this means, leave it as 1.</span>
+<span class="sd">    return_table : boolean</span>
+<span class="sd">        Flag to true if you want the function to also return a dictionary</span>
+<span class="sd">        of the underlying values from the tables. Useful for comparisons.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enpow</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Energy power must be an integer&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_table</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;return_table must be a boolean&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Flux file name must be a string&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;aa&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flux_file</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Azimuth-averaged tables are expected&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;honda&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flux_file</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;hillas&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flux_file</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;bartol&quot;</span> <span class="ow">in</span> <span class="n">flux_file</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">return_table</span><span class="p">:</span>
+                <span class="n">spline_dict</span><span class="p">,</span> <span class="n">flux_dict</span> <span class="o">=</span> <span class="n">load_2d_bartol_table</span><span class="p">(</span>
+                    <span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="n">enpow</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">spline_dict</span> <span class="o">=</span> <span class="n">load_2d_bartol_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="n">enpow</span><span class="p">)</span>
+            <span class="n">spline_dict</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;bartol&quot;</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Flux file must be from the Honda, Hillas, or &quot;</span> <span class="s2">&quot;Bartol groups&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">return_table</span><span class="p">:</span>
+            <span class="n">spline_dict</span><span class="p">,</span> <span class="n">flux_dict</span> <span class="o">=</span> <span class="n">load_2d_honda_table</span><span class="p">(</span>
+                <span class="n">flux_file</span><span class="p">,</span>
+                <span class="n">enpow</span><span class="o">=</span><span class="n">enpow</span><span class="p">,</span>
+                <span class="n">return_table</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">hg_taumode</span><span class="o">=</span><span class="s2">&quot;hillas&quot;</span> <span class="ow">in</span> <span class="n">flux_file</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">spline_dict</span> <span class="o">=</span> <span class="n">load_2d_honda_table</span><span class="p">(</span>
+                <span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="n">enpow</span><span class="p">,</span> <span class="n">hg_taumode</span><span class="o">=</span><span class="s2">&quot;hillas&quot;</span> <span class="ow">in</span> <span class="n">flux_file</span>
+            <span class="p">)</span>
+        <span class="n">spline_dict</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;hillas&quot;</span> <span class="k">if</span> <span class="s2">&quot;hillas&quot;</span> <span class="ow">in</span> <span class="n">flux_file</span> <span class="k">else</span> <span class="s2">&quot;honda&quot;</span>
+
+    <span class="k">if</span> <span class="n">return_table</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">spline_dict</span><span class="p">,</span> <span class="n">flux_dict</span>
+
+    <span class="k">return</span> <span class="n">spline_dict</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_2d_flux_weights">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.calculate_2d_flux_weights">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_2d_flux_weights</span><span class="p">(</span>
+    <span class="n">true_energies</span><span class="p">,</span> <span class="n">true_coszens</span><span class="p">,</span> <span class="n">en_splines</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate flux weights for given array of energy and cos(zenith).</span>
+<span class="sd">    Arrays of true energy and zenith are expected to be for MC events, so</span>
+<span class="sd">    they are tested to be of the same length.</span>
+<span class="sd">    `en_splines` should be the spline for the primary of interest. The entire</span>
+<span class="sd">    dictionary is calculated in the previous function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    true_energies : list or numpy array</span>
+<span class="sd">        A list of the true energies of your MC events. Pass this in GeV!</span>
+<span class="sd">    true_coszens : list or numpy array</span>
+<span class="sd">        A list of the true coszens of your MC events</span>
+<span class="sd">    en_splines : list of splines</span>
+<span class="sd">        A list of the initialised energy splines from the previous function</span>
+<span class="sd">        for your desired primary.</span>
+<span class="sd">    enpow : integer</span>
+<span class="sd">        The power to which the energy was raised in the construction of the</span>
+<span class="sd">        splines. If you don&#39;t know what this means, leave it as 1.</span>
+<span class="sd">    out : np.array</span>
+<span class="sd">        optional array to store results</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    Use the previous function to calculate the spline dict for the South Pole.</span>
+
+<span class="sd">        spline_dict = load_2d_table(&#39;flux/honda-2015-spl-solmax-aa.d&#39;)</span>
+
+<span class="sd">    Then you must have some equal length arrays of energy and zenith.</span>
+
+<span class="sd">        ens = [3.0, 4.0, 5.0]</span>
+<span class="sd">        czs = [-0.4, 0.7, 0.3]</span>
+
+<span class="sd">    These are used in this function, along with whatever primary you are</span>
+<span class="sd">    interested in calculating the flux weights for.</span>
+
+<span class="sd">        flux_weights = calculate_2d_flux_weights(ens, czs, spline_dict[&#39;numu&#39;])</span>
+
+<span class="sd">    Done!</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_energies</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_energies</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;true_energies must be a list or numpy array&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">true_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">true_energies</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_coszens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_coszens</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;true_coszens must be a list or numpy array&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">true_coszens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">true_coszens</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="n">true_coszens</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="n">true_coszens</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not all coszens found between -1 and 1&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_energies</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_coszens</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;length of energy and coszen arrays must match&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enpow</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Energy power must be an integer&quot;</span><span class="p">)</span>
+
+    <span class="n">num_cz_points</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">czkeys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="n">num_cz_points</span><span class="p">)]</span>
+    <span class="n">cz_spline_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_cz_points</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">true_energies</span><span class="p">)</span>
+
+    <span class="n">spline_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_cz_points</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">true_energies</span><span class="p">)):</span>
+        <span class="n">true_log_energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">true_energies</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_cz_points</span><span class="p">):</span>
+            <span class="n">spline_vals</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splev</span><span class="p">(</span>
+                <span class="n">true_log_energy</span><span class="p">,</span> <span class="n">en_splines</span><span class="p">[</span><span class="n">czkeys</span><span class="p">[</span><span class="n">j</span><span class="p">]],</span> <span class="n">der</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
+
+        <span class="n">int_spline_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">spline_vals</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+        <span class="n">spline</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splrep</span><span class="p">(</span><span class="n">cz_spline_points</span><span class="p">,</span> <span class="n">int_spline_vals</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splev</span><span class="p">(</span><span class="n">true_coszens</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">spline</span><span class="p">,</span> <span class="n">der</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span>
+            <span class="n">true_energies</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">enpow</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="load_3d_honda_table">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_3d_honda_table">[docs]</a>
+<span class="k">def</span> <span class="nf">load_3d_honda_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading atmospheric flux table </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flux_file</span><span class="p">)</span>
+
+    <span class="c1"># columns in Honda files are in the same order</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">PRIMARIES</span>
+
+    <span class="c1"># Load the data table</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">open_resource</span><span class="p">(</span><span class="n">flux_file</span><span class="p">),</span> <span class="n">usecols</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cols</span><span class="p">))))</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">table</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">flux_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">cols</span><span class="p">,</span> <span class="n">table</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">flux_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># There are 20 lines per zenith range</span>
+        <span class="n">coszenith_lists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">flux_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="mi">20</span><span class="p">))</span>
+        <span class="n">azimuth_lists</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">coszenith_list</span> <span class="ow">in</span> <span class="n">coszenith_lists</span><span class="p">:</span>
+            <span class="n">azimuth_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">coszenith_list</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">flux_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">azimuth_lists</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;energy&quot;</span><span class="p">:</span>
+            <span class="n">flux_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="c1"># Set the zenith and energy range as they are in the tables</span>
+    <span class="c1"># The energy may change, but the zenith should always be</span>
+    <span class="c1"># 20 bins and the azimuth should always be 12 bins, full sky</span>
+    <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.95</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;azimuth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">345</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+
+    <span class="c1"># Now get a spline representation of the flux table.</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Make spline representation of flux&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Doing this integral-preserving.&quot;</span><span class="p">)</span>
+
+    <span class="n">spline_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Do integral-preserving method as in IceCube&#39;s NuFlux</span>
+    <span class="c1"># This one will be based purely on SciPy rather than ROOT</span>
+    <span class="c1"># Stored splines will be 1D in integrated flux over energy</span>
+    <span class="n">int_flux_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Energy and CosZenith bins needed for integral-preserving</span>
+    <span class="c1"># method must be the edges of those of the normal tables</span>
+    <span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;logenergy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.025</span><span class="p">,</span> <span class="mf">4.025</span><span class="p">,</span> <span class="mi">102</span><span class="p">)</span>
+    <span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">nutype</span> <span class="ow">in</span> <span class="n">PRIMARIES</span><span class="p">:</span>
+        <span class="c1"># spline_dict now wants to be a set of splines for</span>
+        <span class="c1"># every table cosZenith value.</span>
+        <span class="c1"># In 3D mode we have a set of these sets for every</span>
+        <span class="c1"># table azimuth value.</span>
+        <span class="n">az_splines</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">az</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;azimuth&quot;</span><span class="p">],</span> <span class="n">flux_dict</span><span class="p">[</span><span class="n">nutype</span><span class="p">]):</span>
+            <span class="n">splines</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">cz_iter</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">energyfluxlist</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">T</span><span class="p">:</span>
+                <span class="n">int_flux</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">tot_flux</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">int_flux</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tot_flux</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">energyfluxval</span><span class="p">,</span> <span class="n">energyval</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="n">energyfluxlist</span><span class="p">,</span> <span class="n">flux_dict</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]</span>
+                <span class="p">):</span>
+                    <span class="c1"># Spline works best if you integrate flux * energy</span>
+                    <span class="n">tot_flux</span> <span class="o">+=</span> <span class="n">energyfluxval</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">energyval</span><span class="p">,</span> <span class="n">enpow</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.05</span>
+                    <span class="n">int_flux</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tot_flux</span><span class="p">)</span>
+
+                <span class="n">spline</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splrep</span><span class="p">(</span><span class="n">int_flux_dict</span><span class="p">[</span><span class="s2">&quot;logenergy&quot;</span><span class="p">],</span> <span class="n">int_flux</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">cz_value</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mf">1.05</span> <span class="o">-</span> <span class="n">cz_iter</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">)</span>
+                <span class="n">splines</span><span class="p">[</span><span class="n">cz_value</span><span class="p">]</span> <span class="o">=</span> <span class="n">spline</span>
+                <span class="n">cz_iter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">az_splines</span><span class="p">[</span><span class="n">az</span><span class="p">]</span> <span class="o">=</span> <span class="n">splines</span>
+
+        <span class="n">spline_dict</span><span class="p">[</span><span class="n">nutype</span><span class="p">]</span> <span class="o">=</span> <span class="n">az_splines</span>
+
+    <span class="k">if</span> <span class="n">return_table</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">spline_dict</span><span class="p">,</span> <span class="n">flux_dict</span>
+
+    <span class="k">return</span> <span class="n">spline_dict</span></div>
+
+
+
+<div class="viewcode-block" id="load_3d_table">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_3d_table">[docs]</a>
+<span class="k">def</span> <span class="nf">load_3d_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manipulate 3 dimensional flux tables.</span>
+
+<span class="sd">    3D is expected to mean energy, cosZenith and azimuth. The angular range</span>
+<span class="sd">    should be fully sky.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    flux_file : string</span>
+<span class="sd">        The location of the flux file you want to spline. Should be a honda</span>
+<span class="sd">        azimuth-averaged file.</span>
+<span class="sd">    enpow : integer</span>
+<span class="sd">        The power to which the energy will be raised in the construction of the</span>
+<span class="sd">        splines. If you don&#39;t know what this means, leave it as 1.</span>
+<span class="sd">    return_table : boolean</span>
+<span class="sd">        Flag to true if you want the function to also return a dictionary</span>
+<span class="sd">        of the underlying values from the tables. Useful for comparisons.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enpow</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Energy power must be an integer&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_table</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;return_table must be a boolean&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Flux file name must be a string&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;aa&quot;</span> <span class="ow">in</span> <span class="n">flux_file</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Azimuth-dependent tables are expected&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;honda&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flux_file</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Flux file must be from the Honda group&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">return_table</span><span class="p">:</span>
+        <span class="n">spline_dict</span><span class="p">,</span> <span class="n">flux_dict</span> <span class="o">=</span> <span class="n">load_3d_honda_table</span><span class="p">(</span>
+            <span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="n">enpow</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">spline_dict</span> <span class="o">=</span> <span class="n">load_3d_honda_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="n">enpow</span><span class="p">)</span>
+    <span class="n">spline_dict</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;honda&quot;</span>
+
+    <span class="k">if</span> <span class="n">return_table</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">spline_dict</span><span class="p">,</span> <span class="n">flux_dict</span>
+
+    <span class="k">return</span> <span class="n">spline_dict</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_3d_flux_weights">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.calculate_3d_flux_weights">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_3d_flux_weights</span><span class="p">(</span>
+    <span class="n">true_energies</span><span class="p">,</span> <span class="n">true_coszens</span><span class="p">,</span> <span class="n">true_azimuths</span><span class="p">,</span> <span class="n">en_splines</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">az_linear</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate flux weights for given array of energy, cos(zenith) and</span>
+<span class="sd">    azimuth.</span>
+
+<span class="sd">    Arrays of true energy, zenith and azimuth are expected to be for MC events,</span>
+<span class="sd">    so they are tested to be of the same length.</span>
+<span class="sd">    En_splines should be the spline for the primary of interest. The entire</span>
+<span class="sd">    dictionary is calculated in the previous function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    true_energies : list or numpy array</span>
+<span class="sd">        A list of the true energies of your MC events. Pass this in GeV!</span>
+<span class="sd">    true_coszens : list or numpy array</span>
+<span class="sd">        A list of the true coszens of your MC events</span>
+<span class="sd">    true_azimuths : list or numpy array</span>
+<span class="sd">        A list of the true azimuths of your MC events. Pass this in radians!</span>
+<span class="sd">    en_splines : list of splines</span>
+<span class="sd">        A list of the initialised energy splines from the previous function</span>
+<span class="sd">        for your desired primary.</span>
+<span class="sd">    enpow : integer</span>
+<span class="sd">        The power to which the energy was raised in the construction of the</span>
+<span class="sd">        splines. If you don&#39;t know what this means, leave it as 1.</span>
+<span class="sd">    az_linear : boolean</span>
+<span class="sd">        Whether or not to linearly interpolate in the azimuthal direction. If</span>
+<span class="sd">        you don&#39;t know why this is an option, leave it as true.</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    Use the previous function to calculate the spline dict for the South Pole.</span>
+
+<span class="sd">        spline_dict = load_3d_table(&#39;flux/honda-2015-spl-solmax.d&#39;)</span>
+
+<span class="sd">    Then you must have some equal length arrays of energy, zenith and azimuth.</span>
+
+<span class="sd">        ens = [3.0, 4.0, 5.0]</span>
+<span class="sd">        czs = [-0.4, 0.7, 0.3]</span>
+<span class="sd">        azs = [0.3, 1.2, 2.1]</span>
+
+<span class="sd">    These are used in this function, along with whatever primary you are</span>
+<span class="sd">    interested in calculating the flux weights for.</span>
+
+<span class="sd">        flux_weights = calculate_3d_flux_weights(ens,</span>
+<span class="sd">                                                 czs,</span>
+<span class="sd">                                                 azs,</span>
+<span class="sd">                                                 spline_dict[&#39;numu&#39;])</span>
+
+<span class="sd">    Done!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_energies</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_energies</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;true_energies must be a list or numpy array&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">true_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">true_energies</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_coszens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_coszens</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;true_coszens must be a list or numpy array&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">true_coszens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">true_coszens</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_azimuths</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_azimuths</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;true_azimuths must be a list or numpy array&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">true_azimuths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">true_azimuths</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="n">true_coszens</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="n">true_coszens</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not all coszens found between -1 and 1&quot;</span><span class="p">)</span>
+    <span class="n">ensczs_match</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_energies</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_coszens</span><span class="p">)</span>
+    <span class="n">ensazs_match</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_energies</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_azimuths</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">ensczs_match</span> <span class="ow">and</span> <span class="n">ensazs_match</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;length of energy, coszen and azimuth arrays must &quot;</span> <span class="s2">&quot;match&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">true_azimuths</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Azimuths should be given as the angle, so should &quot;</span> <span class="s2">&quot;all be positive&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">azkeys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">15.0</span><span class="p">,</span> <span class="mf">345.0</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">az_linear</span><span class="p">:</span>
+        <span class="n">az_spline_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">360.0</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">az_spline_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">15.0</span><span class="p">,</span> <span class="mf">375.0</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>
+    <span class="n">czkeys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
+    <span class="n">cz_spline_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
+
+    <span class="n">flux_weights</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">,</span> <span class="n">true_azimuth</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="n">true_energies</span><span class="p">,</span> <span class="n">true_coszens</span><span class="p">,</span> <span class="n">true_azimuths</span>
+    <span class="p">):</span>
+        <span class="n">true_azimuth</span> <span class="o">*=</span> <span class="mf">180.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+        <span class="n">true_log_energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">true_energy</span><span class="p">)</span>
+        <span class="n">az_spline_vals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">azkey</span> <span class="ow">in</span> <span class="n">azkeys</span><span class="p">:</span>
+            <span class="n">cz_spline_vals</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">czkey</span> <span class="ow">in</span> <span class="n">czkeys</span><span class="p">:</span>
+                <span class="n">spval</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splev</span><span class="p">(</span>
+                    <span class="n">true_log_energy</span><span class="p">,</span> <span class="n">en_splines</span><span class="p">[</span><span class="n">azkey</span><span class="p">][</span><span class="n">czkey</span><span class="p">],</span> <span class="n">der</span><span class="o">=</span><span class="mi">1</span>
+                <span class="p">)</span>
+
+                <span class="n">cz_spline_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spval</span><span class="p">)</span>
+            <span class="n">cz_spline_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cz_spline_vals</span><span class="p">)</span>
+            <span class="n">cz_int_spline_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">cz_spline_vals</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+            <span class="n">cz_spline</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splrep</span><span class="p">(</span><span class="n">cz_spline_points</span><span class="p">,</span> <span class="n">cz_int_spline_vals</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">az_spline_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interpolate</span><span class="o">.</span><span class="n">splev</span><span class="p">(</span><span class="n">true_coszen</span><span class="p">,</span> <span class="n">cz_spline</span><span class="p">,</span> <span class="n">der</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># Treat the azimuthal dimension in an integral-preserving manner.</span>
+        <span class="c1"># This is not recommended.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">az_linear</span><span class="p">:</span>
+            <span class="n">az_spline_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">az_spline_vals</span><span class="p">)</span>
+            <span class="n">az_spline_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">az_spline_vals</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">az_int_spline_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">az_spline_vals</span><span class="p">)</span> <span class="o">*</span> <span class="mf">30.0</span>
+            <span class="n">az_spline</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splrep</span><span class="p">(</span><span class="n">az_spline_points</span><span class="p">,</span> <span class="n">az_int_spline_vals</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">flux_weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">interpolate</span><span class="o">.</span><span class="n">splev</span><span class="p">(</span><span class="n">true_azimuth</span><span class="p">,</span> <span class="n">az_spline</span><span class="p">,</span> <span class="n">der</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">enpow</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="c1"># Treat the azimuthal dimension with a linear interpolation.</span>
+        <span class="c1"># This is the best treatment.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Make the azimuthal spline cyclic</span>
+            <span class="n">az_spline_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">az_spline_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># Account for the energy power that was applied in the first splines</span>
+            <span class="n">az_spline_vals</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">enpow</span><span class="p">)</span>
+            <span class="n">az_spline</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">splrep</span><span class="p">(</span><span class="n">az_spline_points</span><span class="p">,</span> <span class="n">az_spline_vals</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">true_azimuth</span> <span class="o">&lt;</span> <span class="mf">15.0</span><span class="p">:</span>
+                <span class="n">true_azimuth</span> <span class="o">+=</span> <span class="mf">360.0</span>
+            <span class="n">flux_weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interpolate</span><span class="o">.</span><span class="n">splev</span><span class="p">(</span><span class="n">true_azimuth</span><span class="p">,</span> <span class="n">az_spline</span><span class="p">,</span> <span class="n">der</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">flux_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flux_weights</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">flux_weights</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a slightly longer example than that given in the docstring of</span>
+<span class="sd">    the calculate_flux_weights function. This will make a quick plot of the</span>
+<span class="sd">    flux at 5.0 GeV and 20.0 GeV across all of cos(zenith) for NuMu just to</span>
+<span class="sd">    make sure everything looks sensible.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+    <span class="n">spline_dict</span> <span class="o">=</span> <span class="n">load_2d_table</span><span class="p">(</span><span class="s2">&quot;flux/honda-2015-spl-solmax-aa.d&quot;</span><span class="p">)</span>
+    <span class="n">czs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">81</span><span class="p">)</span>
+    <span class="n">low_ens</span> <span class="o">=</span> <span class="mf">5.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">czs</span><span class="p">)</span>
+    <span class="n">high_ens</span> <span class="o">=</span> <span class="mf">20.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">czs</span><span class="p">)</span>
+
+    <span class="n">low_en_flux_weights</span> <span class="o">=</span> <span class="n">calculate_2d_flux_weights</span><span class="p">(</span><span class="n">low_ens</span><span class="p">,</span> <span class="n">czs</span><span class="p">,</span> <span class="n">spline_dict</span><span class="p">[</span><span class="s2">&quot;numu&quot;</span><span class="p">])</span>
+
+    <span class="n">high_en_flux_weights</span> <span class="o">=</span> <span class="n">calculate_2d_flux_weights</span><span class="p">(</span><span class="n">high_ens</span><span class="p">,</span> <span class="n">czs</span><span class="p">,</span> <span class="n">spline_dict</span><span class="p">[</span><span class="s2">&quot;numu&quot;</span><span class="p">])</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">czs</span><span class="p">,</span> <span class="n">low_en_flux_weights</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;cos(zenith)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;NuMu Flux at 5.0 GeV&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;/tmp/fluxweightstest5GeV.pdf&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">czs</span><span class="p">,</span> <span class="n">high_en_flux_weights</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;cos(zenith)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;NuMu Flux at 20.0 GeV&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;/tmp/fluxweightstest20GeV.pdf&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

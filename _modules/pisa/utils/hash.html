@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.hash &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.hash</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.hash</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Utilities for hashing objects.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">IOBase</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">pickle</span> <span class="kn">import</span> <span class="n">PickleError</span><span class="p">,</span> <span class="n">PicklingError</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">pkg_resources</span> <span class="kn">import</span> <span class="n">resource_filename</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;FAST_HASH_FILESIZE_BYTES&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;FAST_HASH_NDARRAY_ELEMENTS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;FAST_HASH_STR_CHARS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;hash_obj&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;hash_file&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_hash_obj&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_hash_file&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="n">FAST_HASH_FILESIZE_BYTES</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;For a fast hash on a file object, this many bytes of the file are used&quot;&quot;&quot;</span>
+
+<span class="n">FAST_HASH_NDARRAY_ELEMENTS</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;For a fast hash on a numpy array or matrix, this many elements of the array</span>
+<span class="sd">or matrix are used&quot;&quot;&quot;</span>
+
+<span class="n">FAST_HASH_STR_CHARS</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;For a fast hash on a string (or object&#39;s pickle string representation), this</span>
+<span class="sd">many characters are used&quot;&quot;&quot;</span>
+
+
+
+<span class="c1"># NOTE: adding @line_profile decorator slows down function to order of 10s of</span>
+<span class="c1"># ms even if set_verbosity(0)!</span>
+
+<div class="viewcode-block" id="hash_obj">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hash.hash_obj">[docs]</a>
+<span class="k">def</span> <span class="nf">hash_obj</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">hash_to</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="n">full_hash</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return hash for an object. Object can be a numpy ndarray or matrix</span>
+<span class="sd">    (which is serialized to a string), an open file (which has its contents</span>
+<span class="sd">    read), or any pickle-able Python object.</span>
+
+<span class="sd">    Note that only the first most-significant 8 bytes (64 bits) from the MD5</span>
+<span class="sd">    sum are used in the hash.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    obj : object</span>
+<span class="sd">        Object to hash. Note that the larger the object, the longer it takes to</span>
+<span class="sd">        hash.</span>
+
+<span class="sd">    hash_to : string</span>
+<span class="sd">        &#39;i&#39;, &#39;int&#39;, or &#39;integer&#39;: First 8 bytes of the MD5 sum are interpreted</span>
+<span class="sd">            as an integer.</span>
+<span class="sd">        &#39;b&#39;, &#39;bin&#39;, or &#39;binary&#39;: MD5 sum digest; returns an 8-character string</span>
+<span class="sd">        &#39;h&#39;, &#39;x&#39;, &#39;hex&#39;: MD5 sum hexdigest, (string of 16 characters)</span>
+<span class="sd">        &#39;b64&#39;, &#39;base64&#39;: first 8 bytes of MD5 sum are base64 encoded (with &#39;+&#39;</span>
+<span class="sd">            and &#39;-&#39; as final two characters of encoding). Returns string of 11</span>
+<span class="sd">            characters.</span>
+
+<span class="sd">    full_hash : bool</span>
+<span class="sd">        If True, hash on the full object&#39;s contents (which can be slow) or if</span>
+<span class="sd">        False, hash on a partial object. For example, only a file&#39;s first kB is</span>
+<span class="sd">        read, and only 1000 elements (chosen at random) of a numpy ndarray are</span>
+<span class="sd">        hashed on. This mode of operation should suffice for e.g. a</span>
+<span class="sd">        minimization run, but should _not_ be used for storing to/loading from</span>
+<span class="sd">        disk.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hash_val : int or string</span>
+
+<span class="sd">    See also</span>
+<span class="sd">    --------</span>
+<span class="sd">    hash_file : hash a file on disk by filename/path</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">hash_to</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">hash_to</span> <span class="o">=</span> <span class="s1">&#39;int&#39;</span>
+    <span class="n">hash_to</span> <span class="o">=</span> <span class="n">hash_to</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="n">pass_on_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">hash_to</span><span class="o">=</span><span class="n">hash_to</span><span class="p">,</span> <span class="n">full_hash</span><span class="o">=</span><span class="n">full_hash</span><span class="p">)</span>
+
+    <span class="c1"># TODO: convert an existing hash to the desired type, if it isn&#39;t already</span>
+    <span class="c1"># in this type</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">hash</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">hash</span> <span class="o">==</span> <span class="n">obj</span><span class="o">.</span><span class="n">hash</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">hash</span>
+
+    <span class="c1"># Handle numpy arrays and matrices specially</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">full_hash</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">tostring</span><span class="p">(),</span> <span class="o">**</span><span class="n">pass_on_kw</span><span class="p">)</span>
+        <span class="n">len_flat</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">len_flat</span> <span class="o">//</span> <span class="n">FAST_HASH_NDARRAY_ELEMENTS</span><span class="p">)</span>
+        <span class="n">sub_elements</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="n">stride</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">sub_elements</span><span class="o">.</span><span class="n">tostring</span><span class="p">(),</span> <span class="o">**</span><span class="n">pass_on_kw</span><span class="p">)</span>
+
+    <span class="c1"># Handle an open file object as a special case</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IOBase</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">full_hash</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="o">**</span><span class="n">pass_on_kw</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">FAST_HASH_FILESIZE_BYTES</span><span class="p">),</span> <span class="o">**</span><span class="n">pass_on_kw</span><span class="p">)</span>
+
+    <span class="c1"># Convert to string (if not one already) in a fast and generic way: pickle;</span>
+    <span class="c1"># this creates a binary string, which is fine for sending to hashlib</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pkl</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">PickleError</span><span class="p">,</span> <span class="n">PicklingError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="c1"># Recurse into an iterable that couldn&#39;t be pickled</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">hash_obj</span><span class="p">([</span><span class="n">hash_obj</span><span class="p">(</span><span class="n">subobj</span><span class="p">)</span> <span class="k">for</span> <span class="n">subobj</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">],</span>
+                                <span class="o">**</span><span class="n">pass_on_kw</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Failed to pickle `obj` &quot;</span><span class="si">%s</span><span class="s1">&quot; of type &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+                              <span class="n">obj</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>
+                <span class="k">raise</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">pkl</span>
+
+    <span class="k">if</span> <span class="n">full_hash</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">md5hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">md5hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Grab just a subset of the string by changing the stride taken in the</span>
+        <span class="c1"># character array (but if the string is less than</span>
+        <span class="c1"># FAST_HASH_FILESIZE_BYTES, use a stride length of 1)</span>
+        <span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">//</span> <span class="n">FAST_HASH_STR_CHARS</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">md5hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="n">stride</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">md5hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="n">stride</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">hash_to</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="s1">&#39;integer&#39;</span><span class="p">]:</span>
+        <span class="n">hash_val</span><span class="p">,</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;q&#39;</span><span class="p">,</span> <span class="n">md5hash</span><span class="o">.</span><span class="n">digest</span><span class="p">()[:</span><span class="mi">8</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">hash_to</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;bin&#39;</span><span class="p">,</span> <span class="s1">&#39;binary&#39;</span><span class="p">]:</span>
+        <span class="n">hash_val</span> <span class="o">=</span> <span class="n">md5hash</span><span class="o">.</span><span class="n">digest</span><span class="p">()[:</span><span class="mi">8</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">hash_to</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;hex&#39;</span><span class="p">,</span> <span class="s1">&#39;hexadecimal&#39;</span><span class="p">]:</span>
+        <span class="n">hash_val</span> <span class="o">=</span> <span class="n">md5hash</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">16</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">hash_to</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;b64&#39;</span><span class="p">,</span> <span class="s1">&#39;base64&#39;</span><span class="p">]:</span>
+        <span class="n">hash_val</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">md5hash</span><span class="o">.</span><span class="n">digest</span><span class="p">()[:</span><span class="mi">8</span><span class="p">],</span> <span class="s1">&#39;+-&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unrecognized `hash_to`: &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">hash_to</span><span class="p">,))</span>
+    <span class="k">return</span> <span class="n">hash_val</span></div>
+
+
+
+<div class="viewcode-block" id="hash_file">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hash.hash_file">[docs]</a>
+<span class="k">def</span> <span class="nf">hash_file</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">hash_to</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">full_hash</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a hash for a file, passing contents through hash_obj function.&quot;&quot;&quot;</span>
+    <span class="n">resource</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">hash_to</span><span class="o">=</span><span class="n">hash_to</span><span class="p">,</span> <span class="n">full_hash</span><span class="o">=</span><span class="n">full_hash</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="test_hash_obj">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hash.test_hash_obj">[docs]</a>
+<span class="k">def</span> <span class="nf">test_hash_obj</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `hash_obj` function&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">hash_obj</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3783177783470249117</span>
+    <span class="k">assert</span> <span class="n">hash_obj</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">full_hash</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3783177783470249117</span>
+    <span class="k">assert</span> <span class="n">hash_obj</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">hash_to</span><span class="o">=</span><span class="s1">&#39;hex&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;9dd4e461268c8034&#39;</span>
+    <span class="k">assert</span> <span class="n">hash_obj</span><span class="p">(</span><span class="nb">object</span><span class="p">())</span> <span class="o">!=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">nel</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]:</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">rs</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">nel</span><span class="p">,</span> <span class="n">nel</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">a0_h_full</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">a0_h_part</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">full_hash</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">rs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">rs</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">nel</span><span class="p">,</span> <span class="n">nel</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">a1_h_full</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">a1_h_part</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">full_hash</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">rs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">rs</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">nel</span><span class="p">,</span> <span class="n">nel</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">a2_h_full</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">a2_h_part</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">full_hash</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">a1_h_full</span> <span class="o">!=</span> <span class="n">a0_h_full</span>
+        <span class="k">assert</span> <span class="n">a2_h_full</span> <span class="o">!=</span> <span class="n">a0_h_full</span>
+        <span class="k">assert</span> <span class="n">a2_h_full</span> <span class="o">!=</span> <span class="n">a1_h_full</span>
+
+        <span class="k">assert</span> <span class="n">a1_h_part</span> <span class="o">!=</span> <span class="n">a0_h_part</span>
+        <span class="k">assert</span> <span class="n">a2_h_part</span> <span class="o">!=</span> <span class="n">a0_h_part</span>
+        <span class="k">assert</span> <span class="n">a2_h_part</span> <span class="o">!=</span> <span class="n">a1_h_part</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_hash_obj &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+<span class="c1"># TODO: test_hash_file function requires a &quot;standard&quot; file to test on</span>
+<div class="viewcode-block" id="test_hash_file">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hash.test_hash_file">[docs]</a>
+<span class="k">def</span> <span class="nf">test_hash_file</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `hash_file` function&quot;&quot;&quot;</span>
+    <span class="n">file_hash</span> <span class="o">=</span> <span class="n">hash_file</span><span class="p">(</span><span class="n">resource_filename</span><span class="p">(</span><span class="s1">&#39;pisa.utils&#39;</span><span class="p">,</span> <span class="s1">&#39;hash.py&#39;</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">file_hash</span><span class="p">)</span>
+    <span class="n">file_hash</span> <span class="o">=</span> <span class="n">hash_file</span><span class="p">(</span><span class="n">resource_filename</span><span class="p">(</span><span class="s1">&#39;pisa.utils&#39;</span><span class="p">,</span> <span class="s1">&#39;hash.py&#39;</span><span class="p">),</span>
+                          <span class="n">full_hash</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">file_hash</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_hash_file &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_hash_obj</span><span class="p">()</span>
+    <span class="n">test_hash_file</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

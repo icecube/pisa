@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.osc.prob3numba.numba_osc_tests &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.osc.prob3numba.numba_osc_tests</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.osc.prob3numba.numba_osc_tests</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># pylint: disable = invalid-name</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tests for prob3numba code</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;TEST_DATA_DIR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FINFO_FTYPE&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;AC_KW&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PRINTOPTS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;A2S_KW&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;MAT_DOT_MAT_SUBSCR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DEFAULTS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TEST_CASES&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;auto_populate_test_case&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_prob3numba&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;run_test_case&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;stability_test&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;execute_func&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;compare_numeric&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;check&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ary2str&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">getmodule</span><span class="p">,</span> <span class="n">signature</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">join</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="c1"># os.environ[&#39;PISA_FTYPE&#39;] = &#39;single&#39; # for checking unit test on single precision</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">WHERE</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span> <span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CX</span><span class="p">,</span>
+    <span class="n">FX</span><span class="p">,</span>
+    <span class="n">IX</span><span class="p">,</span>
+    <span class="c1"># propagate_scalar_vacuum,</span>
+    <span class="n">propagate_scalar</span><span class="p">,</span>
+    <span class="n">propagate_array</span><span class="p">,</span>
+    <span class="n">get_transition_matrix_hostfunc</span><span class="p">,</span>
+    <span class="n">get_transition_matrix_massbasis_hostfunc</span><span class="p">,</span>
+    <span class="n">get_H_vac_hostfunc</span><span class="p">,</span>
+    <span class="n">get_H_decay_hostfunc</span><span class="p">,</span>
+    <span class="n">get_H_mat_hostfunc</span><span class="p">,</span>
+    <span class="n">get_dms_hostfunc</span><span class="p">,</span>
+    <span class="n">get_dms_numerical_hostfunc</span><span class="p">,</span>
+    <span class="n">get_product_hostfunc</span><span class="p">,</span>
+    <span class="n">convert_from_mass_eigenstate_hostfunc</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pisa.stages.osc.nsi_params</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">StdNSIParams</span><span class="p">,</span>
+    <span class="n">VacuumLikeNSIParams</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">pisa.stages.osc.lri_params</span> <span class="kn">import</span> <span class="n">LRIParams</span>
+<span class="kn">from</span> <span class="nn">pisa.stages.osc.scaling_params</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Mass_scaling</span><span class="p">,</span>
+    <span class="n">Core_scaling_w_constrain</span><span class="p">,</span>
+    <span class="n">Core_scaling_wo_constrain</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">TEST_DATA_DIR</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="s2">&quot;osc/numba_osc_tests_data&quot;</span><span class="p">)</span>
+
+<span class="n">FINFO_FTYPE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+
+<span class="n">AC_KW</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">atol</span><span class="o">=</span><span class="n">FINFO_FTYPE</span><span class="o">.</span><span class="n">resolution</span> <span class="o">*</span> <span class="mi">10</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="n">ALLCLOSE_KW</span><span class="p">[</span><span class="s2">&quot;rtol&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+
+<span class="n">PRINTOPTS</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">precision</span><span class="o">=</span><span class="n">FINFO_FTYPE</span><span class="o">.</span><span class="n">precision</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">floatmode</span><span class="o">=</span><span class="s2">&quot;fixed&quot;</span><span class="p">,</span> <span class="n">sign</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">200</span>
+<span class="p">)</span>
+
+<span class="n">A2S_KW</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="n">PRINTOPTS</span><span class="p">[</span><span class="s2">&quot;precision&quot;</span><span class="p">],</span> <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;, &quot;</span><span class="p">)</span>
+
+<span class="n">MAT_DOT_MAT_SUBSCR</span> <span class="o">=</span> <span class="s2">&quot;in,nj-&gt;ij&quot;</span>
+<span class="sd">&quot;&quot;&quot;matrix dot matrix subscripts for use by `numpy.einsum`&quot;&quot;&quot;</span>
+
+<span class="c1"># ---------------------------------------------------------------------------- #</span>
+<span class="c1"># Define relevant values for testing purposes (from nufit3.2, from intermediate</span>
+<span class="c1"># calculations performed here, or arbitary values).</span>
+<span class="c1">#</span>
+<span class="c1"># NOTE: !!DO NOT CHANGE!! (unless a function is incorrect) tests rely on these</span>
+<span class="c1"># ---------------------------------------------------------------------------- #</span>
+
+<span class="c1">#lri param</span>
+<span class="n">lri_params</span> <span class="o">=</span> <span class="n">LRIParams</span><span class="p">()</span>
+<span class="n">lri_params</span><span class="o">.</span><span class="n">v_lri</span> <span class="o">=</span> <span class="mf">1e-14</span>
+<span class="n">lri_std_mat_pot</span> <span class="o">=</span> <span class="n">lri_params</span><span class="o">.</span><span class="n">potential_matrix_emu</span>
+<span class="c1"># print(lri_std_mat_pot)</span>
+
+<span class="n">DEFAULTS</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">energy</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># GeV</span>
+    <span class="n">state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">nubar</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">rho</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># moles of electrons / cm^3</span>
+    <span class="n">baseline</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># km</span>
+    <span class="n">mat_pot</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">),</span>
+    <span class="n">layer_distances</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>  <span class="c1"># km</span>
+    <span class="n">layer_densities</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>  <span class="c1"># g/cm^3</span>
+    <span class="c1"># osc params: defaults are nufit 3.2 normal ordering values</span>
+    <span class="n">t12</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">33.62</span><span class="p">),</span>
+    <span class="n">t23</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">47.2</span><span class="p">),</span>
+    <span class="n">t13</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">8.54</span><span class="p">),</span>
+    <span class="n">dcp</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mi">234</span><span class="p">),</span>
+    <span class="n">dm21</span><span class="o">=</span><span class="mf">7.40e-5</span><span class="p">,</span>
+    <span class="n">dm31</span><span class="o">=</span><span class="mf">2.494e-3</span><span class="p">,</span>
+    <span class="n">decay_flag</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">mat_decay</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0e-4</span><span class="n">j</span> <span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">),</span>
+    <span class="n">lri_pot</span><span class="o">=</span><span class="n">lri_std_mat_pot</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># define non-0 NSI parameters for non-vacuum NSI</span>
+<span class="c1"># roughly based on best fit params from Thomas Ehrhardts 3y DRAGON analysis</span>
+<span class="n">nsi_params</span> <span class="o">=</span> <span class="n">StdNSIParams</span><span class="p">()</span>
+<span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_emu_magn</span> <span class="o">=</span> <span class="mf">0.07</span>
+<span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_emu_phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mi">340</span><span class="p">)</span>
+<span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_etau_magn</span> <span class="o">=</span> <span class="mf">0.06</span>
+<span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_etau_phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mi">35</span><span class="p">)</span>
+<span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_mutau_magn</span> <span class="o">=</span> <span class="mf">0.003</span>
+<span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_mutau_phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mi">175</span><span class="p">)</span>
+<span class="n">mat_pot_std_nsi_no</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span> <span class="o">+</span> <span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_matrix</span>
+
+<span class="c1"># Vacuum-like NSI parameters</span>
+<span class="n">nsi_params</span> <span class="o">=</span> <span class="n">VacuumLikeNSIParams</span><span class="p">()</span>
+<span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_prime</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">mat_pot_vac_nsi_no</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span> <span class="o">+</span> <span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_matrix</span>
+
+<span class="c1">#mass of earth</span>
+<span class="n">tomography_params</span><span class="o">=</span> <span class="n">Mass_scaling</span><span class="p">()</span>
+<span class="n">tomography_params</span><span class="o">.</span><span class="n">density_scale</span> <span class="o">=</span><span class="mf">1.2</span>
+<span class="n">scale</span> <span class="o">=</span> <span class="n">tomography_params</span><span class="o">.</span><span class="n">density_scale</span>
+
+<span class="c1">#mass of core with constraint</span>
+<span class="n">tomography_params</span><span class="o">=</span> <span class="n">Core_scaling_w_constrain</span><span class="p">()</span>
+<span class="n">tomography_params</span><span class="o">.</span><span class="n">core_density_scale</span> <span class="o">=</span> <span class="mf">0.9</span>
+<span class="n">scale_array_w_constrain</span> <span class="o">=</span> <span class="n">tomography_params</span><span class="o">.</span><span class="n">scaling_array</span>
+
+<span class="c1">#mass of core without constraint</span>
+<span class="n">tomography_params</span><span class="o">=</span> <span class="n">Core_scaling_wo_constrain</span><span class="p">()</span>
+<span class="n">tomography_params</span><span class="o">.</span><span class="n">core_density_scale</span> <span class="o">=</span> <span class="mf">0.8</span>
+<span class="n">tomography_params</span><span class="o">.</span><span class="n">middlemantle_density_scale</span><span class="o">=</span> <span class="mf">0.8</span>
+<span class="n">tomography_params</span><span class="o">.</span><span class="n">innermantle_density_scale</span><span class="o">=</span> <span class="mf">0.8</span>
+<span class="n">scale_array_wo_constrain</span> <span class="o">=</span> <span class="n">tomography_params</span><span class="o">.</span><span class="n">scaling_factor_array</span>
+
+<span class="n">TEST_CASES</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">nufit32_no</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span>  <span class="c1"># nufit 3.2 normal ordering (also overall) best-fit</span>
+    <span class="n">nufit32_no_nubar</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">nubar</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>  <span class="c1"># NO but anti-neutrinos</span>
+    <span class="n">nufit32_no_E1TeV</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">energy</span><span class="o">=</span><span class="mf">1e3</span><span class="p">),</span>  <span class="c1"># NO but e=1 TeV</span>
+    <span class="n">nufit32_no_blearth</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">baseline</span><span class="o">=</span><span class="mf">6371e3</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">layer_distances</span><span class="o">=</span><span class="p">(</span>
+            <span class="mf">6371e3</span>
+            <span class="o">*</span> <span class="mi">2</span>
+            <span class="o">*</span> <span class="n">DEFAULTS</span><span class="p">[</span><span class="s2">&quot;layer_distances&quot;</span><span class="p">]</span>
+            <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">DEFAULTS</span><span class="p">[</span><span class="s2">&quot;layer_distances&quot;</span><span class="p">])</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+    <span class="n">nufit32_io</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>  <span class="c1"># nufit 3.2 best-fit params for inverted ordering</span>
+        <span class="n">t12</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">33.62</span><span class="p">),</span>
+        <span class="n">t23</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">48.1</span><span class="p">),</span>
+        <span class="n">t13</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">8.58</span><span class="p">),</span>
+        <span class="n">dcp</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mi">278</span><span class="p">),</span>
+        <span class="n">dm21</span><span class="o">=</span><span class="mf">7.40e-5</span><span class="p">,</span>
+        <span class="n">dm31</span><span class="o">=-</span><span class="mf">2.465e-3</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">nufit32_std_nsi_no</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>  <span class="c1"># nufit 3.2 normal ordering with non-0 standard NSI parameters</span>
+        <span class="n">mat_pot</span><span class="o">=</span><span class="n">mat_pot_std_nsi_no</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">nufit32_vac_nsi_no</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>  <span class="c1"># nufit 3.2 normal ordering with non-0 vacuum NSI parameters</span>
+        <span class="n">mat_pot</span><span class="o">=</span><span class="n">mat_pot_vac_nsi_no</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">nufit32_std_decay_no</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span> <span class="c1"># nufit 3.2 normal ordering with no neutrino decay</span>
+        <span class="n">decay_flag</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">mat_decay</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">[</span><span class="s2">&quot;mat_decay&quot;</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">nufit32_std_decay</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span> <span class="c1"># nufit 3.2 normal ordering with neutrino decay</span>
+        <span class="n">decay_flag</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">mat_decay</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">[</span><span class="s2">&quot;mat_decay&quot;</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">nufit32_lri_std_mat</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span> <span class="c1">#nufit 3.2 lri potential with std matter potential</span>
+        <span class="n">lri_pot</span> <span class="o">=</span> <span class="n">lri_std_mat_pot</span>
+    <span class="p">),</span>
+    <span class="n">nufit32_mass_of_earth_no</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">layer_densities</span><span class="o">=</span><span class="n">scale</span><span class="o">*</span><span class="n">DEFAULTS</span><span class="p">[</span><span class="s1">&#39;layer_densities&#39;</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">nufit32_mass_of_core_w_constrain_no</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">layer_distances</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1221.50</span><span class="p">,</span> <span class="mf">2258.50</span><span class="p">,</span> <span class="mf">2221.0</span><span class="p">,</span> <span class="mf">450.0</span><span class="p">,</span> <span class="mf">220.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">layer_densities</span><span class="o">=</span><span class="n">scale_array_w_constrain</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">13.0</span><span class="p">,</span> <span class="mf">13.0</span><span class="p">,</span> <span class="mf">10.96</span><span class="p">,</span> <span class="mf">5.03</span><span class="p">,</span> <span class="mf">3.7</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">nufit32_mass_of_core_wo_constrain_no</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">layer_distances</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1221.50</span><span class="p">,</span> <span class="mf">2258.50</span><span class="p">,</span> <span class="mf">2221.0</span><span class="p">,</span> <span class="mf">450.0</span><span class="p">,</span> <span class="mf">220.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">layer_densities</span><span class="o">=</span><span class="n">scale_array_wo_constrain</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">13.0</span><span class="p">,</span> <span class="mf">13.0</span><span class="p">,</span> <span class="mf">10.96</span><span class="p">,</span> <span class="mf">5.03</span><span class="p">,</span> <span class="mf">3.7</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="auto_populate_test_case">
+<a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.auto_populate_test_case">[docs]</a>
+<span class="k">def</span> <span class="nf">auto_populate_test_case</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">defaults</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Populate defaults and construct dm / PMNS matrices if they aren&#39;t</span>
+<span class="sd">    present in a test case.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    test_case : mutable mapping</span>
+
+<span class="sd">    defaults : mapping</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tc</span><span class="p">:</span>
+            <span class="n">tc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="c1"># Construct dm and PMNS matrices derived from test case values, if</span>
+    <span class="c1"># these were not already specified</span>
+
+    <span class="k">if</span> <span class="s2">&quot;dm&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tc</span><span class="p">:</span>  <span class="c1"># construct Delta m^2 matrix if not present</span>
+        <span class="k">if</span> <span class="s2">&quot;dm32&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tc</span><span class="p">:</span>  <span class="c1"># NO case; Delta m^2_32/eV^2</span>
+            <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm32&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm31&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm21&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s2">&quot;dm31&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tc</span><span class="p">:</span>  <span class="c1"># IO case; Delta m^2_32/eV^2</span>
+            <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm31&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm32&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm21&quot;</span><span class="p">]</span>
+
+        <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm21&quot;</span><span class="p">],</span> <span class="o">-</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm31&quot;</span><span class="p">]],</span>
+                <span class="p">[</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm21&quot;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm32&quot;</span><span class="p">]],</span>
+                <span class="p">[</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm31&quot;</span><span class="p">],</span> <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dm32&quot;</span><span class="p">],</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;pmns&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tc</span><span class="p">:</span>  <span class="c1"># construct PMNS matrix if not present</span>
+        <span class="n">c12</span><span class="p">,</span> <span class="n">s12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;t12&quot;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;t12&quot;</span><span class="p">])</span>
+        <span class="n">c23</span><span class="p">,</span> <span class="n">s23</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;t23&quot;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;t23&quot;</span><span class="p">])</span>
+        <span class="n">c13</span><span class="p">,</span> <span class="n">s13</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;t13&quot;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s2">&quot;t13&quot;</span><span class="p">])</span>
+
+        <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">c23</span><span class="p">,</span> <span class="n">s23</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">s23</span><span class="p">,</span> <span class="n">c23</span><span class="p">]])</span>
+<div class="viewcode-block" id="test_prob3numba">
+<a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.test_prob3numba">[docs]</a>
+            <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="p">[</span><span class="n">c13</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">s13</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dcp&quot;</span><span class="p">])],</span>
+                    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="p">[</span><span class="o">-</span><span class="n">s13</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;dcp&quot;</span><span class="p">]),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">c13</span><span class="p">],</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">c12</span><span class="p">,</span> <span class="n">s12</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="n">s12</span><span class="p">,</span> <span class="n">c12</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">test_prob3numba</span><span class="p">(</span><span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run all unit test cases for prob3numba code&quot;&quot;&quot;</span>
+
+    <span class="c1"># Pull first test case to test calling `propagate_array`</span>
+    <span class="n">tc_name</span><span class="p">,</span> <span class="n">tc</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">TEST_CASES</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Testing call and return shape of `propagate_array` with test case &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+        <span class="n">tc_name</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Test simple broadcasting over `nubars` and `energies` where both have</span>
+    <span class="c1"># same shape, as this is the &quot;typical&quot; use case</span>
+    <span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="c1"># Without broadcasting, a single probability matrix is 3x3</span>
+    <span class="n">prob_array_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="c1"># Broadcasted shape</span>
+    <span class="n">out_shape</span> <span class="o">=</span> <span class="n">input_shape</span> <span class="o">+</span> <span class="n">prob_array_shape</span>
+
+    <span class="n">nubars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">IX</span><span class="p">)</span>
+    <span class="n">energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FX</span><span class="p">)</span>
+
+    <span class="c1"># Fill with NaN to ensure all elements are assinged a value</span>
+    <span class="n">probabilities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">out_shape</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FX</span><span class="p">)</span>
+
+    <span class="n">propagate_array</span><span class="p">(</span>
+        <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FX</span><span class="p">),</span>
+        <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">CX</span><span class="p">),</span>
+        <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;mat_pot&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">CX</span><span class="p">),</span>
+        <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;decay_flag&quot;</span><span class="p">],</span>
+        <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;mat_decay&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">CX</span><span class="p">),</span>
+        <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;lri_pot&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FX</span><span class="p">),</span>
+        <span class="n">nubars</span><span class="p">,</span>
+        <span class="n">energies</span><span class="p">,</span>
+        <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;layer_densities&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FX</span><span class="p">),</span>
+        <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;layer_distances&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FX</span><span class="p">),</span>
+        <span class="c1"># output:</span>
+        <span class="n">probabilities</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Check that all probability matrices have no NaNs and are equal to one</span>
+    <span class="c1"># another</span>
+    <span class="n">ref_probs</span> <span class="o">=</span> <span class="n">probabilities</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">probs</span> <span class="o">=</span> <span class="n">probabilities</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">probs</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">probs</span> <span class="o">==</span> <span class="n">ref_probs</span><span class="p">)</span>
+
+    <span class="c1"># Run all test cases</span>
+    <span class="k">for</span> <span class="n">tc_name</span><span class="p">,</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">TEST_CASES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">run_test_case</span><span class="p">(</span>
+            <span class="n">tc_name</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="n">define_as_ref</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="run_test_case">
+<a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.run_test_case">[docs]</a>
+<span class="k">def</span> <span class="nf">run_test_case</span><span class="p">(</span><span class="n">tc_name</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run one test case&quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;== TEST CASE : </span><span class="si">%s</span><span class="s2"> ==&quot;</span><span class="p">,</span> <span class="n">tc_name</span><span class="p">)</span>
+
+    <span class="n">st_test_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="n">define_as_ref</span><span class="p">)</span>
+    <span class="n">tf_sfx</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;__</span><span class="si">{</span><span class="n">tc_name</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">.pkl&quot;</span>
+
+    <span class="c1"># Copy contents of test case, so if a function modifies these</span>
+    <span class="c1"># (accidentally), it doesn&#39;t affect the outcome of further tests</span>
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+    <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">convert_from_mass_eigenstate_hostfunc</span><span class="p">,</span>
+        <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">],</span>
+            <span class="n">mix_nubar</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="c1"># output:</span>
+            <span class="n">psi</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span><span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;convert_from_mass_eigenstate_hostfunc</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">psi = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;psi&quot;</span><span class="p">]))</span>
+
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+    <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">get_H_vac_hostfunc</span><span class="p">,</span>
+        <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">mix_nubar</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">mix_nubar_conj_transp</span><span class="o">=</span><span class="p">(</span>
+                <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span> <span class="k">if</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span>
+            <span class="p">),</span>
+            <span class="n">dm_vac_vac</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">],</span>
+            <span class="c1"># output:</span>
+            <span class="n">H_vac</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span><span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;get_H_vac_hostfunc</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">H_vac = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;H_vac&quot;</span><span class="p">]))</span>
+    <span class="c1"># keep for use by `get_transition_matrix_hostfunc`</span>
+    <span class="n">H_vac_ref</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;H_vac&quot;</span><span class="p">]</span>
+    
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+    <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">get_H_decay_hostfunc</span><span class="p">,</span>
+        <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">mix_nubar</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">mix_nubar_conj_transp</span><span class="o">=</span><span class="p">(</span>
+                <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span> <span class="k">if</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span>
+            <span class="p">),</span>
+            <span class="n">mat_decay</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;mat_decay&quot;</span><span class="p">],</span>
+            <span class="c1">#output;</span>
+            <span class="n">H_decay</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span><span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;get_H_decay_hostfunc</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">H_decay = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;H_decay&quot;</span><span class="p">]))</span>
+    <span class="c1"># keep for use by `get_transition_matrix_hostfunc`</span>
+    <span class="n">H_decay_ref</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;H_decay&quot;</span><span class="p">]</span>
+    
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+    <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">get_H_mat_hostfunc</span><span class="p">,</span>
+        <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">rho</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;rho&quot;</span><span class="p">],</span>
+            <span class="n">mat_pot</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;mat_pot&quot;</span><span class="p">],</span>
+            <span class="n">nubar</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">],</span>
+            <span class="c1"># output:</span>
+            <span class="n">H_mat</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span><span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;get_H_mat_hostfunc</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">H_mat = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;H_mat&quot;</span><span class="p">]))</span>
+    <span class="c1"># keep for use by `get_dms_hostfunc`,</span>
+    <span class="c1"># `get_transition_matrix_massbasis_hostfunc`, `get_product_hostfunc``</span>
+    <span class="n">H_mat_ref</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;H_mat&quot;</span><span class="p">]</span>
+
+    <span class="c1"># tc_ = deepcopy(tc)</span>
+    <span class="c1"># test, ref = stability_test(</span>
+    <span class="c1">#     func=propagate_scalar_vacuum,</span>
+    <span class="c1">#     func_kw=dict(</span>
+    <span class="c1">#         dm=tc_[&quot;dm&quot;],</span>
+    <span class="c1">#         mix=tc_[&quot;pmns&quot;],</span>
+    <span class="c1">#         nubar=tc_[&quot;nubar&quot;],</span>
+    <span class="c1">#         energy=tc_[&quot;energy&quot;],</span>
+    <span class="c1">#         distances=tc_[&quot;layer_distances&quot;],</span>
+    <span class="c1">#         # output:</span>
+    <span class="c1">#         probability=np.ones(shape=(3, 3), dtype=FX),</span>
+    <span class="c1">#     ),</span>
+    <span class="c1">#     ref_path=join(TEST_DATA_DIR, f&quot;propagate_scalar_vacuum{tf_sfx}&quot;),</span>
+    <span class="c1">#     **st_test_kw,</span>
+    <span class="c1"># )</span>
+    <span class="c1"># logging.debug(&quot;\nvac_prob = %s&quot;, ary2str(test[&quot;probability&quot;]))</span>
+    <span class="c1"># # check unitarity</span>
+    <span class="c1"># # TODO: &lt;&lt; BUG? &gt;&gt; these fail even in double precision!</span>
+    <span class="c1"># check(</span>
+    <span class="c1">#     test=np.sum(test[&quot;probability&quot;], axis=0),</span>
+    <span class="c1">#     ref=np.ones(3),</span>
+    <span class="c1">#     label=(</span>
+    <span class="c1">#         f&quot;{tc_name} :: propagate_scalar_vacuum :: sum(vacuum probability, axis=0)&quot;</span>
+    <span class="c1">#     ),</span>
+    <span class="c1">#     ignore_fails=True,</span>
+    <span class="c1"># )</span>
+    <span class="c1"># check(</span>
+    <span class="c1">#     test=np.sum(test[&quot;probability&quot;], axis=1),</span>
+    <span class="c1">#     ref=np.ones(3),</span>
+    <span class="c1">#     label=(</span>
+    <span class="c1">#         f&quot;{tc_name} :: propagate_scalar_vacuum :: sum(vacuum probability, axis=1)&quot;</span>
+    <span class="c1">#     ),</span>
+    <span class="c1">#     ignore_fails=True,</span>
+    <span class="c1"># )</span>
+
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+    <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">propagate_scalar</span><span class="p">,</span>
+        <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">dm</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">],</span>
+            <span class="n">mix</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">],</span>
+            <span class="n">mat_pot</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;mat_pot&quot;</span><span class="p">],</span>
+            <span class="n">decay_flag</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;decay_flag&quot;</span><span class="p">],</span>
+            <span class="n">mat_decay</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;mat_decay&quot;</span><span class="p">],</span>
+            <span class="n">lri_pot</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;lri_pot&quot;</span><span class="p">],</span>
+            <span class="n">nubar</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">],</span>
+            <span class="n">energy</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">],</span>
+            <span class="n">densities</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;layer_densities&quot;</span><span class="p">],</span>
+            <span class="n">distances</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;layer_distances&quot;</span><span class="p">],</span>
+            <span class="c1"># output:</span>
+            <span class="n">probability</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FX</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span><span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;propagate_scalar</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">mat_prob = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;probability&quot;</span><span class="p">]))</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;decay_flag&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># check unitarity</span>
+        <span class="n">check</span><span class="p">(</span>
+            <span class="n">test</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;probability&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tc_name</span><span class="si">}</span><span class="s2"> :: propagate_scalar:: sum(matter probability, axis=0)&quot;</span><span class="p">,</span>
+            <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">check</span><span class="p">(</span>
+            <span class="n">test</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;probability&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tc_name</span><span class="si">}</span><span class="s2"> :: propagate_scalar :: sum(matter probability, axis=1)&quot;</span><span class="p">,</span>
+            <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+    <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">get_transition_matrix_hostfunc</span><span class="p">,</span>
+        <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">nubar</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">],</span>
+            <span class="n">energy</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">],</span>
+            <span class="n">rho</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;rho&quot;</span><span class="p">],</span>
+            <span class="n">baseline</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;baseline&quot;</span><span class="p">],</span>
+            <span class="n">mix_nubar</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">mix_nubar_conj_transp</span><span class="o">=</span><span class="p">(</span>
+                <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span> <span class="k">if</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span>
+            <span class="p">),</span>
+            <span class="n">mat_pot</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;mat_pot&quot;</span><span class="p">],</span>
+            <span class="n">H_vac</span><span class="o">=</span><span class="n">H_vac_ref</span><span class="p">,</span>
+            <span class="n">decay_flag</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;decay_flag&quot;</span><span class="p">],</span>
+            <span class="n">H_decay</span><span class="o">=</span><span class="n">H_decay_ref</span><span class="p">,</span>
+            <span class="n">lri_pot</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;lri_pot&quot;</span><span class="p">],</span>
+            <span class="n">dm</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">],</span>
+            <span class="c1"># output:</span>
+            <span class="n">transition_matrix</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span><span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;get_transition_matrix_hostfunc</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">transition_matrix = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;transition_matrix&quot;</span><span class="p">]))</span>
+    <span class="c1"># check unitarity</span>
+    <span class="n">check</span><span class="p">(</span>
+        <span class="n">test</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;transition_matrix&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+        <span class="n">label</span><span class="o">=</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tc_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">&quot; :: get_transition_matrix_hostfunc&quot;</span>
+            <span class="s2">&quot;:: sum(|transition_matrix|^2, axis=0)&quot;</span>
+        <span class="p">),</span>
+        <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">check</span><span class="p">(</span>
+        <span class="n">test</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;transition_matrix&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+        <span class="n">label</span><span class="o">=</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tc_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">&quot; :: get_transition_matrix_hostfunc&quot;</span>
+            <span class="s2">&quot; :: sum(|transition_matrix|^2, axis=1)&quot;</span>
+        <span class="p">),</span>
+        <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+
+    <span class="c1"># Compute H_full as used in `numba_osc_kernels` to call `get_dms` for SI case </span>
+    <span class="c1"># and det_dms_numnerical for decay case from `get_transition_matrix`</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;decay_flag&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+        
+        <span class="n">H_full_ref</span> <span class="o">=</span> <span class="p">(</span><span class="n">H_vac_ref</span> <span class="o">+</span> <span class="n">H_decay_ref</span><span class="p">)</span><span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="n">H_mat_ref</span>
+    
+        <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+            <span class="n">func</span><span class="o">=</span><span class="n">get_dms_numerical_hostfunc</span><span class="p">,</span>
+            <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">energy</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">],</span>
+                <span class="n">H_full</span><span class="o">=</span><span class="n">H_full_ref</span><span class="p">,</span>
+                <span class="c1"># outputs:</span>
+                <span class="n">dm_mat_mat</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+                <span class="n">dm_mat</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+            <span class="p">),</span>
+            <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span><span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;get_dms_numerical_hostfunc</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+            <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">dm_mat_mat = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;dm_mat_mat&quot;</span><span class="p">]))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">dm_mat = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;dm_mat&quot;</span><span class="p">]))</span>
+        <span class="c1"># keep for use by `get_transition_matrix_massbasis_hostfunc`, `get_product_hostfunc`</span>
+        <span class="n">dm_mat_mat_ref</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;dm_mat_mat&quot;</span><span class="p">]</span>
+        <span class="n">dm_mat_ref</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;dm_mat&quot;</span><span class="p">]</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">H_full_ref</span> <span class="o">=</span> <span class="n">H_vac_ref</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="n">H_mat_ref</span>
+    
+        <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+            <span class="n">func</span><span class="o">=</span><span class="n">get_dms_hostfunc</span><span class="p">,</span>
+            <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">energy</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">],</span>
+                <span class="n">H_full</span><span class="o">=</span><span class="n">H_full_ref</span><span class="p">,</span>
+                <span class="n">dm_vac_vac</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">],</span>
+                <span class="c1"># outputs:</span>
+                <span class="n">dm_mat_mat</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+                <span class="n">dm_mat</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+            <span class="p">),</span>
+            <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span><span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;get_dms_hostfunc</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+            <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">dm_mat_mat = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;dm_mat_mat&quot;</span><span class="p">]))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">dm_mat = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;dm_mat&quot;</span><span class="p">]))</span>
+        <span class="c1"># keep for use by `get_transition_matrix_massbasis_hostfunc`, `get_product_hostfunc`</span>
+        <span class="n">dm_mat_mat_ref</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;dm_mat_mat&quot;</span><span class="p">]</span>
+        <span class="n">dm_mat_ref</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;dm_mat&quot;</span><span class="p">]</span>
+        
+
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+
+    <span class="c1"># Compute same intermediate result `H_full_mass_eigenstate_basis` as in</span>
+    <span class="c1"># `numba_osc_kernels.get_transition_matrix` which calls</span>
+    <span class="c1"># `get_transition_matrix_massbasis`</span>
+    <span class="n">mix_nubar</span> <span class="o">=</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">mix_nubar_conj_transp</span> <span class="o">=</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span> <span class="k">if</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;pmns&quot;</span><span class="p">]</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="n">MAT_DOT_MAT_SUBSCR</span><span class="p">,</span> <span class="n">H_full_ref</span><span class="p">,</span> <span class="n">mix_nubar</span><span class="p">)</span>
+    <span class="n">H_full_mass_eigenstate_basis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+        <span class="n">MAT_DOT_MAT_SUBSCR</span><span class="p">,</span> <span class="n">mix_nubar_conj_transp</span><span class="p">,</span> <span class="n">tmp</span>
+    <span class="p">)</span>
+
+    <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">get_transition_matrix_massbasis_hostfunc</span><span class="p">,</span>
+        <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">baseline</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;baseline&quot;</span><span class="p">],</span>
+            <span class="n">energy</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">],</span>
+            <span class="n">dm_mat</span><span class="o">=</span><span class="n">dm_mat_ref</span><span class="p">,</span>
+            <span class="n">dm_mat_mat</span><span class="o">=</span><span class="n">dm_mat_mat_ref</span><span class="p">,</span>
+            <span class="n">H_full_mass_eigenstate_basis</span><span class="o">=</span><span class="n">H_full_mass_eigenstate_basis</span><span class="p">,</span>
+            <span class="c1"># output:</span>
+            <span class="n">transition_matrix</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;get_transition_matrix_massbasis_hostfunc</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">),</span>
+        <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">transition_matrix_mb = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;transition_matrix&quot;</span><span class="p">]))</span>
+    <span class="n">check</span><span class="p">(</span>
+        <span class="n">test</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;transition_matrix&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+        <span class="n">label</span><span class="o">=</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tc_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">&quot; :: get_transition_matrix_massbasis_hostfunc&quot;</span>
+            <span class="s2">&quot; :: sum(|transition_matrix (mass basis)|^2), axis=0)&quot;</span>
+        <span class="p">),</span>
+        <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">check</span><span class="p">(</span>
+        <span class="n">test</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;transition_matrix&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+        <span class="n">label</span><span class="o">=</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tc_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">&quot; :: get_transition_matrix_massbasis_hostfunc&quot;</span>
+            <span class="s2">&quot; :: sum(|transition_matrix (mass basis)|^2), axis=1)&quot;</span>
+        <span class="p">),</span>
+        <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">tc_</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+    <span class="n">test</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">stability_test</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">get_product_hostfunc</span><span class="p">,</span>
+        <span class="n">func_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">energy</span><span class="o">=</span><span class="n">tc_</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">],</span>
+            <span class="n">dm_mat</span><span class="o">=</span><span class="n">dm_mat_ref</span><span class="p">,</span>
+            <span class="n">dm_mat_mat</span><span class="o">=</span><span class="n">dm_mat_mat_ref</span><span class="p">,</span>
+            <span class="n">H_full_mass_eigenstate_basis</span><span class="o">=</span><span class="n">H_full_ref</span><span class="p">,</span>
+            <span class="c1"># output:</span>
+            <span class="n">product</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">ref_path</span><span class="o">=</span><span class="n">join</span><span class="p">(</span><span class="n">TEST_DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;product_hostfunc</span><span class="si">{</span><span class="n">tf_sfx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">st_test_kw</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">product = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ary2str</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s2">&quot;product&quot;</span><span class="p">]))</span></div>
+
+
+
+<div class="viewcode-block" id="stability_test">
+<a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.stability_test">[docs]</a>
+<span class="k">def</span> <span class="nf">stability_test</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">func_kw</span><span class="p">,</span> <span class="n">ref_path</span><span class="p">,</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;basic stability test of a Numba CPUDispatcher function (i.e., function</span>
+<span class="sd">    compiled via @jit / @njit)&quot;&quot;&quot;</span>
+    <span class="n">func_name</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">py_func</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;stability testing `</span><span class="si">%s</span><span class="s2">`&quot;</span><span class="p">,</span> <span class="n">func_name</span><span class="p">)</span>
+    <span class="n">ref_path</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">ref_path</span><span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">execute_func</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">func</span><span class="p">,</span> <span class="n">func_kw</span><span class="o">=</span><span class="n">func_kw</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">define_as_ref</span><span class="p">:</span>
+        <span class="n">to_file</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref_path</span><span class="p">)</span>
+
+    <span class="c1"># Even when we define the test case as ref, round-trip to/from file to</span>
+    <span class="c1"># ensure that doesn&#39;t corrupt the values</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">ref_path</span><span class="p">)</span>
+
+    <span class="n">check</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">func_name</span><span class="p">,</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">test</span><span class="p">,</span> <span class="n">ref</span></div>
+
+
+
+<div class="viewcode-block" id="execute_func">
+<a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.execute_func">[docs]</a>
+<span class="k">def</span> <span class="nf">execute_func</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">func_kw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run `func` with *func_kw.values() where `outputs` specify names in</span>
+<span class="sd">    `func_kw` taken to be outputs of the function; for these, mark changed.</span>
+<span class="sd">    Retrieve both input and output values as Numpy arrays on the host and</span>
+<span class="sd">    aggregate together in a single dict before returning.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : numba CPUDispatcher or CUDADispatcher</span>
+<span class="sd">    func_kw : OrderedDict</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ret_dict : OrderedDict</span>
+<span class="sd">        Keys are arg names and vals are type-&quot;correct&quot; values; all arrays are</span>
+<span class="sd">        converted to host Numpy arrays</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">py_func</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">py_func</span>
+    <span class="n">func_name</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">getmodule</span><span class="p">(</span><span class="n">py_func</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">py_func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">])</span>
+    <span class="n">arg_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">py_func</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;signatures&quot;</span><span class="p">):</span>
+        <span class="n">arg_types</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">signatures</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">arg_types</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">compiled</span><span class="o">.</span><span class="n">argument_types</span>
+
+    <span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">arg_names</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">func_kw</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">excess</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">func_kw</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">arg_names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">missing</span> <span class="ow">or</span> <span class="n">excess</span><span class="p">:</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="n">msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;missing kwargs </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">excess</span><span class="p">:</span>
+            <span class="n">msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;excess kwargs </span><span class="si">{</span><span class="n">excess</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">func_name</span><span class="si">}</span><span class="s2">:&quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">msgs</span><span class="p">))</span>
+
+    <span class="n">typed_args</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">arg_name</span><span class="p">,</span> <span class="n">arg_type</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">arg_names</span><span class="p">,</span> <span class="n">arg_types</span><span class="p">):</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">func_kw</span><span class="p">[</span><span class="n">arg_name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">arg_type</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;array&quot;</span><span class="p">):</span>
+            <span class="n">arg_val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">arg_type</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arg_val</span> <span class="o">=</span> <span class="n">arg_type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="n">typed_args</span><span class="p">[</span><span class="n">arg_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">arg_val</span>
+
+    <span class="c1"># Call the host function with typed args</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">typed_args</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Failed running `</span><span class="si">%s</span><span class="s2">` with args </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">func_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">typed_args</span><span class="p">))</span>
+        <span class="k">raise</span>
+
+    <span class="c1"># All arrays converted to Numpy host arrays</span>
+
+    <span class="n">ret_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">typed_args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">ret_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="k">return</span> <span class="n">ret_dict</span></div>
+
+
+
+<div class="viewcode-block" id="compare_numeric">
+<a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.compare_numeric">[docs]</a>
+<span class="k">def</span> <span class="nf">compare_numeric</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ac_kw</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">AC_KW</span><span class="p">),</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare scalars or numpy ndarrays.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    test : scalar or numpy.ndarray</span>
+<span class="sd">    ref : scalar or numpy.ndarray</span>
+<span class="sd">    label : str or None, optional</span>
+<span class="sd">    ac_kw : mapping, optional</span>
+<span class="sd">        Keyword args to pass via **ac_kw to `numpy.isclose` / `numpy.allclose`</span>
+<span class="sd">    ignore_fails : bool, optional</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rslt : bool</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pfx</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> :: &quot;</span> <span class="k">if</span> <span class="n">label</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">printoptions</span><span class="p">(</span><span class="o">**</span><span class="n">PRINTOPTS</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">test</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="o">**</span><span class="n">ac_kw</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pfx</span><span class="si">}</span><span class="s2">test: </span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="s2"> != ref: </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="n">ignore_fails</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Arrays</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="o">**</span><span class="n">ac_kw</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">test</span> <span class="o">-</span> <span class="n">ref</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pfx</span><span class="si">}</span><span class="s2">test:&quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="p">(</span><span class="n">test</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">diff:</span><span class="se">\n</span><span class="si">{</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ref</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">nzmask</span> <span class="o">=</span> <span class="n">ref</span> <span class="o">!=</span> <span class="mi">0</span>
+            <span class="n">zmask</span> <span class="o">=</span> <span class="n">ref</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="n">fdiff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+            <span class="n">fdiff</span><span class="p">[</span><span class="n">nzmask</span><span class="p">]</span> <span class="o">=</span> <span class="n">diff</span><span class="p">[</span><span class="n">nzmask</span><span class="p">]</span> <span class="o">/</span> <span class="n">ref</span><span class="p">[</span><span class="n">nzmask</span><span class="p">]</span>
+            <span class="n">fdiff</span><span class="p">[</span><span class="n">zmask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">fractdiff:</span><span class="se">\n</span><span class="si">{</span><span class="p">(</span><span class="n">fdiff</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="n">ignore_fails</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="check">
+<a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.check">[docs]</a>
+<span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ac_kw</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">AC_KW</span><span class="p">),</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that `test` matches `ref` (closely enough).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    test</span>
+<span class="sd">    ref</span>
+<span class="sd">    ac_kw : mapping, optional</span>
+<span class="sd">        Kwargs to `np.allclose`, as used by</span>
+<span class="sd">        `pisa.utils.comparisons.recursiveEquality`</span>
+<span class="sd">    ignore_fails : bool, optional</span>
+<span class="sd">        If True and comparison fails, do not raise AssertionError</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    AssertionError</span>
+<span class="sd">        If `test` is not close enough to `ref` and ignore_fails is False</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">same</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">printoptions</span><span class="p">(</span><span class="o">**</span><span class="n">PRINTOPTS</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">label</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="n">label</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span>
+
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">test</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">same</span> <span class="o">&amp;=</span> <span class="n">compare_numeric</span><span class="p">(</span>
+                    <span class="n">test</span><span class="o">=</span><span class="n">val</span><span class="p">,</span>
+                    <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+                    <span class="n">label</span><span class="o">=</span><span class="n">label</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;key: &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                    <span class="n">ac_kw</span><span class="o">=</span><span class="n">ac_kw</span><span class="p">,</span>
+                    <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">same</span> <span class="o">&amp;=</span> <span class="n">compare_numeric</span><span class="p">(</span>
+                <span class="n">test</span><span class="o">=</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">ac_kw</span><span class="o">=</span><span class="n">ac_kw</span><span class="p">,</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="n">ignore_fails</span>
+            <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_fails</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">same</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">same</span></div>
+
+
+
+<div class="viewcode-block" id="ary2str">
+<a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.ary2str">[docs]</a>
+<span class="k">def</span> <span class="nf">ary2str</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a numpy ndarray to string easy to copy back into code&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;np.array(&quot;</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array2string</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="o">**</span><span class="n">A2S_KW</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span></div>
+
+
+
+<span class="c1"># Augment test cases with defaults / contruct arrays where necessary</span>
+<span class="k">for</span> <span class="n">TC</span> <span class="ow">in</span> <span class="n">TEST_CASES</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+    <span class="n">auto_populate_test_case</span><span class="p">(</span><span class="n">tc</span><span class="o">=</span><span class="n">TC</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Script interface for `test_prob3numba` function&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--ignore-fails&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--define-as-ref&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">Levels</span><span class="o">.</span><span class="n">WARN</span><span class="p">)</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">())</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">))</span>
+    <span class="n">test_prob3numba</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

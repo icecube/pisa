@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.core.pipeline &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.core.pipeline</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.core.pipeline</h1><div class="highlight"><pre>
+<span></span><span class="ch">#! /usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Implementation of the Pipeline object, and a simple script to instantiate and</span>
+<span class="sd">run a pipeline (the outputs of which can be plotted and stored to disk).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">NoSectionError</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">importlib</span> <span class="kn">import</span> <span class="n">import_module</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">getsource</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.events</span> <span class="kn">import</span> <span class="n">Data</span>
+<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">ParamSet</span><span class="p">,</span> <span class="n">DerivedParam</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">ContainerSet</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">PISAConfigParser</span><span class="p">,</span> <span class="n">parse_pipeline_config</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">mkdir</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Pipeline&quot;</span><span class="p">,</span> <span class="s2">&quot;test_Pipeline&quot;</span><span class="p">,</span> <span class="s2">&quot;parse_args&quot;</span><span class="p">,</span> <span class="s2">&quot;main&quot;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;J.L. Lanfranchi, P. Eller&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2018, The IceCube Collaboration</span>
+
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> you may not use this file except in compliance with the License.</span>
+<span class="s2"> You may obtain a copy of the License at</span>
+
+<span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s2"> See the License for the specific language governing permissions and</span>
+<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+
+
+<span class="c1"># TODO: should we check that the output binning of a previous stage produces</span>
+<span class="c1"># the inputs required by the current stage, or that the aggregate outputs that</span>
+<span class="c1"># got produced by previous stages (less those that got consumed in other</span>
+<span class="c1"># previous stages) hold what the current stage requires for inputs... or</span>
+<span class="c1"># should we not assume either will check out, since it&#39;s possible that the</span>
+<span class="c1"># stage requires sideband objects that are to be introduced at the top of the</span>
+<span class="c1"># pipeline by the user (and so there&#39;s no way to verify that all inputs are</span>
+<span class="c1"># present until we see what the user hands the pipeline as its top-level</span>
+<span class="c1"># input)? Alternatively, the lack of apparent inputs for a stage could show</span>
+<span class="c1"># a warning message. Or we just wait to see if it fails when the user runs the</span>
+<span class="c1"># code.</span>
+
+<span class="c1"># TODO: return an OrderedDict instead of a list if the user requests</span>
+<span class="c1"># intermediate results? Or simply use the `outputs` attribute of each stage to</span>
+<span class="c1"># dynamically access this?</span>
+
+
+<div class="viewcode-block" id="Pipeline">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline">[docs]</a>
+<span class="k">class</span> <span class="nc">Pipeline</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiate stages according to a parsed config object; excecute</span>
+<span class="sd">    stages.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config : string, OrderedDict, or PISAConfigParser</span>
+<span class="sd">        If string, interpret as resource location; send to the</span>
+<span class="sd">        `config_parser.parse_pipeline_config()` method to get a config</span>
+<span class="sd">        OrderedDict. If `OrderedDict`, use directly as pipeline configuration.</span>
+
+<span class="sd">    profile : bool</span>
+<span class="sd">        Perform timings</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">PISAConfigParser</span><span class="p">)):</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">parse_pipeline_config</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;`config` passed is of type </span><span class="si">%s</span><span class="s2"> but must be string,&quot;</span>
+                <span class="s2">&quot; PISAConfigParser, or OrderedDict&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">config</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pisa_version</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">ContainerSet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector_name</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;detector_name&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_binning</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;output_binning&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_key</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span> <span class="o">=</span> <span class="n">profile</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_stages</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># check in case someone decided to add a non-daemonflux parameter with daemon_</span>
+        <span class="c1"># in it, which would potentially make penalty calculation incorrect</span>
+        <span class="k">if</span> <span class="s2">&quot;daemon_chi2&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">num_daemon_params</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">names</span> <span class="k">if</span> <span class="s2">&quot;daemon_&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">])</span>
+            <span class="k">assert</span> <span class="n">num_daemon_params</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;daemon_params_len&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">),</span> \
+                    <span class="s1">&#39;Incorrect number of parameters with &quot;daemon_&quot; in their name detected. Non-daemonflux parameters can not have &quot;daemon_&quot; in their name. Rename your non-daemonflux parameters which do not comly!&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_covariance_set</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;presto&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Pipeline.tabulate">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.tabulate">[docs]</a>
+    <span class="k">def</span> <span class="nf">tabulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">):</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;stage number&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;calc_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;has setup&#39;</span><span class="p">,</span> <span class="s1">&#39;has compute&#39;</span><span class="p">,</span> <span class="s1">&#39;has apply&#39;</span><span class="p">,</span> <span class="s1">&#39;# fixed params&#39;</span><span class="p">,</span> <span class="s1">&#39;# free params&#39;</span><span class="p">]</span>
+        <span class="n">colalign</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;center&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span> <span class="p">)</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">):</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">])</span>
+            <span class="n">table</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">setup_function</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
+            <span class="n">table</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">compute_function</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
+            <span class="n">table</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">apply_function</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
+            <span class="n">table</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">fixed</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">tabulate</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">tablefmt</span><span class="p">,</span> <span class="n">colalign</span><span class="o">=</span><span class="n">colalign</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Pipeline.report_profile">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.report_profile">[docs]</a>
+    <span class="k">def</span> <span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">report_profile</span><span class="p">(</span><span class="n">detailed</span><span class="o">=</span><span class="n">detailed</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span>
+
+    <span class="nd">@profile</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="Pipeline.index">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.index">[docs]</a>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the index in the pipeline of `stage_id`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        stage_id : string or int</span>
+<span class="sd">            Name of the stage, or stage number (0-indexed)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        idx : integer stage number (0-indexed)</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError : if `stage_id` not in pipeline.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stage_id</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">stage_num</span><span class="p">,</span> <span class="n">stage</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">stage_id</span> <span class="ow">in</span> <span class="p">[</span><span class="n">stage_num</span><span class="p">,</span> <span class="n">stage</span><span class="o">.</span><span class="n">stage_name</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="n">stage_num</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No stage &quot;</span><span class="si">%s</span><span class="s1">&quot; found in the pipeline.&#39;</span> <span class="o">%</span> <span class="n">stage_id</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stages</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stages</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;Cannot locate stage &quot;</span><span class="si">%s</span><span class="s1">&quot; in pipeline. Stages&#39;</span>
+            <span class="s2">&quot; available are </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stage_names</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">stage</span><span class="o">.</span><span class="n">stage_name</span> <span class="o">==</span> <span class="n">attr</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">stage</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+            <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot; is neither a stage in this pipeline nor an attribute/property&#39;</span>
+            <span class="s2">&quot; of the `Pipeline` object.&quot;</span> <span class="o">%</span> <span class="n">attr</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_init_stages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stage factory: Instantiate stages specified by self.config.</span>
+
+<span class="sd">        Conventions required for this to work:</span>
+<span class="sd">            * Stage and service names must be lower-case</span>
+<span class="sd">            * Service implementations must be found at Python path</span>
+<span class="sd">              `pisa.stages.&lt;stage_name&gt;.&lt;service_name&gt;`</span>
+<span class="sd">            * `service` cannot be an instantiation argument for a service</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">stage_num</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">name</span><span class="p">,</span> <span class="n">settings</span> <span class="o">=</span> <span class="n">item</span>
+
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;pipeline&#39;</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                <span class="n">stage_name</span><span class="p">,</span> <span class="n">service_name</span> <span class="o">=</span> <span class="n">name</span>
+
+                <span class="c1"># old cfgs compatibility</span>
+                <span class="k">if</span> <span class="n">service_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;pi_&#39;</span><span class="p">):</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Old stage name `</span><span class="si">{</span><span class="n">service_name</span><span class="si">}</span><span class="s2">` is automatically renamed to `</span><span class="si">{</span><span class="n">service_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pi_&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">`. &quot;</span> <span class="o">+</span>
+                                    <span class="s2">&quot;Please change your config in the future!&quot;</span><span class="p">)</span>
+                <span class="n">service_name</span> <span class="o">=</span> <span class="n">service_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pi_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;instantiating stage </span><span class="si">%s</span><span class="s2"> / service </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">stage_name</span><span class="p">,</span> <span class="n">service_name</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Import service&#39;s module</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Importing service module: </span><span class="si">{</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">module_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;pisa.stages.</span><span class="si">{</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">module</span> <span class="o">=</span> <span class="n">import_module</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Module </span><span class="si">{</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">service_name</span><span class="si">}</span><span class="s2"> not found in PISA, trying &quot;</span>
+                        <span class="s2">&quot;to import from external definition.&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">module_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">module</span> <span class="o">=</span> <span class="n">import_module</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span>
+
+                <span class="c1"># Get service class from module</span>
+                <span class="n">service_cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">service_name</span><span class="p">)</span>
+
+                <span class="c1"># Instantiate service</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span>
+                    <span class="s2">&quot;initializing stage.service </span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2"> with settings </span><span class="si">%s</span><span class="s2">&quot;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="n">stage_name</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">settings</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">service</span> <span class="o">=</span> <span class="n">service_cls</span><span class="p">(</span><span class="o">**</span><span class="n">settings</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_profile</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="s2">&quot;Failed to instantiate stage.service </span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2"> with settings </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">stage_name</span><span class="p">,</span>
+                        <span class="n">service_name</span><span class="p">,</span>
+                        <span class="n">settings</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">Stage</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s1">&#39;Trying to create service &quot;</span><span class="si">%s</span><span class="s1">&quot; for stage #</span><span class="si">%d</span><span class="s1"> (</span><span class="si">%s</span><span class="s1">),&#39;</span>
+                        <span class="s2">&quot; but object </span><span class="si">%s</span><span class="s2"> instantiated from class </span><span class="si">%s</span><span class="s2"> is not a&quot;</span>
+                        <span class="s2">&quot; PISA Stage type but instead is of type </span><span class="si">%s</span><span class="s2">.&quot;</span>
+                        <span class="o">%</span> <span class="p">(</span>
+                            <span class="n">service_name</span><span class="p">,</span>
+                            <span class="n">stage_num</span><span class="p">,</span>
+                            <span class="n">stage_name</span><span class="p">,</span>
+                            <span class="n">service</span><span class="p">,</span>
+                            <span class="n">service_cls</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="p">(</span><span class="n">service</span><span class="p">),</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+
+                <span class="n">stages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">service</span><span class="p">)</span>
+
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;Failed to initialize stage #</span><span class="si">%d</span><span class="s2"> (stage=</span><span class="si">%s</span><span class="s2">, service=</span><span class="si">%s</span><span class="s2">).&quot;</span><span class="p">,</span>
+                    <span class="n">stage_num</span><span class="p">,</span>
+                    <span class="n">stage_name</span><span class="p">,</span>
+                    <span class="n">service_name</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">raise</span>
+
+
+
+        <span class="c1"># set parameters with an identical name to the same object</span>
+        <span class="c1"># otherwise we get inconsistent behaviour when setting repeated params</span>
+        <span class="c1"># See Isues #566 and #648</span>
+        <span class="n">all_parans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="n">all_parans</span><span class="p">,</span> <span class="n">existing_must_match</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">param_selections</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="n">stages</span><span class="p">:</span>
+            <span class="n">param_selections</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">param_selections</span><span class="p">)</span>
+        <span class="n">param_selections</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">param_selections</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">stages</span><span class="p">:</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">param_selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stages</span> <span class="o">=</span> <span class="n">stages</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Pipeline.get_outputs">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.get_outputs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_binning</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get MapSet output&quot;&quot;&quot;</span>
+
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">output_binning</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output_binning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_binning</span>
+            <span class="n">output_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_key</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">output_binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">))</span>
+
+        <span class="k">assert</span> <span class="n">output_binning</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">output_binning</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_mapset</span><span class="p">(</span><span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">error</span><span class="o">=</span><span class="n">output_key</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_mapset</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">outputs</span></div>
+
+
+<div class="viewcode-block" id="Pipeline.add_covariance">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.add_covariance">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">covmat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Incorporates covariance between parameters. </span>
+<span class="sd">            This is done by replacing relevant correlated parameters with &quot;DerivedParams&quot;</span>
+<span class="sd">                that depend on new parameters in an uncorrelated basis</span>
+
+<span class="sd">            The parameters are all updated, but this doesn&#39;t add the new parameters in</span>
+<span class="sd">            So we go to the first stage we find that has one of the original parameters and manually add this in </span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_covariance_set</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Tried to add covariance matrix while one is already here.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s2">&quot;Add larger covariance matrix rather than calling this multiple times&quot;</span><span class="p">)</span>
+
+        <span class="n">paramset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
+        <span class="n">paramset</span><span class="o">.</span><span class="n">add_covariance</span><span class="p">(</span><span class="n">covmat</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_covariance_set</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># this should go and replace existing stage parameters with the new ones </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="n">paramset</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_rotated</span><span class="p">(</span><span class="n">paramset</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_add_rotated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramset</span><span class="p">:</span><span class="n">ParamSet</span><span class="p">,</span> <span class="n">suppress_warning</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Used to manually add in the new, rotated parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># now we need to add in the new, rotated, parameters </span>
+        <span class="c1"># we want to add the new rotated parameters into a stage that had the correlated parameter</span>
+        <span class="c1">#   it doesn&#39;t really matter where these uncorrelated parameters go, all stages</span>
+        <span class="c1">#   that need to are already using those Derived Params </span>
+        <span class="n">derived_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">paramset</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">DerivedParam</span><span class="p">):</span> 
+                <span class="n">derived_name</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">name</span>
+                <span class="n">depends</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">dependson</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">depends</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">suppress_warning</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Added covariance matrix but found no Derived Params&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># now we find where a derived parameter lives </span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
+            <span class="n">included</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">_param_selector</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">names</span>
+            <span class="k">if</span> <span class="n">derived_name</span> <span class="ow">in</span> <span class="n">included</span><span class="p">:</span>
+                <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># TODO incorporate selector !! </span>
+                <span class="n">stage</span><span class="o">.</span><span class="n">_param_selector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">paramset</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">success</span>
+
+<div class="viewcode-block" id="Pipeline.run">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.run">[docs]</a>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the pipeline to compute&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Working on stage </span><span class="si">{</span><span class="n">stage</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">stage</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Pipeline.setup">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.setup">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup (reset) all stages&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">ContainerSet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Pipeline.update_params">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.update_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">existing_must_match</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">extend</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update params for the pipeline.</span>
+
+<span class="sd">        Note that any param in `params` in excess of those that already exist</span>
+<span class="sd">        in the pipeline&#39;s stages will have no effect.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : ParamSet</span>
+<span class="sd">            Parameters to be updated</span>
+
+<span class="sd">        existing_must_match : bool</span>
+<span class="sd">        extend : bool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">_param_selector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">existing_must_match</span><span class="o">=</span><span class="n">existing_must_match</span><span class="p">,</span> <span class="n">extend</span><span class="o">=</span><span class="n">extend</span><span class="p">)</span></div>
+
+            <span class="c1">#stage.params.update(params, existing_must_match=existing_must_match, extend=extend)</span>
+
+<div class="viewcode-block" id="Pipeline.select_params">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.select_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">select_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select a set of alternate param values/specifications.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        selections : string or iterable of strings</span>
+<span class="sd">        error_on_missing : bool</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        KeyError if `error_on_missing` is `True` and any of `selections` does</span>
+<span class="sd">            not exist in any stage in the pipeline.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">successes</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">stage</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">successes</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">error_on_missing</span> <span class="ow">and</span> <span class="n">successes</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="s2">&quot;None of the stages in this pipeline has all of the&quot;</span>
+                <span class="s2">&quot; selections </span><span class="si">%s</span><span class="s2"> available.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">selections</span><span class="p">,)</span>
+            <span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;pisa.core.param.ParamSet : pipeline&#39;s parameters&quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">param_selections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;list of strings : param selections collected from all stages&quot;&quot;&quot;</span>
+        <span class="n">selections</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">selections</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">param_selections</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stages</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="s1">&#39;list[Stage]&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;list of Stage : stages in the pipeline&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stage_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;list of strings : names of stages in the pipeline&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">stage_name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deepcopy of the OrderedDict used to instantiate the pipeline&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">source_code_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash for the source code of this object&#39;s class.</span>
+
+<span class="sd">        Not meant to be perfect, but should suffice for tracking provenance of</span>
+<span class="sd">        an object stored to disk that were produced by a Stage.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">getsource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;int : Hash of the state of the pipeline. This hashes together a hash</span>
+<span class="sd">        of the Pipeline class&#39;s source code and a hash of the state of each</span>
+<span class="sd">        contained stage.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">hash_obj</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">source_code_hash</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">stage</span><span class="o">.</span><span class="n">hash</span> <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span></div>
+
+
+
+<div class="viewcode-block" id="test_Pipeline">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.test_Pipeline">[docs]</a>
+<span class="k">def</span> <span class="nf">test_Pipeline</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for Pipeline class&quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=line-too-long</span>
+
+    <span class="c1"># TODO: make a test config file with hierarchy AND material selector,</span>
+    <span class="c1"># uncomment / add in tests commented / removed below</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Test: select_params and param_selections</span>
+    <span class="c1">#</span>
+
+    <span class="n">hierarchies</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;nh&quot;</span><span class="p">,</span> <span class="s2">&quot;ih&quot;</span><span class="p">]</span>
+    <span class="c1">#materials = [&quot;iron&quot;, &quot;pyrolite&quot;]</span>
+    <span class="n">materials</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">t23</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">ih</span><span class="o">=</span><span class="mf">49.5</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">nh</span><span class="o">=</span><span class="mf">42.3</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">)</span>
+    <span class="c1">#YeO = dict(iron=0.4656, pyrolite=0.4957)</span>
+
+    <span class="c1"># Instantiate with two pipelines: first has both nh/ih and iron/pyrolite</span>
+    <span class="c1"># param selectors, while the second only has nh/ih param selectors.</span>
+    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/example.cfg&quot;</span><span class="p">)</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+
+    <span class="c1">#current_mat = &quot;iron&quot;</span>
+    <span class="n">current_hier</span> <span class="o">=</span> <span class="s2">&quot;nh&quot;</span>
+
+    <span class="k">for</span> <span class="n">new_hier</span><span class="p">,</span> <span class="n">new_mat</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="n">hierarchies</span><span class="p">,</span> <span class="n">materials</span><span class="p">):</span>
+        <span class="c1">#_ = YeO[new_mat]</span>
+
+        <span class="k">assert</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">param_selections</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">current_hier</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">param_selections</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">t23</span><span class="p">[</span><span class="n">current_hier</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span>
+        <span class="p">)</span>
+        <span class="c1">#assert pipeline.params.YeO.value == YeO[current_mat], str(pipeline.params.YeO)</span>
+
+        <span class="c1"># Select just the hierarchy</span>
+        <span class="n">pipeline</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">new_hier</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">param_selections</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">new_hier</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">param_selections</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">t23</span><span class="p">[</span><span class="n">new_hier</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span>
+        <span class="p">)</span>
+        <span class="c1">#assert pipeline.params.YeO.value == YeO[current_mat], str(pipeline.params.YeO)</span>
+
+        <span class="c1">## Select just the material</span>
+        <span class="c1">#pipeline.select_params(new_mat)</span>
+        <span class="c1">#assert pipeline.param_selections == sorted([new_hier, new_mat]), str(</span>
+        <span class="c1">#    pipeline.param_selections</span>
+        <span class="c1">#)</span>
+        <span class="k">assert</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">t23</span><span class="p">[</span><span class="n">new_hier</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span>
+        <span class="p">)</span>
+        <span class="c1">#assert pipeline.params.YeO.value == YeO[new_mat], str(pipeline.params.YeO)</span>
+
+        <span class="c1"># Reset both to &quot;current&quot;</span>
+        <span class="n">pipeline</span><span class="o">.</span><span class="n">select_params</span><span class="p">([</span><span class="n">current_hier</span><span class="p">])</span>
+        <span class="k">assert</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">param_selections</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">current_hier</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">param_selections</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">t23</span><span class="p">[</span><span class="n">current_hier</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span>
+        <span class="p">)</span></div>
+
+        <span class="c1">#assert pipeline.params.YeO.value == YeO[current_mat], str(pipeline.params.YeO)</span>
+
+        <span class="c1">## Select both hierarchy and material</span>
+        <span class="c1">#pipeline.select_params([new_hier])</span>
+        <span class="c1">#assert pipeline.param_selections == sorted([new_hier, new_mat]), str(</span>
+        <span class="c1">#    pipeline.param_selections</span>
+        <span class="c1">#)</span>
+        <span class="c1">#assert pipeline.params.theta23.value == t23[new_hier], str(</span>
+        <span class="c1">#    pipeline.params.theta23</span>
+        <span class="c1">#)</span>
+        <span class="c1">#assert pipeline.params.YeO.value == YeO[new_mat], str(pipeline.params.YeO)</span>
+
+        <span class="c1">#current_hier = new_hier</span>
+        <span class="c1">#current_mat = new_mat</span>
+
+
+
+<span class="c1"># ----- Most of this below cang go (?) ---</span>
+
+<div class="viewcode-block" id="parse_args">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.parse_args">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command line arguments if `pipeline.py` is called as a script.&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="c1"># formatter_class=ArgumentDefaultsHelpFormatter,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Instantiate and run a pipeline from a config file.</span>
+<span class="s2">        Optionally store the resulting distribution(s) and plot(s) to disk.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">required</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;required arguments&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-p&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--pipeline&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;CONFIGFILE&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;File containing settings for the pipeline.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-a&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--arg&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECTION ARG=VAL&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;append&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Set config arg(s) manually. SECTION can be e.g.</span>
+<span class="s2">        &quot;stage:&lt;stage_name&gt;&quot; (like &quot;stage:flux&quot;, &quot;stage:reco&quot;, etc.),</span>
+<span class="s2">        &quot;pipeline&quot;, and so forth. Arg values specified here take precedence</span>
+<span class="s2">        over those in the config file, but note that the sections specified</span>
+<span class="s2">        must already exist in the config file.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--select&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;PARAM_SELECTIONS&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Param selectors (separated by spaces) to use to override any</span>
+<span class="s2">        defaults in the config file.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--inputs&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;File from which to read inputs to be fed to the pipeline.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--only-stage&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;STAGE&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Test stage: Instantiate a single stage in the pipeline</span>
+<span class="s2">        specification and run it in isolation (as the sole stage in a</span>
+<span class="s2">        pipeline). If it is a stage that requires inputs, these can be</span>
+<span class="s2">        specified with the --infile argument, or else dummy stage input maps</span>
+<span class="s2">        (numpy.ones(...), matching the input binning specification) are</span>
+<span class="s2">        generated for testing purposes.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--stop-after-stage&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;STAGE&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Instantiate a pipeline up to and including STAGE, but stop</span>
+<span class="s2">        there. Can specify a stage by index in the pipeline config (e.g., 0, 1,</span>
+<span class="s2">        etc.) or name (e.g., flux, osc, etc.)&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--outdir&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;DIR&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Store all output files (data and plots) to this directory.</span>
+<span class="s2">        Directory will be created (including missing parent directories) if it</span>
+<span class="s2">        does not exist already. If no dir is provided, no outputs will be</span>
+<span class="s2">        saved.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--intermediate&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Store all intermediate outputs, not just the final stage&#39;s</span>
+<span class="s2">        outputs.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--pdf&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Produce pdf plot(s).&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--png&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Produce png plot(s).&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--annotate&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Annotate plots with counts per bin&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-v&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Set verbosity level. Repeat for increased verbosity. -v is</span>
+<span class="s2">        info-level, -vv is debug-level and -vvv is trace-level output.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">args</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">return_outputs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run unit tests if `pipeline.py` is called as a script.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.plotter</span> <span class="kn">import</span> <span class="n">Plotter</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="c1"># Even if user specifies an integer on command line, it comes in as a</span>
+    <span class="c1"># string. Try to convert to int (e.g. if `&#39;1&#39;` is passed to indicate the</span>
+    <span class="c1"># second stage), and -- if successful -- use this as `args.only_stage`.</span>
+    <span class="c1"># Otherwise, the string value passed will be used (e.g. `&#39;osc&#39;` could be</span>
+    <span class="c1"># passed).</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">only_stage_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">only_stage</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">only_stage</span> <span class="o">=</span> <span class="n">only_stage_int</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">:</span>
+        <span class="n">mkdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">pdf</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">png</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No --outdir provided, so cannot save images.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Most basic parsing of the pipeline config (parsing only to this level</span>
+    <span class="c1"># allows for simple strings to be specified as args for updating)</span>
+    <span class="n">bcp</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="p">()</span>
+    <span class="n">bcp</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">pipeline</span><span class="p">)</span>
+
+    <span class="c1"># Update the config with any args specified on command line</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">arg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">arg_list</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">arg</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Args must be formatted as: &quot;section arg=val&quot;. Got &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+                    <span class="s2">&quot; instead.&quot;</span> <span class="o">%</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arg_list</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">section</span> <span class="o">=</span> <span class="n">arg_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">remainder</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arg_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">eq_split</span> <span class="o">=</span> <span class="n">remainder</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span>
+            <span class="n">newarg</span> <span class="o">=</span> <span class="n">eq_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">eq_split</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s1">&#39;Setting config section &quot;</span><span class="si">%s</span><span class="s1">&quot; arg &quot;</span><span class="si">%s</span><span class="s1">&quot; = &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">newarg</span><span class="p">,</span> <span class="n">value</span>
+            <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">bcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">newarg</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">NoSectionError</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s1">&#39;Invalid section &quot;</span><span class="si">%s</span><span class="s1">&quot; specified. Must be one of </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+                    <span class="n">section</span><span class="p">,</span>
+                    <span class="n">bcp</span><span class="o">.</span><span class="n">sections</span><span class="p">(),</span>
+                <span class="p">)</span>
+                <span class="k">raise</span>
+
+    <span class="c1"># Instantiate the pipeline</span>
+    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">bcp</span><span class="p">)</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">select</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pipeline</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">select</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">only_stage</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">stop_idx</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">stop_after_stage</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">stop_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop_idx</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stop_idx</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">stop_idx</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">stop_idx</span><span class="p">)</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span>
+            <span class="n">idx</span><span class="o">=</span><span class="n">stop_idx</span>
+        <span class="p">)</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+        <span class="k">if</span> <span class="n">stop_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stop_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop_idx</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">stop_after_stage</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">only_stage</span><span class="p">)</span>
+        <span class="n">stage</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Create dummy inputs if necessary</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;input_binning&quot;</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Stage requires input, so building dummy&quot;</span>
+                <span class="s2">&quot; inputs of random numbers, with random state set to the input&quot;</span>
+                <span class="s2">&quot; index according to alphabetical ordering of input names and&quot;</span>
+                <span class="s2">&quot; filled in alphabetical ordering of dimension names.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">input_maps</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">input_binning</span><span class="p">)</span>
+            <span class="n">alphabetical_binning</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">reorder_dimensions</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">names</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">input_num</span><span class="p">,</span> <span class="n">input_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">input_names</span><span class="p">)):</span>
+                <span class="c1"># Create a new map with all 3&#39;s; name according to the input</span>
+                <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">alphabetical_binning</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+                <span class="n">input_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">input_name</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="n">alphabetical_binning</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="n">hist</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Apply Poisson fluctuations to randomize the values in the map</span>
+                <span class="n">input_map</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;poisson&quot;</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">input_num</span><span class="p">)</span>
+
+                <span class="c1"># Reorder dimensions according to user&#39;s original binning spec</span>
+                <span class="n">input_map</span><span class="o">.</span><span class="n">reorder_dimensions</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">input_binning</span><span class="p">)</span>
+                <span class="n">input_maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_map</span><span class="p">)</span>
+            <span class="n">inputs</span> <span class="o">=</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">maps</span><span class="o">=</span><span class="n">input_maps</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ones&quot;</span><span class="p">,</span> <span class="nb">hash</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">outputs</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="p">[</span><span class="n">indices</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">stg_svc</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">stage_name</span> <span class="o">+</span> <span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="n">stage</span><span class="o">.</span><span class="n">service_name</span>
+        <span class="n">fbase</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span> <span class="n">stg_svc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">intermediate</span> <span class="ow">or</span> <span class="n">stage</span> <span class="o">==</span> <span class="n">pipeline</span><span class="p">[</span><span class="n">indices</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">outputs</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">fbase</span> <span class="o">+</span> <span class="s2">&quot;__output.json.bz2&quot;</span><span class="p">)</span>
+
+        <span class="c1"># also only plot if args intermediate or last stage</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">intermediate</span> <span class="ow">or</span> <span class="n">stage</span> <span class="o">==</span> <span class="n">pipeline</span><span class="p">[</span><span class="n">indices</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">formats</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">png</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">png</span><span class="p">,</span> <span class="n">pdf</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">pdf</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">outputs</span><span class="p">,</span> <span class="n">Data</span><span class="p">):</span>
+                <span class="c1"># TODO(shivesh): plots made here will use the most recent</span>
+                <span class="c1"># &quot;pisa_weight&quot; column and so all stages will have identical plots</span>
+                <span class="c1"># (one workaround is to turn on &quot;memcache_deepcopy&quot;)</span>
+                <span class="c1"># TODO(shivesh): intermediate stages have no output binning</span>
+                <span class="k">if</span> <span class="n">stage</span><span class="o">.</span><span class="n">output_binning</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Skipping plot of intermediate stage </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">stage</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">outputs</span><span class="o">.</span><span class="n">histogram_set</span><span class="p">(</span>
+                    <span class="n">binning</span><span class="o">=</span><span class="n">stage</span><span class="o">.</span><span class="n">output_binning</span><span class="p">,</span>
+                    <span class="n">nu_weights_col</span><span class="o">=</span><span class="s2">&quot;pisa_weight&quot;</span><span class="p">,</span>
+                    <span class="n">mu_weights_col</span><span class="o">=</span><span class="s2">&quot;pisa_weight&quot;</span><span class="p">,</span>
+                    <span class="n">noise_weights_col</span><span class="o">=</span><span class="s2">&quot;pisa_weight&quot;</span><span class="p">,</span>
+                    <span class="n">mapset_name</span><span class="o">=</span><span class="n">stg_svc</span><span class="p">,</span>
+                    <span class="n">errors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">enabled</span> <span class="ow">in</span> <span class="n">formats</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">enabled</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">my_plotter</span> <span class="o">=</span> <span class="n">Plotter</span><span class="p">(</span>
+                        <span class="n">stamp</span><span class="o">=</span><span class="s2">&quot;Event rate&quot;</span><span class="p">,</span>
+                        <span class="n">outdir</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span>
+                        <span class="n">fmt</span><span class="o">=</span><span class="n">fmt</span><span class="p">,</span>
+                        <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">annotate</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">annotate</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">my_plotter</span><span class="o">.</span><span class="n">ratio</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">my_plotter</span><span class="o">.</span><span class="n">plot_2d_array</span><span class="p">(</span>
+                        <span class="n">outputs</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="n">stg_svc</span> <span class="o">+</span> <span class="s2">&quot;__output&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;RdBu&quot;</span>
+                    <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;Failed to save plot to format </span><span class="si">%s</span><span class="s2">. See exception&quot;</span> <span class="s2">&quot; message below&quot;</span><span class="p">,</span>
+                    <span class="n">fmt</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;I can&#39;t go on, I&#39;ll go on.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_outputs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pipeline</span><span class="p">,</span> <span class="n">outputs</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">pipeline</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">main</span><span class="p">(</span><span class="n">return_outputs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># pylint: disable=invalid-name</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,1 +1,0 @@
-../../../pisa/utils/flavor_interaction_types.md

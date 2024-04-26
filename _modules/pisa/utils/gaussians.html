@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.gaussians &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.gaussians</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.gaussians</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Multiple implementations of sum-of-gaussians for compatibility and speed</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">exp</span><span class="p">,</span> <span class="n">sqrt</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">OMP_NUM_THREADS</span><span class="p">,</span> <span class="n">NUMBA_CUDA_AVAIL</span><span class="p">,</span> <span class="n">numba_jit</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">tprofile</span>
+
+
+<span class="c1"># TODO: if the Numba CUDA functions are defined, then other CUDA (e.g. pycuda)</span>
+<span class="c1"># code doesn&#39;t run (possibly only when Nvidia driver is set to</span>
+<span class="c1"># process-exclusive or thread-exclusive mode). Need to fix this behavior. (E.g.</span>
+<span class="c1"># context that gets destroyed?)</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;GAUS_IMPLEMENTATIONS&#39;</span><span class="p">,</span> <span class="s1">&#39;gaussians&#39;</span><span class="p">,</span> <span class="s1">&#39;test_gaussians&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="n">GAUS_IMPLEMENTATIONS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;singlethreaded&#39;</span><span class="p">,</span> <span class="s1">&#39;multithreaded&#39;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">NUMBA_CUDA_AVAIL</span><span class="p">:</span>
+    <span class="n">GAUS_IMPLEMENTATIONS</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">,)</span>
+
+<span class="n">PI</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">TWOPI</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">SQRTPI</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+<span class="n">SQRT2PI</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+<span class="n">PISQ</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="gaussians">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.gaussians.gaussians">[docs]</a>
+<span class="k">def</span> <span class="nf">gaussians</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum of multiple Gaussian curves, normalized to have area of 1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : array</span>
+<span class="sd">        Points at which to evaluate the sum of Gaussians</span>
+
+<span class="sd">    mu : arrays</span>
+<span class="sd">        Means of the Gaussians to accumulate</span>
+
+<span class="sd">    sigma : array</span>
+<span class="sd">        Standard deviations of the Gaussians to accumulate</span>
+
+<span class="sd">    weights : array or None</span>
+<span class="sd">        Weights given to each Gaussian</span>
+
+<span class="sd">    implementation : None or string</span>
+<span class="sd">        One of &#39;singlethreaded&#39;, &#39;multithreaded&#39;, or &#39;cuda&#39;. Passing None, the</span>
+<span class="sd">        function will try to determine which of the implementations is best to</span>
+<span class="sd">        call.</span>
+
+<span class="sd">    kwargs</span>
+<span class="sd">        Passed on to the underlying implementation</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    outbuf : array</span>
+<span class="sd">        Resulting sum of Gaussians</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    This function dynamically calls an appropriate implementation depending</span>
+<span class="sd">    upon the problem size, the hardware available (multi-core CPU or a GPU),</span>
+<span class="sd">    and whether the user specifies `implementation`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: figure out which is the roughly the best function to call, if more</span>
+    <span class="c1"># than one function is available to call (i.e., really small problems are</span>
+    <span class="c1"># fastest in single core, really large `x` are probably best on GPU, and</span>
+    <span class="c1"># if/where multithreaded CPU beats GPU is still up in the air</span>
+    <span class="k">if</span> <span class="n">implementation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">implementation</span> <span class="o">=</span> <span class="n">implementation</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">implementation</span> <span class="ow">in</span> <span class="n">GAUS_IMPLEMENTATIONS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`implementation` must be one of </span><span class="si">%s</span><span class="s1">&#39;</span>
+                             <span class="o">%</span> <span class="n">GAUS_IMPLEMENTATIONS</span><span class="p">)</span>
+
+    <span class="c1"># Extract a &#39;threads&#39; kwarg if it&#39;s present, or default to OMP_NUM_THREADS</span>
+    <span class="k">if</span> <span class="s1">&#39;threads&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">threads</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;threads&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">threads</span> <span class="o">=</span> <span class="n">OMP_NUM_THREADS</span>
+
+    <span class="c1"># Convert all inputs to arrays of correct datatype</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="p">[</span><span class="n">mu</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="p">[</span><span class="n">sigma</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">use_weights</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">use_weights</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="n">weights</span><span class="p">]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">inv_sigma</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">inv_sigma_sq</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">inv_sigma</span> <span class="o">*</span> <span class="n">inv_sigma</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="n">n_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">n_gaussians</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
+
+    <span class="c1"># Normalization is computed here regardless of implementation</span>
+    <span class="k">if</span> <span class="n">use_weights</span><span class="p">:</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">SQRT2PI</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">SQRT2PI</span> <span class="o">*</span> <span class="n">n_gaussians</span><span class="p">)</span>
+
+    <span class="c1"># Instantiate an empty output buffer</span>
+    <span class="n">outbuf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">n_points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="c1"># Default to CUDA since it&#39;s generally fastest</span>
+    <span class="k">if</span> <span class="n">implementation</span> <span class="o">==</span> <span class="s1">&#39;cuda&#39;</span> <span class="ow">or</span> <span class="p">(</span><span class="n">implementation</span> <span class="ow">is</span> <span class="kc">None</span>
+                                    <span class="ow">and</span> <span class="n">NUMBA_CUDA_AVAIL</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Using CUDA Gaussians implementation&#39;</span><span class="p">)</span>
+        <span class="n">_gaussians_cuda</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
+                        <span class="n">n_gaussians</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Use singlethreaded version if `threads` is 1</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">implementation</span> <span class="o">==</span> <span class="s1">&#39;singlethreaded&#39;</span>
+          <span class="ow">or</span> <span class="n">implementation</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">threads</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Using single-threaded Gaussians implementation&#39;</span><span class="p">)</span>
+        <span class="n">_gaussians_singlethreaded</span><span class="p">(</span>
+            <span class="n">outbuf</span><span class="o">=</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="o">=</span><span class="n">inv_sigma</span><span class="p">,</span>
+            <span class="n">inv_sigma_sq</span><span class="o">=</span><span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+            <span class="n">n_gaussians</span><span class="o">=</span><span class="n">n_gaussians</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">n_points</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Use multithreaded version otherwise</span>
+    <span class="k">elif</span> <span class="n">implementation</span> <span class="o">==</span> <span class="s1">&#39;multithreaded&#39;</span> <span class="ow">or</span> <span class="n">threads</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Using multi-threaded Gaussians implementation&#39;</span><span class="p">)</span>
+        <span class="n">_gaussians_multithreaded</span><span class="p">(</span>
+            <span class="n">outbuf</span><span class="o">=</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="o">=</span><span class="n">inv_sigma</span><span class="p">,</span>
+            <span class="n">inv_sigma_sq</span><span class="o">=</span><span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+            <span class="n">n_gaussians</span><span class="o">=</span><span class="n">n_gaussians</span><span class="p">,</span> <span class="n">threads</span><span class="o">=</span><span class="n">threads</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;Unhandled value(s): `implementation`=&quot;</span><span class="si">%s</span><span class="s1">&quot;; note: threads=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+            <span class="s1">&#39; and NUMBA_CUDA_AVAIL=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="n">implementation</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">NUMBA_CUDA_AVAIL</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Now apply the normalization</span>
+    <span class="k">return</span> <span class="n">outbuf</span> <span class="o">*</span> <span class="n">norm</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_gaussians_multithreaded</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
+                             <span class="n">n_gaussians</span><span class="p">,</span> <span class="n">threads</span><span class="o">=</span><span class="n">OMP_NUM_THREADS</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum of multiple Gaussians, optimized to be run in multiple threads. This</span>
+<span class="sd">    dispatches the single-kernel threaded &quot;&quot;&quot;</span>
+    <span class="n">n_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">chunklen</span> <span class="o">=</span> <span class="n">n_points</span> <span class="o">//</span> <span class="n">OMP_NUM_THREADS</span>
+    <span class="n">threads</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">OMP_NUM_THREADS</span><span class="p">):</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">n_points</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="p">(</span><span class="n">OMP_NUM_THREADS</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">else</span> <span class="n">start</span> <span class="o">+</span> <span class="n">chunklen</span>
+        <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="n">_gaussians_singlethreaded</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">n_gaussians</span><span class="p">,</span>
+                  <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">threads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
+        <span class="n">start</span> <span class="o">+=</span> <span class="n">chunklen</span>
+
+    <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+
+<span class="nd">@numba_jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_gaussians_singlethreaded</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
+                              <span class="n">n_gaussians</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum of multiple Gaussians, optimized to be run in a single thread&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_gaussians</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">):</span>
+            <span class="n">tot</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_gaussians</span><span class="p">):</span>
+                <span class="n">xlessmu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">mu</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">tot</span> <span class="o">+=</span> <span class="p">(</span>
+                    <span class="n">exp</span><span class="p">((</span><span class="n">xlessmu</span><span class="o">*</span><span class="n">xlessmu</span><span class="p">)</span> <span class="o">*</span> <span class="n">inv_sigma_sq</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">inv_sigma</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="n">outbuf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">tot</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">):</span>
+            <span class="n">tot</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_gaussians</span><span class="p">):</span>
+                <span class="n">xlessmu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">mu</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">tot</span> <span class="o">+=</span> <span class="p">(</span>
+                    <span class="n">exp</span><span class="p">((</span><span class="n">xlessmu</span><span class="o">*</span><span class="n">xlessmu</span><span class="p">)</span><span class="o">*</span><span class="n">inv_sigma_sq</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="o">*</span><span class="n">inv_sigma</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="n">outbuf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">tot</span>
+
+
+<span class="k">if</span> <span class="n">NUMBA_CUDA_AVAIL</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
+
+    <span class="k">def</span> <span class="nf">_gaussians_cuda</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
+                        <span class="n">n_gaussians</span><span class="p">):</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">use_weights</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">use_weights</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">threads_per_block</span> <span class="o">=</span> <span class="mi">32</span>
+        <span class="n">blocks_per_grid</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">n_points</span> <span class="o">+</span> <span class="p">(</span><span class="n">threads_per_block</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">//</span> <span class="n">threads_per_block</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create empty array on GPU to store result</span>
+        <span class="n">d_outbuf</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">device_array</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">n_points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Copy argument arrays to GPU</span>
+        <span class="n">d_x</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">d_mu</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
+        <span class="n">d_inv_sigma</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">inv_sigma</span><span class="p">)</span>
+        <span class="n">d_inv_sigma_sq</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">inv_sigma_sq</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_weights</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_gaussians</span>
+            <span class="n">d_weights</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+            <span class="n">func</span> <span class="o">=</span> <span class="n">_gaussians_weighted_cuda_kernel</span><span class="p">[</span><span class="n">blocks_per_grid</span><span class="p">,</span> <span class="c1"># pylint: disable=unsubscriptable-object</span>
+                                                   <span class="n">threads_per_block</span><span class="p">]</span>
+            <span class="n">func</span><span class="p">(</span><span class="n">d_outbuf</span><span class="p">,</span> <span class="n">d_x</span><span class="p">,</span> <span class="n">d_mu</span><span class="p">,</span> <span class="n">d_inv_sigma</span><span class="p">,</span> <span class="n">d_inv_sigma_sq</span><span class="p">,</span> <span class="n">d_weights</span><span class="p">,</span>
+                 <span class="n">n_gaussians</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d_weights</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">func</span> <span class="o">=</span> <span class="n">_gaussians_cuda_kernel</span><span class="p">[</span><span class="n">blocks_per_grid</span><span class="p">,</span> <span class="n">threads_per_block</span><span class="p">]</span> <span class="c1"># pylint: disable=unsubscriptable-object</span>
+            <span class="n">func</span><span class="p">(</span><span class="n">d_outbuf</span><span class="p">,</span> <span class="n">d_x</span><span class="p">,</span> <span class="n">d_mu</span><span class="p">,</span> <span class="n">d_inv_sigma</span><span class="p">,</span> <span class="n">d_inv_sigma_sq</span><span class="p">,</span> <span class="n">n_gaussians</span><span class="p">)</span>
+
+        <span class="c1"># Copy contents of GPU result to host&#39;s outbuf</span>
+        <span class="n">d_outbuf</span><span class="o">.</span><span class="n">copy_to_host</span><span class="p">(</span><span class="n">ary</span><span class="o">=</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">del</span> <span class="n">d_x</span><span class="p">,</span> <span class="n">d_mu</span><span class="p">,</span> <span class="n">d_inv_sigma</span><span class="p">,</span> <span class="n">d_inv_sigma_sq</span><span class="p">,</span> <span class="n">d_weights</span><span class="p">,</span> <span class="n">d_outbuf</span>
+
+    <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">inline</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_gaussians_cuda_kernel</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span>
+                               <span class="n">n_gaussians</span><span class="p">):</span>
+        <span class="n">pt_idx</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># pylint: disable=not-callable</span>
+        <span class="n">x_pt</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">pt_idx</span><span class="p">]</span>
+        <span class="n">tot</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">g_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_gaussians</span><span class="p">):</span>
+            <span class="n">xlessmu</span> <span class="o">=</span> <span class="n">x_pt</span> <span class="o">-</span> <span class="n">mu</span><span class="p">[</span><span class="n">g_idx</span><span class="p">]</span>
+            <span class="n">tot</span> <span class="o">+=</span> <span class="p">(</span><span class="n">exp</span><span class="p">((</span><span class="n">xlessmu</span><span class="o">*</span><span class="n">xlessmu</span><span class="p">)</span> <span class="o">*</span> <span class="n">inv_sigma_sq</span><span class="p">[</span><span class="n">g_idx</span><span class="p">])</span>
+                    <span class="o">*</span> <span class="n">inv_sigma</span><span class="p">[</span><span class="n">g_idx</span><span class="p">])</span>
+        <span class="n">outbuf</span><span class="p">[</span><span class="n">pt_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">tot</span>
+
+    <span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">inline</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_gaussians_weighted_cuda_kernel</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span>
+                                        <span class="n">weights</span><span class="p">,</span> <span class="n">n_gaussians</span><span class="p">):</span>
+        <span class="n">pt_idx</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># pylint: disable=not-callable</span>
+        <span class="n">x_pt</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">pt_idx</span><span class="p">]</span>
+        <span class="n">tot</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">g_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_gaussians</span><span class="p">):</span>
+            <span class="n">xlessmu</span> <span class="o">=</span> <span class="n">x_pt</span> <span class="o">-</span> <span class="n">mu</span><span class="p">[</span><span class="n">g_idx</span><span class="p">]</span>
+            <span class="n">tot</span> <span class="o">+=</span> <span class="p">(</span><span class="n">exp</span><span class="p">((</span><span class="n">xlessmu</span><span class="o">*</span><span class="n">xlessmu</span><span class="p">)</span> <span class="o">*</span> <span class="n">inv_sigma_sq</span><span class="p">[</span><span class="n">g_idx</span><span class="p">])</span>
+                    <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">g_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">inv_sigma</span><span class="p">[</span><span class="n">g_idx</span><span class="p">])</span>
+        <span class="n">outbuf</span><span class="p">[</span><span class="n">pt_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">tot</span>
+
+
+<div class="viewcode-block" id="test_gaussians">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.gaussians.test_gaussians">[docs]</a>
+<span class="k">def</span> <span class="nf">test_gaussians</span><span class="p">(</span><span class="n">test_perf</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test `gaussians` function&quot;&quot;&quot;</span>
+    <span class="n">n_gaus</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">]</span> <span class="k">if</span> <span class="n">test_perf</span> <span class="k">else</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+    <span class="n">n_eval</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span> <span class="k">if</span> <span class="n">test_perf</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e2</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="n">n_eval</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">mu_sigma_weight_sets</span> <span class="o">=</span> <span class="p">[(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span>
+                             <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">n_gaus</span><span class="p">]</span>
+
+    <span class="n">timings</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">impl</span> <span class="ow">in</span> <span class="n">GAUS_IMPLEMENTATIONS</span><span class="p">:</span>
+        <span class="n">timings</span><span class="p">[</span><span class="n">impl</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">mus</span><span class="p">,</span> <span class="n">sigmas</span><span class="p">,</span> <span class="n">weights</span> <span class="ow">in</span> <span class="n">mu_sigma_weight_sets</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mus</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+            <span class="n">mus</span> <span class="o">=</span> <span class="p">[</span><span class="n">mus</span><span class="p">]</span>
+            <span class="n">sigmas</span> <span class="o">=</span> <span class="p">[</span><span class="n">sigmas</span><span class="p">]</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="n">weights</span><span class="p">]</span>
+        <span class="n">ref_unw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">mus</span><span class="p">,</span> <span class="n">sigmas</span><span class="p">)],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">mus</span><span class="p">)</span>
+        <span class="n">ref_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">s</span><span class="p">)</span><span class="o">*</span><span class="n">w</span>
+             <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">mus</span><span class="p">,</span> <span class="n">sigmas</span><span class="p">,</span> <span class="n">weights</span><span class="p">)],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">impl</span> <span class="ow">in</span> <span class="n">GAUS_IMPLEMENTATIONS</span><span class="p">:</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">test_unw</span> <span class="o">=</span> <span class="n">gaussians</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mus</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigmas</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">implementation</span><span class="o">=</span><span class="n">impl</span><span class="p">)</span>
+            <span class="n">dt_unw</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">test_w</span> <span class="o">=</span> <span class="n">gaussians</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mus</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigmas</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+                               <span class="n">implementation</span><span class="o">=</span><span class="n">impl</span><span class="p">)</span>
+            <span class="n">dt_w</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+            <span class="n">timings</span><span class="p">[</span><span class="n">impl</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dt_unw</span><span class="o">*</span><span class="mi">1000</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+                                  <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dt_w</span><span class="o">*</span><span class="mi">1000</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">3</span><span class="p">)))</span>
+            <span class="n">err_msgs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">test_unw</span><span class="p">,</span> <span class="n">ref_unw</span><span class="p">):</span>
+                <span class="n">err_msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="s1">&#39;BAD RESULT (unweighted), n_gaus=</span><span class="si">%d</span><span class="s1">, implementation=&#39;</span>
+                    <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot;, max. abs. fract. diff.: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                    <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mus</span><span class="p">),</span> <span class="n">impl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">test_unw</span><span class="o">/</span><span class="n">ref_unw</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))))</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">test_w</span><span class="p">,</span> <span class="n">ref_w</span><span class="p">):</span>
+                <span class="n">err_msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="s1">&#39;BAD RESULT (weighted), n_gaus=</span><span class="si">%d</span><span class="s1">, implementation=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+                    <span class="s1">&#39;, max. abs. fract. diff.: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                    <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mus</span><span class="p">),</span> <span class="n">impl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">test_w</span><span class="o">/</span><span class="n">ref_w</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))))</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">err_msgs</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">err_msg</span> <span class="ow">in</span> <span class="n">err_msgs</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">err_msgs</span><span class="p">))</span>
+
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s1">&#39;gaussians() timings (unweighted) (Note:OMP_NUM_THREADS=</span><span class="si">%d</span><span class="s1">; evaluated&#39;</span>
+        <span class="s1">&#39; at </span><span class="si">%.0e</span><span class="s1"> points)&#39;</span><span class="p">,</span> <span class="n">OMP_NUM_THREADS</span><span class="p">,</span> <span class="n">n_eval</span>
+    <span class="p">)</span>
+    <span class="n">timings_str</span> <span class="o">=</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">format</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s1">&#39;10d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">n_gaus</span><span class="p">])</span>
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">*</span><span class="mi">30</span> <span class="o">+</span> <span class="s1">&#39;Number of gaussians&#39;</span><span class="o">.</span><span class="n">center</span><span class="p">(</span><span class="mi">59</span><span class="p">))</span>
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;         </span><span class="si">%15s</span><span class="s1">       </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;impl.&#39;</span><span class="p">,</span> <span class="n">timings_str</span><span class="p">)</span>
+    <span class="n">timings_str</span> <span class="o">=</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">10</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">n_gaus</span><span class="p">])</span>
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;         </span><span class="si">%15s</span><span class="s1">       </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">15</span><span class="p">,</span> <span class="n">timings_str</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">impl</span> <span class="ow">in</span> <span class="n">GAUS_IMPLEMENTATIONS</span><span class="p">:</span>
+        <span class="c1"># only report timings for unweighted case</span>
+        <span class="n">timings_str</span> <span class="o">=</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">format</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;10.3f&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">timings</span><span class="p">[</span><span class="n">impl</span><span class="p">]])</span>
+        <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Timings, </span><span class="si">%15s</span><span class="s1"> (ms): </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">impl</span><span class="p">,</span> <span class="n">timings_str</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_gaussians &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command line arguments&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--test-perf&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Instead of unit test, run a performance test&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-v&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">Levels</span><span class="o">.</span><span class="n">WARN</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Set verbosity level. Repeat for increased verbosity.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">vars</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">())</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Script wrapper for calling `test_gaussians`&quot;&quot;&quot;</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="p">))</span>
+    <span class="n">test_gaussians</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

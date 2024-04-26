@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.utils.add_indices &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.utils.add_indices</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.utils.add_indices</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">PISA module to prep incoming data into formats that are</span>
+<span class="sd">compatible with the mc_uncertainty likelihood formulation</span>
+
+<span class="sd">This module takes in events containers from the pipeline, and</span>
+<span class="sd">introduces an additional array giving the indices where each</span>
+<span class="sd">event falls into.</span>
+
+<span class="sd">module structure imported from bootcamp example</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="c1">#from pisa.utils.log import logging</span>
+
+<span class="c1"># Load the modified index lookup function</span>
+<span class="kn">from</span> <span class="nn">pisa.core.bin_indexing</span> <span class="kn">import</span> <span class="n">lookup_indices</span>
+
+
+
+<div class="viewcode-block" id="add_indices">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.add_indices.add_indices">[docs]</a>
+<span class="k">class</span> <span class="nc">add_indices</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    PISA Pi stage to map out the index of the analysis</span>
+<span class="sd">    binning where each event falls into.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params</span>
+<span class="sd">        foo : Quantity</span>
+<span class="sd">        bar : Quanitiy with time dimension</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">    ------</span>
+<span class="sd">    - input and calc specs are predetermined in the module</span>
+<span class="sd">        (inputs from the config files will be disregarded)</span>
+
+<span class="sd">    - stage appends an array quantity called bin_indices</span>
+<span class="sd">    - stage also appends an array mask to access events by</span>
+<span class="sd">      bin index later in the pipeline</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># this is the constructor with default arguments</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+                 <span class="p">):</span>
+
+
+        <span class="c1"># init base class</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">add_indices</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+                                       <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+                                       <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+                                       <span class="p">)</span>
+
+
+<div class="viewcode-block" id="add_indices.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.add_indices.add_indices.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate the bin index where each event falls into</span>
+
+<span class="sd">        Create one mask for each analysis bin.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="s1">&#39;ERROR: calc specs must be set to &quot;events for this module&#39;</span>
+
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+            <span class="n">variables_to_bin</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">bin_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                <span class="n">variables_to_bin</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="n">bin_name</span><span class="p">])</span>
+
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">variables_to_bin</span><span class="p">,</span>
+                                       <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">)</span>
+
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">indices</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
+            <span class="k">for</span> <span class="n">bin_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">tot_num_bins</span><span class="p">):</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bin_i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bin_i</span></div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

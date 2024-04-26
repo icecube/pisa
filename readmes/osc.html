@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/readmes/osc.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p># Stage: Oscillations</p>
+<p>The purpose of this stage is to modify the modelled atmospheric neutrino flux by applying the appropriate oscillation probability in each energy and zenith bin through the earth, for each flavour.
+At the end of the stage, the oscillated neutrino flux for each flavour is given.</p>
+<p>### prob3</p>
+<p>This service calculates the neutrino oscillation probabilities based on the original <cite>Prob3</cite> code, which at its core, relies on a 3-flavour analytic solution to the neutrino oscillation propagation over constant matter density.
+For a realistic earth model, small enough constant density layers are chosen to accuratly describe the matter density through the earth.
+The <cite>Prob3</cite> code, initially written by the Super-Kamiokande collaboration in C/C++, is publicly available here: <a class="reference external" href="http://www.phy.duke.edu/~raw22/public/Prob3++/">http://www.phy.duke.edu/~raw22/public/Prob3++/</a></p>
+<p>We use a custom re-implementation in python/numba.</p>
+<p>To use this service, one must set values for all of the 3-flavour oscillation parameters: <cite>theta12</cite>, <cite>theta13</cite>, <cite>theta23</cite>, <cite>deltam21</cite>, <cite>deltam31</cite> and <cite>deltacp</cite>.
+One can set hierarchy-dependent versions in the settings file by adding <cite>.nh</cite> before the name in the <cite>params</cite> (see <cite>theta23</cite> in the example pipeline settings file for more details).</p>
+<p>The other advantage of <cite>Prob3</cite> is that it can fully take in to account matter effects in a very quick way.
+It is fed a model of the density of the Earth via the <cite>earth_model</cite> parameter which contains a discretised model of the Earth density.
+The two columns in the file are the radii of the boundaries and then densities in the sections.
+PISA has the 4, 10, 12 and 59 layer versions of the PReliminary Earth reference Model (PREM), the source of which can be found here:</p>
+<p><a class="reference external" href="http://www.sciencedirect.com/science/article/pii/0031920181900467">http://www.sciencedirect.com/science/article/pii/0031920181900467</a></p>
+<p>One also has control over 3 values of the electron fraction: <cite>YeI</cite>, <cite>YeM</cite> and <cite>YeO</cite>, which are the values in the inner core, mantle and outer core respectively.
+Finally, in PISA one can set the detector depth (since the standard <cite>Prob3</cite> has the detector at the surface) and the height above the Earth’s surface from which to begin propagation of the neutrinos.</p>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

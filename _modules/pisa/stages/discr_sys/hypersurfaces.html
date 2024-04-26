@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.discr_sys.hypersurfaces &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.discr_sys.hypersurfaces</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.discr_sys.hypersurfaces</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">PISA pi stage to apply hypersurface fits from discrete systematics parameterizations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1">#TODO Currently have to defined the `links` value in the stage config to match what the `combine_regex` does in</span>
+<span class="c1">#     the Hypersurface fitting. The `combine_regex` is stored in the hypersurface instance, so should make the</span>
+<span class="c1">#     scontainer linking use this instead of having to manually specify links. To do this, should make a variant</span>
+<span class="c1">#     of the container linking function that accepts a regex (using shared code with Map.py).</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">ast</span>
+
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">import</span> <span class="nn">pisa.utils.hypersurface</span> <span class="k">as</span> <span class="nn">hs</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">Levels</span>
+<span class="c1">#set_verbosity(Levels.DEBUG)</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;hypersurfaces&quot;</span><span class="p">,]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;P. Eller, T. Ehrhardt, T. Stuttard, J.L. Lanfranchi, A. Trettin&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2018, The IceCube Collaboration</span>
+
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> you may not use this file except in compliance with the License.</span>
+<span class="s2"> You may obtain a copy of the License at</span>
+
+<span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s2"> See the License for the specific language governing permissions and</span>
+<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="hypersurfaces">
+<a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.hypersurfaces.hypersurfaces">[docs]</a>
+<span class="k">class</span> <span class="nc">hypersurfaces</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Service to apply hypersurface parameterisation produced by</span>
+<span class="sd">    `scripts.fit_discrete_sys_nd`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fit_results_file : str</span>
+<span class="sd">        Path to hypersurface fit results file, i.e. the JSON file produced by the</span>
+<span class="sd">        `pisa.scripts.fit_discrete_sys_nd.py` script</span>
+
+<span class="sd">    propagate_uncertainty : bool, optional</span>
+<span class="sd">        Propagate the uncertainties from the hypersurface to the uncertainty of</span>
+<span class="sd">        the output</span>
+
+<span class="sd">    params : ParamSet</span>
+<span class="sd">        Note that the params required to be in `params` are determined from</span>
+<span class="sd">        those listed in the `fit_results_file`.</span>
+<span class="sd">    </span>
+<span class="sd">    interpolated : bool</span>
+<span class="sd">        If `True`, indicates that the hypersurfaces to be loaded are interpolated.</span>
+<span class="sd">    </span>
+<span class="sd">    links : dict</span>
+<span class="sd">        A dictionary defining how containers should be linked. Keys are the names of</span>
+<span class="sd">        the merged containers, values are lists of containers being linked together.</span>
+<span class="sd">        Keys must be a sub-set of the loaded hypersurfaces.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fit_results_file</span><span class="p">,</span>
+        <span class="n">propagate_uncertainty</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">interpolated</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">links</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">fluctuate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">fluctuate_seed</span><span class="o">=</span><span class="mi">12345</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># -- Only allowed/implemented modes -- #</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">],</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+        <span class="c1"># -- Load hypersurfaces -- #</span>
+
+        <span class="c1"># Store args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span> <span class="o">=</span> <span class="n">fit_results_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span> <span class="o">=</span> <span class="n">propagate_uncertainty</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolated</span> <span class="o">=</span> <span class="n">interpolated</span>
+        <span class="c1"># Expected parameter names depend on the hypersurface and, if applicable,</span>
+        <span class="c1"># on the parameters in which the hypersurfaces are interpolated.</span>
+        <span class="c1"># For this reason we need to load the hypersurfaces already in the init function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inter_params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolated</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">load_interpolated_hypersurfaces</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span><span class="p">,</span> <span class="n">expected_binning</span><span class="o">=</span><span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inter_params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hypersurfaces</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">interpolation_param_names</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">load_hypersurfaces</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span><span class="p">,</span> <span class="n">expected_binning</span><span class="o">=</span><span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hypersurface_param_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hypersurfaces</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">param_names</span>
+
+        <span class="c1"># -- Initialize base class -- #</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hypersurface_param_names</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">inter_params</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">warning_issued</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># don&#39;t warn more than once about empty bins</span>
+
+        <span class="c1"># Handle fluctuation option</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fluctuate</span> <span class="o">=</span> <span class="n">fluctuate</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluctuate</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fluctuate_seed</span> <span class="o">=</span> <span class="n">fluctuate_seed</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;User has selected to fluctuate the hypersurface coefficients (seed is </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fluctuate_seed</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluctuate_seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="c1"># pylint: disable=line-too-long</span>
+<div class="viewcode-block" id="hypersurfaces.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.hypersurfaces.hypersurfaces.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the fit results from the file and make some check compatibility&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+        <span class="c1"># create containers for scale factors</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales_uncertainty&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+
+        <span class="c1"># Check map names match between data container and hypersurfaces</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypersurfaces</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No match for map </span><span class="si">{</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> found in the hypersurfaces&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
+
+
+    <span class="c1"># the linter thinks that &quot;logging&quot; refers to Python&#39;s built-in</span>
+    <span class="c1"># pylint: disable=line-too-long, logging-not-lazy, deprecated-method</span>
+<div class="viewcode-block" id="hypersurfaces.compute_function">
+<a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.hypersurfaces.hypersurfaces.compute_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+
+        <span class="c1"># Link containers</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+        <span class="c1"># Format the params dict that will be passed to `Hypersurface.evaluate`</span>
+        <span class="c1">#TODO checks on param units</span>
+        <span class="n">param_values</span> <span class="o">=</span> <span class="p">{</span><span class="n">sys_param_name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">sys_param_name</span><span class="p">]</span><span class="o">.</span><span class="n">m</span>
+                        <span class="k">for</span> <span class="n">sys_param_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypersurface_param_names</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolated</span><span class="p">:</span>
+            <span class="n">osc_params</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inter_params</span><span class="p">}</span>
+
+        <span class="c1"># If fluctuating, seed the flucutations</span>
+        <span class="c1"># Needs to be consistent for each call to this functions</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluctuate</span> <span class="p">:</span>
+            <span class="n">fluctuate_random_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fluctuate_seed</span><span class="p">)</span>
+
+        <span class="c1"># Loop over types</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+
+            <span class="c1"># Get the hypersurfaces</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolated</span><span class="p">:</span>
+                <span class="c1"># in the case of interpolated hypersurfaces, the actual hypersurface</span>
+                <span class="c1"># must be generated for the given oscillation parameters first</span>
+                <span class="n">container_hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypersurfaces</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">get_hypersurface</span><span class="p">(</span><span class="o">**</span><span class="n">osc_params</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">container_hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypersurfaces</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+            <span class="c1"># Fluctute the hypersurfaces, if requested</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluctuate</span> <span class="p">:</span>
+                <span class="n">container_hs</span> <span class="o">=</span> <span class="n">container_hs</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="n">fluctuate_random_state</span><span class="p">)</span> <span class="c1">#TODO oncely need to do this once if not interpolating</span>
+
+            <span class="c1"># Get the hypersurface scale factors (reshape to 1D array)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span><span class="p">:</span>
+                <span class="n">scales</span><span class="p">,</span> <span class="n">uncertainties</span> <span class="o">=</span> <span class="n">container_hs</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">param_values</span><span class="p">,</span> <span class="n">return_uncertainty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">scales</span> <span class="o">=</span> <span class="n">scales</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+                <span class="n">uncertainties</span> <span class="o">=</span> <span class="n">uncertainties</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">scales</span> <span class="o">=</span> <span class="n">container_hs</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">param_values</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+            <span class="c1"># Where there are no scales (e.g. empty bins), set scale factor to 1</span>
+            <span class="n">empty_bins_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">scales</span><span class="p">)</span>
+            <span class="n">num_empty_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">empty_bins_mask</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">num_empty_bins</span> <span class="o">&gt;</span> <span class="mf">0.</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">warning_issued</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%i</span><span class="s2"> empty bins found in hypersurface&quot;</span> <span class="o">%</span> <span class="n">num_empty_bins</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">warning_issued</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">scales</span><span class="p">[</span><span class="n">empty_bins_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span><span class="p">:</span>
+                <span class="n">uncertainties</span><span class="p">[</span><span class="n">empty_bins_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+            <span class="c1"># Add to container</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">scales</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">])</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span><span class="p">:</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">uncertainties</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales_uncertainty&quot;</span><span class="p">])</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;hs_scales_uncertainty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Unlink the containers again</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="hypersurfaces.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.hypersurfaces.hypersurfaces.apply_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="c1"># update uncertainty first, before the weights are changed. This step is skipped in event mode</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">&quot;sumw2&quot;</span><span class="p">:</span>
+
+                <span class="c1"># If computing uncertainties in events mode, warn that</span>
+                <span class="c1"># hs error propagation will be skipped</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span><span class="o">==</span><span class="s1">&#39;events&#39;</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;WARNING: running stage in events mode. Hypersurface error propagation will be IGNORED.&#39;</span><span class="p">)</span>
+                
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span><span class="p">:</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales_uncertainty&quot;</span><span class="p">]</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">]</span>
+                    <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s2">&quot;bin_unc2&quot;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;bin_unc2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;bin_unc2&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+                    <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;bin_unc2&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Update weights according to hypersurfaces</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

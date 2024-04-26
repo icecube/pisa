@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.vbwkde &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.vbwkde</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.vbwkde</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Implementation of the Improved Sheather Jones (ISJ) KDE bandwidth selection</span>
+<span class="sd">method outlined in:</span>
+
+<span class="sd">  Z. I. Botev, J. F. Grotowski, and D. P. Kroese. Kernel density</span>
+<span class="sd">    estimation via diffusion. The Annals of Statistics, 38(5):2916-2957, 2010.</span>
+
+<span class="sd">and extension to use this in varaible bandwidth KDE via</span>
+
+<span class="sd">  I.S. Abramson, On bandwidth variation in kernel estimates - A</span>
+<span class="sd">    square root law, Annals of Stat. Vol. 10, No. 4, 1217-1223 1982</span>
+
+<span class="sd">See also</span>
+
+<span class="sd">  P. Hall, T. C. Hu, J. S. Marron, Improved Variable Window Kernel</span>
+<span class="sd">    Estimates of Probability Densities, Annals of Statistics</span>
+<span class="sd">    Vol. 23, No. 1, 1-10, 1995</span>
+
+<span class="sd">Some code in this module is Copyright (c) 2007 Zdravko Botev. See __license__</span>
+<span class="sd">for details.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># TODO: Make normalization use a relative density value normalized after ISJ</span>
+<span class="c1"># bandwidth to take into consideration really-high densities (which can have</span>
+<span class="c1"># narrower bandwidths than ISJ dictates) or really-low densities (which should</span>
+<span class="c1"># have very wide bandwidths, wider than ISJ dictates)</span>
+
+<span class="c1"># TODO : accuracy tests for fbwkde and vbwkde</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">exp</span><span class="p">,</span> <span class="n">sqrt</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">fftpack</span><span class="p">,</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">optimize</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">numba_jit</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.gaussians</span> <span class="kn">import</span> <span class="n">gaussians</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">tprofile</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;OPT_TYPE&#39;</span><span class="p">,</span> <span class="s1">&#39;FIXED_POINT_IMPL&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;fbwkde&#39;</span><span class="p">,</span> <span class="s1">&#39;vbwkde&#39;</span><span class="p">,</span> <span class="s1">&#39;isj_bandwidth&#39;</span><span class="p">,</span> <span class="s1">&#39;test_fbwkde&#39;</span><span class="p">,</span> <span class="s1">&#39;test_vbwkde&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Z. Botev, J.L. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Original BSD license, applicable *ONLY* to functions</span>
+<span class="s1">&quot;isj_bandwidth&quot; and &quot;fixed_point&quot; since these were derived from Botev&#39;s</span>
+<span class="s1">original work (this license applies to any future code derived from those</span>
+<span class="s1">functions as well):</span>
+
+<span class="s1">  Copyright (c) 2007, Zdravko Botev</span>
+<span class="s1">  All rights reserved.</span>
+
+<span class="s1">  Redistribution and use in source and binary forms, with or without</span>
+<span class="s1">  modification, are permitted provided that the following conditions are</span>
+<span class="s1">  met:</span>
+
+<span class="s1">      * Redistributions of source code must retain the above copyright</span>
+<span class="s1">        notice, this list of conditions and the following disclaimer.</span>
+<span class="s1">      * Redistributions in binary form must reproduce the above copyright</span>
+<span class="s1">        notice, this list of conditions and the following disclaimer in</span>
+<span class="s1">        the documentation and/or other materials provided with the</span>
+<span class="s1">        distribution</span>
+
+<span class="s1">  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS</span>
+<span class="s1">  IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED</span>
+<span class="s1">  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A</span>
+<span class="s1">  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER</span>
+<span class="s1">  OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="s1">  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="s1">  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="s1">  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF</span>
+<span class="s1">  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING</span>
+<span class="s1">  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS</span>
+<span class="s1">  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="s1">============================================================================</span>
+
+<span class="s1">All other code in this module is under the following copyright/license:</span>
+
+<span class="s1">Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="c1"># NOTE: &#39;minimum&#39; is giving very rough overfit results. Switching to &#39;root&#39; for</span>
+<span class="c1"># now.</span>
+<span class="n">OPT_TYPE</span> <span class="o">=</span> <span class="s1">&#39;root&#39;</span>
+<span class="n">FIXED_POINT_IMPL</span> <span class="o">=</span> <span class="s1">&#39;numba_loops&#39;</span>
+
+<span class="n">_PI</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">_TWOPI</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">_SQRTPI</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">_SQRT2PI</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">_PISQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+
+
+<div class="viewcode-block" id="fbwkde">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.fbwkde">[docs]</a>
+<span class="k">def</span> <span class="nf">fbwkde</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_dct</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+           <span class="n">evaluate_dens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fixed-bandwidth (standard) Gaussian KDE using the Improved</span>
+<span class="sd">    Sheather-Jones bandwidth.</span>
+
+<span class="sd">    Code adapted for Python from the implementation in Matlab by Zdravko Botev.</span>
+
+<span class="sd">    Ref: Z. I. Botev, J. F. Grotowski, and D. P. Kroese. Kernel density</span>
+<span class="sd">    estimation via diffusion. The Annals of Statistics, 38(5):2916-2957, 2010.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : array</span>
+<span class="sd">    weights : array or None</span>
+<span class="sd">    n_dct : None or int</span>
+<span class="sd">        Number of points with which to form a regular grid, from `min` to</span>
+<span class="sd">        `max`; histogram values at these points are sent through a discrete</span>
+<span class="sd">        Cosine Transform (DCT), so `n_dct` should be an integer power of 2 for</span>
+<span class="sd">        speed purposes. If None, uses next-highest-power-of-2 above</span>
+<span class="sd">        len(data)*10.</span>
+<span class="sd">    min : float or None</span>
+<span class="sd">    max : float or None</span>
+<span class="sd">    evaluate_dens : bool</span>
+<span class="sd">    evaluate_at : None or array</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bandwidth : float</span>
+<span class="sd">    evaluate_at : array of float</span>
+<span class="sd">    density : None or array of float</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n_dct</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">*</span><span class="mi">10</span><span class="p">)))</span>
+    <span class="k">assert</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_dct</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_dct</span>
+    <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_dct</span><span class="p">)</span>
+    <span class="n">n_datapoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># Parameters to set up the points on which to evaluate the density</span>
+    <span class="k">if</span> <span class="nb">min</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">minimum</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">maximum</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">data_range</span> <span class="o">=</span> <span class="n">maximum</span> <span class="o">-</span> <span class="n">minimum</span>
+        <span class="nb">min</span> <span class="o">=</span> <span class="n">minimum</span> <span class="o">-</span> <span class="n">data_range</span><span class="o">/</span><span class="mi">2</span> <span class="k">if</span> <span class="nb">min</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">min</span>
+        <span class="nb">max</span> <span class="o">=</span> <span class="n">maximum</span> <span class="o">+</span> <span class="n">data_range</span><span class="o">/</span><span class="mi">2</span> <span class="k">if</span> <span class="nb">max</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">max</span>
+
+    <span class="n">hist_range</span> <span class="o">=</span> <span class="nb">max</span> <span class="o">-</span> <span class="nb">min</span>
+
+    <span class="c1"># Histogram the data to get a crude first approximation of the density</span>
+    <span class="n">data_hist</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">n_dct</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">),</span> <span class="n">density</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Make into a probability mass function</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">data_hist</span> <span class="o">=</span> <span class="n">data_hist</span> <span class="o">/</span> <span class="n">n_datapoints</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data_hist</span> <span class="o">=</span> <span class="n">data_hist</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="c1"># Define a minimum bandwidth relative to mean of distances between points</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    <span class="n">min_bandwidth</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;min_bandwidth, 2pi*mean: </span><span class="si">%.5e</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">min_bandwidth</span><span class="p">)</span>
+
+    <span class="c1"># Solve for the ISJ fixed point to obtain the &quot;optimal&quot; bandwidth</span>
+    <span class="n">isj_bw</span><span class="p">,</span> <span class="n">t_star</span><span class="p">,</span> <span class="n">dct_data</span> <span class="o">=</span> <span class="n">isj_bandwidth</span><span class="p">(</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">data_hist</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="o">=</span><span class="n">n_datapoints</span><span class="p">,</span> <span class="n">x_range</span><span class="o">=</span><span class="n">hist_range</span><span class="p">,</span>
+        <span class="n">min_bandwidth</span><span class="o">=</span><span class="n">min_bandwidth</span>
+    <span class="p">)</span>
+
+    <span class="c1"># TODO: Detect numerical instability issues here, prior to returning!</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">evaluate_dens</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">isj_bw</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">evaluate_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Smooth the discrete-cosine-transformed data using t_star</span>
+        <span class="n">sm_dct_data</span> <span class="o">=</span> <span class="n">dct_data</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_dct</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">_PISQ</span><span class="o">*</span><span class="n">t_star</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Inverse DCT to get density</span>
+        <span class="n">density</span> <span class="o">=</span> <span class="n">fftpack</span><span class="o">.</span><span class="n">idct</span><span class="p">(</span><span class="n">sm_dct_data</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">*</span><span class="n">n_dct</span><span class="o">/</span><span class="n">hist_range</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">density</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span>
+                <span class="s1">&#39;ISJ encountered numerical instability in IDCT (resulting in a&#39;</span>
+                <span class="s1">&#39; negative density). Result will be computed without the IDCT.&#39;</span>
+            <span class="p">)</span>
+            <span class="n">evaluate_at</span> <span class="o">=</span> <span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">evaluate_at</span> <span class="o">=</span> <span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">density</span> <span class="o">=</span> <span class="n">density</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">density</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">isj_bw</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="p">,</span> <span class="n">density</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">evaluate_at</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">evaluate_at</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="n">density</span> <span class="o">=</span> <span class="n">gaussians</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">evaluate_at</span><span class="p">,</span>
+        <span class="n">mu</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">),</span>
+        <span class="n">sigma</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">n_datapoints</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">isj_bw</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">),</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">weights</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">isj_bw</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="p">,</span> <span class="n">density</span></div>
+
+
+
+<div class="viewcode-block" id="vbwkde">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.vbwkde">[docs]</a>
+<span class="k">def</span> <span class="nf">vbwkde</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_dct</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_addl_iter</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+           <span class="n">evaluate_dens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Variable-bandwidth (standard) Gaussian KDE that uses the function</span>
+<span class="sd">    `fbwkde` for a pilot density estimate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : array</span>
+<span class="sd">        The data points for which the density estimate is sought</span>
+
+<span class="sd">    weights : array or None</span>
+<span class="sd">        Weight for each point in `data`</span>
+
+<span class="sd">    n_dct : None or int</span>
+<span class="sd">        Number of points with which to form a regular grid, from `min` to</span>
+<span class="sd">        `max`; histogram values at these points are sent through a discrete</span>
+<span class="sd">        Cosine Transform (DCT), so `n_dct` should be an integer power of 2 for</span>
+<span class="sd">        speed purposes. If None, uses next-highest-power-of-2 above</span>
+<span class="sd">        len(data)*10.</span>
+
+<span class="sd">    min : None or float</span>
+<span class="sd">        Minimum of range over which to compute density.</span>
+<span class="sd">        If None, defaults to min(data) - range(data)/2</span>
+
+<span class="sd">    max : None or float</span>
+<span class="sd">        Maximum of range over which to compute density.</span>
+<span class="sd">        If None: max(data) + range(data)/2</span>
+
+<span class="sd">    n_addl_iter : int &gt;= 0</span>
+<span class="sd">        Number of additional iterations on the Abramson VBW density *after*</span>
+<span class="sd">        the initial VBW estimate. This can help smooth the tails of the</span>
+<span class="sd">        distribution, at the expense of additional computational cost.</span>
+
+<span class="sd">    evaluate_dens : bool</span>
+<span class="sd">        Whether to evaluate and return the density estimate on the points</span>
+<span class="sd">        defined by `evaluate_at`</span>
+
+<span class="sd">    evaluate_at : None, float, or array of float</span>
+<span class="sd">        Point(s) at which to evaluate the density estimate. If None,</span>
+<span class="sd">          evaluate_at = np.linspace(min + dx/2, max - dx/2, n_dct)</span>
+<span class="sd">        where</span>
+<span class="sd">          dx = (max - min) / n_dct</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    kernel_bandwidths : array</span>
+
+<span class="sd">    evaluate_at : array</span>
+<span class="sd">        Locations at which the density estimates would be evaluated</span>
+
+<span class="sd">    density : array</span>
+<span class="sd">        Density estimates</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Specifying the range:</span>
+
+<span class="sd">        The specification of min and max are critical for obtaining a</span>
+<span class="sd">        reasonable density estimate. If the true underlying density slowly</span>
+<span class="sd">        decays to zero on one side or the other, like a gaussian, specifying</span>
+<span class="sd">        too-small a range will distort the edge the VBW-KDE finds. On the</span>
+<span class="sd">        other hand, an abrupt cut-off in the distribution should be</span>
+<span class="sd">        accompanied by a similar cutoff in the computational range (min and/or</span>
+<span class="sd">        max). The algorithm here will approximate such a sharp cut-off with</span>
+<span class="sd">        roughly the same performance to the reflection method for standard</span>
+<span class="sd">        KDE&#39;s (as the fixed-BW portion uses a DCT of the data), but note that</span>
+<span class="sd">        this will not perform as well as polynomial-edges or other</span>
+<span class="sd">        modifications that have been proposed in the literature.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n_dct</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">*</span><span class="mi">10</span><span class="p">)))</span>
+    <span class="k">assert</span> <span class="n">n_addl_iter</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_addl_iter</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_addl_iter</span>
+    <span class="n">n_addl_iter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_addl_iter</span><span class="p">)</span>
+
+    <span class="c1"># Parameters to set up the points on which to evaluate the density</span>
+    <span class="k">if</span> <span class="nb">min</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">minimum</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">maximum</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">data_range</span> <span class="o">=</span> <span class="n">maximum</span> <span class="o">-</span> <span class="n">minimum</span>
+        <span class="nb">min</span> <span class="o">=</span> <span class="n">minimum</span> <span class="o">-</span> <span class="n">data_range</span><span class="o">/</span><span class="mi">2</span> <span class="k">if</span> <span class="nb">min</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">min</span>
+        <span class="nb">max</span> <span class="o">=</span> <span class="n">maximum</span> <span class="o">+</span> <span class="n">data_range</span><span class="o">/</span><span class="mi">2</span> <span class="k">if</span> <span class="nb">max</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">max</span>
+
+    <span class="c1"># Pilot density estimate for the VBW KDE comes from fixed bandwidth KDE</span>
+    <span class="c1"># using the Improved Sheather-Jones algorithm. By specifying</span>
+    <span class="c1"># `evaluate_at` to be None, `fbwkde` derives a regular grid at which to</span>
+    <span class="c1"># evaluate the points and does so without needing to do a sum of Gaussians</span>
+    <span class="c1"># (only a freq.-domain multiply and inverse DCT)</span>
+    <span class="n">isj_bw</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">pilot_dens_on_grid</span> <span class="o">=</span> <span class="n">fbwkde</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">n_dct</span><span class="o">=</span><span class="n">n_dct</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="nb">max</span><span class="p">,</span>
+        <span class="n">evaluate_dens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">pilot_dens_on_grid</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ISJ&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Include edges (min, max) in the grid and extend the densities to the</span>
+    <span class="c1"># left/right, respectively. (Make the profile constant out to the edge).</span>
+    <span class="n">all_gridpoints</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_dens</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">min</span><span class="p">:</span>
+        <span class="n">all_gridpoints</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">min</span><span class="p">])</span>
+        <span class="n">all_dens</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">pilot_dens_on_grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+
+    <span class="n">all_gridpoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">all_dens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pilot_dens_on_grid</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">max</span><span class="p">:</span>
+        <span class="n">all_gridpoints</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">max</span><span class="p">])</span>
+        <span class="n">all_dens</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">pilot_dens_on_grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_gridpoints</span><span class="p">)</span>
+    <span class="n">pilot_dens_on_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_dens</span><span class="p">)</span>
+
+    <span class="c1"># Use linear interpolation to get density at the data points</span>
+    <span class="n">interp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">grid</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">pilot_dens_on_grid</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+        <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">bounds_error</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="p">)</span>
+    <span class="c1"># TODO: For some reason this gets translated into an object array, so the</span>
+    <span class="c1"># `astype` call is necessary</span>
+    <span class="n">pilot_dens_at_datapoints</span> <span class="o">=</span> <span class="n">interp</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="n">n_iter</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">n_addl_iter</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iter</span><span class="p">):</span>
+        <span class="c1"># Note below diverges from the published Abramson method, by forcing</span>
+        <span class="c1"># the bandwidth at the max of the density distribution to be exactly</span>
+        <span class="c1"># the bandwidth found above with the improved Sheather-Jones BW</span>
+        <span class="c1"># selection technique. Refs:</span>
+        <span class="c1">#   I.S. Abramson, On bandwidth variation in kernel estimates - A</span>
+        <span class="c1">#       square root law, Annals of Stat. Vol. 10, No. 4, 1217-1223 1982</span>
+        <span class="c1">#   P. Hall, T. C. Hu, J. S. Marron, Improved Variable Window Kernel</span>
+        <span class="c1">#       Estimates of Probability Densities, Annals of Statistics</span>
+        <span class="c1">#       Vol. 23, No. 1, 1-10, 1995</span>
+        <span class="n">kernel_bandwidths</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">isj_bw</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pilot_dens_at_datapoints</span><span class="p">))</span>
+            <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">pilot_dens_at_datapoints</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">n_addl_iter</span><span class="p">:</span>
+            <span class="n">pilot_dens_at_datapoints</span> <span class="o">=</span> <span class="n">gaussians</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">mu</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">sigma</span><span class="o">=</span><span class="n">kernel_bandwidths</span><span class="p">,</span>
+                <span class="n">weights</span><span class="o">=</span><span class="n">weights</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># final iteration</span>
+            <span class="k">if</span> <span class="n">evaluate_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">evaluate_at</span> <span class="o">=</span> <span class="n">grid</span>
+            <span class="k">if</span> <span class="n">evaluate_dens</span><span class="p">:</span>
+                <span class="n">density</span> <span class="o">=</span> <span class="n">gaussians</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">evaluate_at</span><span class="p">,</span>
+                    <span class="n">mu</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                    <span class="n">sigma</span><span class="o">=</span><span class="n">kernel_bandwidths</span><span class="p">,</span>
+                    <span class="n">weights</span><span class="o">=</span><span class="n">weights</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">density</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">kernel_bandwidths</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="p">,</span> <span class="n">density</span></div>
+
+
+
+<div class="viewcode-block" id="isj_bandwidth">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.isj_bandwidth">[docs]</a>
+<span class="k">def</span> <span class="nf">isj_bandwidth</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">x_range</span><span class="p">,</span> <span class="n">min_bandwidth</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    y : array of float</span>
+<span class="sd">    n_datapoints : int</span>
+<span class="sd">    x_range : float</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bandwidth : float</span>
+<span class="sd">    t_star : float</span>
+<span class="sd">    dct_data : array of float</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Ensure double-precision datatypes are used</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">x_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">x_range</span><span class="p">)</span>
+
+    <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="n">min_t_star</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_bandwidth</span><span class="o">/</span><span class="n">x_range</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="n">i_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_dct</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">log_i_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">i_range</span><span class="p">)</span>
+
+    <span class="n">dct_data</span> <span class="o">=</span> <span class="n">fftpack</span><span class="o">.</span><span class="n">dct</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">dct_data_sq</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="p">(</span><span class="n">dct_data</span> <span class="o">*</span> <span class="n">dct_data</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Fixed point implementation = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">FIXED_POINT_IMPL</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Optimization type = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">OPT_TYPE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">FIXED_POINT_IMPL</span> <span class="o">==</span> <span class="s1">&#39;numba_np&#39;</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">fixed_point_numba_np</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">log_i_range</span><span class="p">,</span> <span class="n">dct_data_sq</span>
+    <span class="k">elif</span> <span class="n">FIXED_POINT_IMPL</span> <span class="o">==</span> <span class="s1">&#39;numba_loops&#39;</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">fixed_point_numba_loops</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">log_i_range</span><span class="p">,</span> <span class="n">dct_data_sq</span>
+    <span class="k">elif</span> <span class="n">FIXED_POINT_IMPL</span> <span class="o">==</span> <span class="s1">&#39;numba_orig&#39;</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">fixed_point_numba_orig</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">dct_data_sq</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown FIXED_POINT_IMPL &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">FIXED_POINT_IMPL</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">OPT_TYPE</span> <span class="o">==</span> <span class="s1">&#39;root&#39;</span><span class="p">:</span>
+            <span class="n">t_star</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">brentq</span><span class="p">(</span>
+                <span class="n">f</span><span class="o">=</span><span class="n">func</span><span class="p">,</span>
+                <span class="n">a</span><span class="o">=</span><span class="n">min_t_star</span><span class="o">/</span><span class="mi">1000</span><span class="p">,</span>
+                <span class="n">b</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                <span class="n">rtol</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="o">*</span><span class="mf">1e2</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
+                <span class="n">full_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">disp</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">OPT_TYPE</span> <span class="o">==</span> <span class="s1">&#39;minimum&#39;</span><span class="p">:</span>
+            <span class="n">t_star</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">minimize_scalar</span><span class="p">(</span>
+                <span class="n">fun</span><span class="o">=</span><span class="n">func</span><span class="p">,</span>
+                <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="n">min_t_star</span><span class="o">/</span><span class="mi">1000</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+                <span class="n">method</span><span class="o">=</span><span class="s1">&#39;Bounded&#39;</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span> <span class="n">xatol</span><span class="o">=</span><span class="mf">1e-22</span><span class="p">),</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">x</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown OPT_TYPE &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">OPT_TYPE</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">t_star</span> <span class="o">&lt;</span> <span class="n">min_t_star</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;t_star = </span><span class="si">%.4e</span><span class="s1"> &lt; min_t_star = </span><span class="si">%.4e</span><span class="s1">;&#39;</span>
+                          <span class="s1">&#39; setting to min_t_star&#39;</span><span class="p">,</span> <span class="n">t_star</span><span class="p">,</span> <span class="n">min_t_star</span><span class="p">)</span>
+            <span class="n">t_star</span> <span class="o">=</span> <span class="n">min_t_star</span>
+
+        <span class="c1"># NOTE: Use `math.sqrt` _not_ `numpy.sqrt` to ensure failures raise</span>
+        <span class="c1"># exceptions (numpy might be coaxed to do so, but it&#39;d probably be</span>
+        <span class="c1"># slow)</span>
+        <span class="n">bandwidth</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">t_star</span><span class="p">)</span><span class="o">*</span><span class="n">x_range</span>
+
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Improved Sheather-Jones bandwidth </span><span class="si">%s</span><span class="s1">-finding failed.&#39;</span><span class="p">,</span>
+                      <span class="n">OPT_TYPE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">min_bandwidth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Using supplied `min_bandwidth` instead.&#39;</span><span class="p">)</span>
+            <span class="n">bandwidth</span> <span class="o">=</span> <span class="n">min_bandwidth</span>
+            <span class="n">t_star</span> <span class="o">=</span> <span class="n">min_t_star</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span>
+
+    <span class="k">return</span> <span class="n">bandwidth</span><span class="p">,</span> <span class="n">t_star</span><span class="p">,</span> <span class="n">dct_data</span></div>
+
+
+
+<span class="k">if</span> <span class="n">OPT_TYPE</span> <span class="o">==</span> <span class="s1">&#39;root&#39;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">optfunc</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;No-op decorator&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">f</span>
+
+<span class="k">elif</span> <span class="n">OPT_TYPE</span> <span class="o">==</span> <span class="s1">&#39;minimum&#39;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">optfunc</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decorator for returning abs of function output&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Return absolute value of function&quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">func</span>
+
+
+<span class="n">_ELL</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">_TWOPI2ELL</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">_PI</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">_ELL</span><span class="p">)</span>
+<span class="n">_K0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">**</span><span class="p">(</span><span class="n">_S</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">_S</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">_SQRT2PI</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_S</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_ELL</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="nd">@optfunc</span>
+<span class="nd">@numba_jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">fixed_point_numba_np</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">log_i_range</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ISJ fixed-point calculation as per Botev et al..</span>
+
+<span class="sd">    In this implementation, Numba makes calls to Numpy routines.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t</span>
+<span class="sd">    n_datapoints</span>
+<span class="sd">    i_range</span>
+<span class="sd">    log_i_range</span>
+<span class="sd">    a2</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t_star</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exparg</span> <span class="o">=</span> <span class="n">_ELL</span><span class="o">*</span><span class="n">log_i_range</span> <span class="o">-</span> <span class="n">i_range</span><span class="o">*</span><span class="p">(</span><span class="n">_PISQ</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">ex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">exparg</span><span class="p">)</span>
+    <span class="n">eff</span> <span class="o">=</span> <span class="n">_TWOPI2ELL</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_ELL</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">t_elap</span> <span class="o">=</span> <span class="p">(</span><span class="n">_K0</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_datapoints</span> <span class="o">*</span> <span class="n">eff</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">s</span><span class="p">))</span>
+        <span class="n">exparg</span> <span class="o">=</span> <span class="n">s</span><span class="o">*</span><span class="n">log_i_range</span> <span class="o">-</span> <span class="n">i_range</span><span class="o">*</span><span class="p">(</span><span class="n">_PISQ</span><span class="o">*</span><span class="n">t_elap</span><span class="p">)</span>
+        <span class="n">ex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">exparg</span><span class="p">)</span>
+        <span class="n">dp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+        <span class="n">eff</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">_PI</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="n">dp</span>
+
+    <span class="k">return</span> <span class="n">t</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">n_datapoints</span> <span class="o">*</span> <span class="n">_SQRTPI</span> <span class="o">*</span> <span class="n">eff</span><span class="p">)</span><span class="o">**-</span><span class="mf">0.4</span>
+
+
+<span class="nd">@optfunc</span>
+<span class="nd">@numba_jit</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{f}</span><span class="s1">(</span><span class="si">{f}</span><span class="s1">, int64, </span><span class="si">{f}</span><span class="s1">[:], </span><span class="si">{f}</span><span class="s1">[:], </span><span class="si">{f}</span><span class="s1">[:])&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">fixed_point_numba_loops</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">log_i_range</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ISJ fixed-point calculation as per Botev et al..</span>
+
+<span class="sd">    In this implementation, Numba explicitly loops over arrays.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t</span>
+<span class="sd">    n_datapoints</span>
+<span class="sd">    i_range</span>
+<span class="sd">    log_i_range</span>
+<span class="sd">    a2</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t_star</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">len_i</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_range</span><span class="p">)</span>
+
+    <span class="n">tot</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_i</span><span class="p">):</span>
+        <span class="n">a2_el</span> <span class="o">=</span> <span class="n">a2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">log_i_range_el</span> <span class="o">=</span> <span class="n">log_i_range</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">i_range_el</span> <span class="o">=</span> <span class="n">i_range</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">exparg</span> <span class="o">=</span> <span class="n">_ELL</span><span class="o">*</span><span class="n">log_i_range_el</span> <span class="o">-</span> <span class="n">i_range_el</span> <span class="o">*</span> <span class="n">_PISQ</span> <span class="o">*</span> <span class="n">t</span>
+        <span class="n">tot</span> <span class="o">+=</span> <span class="n">a2_el</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="n">exparg</span><span class="p">)</span>
+    <span class="n">eff</span> <span class="o">=</span> <span class="n">_TWOPI2ELL</span> <span class="o">*</span> <span class="n">tot</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_ELL</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">k0</span> <span class="o">=</span> <span class="n">_K0</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+        <span class="n">t_elap</span> <span class="o">=</span> <span class="p">(</span><span class="n">k0</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_datapoints</span> <span class="o">*</span> <span class="n">eff</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">s</span><span class="p">))</span>
+
+        <span class="n">tot</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_i</span><span class="p">):</span>
+            <span class="n">a2_el</span> <span class="o">=</span> <span class="n">a2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">log_i_range_el</span> <span class="o">=</span> <span class="n">log_i_range</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">i_range_el</span> <span class="o">=</span> <span class="n">i_range</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+            <span class="n">exparg</span> <span class="o">=</span> <span class="n">s</span><span class="o">*</span><span class="n">log_i_range_el</span> <span class="o">-</span> <span class="n">i_range_el</span><span class="o">*</span><span class="n">_PISQ</span><span class="o">*</span><span class="n">t_elap</span>
+            <span class="n">tot</span> <span class="o">+=</span> <span class="n">a2_el</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="n">exparg</span><span class="p">)</span>
+        <span class="n">eff</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">_PI</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="n">tot</span>
+
+    <span class="k">return</span> <span class="n">t</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">n_datapoints</span><span class="o">*</span><span class="n">_SQRTPI</span><span class="o">*</span><span class="n">eff</span><span class="p">)</span><span class="o">**-</span><span class="mf">0.4</span>
+
+
+<span class="nd">@optfunc</span>
+<span class="nd">@numba_jit</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{f}</span><span class="s1">(</span><span class="si">{f}</span><span class="s1">, int64, </span><span class="si">{f}</span><span class="s1">[:], </span><span class="si">{f}</span><span class="s1">[:])&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">fixed_point_numba_orig</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fixed point algorithm for Improved Sheather Jones bandwidth</span>
+<span class="sd">    selection.</span>
+
+<span class="sd">    Implements the fixed-point finding for the function</span>
+<span class="sd">    ``t - zeta * gamma^{[l]}(t)``</span>
+
+<span class="sd">    See The Annals of Statistics, 38(5):2916-2957, 2010.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float64</span>
+<span class="sd">    n_datapoints : int64</span>
+<span class="sd">    i_range : array of float64</span>
+<span class="sd">    a2 : array of float64</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t_star : float64</span>
+
+<span class="sd">    NOTES</span>
+<span class="sd">    -----</span>
+<span class="sd">    Original implementation by Botev et al. is quad-precision, whereas this is</span>
+<span class="sd">    double precision only. This might cause discrepancies from the reference</span>
+<span class="sd">    implementation.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">len_i</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_range</span><span class="p">)</span>
+
+    <span class="n">tot</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_i</span><span class="p">):</span>
+        <span class="n">tot</span> <span class="o">+=</span> <span class="n">i_range</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">**</span><span class="n">_ELL</span> <span class="o">*</span> <span class="n">a2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">i_range</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">_PISQ</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+    <span class="n">eff</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">_PI</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">_ELL</span><span class="p">)</span> <span class="o">*</span> <span class="n">tot</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_ELL</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">k0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="n">_SQRT2PI</span>
+        <span class="n">const</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">s</span><span class="o">+</span><span class="mf">0.5</span><span class="p">))</span> <span class="o">/</span> <span class="mf">3.0</span>
+        <span class="n">t_elap</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">const</span> <span class="o">*</span> <span class="n">k0</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_datapoints</span> <span class="o">*</span> <span class="n">eff</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">3.0</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">s</span><span class="p">))</span>
+
+        <span class="n">tot</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_i</span><span class="p">):</span>
+            <span class="n">tot</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="n">i_range</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">**</span><span class="n">s</span> <span class="o">*</span> <span class="n">a2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">i_range</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">_PISQ</span> <span class="o">*</span> <span class="n">t_elap</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">eff</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">_PI</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="n">tot</span>
+
+    <span class="k">return</span> <span class="n">t</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">n_datapoints</span> <span class="o">*</span> <span class="n">_SQRTPI</span> <span class="o">*</span> <span class="n">eff</span><span class="p">)</span><span class="o">**-</span><span class="mf">0.4</span>
+
+
+<div class="viewcode-block" id="test_fbwkde">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.test_fbwkde">[docs]</a>
+<span class="k">def</span> <span class="nf">test_fbwkde</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test speed of fbwkde implementation&quot;&quot;&quot;</span>
+    <span class="n">n_samp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
+    <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>
+    <span class="n">n_eval</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="n">n_eval</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">enuerr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">noncentral_chisquare</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">nonc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samp</span><span class="p">)</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="n">fbwkde</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">enuerr</span><span class="p">,</span> <span class="n">n_dct</span><span class="o">=</span><span class="n">n_dct</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s1">&#39;median time to run fbwkde, </span><span class="si">%d</span><span class="s1"> samples </span><span class="si">%d</span><span class="s1"> dct, eval. at </span><span class="si">%d</span><span class="s1"> points: </span><span class="si">%f</span><span class="s1">&#39;</span>
+        <span class="s1">&#39; ms&#39;</span><span class="p">,</span> <span class="n">n_samp</span><span class="p">,</span> <span class="n">n_dct</span><span class="p">,</span> <span class="n">n_eval</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_fbwkde &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="test_vbwkde">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.test_vbwkde">[docs]</a>
+<span class="k">def</span> <span class="nf">test_vbwkde</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test speed of unweighted vbwkde implementation&quot;&quot;&quot;</span>
+    <span class="n">n_samp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
+    <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>
+    <span class="n">n_eval</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">5e3</span><span class="p">)</span>
+    <span class="n">n_addl</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="n">n_samp</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">enuerr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">noncentral_chisquare</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">nonc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_eval</span><span class="p">)</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="n">vbwkde</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">enuerr</span><span class="p">,</span> <span class="n">n_dct</span><span class="o">=</span><span class="n">n_dct</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">n_addl_iter</span><span class="o">=</span><span class="n">n_addl</span><span class="p">)</span>
+        <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s1">&#39;median time to run vbwkde, </span><span class="si">%d</span><span class="s1"> samples </span><span class="si">%d</span><span class="s1"> dct </span><span class="si">%d</span><span class="s1"> addl iter, eval. at&#39;</span>
+        <span class="s1">&#39; </span><span class="si">%d</span><span class="s1"> points: </span><span class="si">%f</span><span class="s1"> ms&#39;</span><span class="p">,</span> <span class="n">n_samp</span><span class="p">,</span> <span class="n">n_dct</span><span class="p">,</span> <span class="n">n_addl</span><span class="p">,</span> <span class="n">n_eval</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">*</span><span class="mf">1e3</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_vbwkde &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">test_weighted_vbwkde</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test speed of vbwkde implementation using weights&quot;&quot;&quot;</span>
+    <span class="n">n_samp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
+    <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>
+    <span class="n">n_eval</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">5e3</span><span class="p">)</span>
+    <span class="n">n_addl</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="n">n_samp</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">enuerr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">noncentral_chisquare</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">nonc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_eval</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_eval</span><span class="p">)</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="n">vbwkde</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">enuerr</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+               <span class="n">n_dct</span><span class="o">=</span><span class="n">n_dct</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">n_addl_iter</span><span class="o">=</span><span class="n">n_addl</span><span class="p">)</span>
+        <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s1">&#39;median time to run weighted vbwkde, </span><span class="si">%d</span><span class="s1"> samples </span><span class="si">%d</span><span class="s1"> dct </span><span class="si">%d</span><span class="s1"> addl iter,&#39;</span>
+        <span class="s1">&#39; eval. at </span><span class="si">%d</span><span class="s1"> points: </span><span class="si">%f</span><span class="s1"> ms&#39;</span><span class="p">,</span>
+        <span class="n">n_samp</span><span class="p">,</span> <span class="n">n_dct</span><span class="p">,</span> <span class="n">n_addl</span><span class="p">,</span> <span class="n">n_eval</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">*</span><span class="mf">1e3</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_weighted_vbwkde &gt;&gt;&#39;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">test_fbwkde</span><span class="p">()</span>
+    <span class="n">test_vbwkde</span><span class="p">()</span>
+    <span class="n">test_weighted_vbwkde</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.data.simple_data_loader &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.data.simple_data_loader</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.data.simple_data_loader</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A Stage to load data from a PISA style hdf5 file into a PISA pi ContainerSet</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1">#TODO This class is become dcereasingly &quot;simple&quot;! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span> <span class="nn">pisa.core.events_pi</span> <span class="kn">import</span> <span class="n">EventsPi</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">arg_str_seq_none</span><span class="p">,</span> <span class="n">split</span>
+
+
+<div class="viewcode-block" id="simple_data_loader">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader">[docs]</a>
+<span class="k">class</span> <span class="nc">simple_data_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    HDF5 file loader PISA Pi class</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    events_file : hdf5 file path</span>
+<span class="sd">        output from make_events, including flux weights</span>
+<span class="sd">        and Genie systematics coefficients</span>
+
+<span class="sd">    mc_cuts : cut expr</span>
+<span class="sd">        e.g. &#39;(true_coszen &lt;= 0.5) &amp; (true_energy &lt;= 70)&#39;</span>
+
+<span class="sd">    data_dict : str of a dict</span>
+<span class="sd">        Dictionary to specify what keys from the hdf5 files to be loaded</span>
+<span class="sd">        under what name. Entries can be strings that point to the right</span>
+<span class="sd">        key in the hdf5 file or lists of keys, and the data will be</span>
+<span class="sd">        stacked into a 2d array.</span>
+
+<span class="sd">    neutrinos : bool</span>
+<span class="sd">        Flag indicating whether data events represent neutrinos</span>
+<span class="sd">        In this case, special handling for e.g. nu/nubar, CC vs NC, ...</span>
+
+<span class="sd">    fraction_events_to_keep : float</span>
+<span class="sd">        Fraction of loaded events to use (use to downsample).</span>
+<span class="sd">        Must be in range [0.,1.], or disable by setting to `None`.</span>
+<span class="sd">        Default in None.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Looks for `initial_weights` fields in events file, which will serve</span>
+<span class="sd">    as nominal weights for all events included.</span>
+<span class="sd">    No fields named `weights` may already be present.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">events_file</span><span class="p">,</span>
+                 <span class="n">mc_cuts</span><span class="p">,</span>
+                 <span class="n">data_dict</span><span class="p">,</span>
+                 <span class="n">neutrinos</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">required_metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">fraction_events_to_keep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">events_subsample_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">seed</span><span class="o">=</span><span class="mi">123456</span><span class="p">,</span>
+                 <span class="n">output_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+                <span class="p">):</span>
+
+        <span class="c1"># instantiation args that should not change</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_file</span> <span class="o">=</span> <span class="n">events_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mc_cuts</span> <span class="o">=</span> <span class="n">mc_cuts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span> <span class="o">=</span> <span class="n">data_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span> <span class="o">=</span> <span class="n">neutrinos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">required_metadata</span> <span class="o">=</span> <span class="n">required_metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="o">=</span> <span class="n">fraction_events_to_keep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">events_subsample_index</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="o">=</span> <span class="n">output_names</span>
+
+        <span class="c1"># Handle list inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_file</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">required_metadata</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">required_metadata</span><span class="p">)</span>
+
+        <span class="c1"># instead of adding params here, consider making them instantiation</span>
+        <span class="c1"># args so nothing external will inadvertently try to change</span>
+        <span class="c1"># their values</span>
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">()</span>
+
+        <span class="c1"># init base class</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># check output names</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Found duplicates in `output_names`, but each name must be&#39;</span>
+                <span class="s1">&#39; unique.&#39;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_events</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_cuts_to_events</span><span class="p">()</span>
+
+<div class="viewcode-block" id="simple_data_loader.load_events">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.load_events">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Loads events from events file&#39;&#39;&#39;</span>
+
+        <span class="c1"># Create the events structure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evts</span> <span class="o">=</span> <span class="n">EventsPi</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Events&#39;</span><span class="p">,</span>
+            <span class="n">neutrinos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">,</span>
+            <span class="n">fraction_events_to_keep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span><span class="p">,</span>
+            <span class="n">events_subsample_index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># If user provided a variable mapping dict, parse it from the input string (if not already done)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span><span class="p">)</span>
+
+        <span class="c1"># Load the event file into the events structure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="o">.</span><span class="n">load_events_file</span><span class="p">(</span>
+            <span class="n">events_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">,</span>
+            <span class="n">variable_mapping</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span><span class="p">,</span>
+            <span class="n">required_metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">required_metadata</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="o">.</span><span class="n">metadata</span></div>
+
+
+        <span class="c1"># TODO Add option to define eventual binning here so that can cut events</span>
+        <span class="c1"># now that will be cut later anyway (use EventsPi.keep_inbounds)</span>
+
+<div class="viewcode-block" id="simple_data_loader.apply_cuts_to_events">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.apply_cuts_to_events">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_cuts_to_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Just apply any cuts that the user defined&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mc_cuts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="o">.</span><span class="n">apply_cut</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mc_cuts</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="simple_data_loader.record_event_properties">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.record_event_properties">[docs]</a>
+    <span class="k">def</span> <span class="nf">record_event_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Adds fields present in events file and selected in `self.data_dict`</span>
+<span class="sd">        into containers for the specified output names. Also ensures the</span>
+<span class="sd">        presence of a set of nominal weights.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># define which  categories to include in the data</span>
+        <span class="c1"># user can manually specify what they want using `output_names`, or else just use everything</span>
+        <span class="n">output_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="c1"># create containers from the events</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">output_keys</span><span class="p">:</span>
+
+            <span class="c1"># make container</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+            <span class="n">event_groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">event_groups</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Output name &quot;</span><span class="si">%s</span><span class="s1">&quot; not found in events. Only found </span><span class="si">%s</span><span class="s1">.&#39;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">event_groups</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="c1"># add the events data to the container</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">container</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+            <span class="c1"># create weights arrays:</span>
+            <span class="c1"># * `initial_weights` as starting point (never modified)</span>
+            <span class="c1"># * `weights` to be initialised from `initial_weights`</span>
+            <span class="c1">#   and modified by the stages</span>
+            <span class="c1"># * user can also provide `initial_weights` in input file</span>
+            <span class="c1">#TODO Maybe add this directly into EventsPi</span>
+            <span class="k">if</span> <span class="s1">&#39;weights&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                <span class="c1"># raise manually to give user some helpful feedback</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                    <span class="s1">&#39;Found an existing `weights` array in &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+                    <span class="s1">&#39; which would be overwritten. Consider renaming it&#39;</span>
+                    <span class="s1">&#39; to `initial_weights`.&#39;</span> <span class="o">%</span> <span class="n">name</span>
+                <span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;initial_weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;nu&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;mu&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                        <span class="c1"># Need to scale weights if using down-sampling</span>
+                        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+            <span class="c1"># add neutrino flavor information for neutrino events</span>
+            <span class="c1">#TODO Maybe add this directly into EventsPi</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">:</span>
+                <span class="c1"># this determination of flavour is the worst possible coding, ToDo</span>
+                <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s1">&#39;bar&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;nutau&#39;</span><span class="p">):</span>
+                    <span class="n">flav</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;numu&#39;</span><span class="p">):</span>
+                    <span class="n">flav</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;nue&#39;</span><span class="p">):</span>
+                    <span class="n">flav</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot determine flavour of </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;nubar&#39;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;flav&#39;</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
+
+        <span class="c1"># check created at least one container</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;No containers created during data loading for some reason.&#39;</span>
+            <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="simple_data_loader.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Store event properties from events file at</span>
+<span class="sd">        service initialisation. Cf. `Stage` docs.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">record_event_properties</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="simple_data_loader.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.apply_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># reset data representation to events</span>
+        <span class="c1">#TODO This should be fixed more generally at the Pipeline level, see XXX</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+
+        <span class="c1"># reset weights to initial weights prior to downstream stages running</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

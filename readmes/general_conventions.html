@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/readmes/general_conventions.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p># Coding conventions
+* General Python conventions should be followed</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>[PEP8](<a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">https://www.python.org/dev/peps/pep-0008/</a>)</p></li>
+<li><p>Run [pylint](<a class="reference external" href="https://www.pylint.org/">https://www.pylint.org/</a>) to see how egregious your code is (and make it less so) before submitting a pull request (no hard requirement on making it pass 100%, but at least you’ll learn how to make it cleaner in the future). Also, static analysis of code (i.e., running pylint) can find bugs you miss in other ways. (Note that there are some nice GUI interfaces for pylint, including e.g. [Spyder IDE](<a class="reference external" href="https://github.com/spyder-ide/spyder">https://github.com/spyder-ide/spyder</a>).)</p></li>
+<li><p>Call functions and methods using full keyword names. E.g.:&lt;br&gt;`my_function(x=1, y=2, z=’blahblah’)`</p></li>
+<li><p>Avoid positional arguments wherever possible and reasonable (both for Python methods/functions and for command-line interfaces)</p></li>
+<li><p>Always give the user double-dash (<cite>–three-word-arg</cite>) command-line keyword options. Separate words in the option with single-dashes, <em>not</em> underscores. Optionally provide single-dash/single-letter options (<cite>-a</cite>) in addition to the double-sash keyword options.</p></li>
+<li><p>To use matplotlib on a headless server, you can specify at the command line the environment variable <cite>MPLBACKEND=agg</cite> or <cite>=pdf</cite>, etc.</p></li>
+</ul>
+</div></blockquote>
+<p># Naming conventions
+* Stage/service naming: see [creating a service](creating_a_service). (Note that the all-lower-case class naming scheme for services is one of the few exceptions we make to the general Python conventions above.)
+* Use the following syntax to refer to neutrino signatures <cite>*flavour*_*interaction*_*pid*</cite> where:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><cite>flavour</cite> is one of <cite>nue, nuebar, numu, numubar, nutau, nutaubar</cite></p></li>
+<li><p><cite>interaction</cite> is one of <cite>cc, nc</cite></p></li>
+<li><p><cite>pid</cite> is one of <cite>trck, cscd</cite></p></li>
+</ul>
+<p>Omit suffixed fields as necessary to refer to a more general signature for the same flavour, e.g. <cite>nue</cite> refers to all interactions/pids involving electron neutrinos. To refer to multiple signatures separate each signature with a <cite>+</cite> symbol, e.g. <cite>nue_cc+nuebar_cc</cite></p>
+</div></blockquote>
+<p># Documentation conventions</p>
+<p>Documentation comes in two forms: <strong>*docstrings*</strong> and <strong>*standalone files*</strong> (either markdown <strong>.md</strong> files or reStricturedText <strong>.rst</strong> files). Docstrings are the most important for physics and framework developers to consider, and can (and should) be quite far-ranging in their scope. Standalone files are reserved for guides (install guide, developer’s guide, user’s guide, quick-start, etc.) and one README.md file within each directory to document the directory’s raison d’être, or what is common to all of the things contained in the directory.</p>
+<ul class="simple">
+<li><p>All documentation is run through [Sphinx](<a class="reference external" href="http://www.sphinx-doc.org">http://www.sphinx-doc.org</a>) using the [Napoleon](<a class="reference external" href="http://sphinxcontrib-napoleon.readthedocs.io">http://sphinxcontrib-napoleon.readthedocs.io</a>) (to understand Numpy-style docstrings) and [Recommonmark](<a class="reference external" href="http://recommonmark.readthedocs.io">http://recommonmark.readthedocs.io</a>) (to understand Markdown syntax) extensions, so the final arbiter of whether a docstring is formatted “correctly” is the output generated using these.</p></li>
+</ul>
+<p>Refer to those links for how to format docstrings / Markdown to produce a desired result.</p>
+<p>## Docstrings</p>
+<p>Docstrings can document nearly everything within a Python file. The various types of docstrings are:
+* <strong>module</strong>: beneath the authorship, at the top of the .py file</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Why did you create this file (module)? What purpose does it serve? Are there issues that the user should be aware of? Good and bad situations for using the class(es) and function(s) contained? Anything that doesn’t fit into the more usage-oriented docstrings below should go here.</p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p><strong>function</strong>: beneath the function declaration line
+* What the function does, args to the function, notes</p></li>
+<li><p><strong>class</strong>: beneath the class declaration line
+* Purpose of the class, instantiation args for the class, notes to go into more detail, references, …</p></li>
+<li><p><strong>method</strong>: beneath the method declaration line
+* Purpose of the method, args to the method, notes</p></li>
+<li><p><strong>attribute</strong>: beneath the definition of a variable (in any scope in the file)
+* What purpose it serves. Note that if you add an attribute docstring, the attribute is included in the documentation, while if you do not add such a docstring, the attribute does not appear in the documentation.</p></li>
+</ul>
+<p>Examples of the above can be seen and are discussed further in the [tutorial for creating a service](creating_a_service).</p>
+<p>Docstrings should be formatted according to the NumPy/SciPy convention.
+* [PEP257: General Python docstring conventions](<a class="reference external" href="https://www.python.org/dev/peps/pep-0257/">https://www.python.org/dev/peps/pep-0257/</a>)
+* [NumPy/SciPy documentation style guide](<a class="reference external" href="https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt">https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt</a>)
+* [Example NumPy docstrings in code](<a class="reference external" href="http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html">http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html</a>)
+* [Recommonmark translates markdown into reST](<a class="reference external" href="http://recommonmark.readthedocs.io/en/latest/auto_structify.html">http://recommonmark.readthedocs.io/en/latest/auto_structify.html</a>)
+* Since all documentation will be run through Sphinx using the Napoleon and Recommonmark extensions, the final arbiter on whether a docstring is formatted correctly is the output generated using these. Good information for making nice docstrings can be found in both [Napoleon](<a class="reference external" href="http://sphinxcontrib-napoleon.readthedocs.io/">http://sphinxcontrib-napoleon.readthedocs.io/</a>)</p>
+<p>## Standalone files</p>
+<p>### Guides</p>
+<p>These are high-level documents addressing one (or multiple) of the three audiences: users, physics developers, and framework developers.</p>
+<ul class="simple">
+<li><p>Install guide</p></li>
+<li><p>Quick-start guide</p></li>
+<li><p>User guide</p></li>
+<li><p>Physics developer guide</p></li>
+<li><p>Framework developer guide</p></li>
+</ul>
+<p>### README.md files</p>
+<p>There is (or should be) one README.md file per directory in PISA. This should state the raison d’être of the directory, or what is common to all of the “things” contained in the directory. Those that live in stage directories (e.g. <cite>$PISA/pisa/stages/pid/README.md</cite>) are more critical than the others, so are discussed further below.</p>
+<p>#### Stage README.md files</p>
+<ul class="simple">
+<li><p>Try to avoid saying anything here that’s already (or should be) said in the docstrings within each individual service. Anything like this is only going to get out of sync with the actual implementations, since it’s repeating what’s already in the docstrings for the individual services. This violates probably the most important [principle of software development](<a class="reference external" href="https://en.wikipedia.org/wiki/Don't_repeat_yourself">https://en.wikipedia.org/wiki/Don’t_repeat_yourself</a>).</p></li>
+<li><p>So just make that as high-level as possible. For example, for <cite>$PISA/pisa/stages/pid/README.md</cite>, guidance would be:
+* What is particle ID? I.e., what is the physics it represents, what is the process we generally use to do PID, and what systematics are pertinent to PID?
+* What general categories to the contained service(s) fall into?
+* What are the major difference between services that would lead a user to pick one vs. another?
+* A table of what systematics are implemented by each service would be useful at this level</p></li>
+</ul>
+<p># Testing
+If you add a feature: <strong>*add a test that proves it works*</strong>. If you find a bug: <strong>*add a test that it’s fixed*</strong>. Not only does a test ensure that the functionality continues to work / bug continues to be squashed, through future iterations of the code, but it also is another way of communicating the assumptions that went into the code that might not be obvious from the code itself.</p>
+<p>## Low-level testing: Unit tests
+Write simple functions named <cite>test_&lt;FUNCNAME&gt;</cite> or <cite>test_&lt;CLASSNAME&gt;</cite> within your modules. These get called automatically from [pytest](<a class="reference external" href="http://pytest.org/">http://pytest.org/</a>). Pytest picks up exceptions that occur, so sprinkle <cite>assert</cite> statements liberally in your <cite>test_*</cite> functions, and you should test both things you expect to succeed <em>and</em> test things that you expect to fail (wrap the latter in <cite>try:/except:/else:</cite> blocks, where the <cite>assert</cite> occurs in the <cite>else:</cite> clause).</p>
+<p>We chose [pytest](<a class="reference external" href="http://pytest.org/">http://pytest.org/</a>): We’d rather have more unit tests written because they’re dead-easy to write than to use the full-featured (and built-in) framework that comes with Python.</p>
+<p>Expect pytest to eventually be configured to run with [doctest](<a class="reference external" href="https://pytest.org/latest/doctest.html">https://pytest.org/latest/doctest.html</a>) functionality enabled, so it’s also acceptable to put simple tests in docstrings, Markdown documentation files, or reST documentation files. (Just these won’t be exercised until we get pytest fully configured to do look for these tests.)</p>
+<p>Finally, until we get pytest configured, the <cite>test_*</cite> functions are called in the <cite>__main__</cite> section of many of the <cite>pisa/core</cite> modules (e.g., <cite>map.py</cite>, <cite>binning.py</cite>, <cite>transform.py</cite>, <cite>param.py</cite>). For now, these must be invoked by calling <cite>python &lt;filename&gt;</cite>.</p>
+<p>### How to test a service
+Look at the <cite>pisa.core.pipeline.stage_test()</cite> function to implement tests for your service. It can run a stage in isolation (either with maps you supply or with dummy <cite>numpy.ones()</cite> maps) or will run a pipeline from beginning up until the stage you’re testing. To keep tests synchronized with the code they are testing, it is recommended that configurations be generated within the test code rather than read from an external file. This is not a hard-and-fast rule, but usually results in better long-term outcomes.</p>
+<p>## High-level testing
+Here we will supply whatever basic configuration files and example data is necessary to fully test all high-level functionality. Outputs should be able to be compared against known-outputs, either exactly (for deterministic processes or pseudo-random processes) or as a ratio with a know result (in the case of a “new” physics implementation).</p>
+<p>There should be both quick tests that just show an analysis can make it through from beginning to end (and produce a known output), as well as more thorough tests that check the correctness of a result.</p>
+<p>For comparing non-deterministic results, plotting is essential for understanding differences. Difference plots, ratio plots, fractional-difference plots, side-by-side plots, overlays, correlations, …</p>
+<p># Physical Quantities</p>
+<p>## Units</p>
+<p>All physical quantities with units should have units attached. Parameters with units specified also require that their prior specifications adhere to those same units.</p>
+<p>This is essential so that, transparently, the user can input units are most comprehensible while computations can be carried out in whatever units have been defined for computation. Furthermore, it is made explicit in the user’s configuration files what units were chosen for input and the code for performing computation makes it explicit what units it uses as well.</p>
+<p>## Uncertainties</p>
+<p>Likewise, measured quantities with uncertainties should have these specified as well. Since there is a performance penalty for computing with uncertainties, this is a feature that can be enabled or disabled according to the task the user is working on. Certain parts of PISA (e.g., the convolutional likelihood metric) will only work if errors are propagated through the analysis.</p>
+<p>## Further documentation
+For more information on using units and uncertainties, see the [Units and uncertainties](units_and_uncertainties) page.</p>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

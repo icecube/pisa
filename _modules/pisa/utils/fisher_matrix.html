@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.fisher_matrix &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.fisher_matrix</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.fisher_matrix</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A Fisher matrix class definition.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#TODO: fix, adapt, clean up</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">chi2</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;FisherMatrix&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;L. Schulte, S. Boeser, T. Ehrhardt&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2020, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="k">def</span> <span class="nf">build_fisher_matrix</span><span class="p">(</span><span class="n">gradient_hist_flat_d</span><span class="p">,</span> <span class="n">fiducial_hist</span><span class="p">,</span> <span class="n">fiducial_params</span><span class="p">):</span>
+    <span class="c1"># fix the ordering of parameters</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">gradient_hist_flat_d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="c1"># find non-empty bins in flattened map</span>
+    <span class="n">fiducial_hist_flat</span> <span class="o">=</span> <span class="n">fiducial_hist</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">nonempty</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">fiducial_hist_flat</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Using </span><span class="si">%u</span><span class="s2"> non-empty bins of </span><span class="si">%u</span><span class="s2">&quot;</span> <span class="o">%</span>
+                  <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nonempty</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">fiducial_hist_flat</span><span class="p">)))</span>
+
+    <span class="c1"># get gradients as calculated above for non-zero bins</span>
+    <span class="n">gradients</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">gradient_hist_flat_d</span><span class="p">[</span><span class="n">par</span><span class="p">][</span><span class="n">nonempty</span><span class="p">]</span> <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">params</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span>
+    <span class="p">)</span>
+
+    <span class="c1"># get error estimate from best-fit bin count for non-zero bins</span>
+    <span class="c1"># TODO: these are not variances</span>
+    <span class="n">variances</span> <span class="o">=</span> <span class="n">fiducial_hist</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">std_devs</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">nonempty</span><span class="p">]</span>
+
+    <span class="c1"># Loop over all parameters per bin (simple transpose) and calculate Fisher</span>
+    <span class="c1"># matrix by getting the outer product of all gradients in a bin.</span>
+    <span class="c1"># Result is sum of matrix for all bins.</span>
+    <span class="n">fmatrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">bin_gradients</span><span class="p">,</span> <span class="n">bin_var</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">gradients</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">variances</span><span class="p">):</span>
+        <span class="n">fmatrix</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">bin_gradients</span><span class="p">,</span> <span class="n">bin_gradients</span><span class="p">)</span><span class="o">/</span><span class="n">bin_var</span>
+
+    <span class="c1"># construct the fisher matrix object</span>
+    <span class="n">fisher</span> <span class="o">=</span> <span class="n">FisherMatrix</span><span class="p">(</span>
+        <span class="n">matrix</span><span class="o">=</span><span class="n">fmatrix</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>  <span class="c1">#order is important here!</span>
+        <span class="n">best_fits</span><span class="o">=</span><span class="n">fiducial_params</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">,</span> <span class="c1"># TODO: fix order (in the sense of making it definite?)</span>
+        <span class="n">priors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1">#FIXME: support priors</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fisher</span><span class="p">,</span> <span class="n">nonempty</span>
+
+
+<span class="k">def</span> <span class="nf">get_fisher_matrix</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">test_vals</span><span class="p">,</span> <span class="n">counter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute Fisher matrices at fiducial hypothesis given data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.pull_method</span> <span class="kn">import</span> <span class="n">get_gradients</span>
+    <span class="n">hypo_params</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span>
+
+    <span class="c1">#fisher = {&#39;total&#39;: {}}</span>
+    <span class="n">fid_hypo_asimov_dist</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">pmaps</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="p">{}}</span>
+    <span class="n">gradient_maps</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="p">{}}</span>
+
+    <span class="k">for</span> <span class="n">pname</span> <span class="ow">in</span> <span class="n">hypo_params</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Computing binwise gradients for parameter &#39;</span><span class="si">%s</span><span class="s2">&#39;.&quot;</span> <span class="o">%</span> <span class="n">pname</span><span class="p">)</span>
+        <span class="n">tpm</span><span class="p">,</span> <span class="n">gm</span> <span class="o">=</span> <span class="n">get_gradients</span><span class="p">(</span>
+            <span class="n">param</span><span class="o">=</span><span class="n">pname</span><span class="p">,</span>
+            <span class="n">hypo_maker</span><span class="o">=</span><span class="n">hypo_maker</span><span class="p">,</span>
+            <span class="n">test_vals</span><span class="o">=</span><span class="n">test_vals</span><span class="p">[</span><span class="n">pname</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">counter</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_vals</span><span class="p">[</span><span class="n">pname</span><span class="p">])</span>
+        <span class="c1"># the maps corresponding to variations of</span>
+        <span class="c1"># a single param are not flattened</span>
+        <span class="n">pmaps</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">][</span><span class="n">pname</span><span class="p">]</span> <span class="o">=</span> <span class="n">tpm</span>
+        <span class="c1"># these are flattened, which is also what the</span>
+        <span class="c1"># method below assumes</span>
+        <span class="n">gradient_maps</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">][</span><span class="n">pname</span><span class="p">]</span> <span class="o">=</span> <span class="n">gm</span>
+
+    <span class="c1"># hypo param values are not at nominal anymore,</span>
+    <span class="c1"># but we don&#39;t use their values here</span>
+
+    <span class="n">fisher</span><span class="p">,</span> <span class="n">nonempty</span> <span class="o">=</span> <span class="n">build_fisher_matrix</span><span class="p">(</span>
+        <span class="n">gradient_hist_flat_d</span><span class="o">=</span><span class="n">gradient_maps</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">],</span>
+        <span class="n">fiducial_hist</span><span class="o">=</span><span class="n">fid_hypo_asimov_dist</span><span class="p">,</span>
+        <span class="n">fiducial_params</span><span class="o">=</span><span class="n">hypo_params</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">fisher</span><span class="p">,</span> <span class="n">gradient_maps</span><span class="p">,</span> <span class="n">fid_hypo_asimov_dist</span><span class="p">,</span> <span class="n">nonempty</span>
+
+
+<span class="c1">### FISHER MATRIX CLASS DEFINITION ###</span>
+
+<div class="viewcode-block" id="FisherMatrix">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix">[docs]</a>
+<span class="k">class</span> <span class="nc">FisherMatrix</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">best_fits</span><span class="p">,</span> <span class="n">priors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct a fisher matrix object</span>
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        matrix : len(parameters) x len(parameters) matrix or 2D array</span>
+<span class="sd">            Matrix values</span>
+<span class="sd">        parameters : sequence of str</span>
+<span class="sd">            Identifiers used for each parameter</span>
+<span class="sd">        best_fits : sequence of numbers</span>
+<span class="sd">            Best-fit values for each parameter</span>
+<span class="sd">        priors : sequence of Prior objects or None</span>
+<span class="sd">            Priors for each parameter; only accepts Gaussian or uniform priors,</span>
+<span class="sd">            otherwise raises TypeError. Note that uniform priors are</span>
+<span class="sd">            functionally equivalent to no prior. If None, uniform priors are</span>
+<span class="sd">            used for all parameters (i.e., sigma=np.inf).</span>
+<span class="sd">        labels : sequence of str or None</span>
+<span class="sd">            Pretty-print labels for the parameters. If None, use `paramaters`</span>
+<span class="sd">            strings as labels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_fits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">best_fits</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">priors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">priors</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">priors</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">translatePrior</span><span class="p">(</span><span class="n">prior</span><span class="p">)</span> <span class="k">for</span> <span class="n">prior</span> <span class="ow">in</span> <span class="n">priors</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">parameters</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkConsistency</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculateCovariance</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="FisherMatrix.fromFile">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.fromFile">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">fromFile</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load a Fisher matrix from a json file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.fromPaPAFile">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.fromPaPAFile">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">fromPaPAFile</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load Fisher matrix from json file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">loaded_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">))</span>
+        
+        <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">loaded_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;matrix&#39;</span><span class="p">))</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">loaded_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;parameters&#39;</span><span class="p">)</span>
+        <span class="n">best_fits</span> <span class="o">=</span> <span class="n">loaded_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;best_fits&#39;</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">loaded_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;labels&#39;</span><span class="p">)</span>
+        
+        <span class="n">new_fm</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">matrix</span><span class="o">=</span><span class="n">matrix</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span> 
+                     <span class="n">best_fits</span><span class="o">=</span><span class="n">best_fits</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
+        
+        <span class="k">while</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">loaded_dict</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            
+            <span class="n">par</span><span class="p">,</span> <span class="n">prior_dict</span> <span class="o">=</span> <span class="n">loaded_dict</span><span class="o">.</span><span class="n">popitem</span><span class="p">()</span>
+            
+            <span class="c1">#self.parameters.append(par)</span>
+            <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">prior_dict</span><span class="o">.</span><span class="n">itervalues</span><span class="p">():</span>
+                <span class="n">new_fm</span><span class="o">.</span><span class="n">addPrior</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        
+        <span class="n">new_fm</span><span class="o">.</span><span class="n">checkConsistency</span><span class="p">()</span>
+        <span class="n">new_fm</span><span class="o">.</span><span class="n">calculateCovariance</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="n">new_fm</span></div>
+
+    
+    
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="c1"># merge parameter lists</span>
+        <span class="n">new_params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">+</span><span class="n">other</span><span class="o">.</span><span class="n">parameters</span><span class="p">))</span>
+        
+        <span class="n">new_best_fits</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">new_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">new_params</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBestFit</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+                <span class="n">lbl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLabel</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">getBestFit</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+                <span class="n">lbl</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">getLabel</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+            
+            <span class="n">new_best_fits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">new_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
+        
+        <span class="c1"># generate blank matrix</span>
+        <span class="n">new_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">new_params</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_params</span><span class="p">)))</span> <span class="p">)</span>
+        
+        <span class="c1"># fill new matrix</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_params</span><span class="p">)),</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_params</span><span class="p">))):</span>
+            
+            <span class="k">for</span> <span class="n">summand</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">i_sum</span> <span class="o">=</span> <span class="n">summand</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">new_params</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">j_sum</span> <span class="o">=</span> <span class="n">summand</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">new_params</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                
+                <span class="n">new_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">summand</span><span class="o">.</span><span class="n">matrix</span><span class="p">[</span><span class="n">i_sum</span><span class="p">,</span> <span class="n">j_sum</span><span class="p">]</span>
+        
+        <span class="c1"># create new FisherMatrix object</span>
+        <span class="n">new_object</span> <span class="o">=</span> <span class="n">FisherMatrix</span><span class="p">(</span><span class="n">matrix</span><span class="o">=</span><span class="n">new_matrix</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">new_params</span><span class="p">,</span> 
+                                  <span class="n">best_fits</span><span class="o">=</span><span class="n">new_best_fits</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">new_labels</span><span class="p">)</span>
+        <span class="n">new_object</span><span class="o">.</span><span class="n">calculateCovariance</span><span class="p">()</span>
+        
+        <span class="c1"># fill in priors</span>
+        <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">new_object</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            
+            <span class="k">for</span> <span class="n">summand</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">]:</span>
+                
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">prior_dict</span> <span class="o">=</span> <span class="n">summand</span><span class="o">.</span><span class="n">getPriorDict</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                
+                <span class="k">for</span> <span class="n">par</span><span class="p">,</span> <span class="n">sigma</span> <span class="ow">in</span> <span class="n">prior_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">new_object</span><span class="o">.</span><span class="n">addPrior</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+        
+        <span class="c1"># ...and we&#39;re done!</span>
+        <span class="k">return</span> <span class="n">new_object</span>
+    
+    
+<div class="viewcode-block" id="FisherMatrix.checkConsistency">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.checkConsistency">[docs]</a>
+    <span class="k">def</span> <span class="nf">checkConsistency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check whether number of parameters matches dimension of matrix; </span>
+<span class="sd">        matrix is symmetrical; parameter names are unique; and number of</span>
+<span class="sd">        best_fits, labels, and priors all match number of parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">)[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;Number of parameters does not match dimension of Fisher matrix! [</span><span class="si">%i</span><span class="s1">, </span><span class="si">%i</span><span class="s1">]&#39;</span> \
+                <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">))</span> <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="o">.</span><span class="n">T</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Fisher matrix not symmetric!&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Parameter names not unique! </span><span class="si">%s</span><span class="s1">&#39;</span> \
+                <span class="o">%</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array2string</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)))</span> <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">best_fits</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">priors</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Parameters, best_fits, labels, and priors must all have same length! (lengths = </span><span class="si">%d</span><span class="s1">, </span><span class="si">%d</span><span class="s1">, </span><span class="si">%d</span><span class="s1">, </span><span class="si">%d</span><span class="s1">)&#39;</span> \
+                <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">best_fits</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">priors</span><span class="p">))</span> <span class="p">)</span>
+        
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.saveFile">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.saveFile">[docs]</a>
+    <span class="k">def</span> <span class="nf">saveFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write Fisher matrix to json file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">dict_to_write</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">dict_to_write</span><span class="p">[</span><span class="s1">&#39;matrix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span>
+        <span class="n">dict_to_write</span><span class="p">[</span><span class="s1">&#39;parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="n">dict_to_write</span><span class="p">[</span><span class="s1">&#39;best_fits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_fits</span>
+        <span class="n">dict_to_write</span><span class="p">[</span><span class="s1">&#39;labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span>
+        <span class="n">dict_to_write</span><span class="p">[</span><span class="s1">&#39;priors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">priors</span>
+        
+        <span class="n">to_file</span><span class="p">(</span><span class="n">dict_to_write</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getParameterIndex">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getParameterIndex">[docs]</a>
+    <span class="k">def</span> <span class="nf">getParameterIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Whether par is already existing in parameter list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">par</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> not found in parameter list </span><span class="si">%s</span><span class="s1">&#39;</span>\
+                <span class="o">%</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array2string</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">))</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">par</span><span class="p">)</span></div>
+
+    
+    
+    <span class="c1">## -&gt; Why on earth would we ever want to do that?</span>
+<div class="viewcode-block" id="FisherMatrix.renameParameter">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.renameParameter">[docs]</a>
+    <span class="k">def</span> <span class="nf">renameParameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fromname</span><span class="p">,</span> <span class="n">toname</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rename a parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">fromname</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">toname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">!=</span><span class="n">fromname</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> already in parameter list </span><span class="si">%s</span><span class="s1">&#39;</span>\
+                <span class="o">%</span><span class="p">(</span><span class="n">toname</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array2string</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">))</span> <span class="p">)</span> <span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">toname</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.calculateCovariance">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.calculateCovariance">[docs]</a>
+    <span class="k">def</span> <span class="nf">calculateCovariance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate covariance matrix from Fisher matrix (i.e. invert including priors).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Fisher Matrix is singular, cannot be inverted!&#39;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">getPrior</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">])</span>
+        <span class="p">)</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getBestFit">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getBestFit">[docs]</a>
+    <span class="k">def</span> <span class="nf">getBestFit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get best fit value for given parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_fits</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getLabel">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getLabel">[docs]</a>
+    <span class="k">def</span> <span class="nf">getLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get pretty-print label for given parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.setLabel">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.setLabel">[docs]</a>
+    <span class="k">def</span> <span class="nf">setLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">newlabel</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Change the pretty-print label for given parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">newlabel</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.removeParameter">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.removeParameter">[docs]</a>
+    <span class="k">def</span> <span class="nf">removeParameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove par from Fisher matrix and recalculate covariance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        
+        <span class="c1"># drop from parameter, best fit, and prior list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_fits</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">priors</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        
+        <span class="c1"># drop from matrix (first row, then column)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkConsistency</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculateCovariance</span><span class="p">()</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.translatePrior">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.translatePrior">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">translatePrior</span><span class="p">(</span><span class="n">prior</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Translates a Prior object, numeric, or None to the simplistic prior</span>
+<span class="sd">        format used internally (a value for sigma).</span>
+<span class="sd">        </span>
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        prior : Prior object (gaussian or uniform), float, or None</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sigma : Standard deviation of prior (np.inf for uniform Prior or None)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">prior</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">prior</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">prior</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        
+        <span class="c1"># TODO: debug following check, which fails even when types are &quot;same&quot;;</span>
+        <span class="c1"># multiple import of Prior?</span>
+        <span class="c1"># if not isinstance(prior, Prior):</span>
+        <span class="c1">#    raise TypeError(&#39;prior must be Prior object, numeric, or None; got `%s` instead&#39; % type(prior))</span>
+        
+        <span class="k">if</span> <span class="n">prior</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">elif</span> <span class="n">prior</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">prior</span><span class="o">.</span><span class="n">sigma</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Prior object must be of either gaussian or uniform kind; got kind `&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">prior</span><span class="o">.</span><span class="n">kind</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;` instead&#39;</span><span class="p">)</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.setPrior">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.setPrior">[docs]</a>
+    <span class="k">def</span> <span class="nf">setPrior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set prior for parameter &#39;par&#39; to value sigma. If sigma is None, no</span>
+<span class="sd">        prior is assumed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">priors</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculateCovariance</span><span class="p">()</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.addPrior">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.addPrior">[docs]</a>
+    <span class="k">def</span> <span class="nf">addPrior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a prior of value sigma to the existing one for par (in quadrature)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">priors</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">priors</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">1.</span><span class="o">/</span><span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculateCovariance</span><span class="p">()</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.removeAllPriors">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.removeAllPriors">[docs]</a>
+    <span class="k">def</span> <span class="nf">removeAllPriors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove *all* priors from this Fisher Matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">priors</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculateCovariance</span><span class="p">()</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getPrior">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getPrior">[docs]</a>
+    <span class="k">def</span> <span class="nf">getPrior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the prior (sigma value) for par</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">priors</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getPriorDict">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getPriorDict">[docs]</a>
+    <span class="k">def</span> <span class="nf">getPriorDict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List priors of all parameters (sigma values)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">priors</span><span class="p">))</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getCovariance">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getCovariance">[docs]</a>
+    <span class="k">def</span> <span class="nf">getCovariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the covariance of par1 and par2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># Return the respective element</span>
+        <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">[</span><span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span><span class="p">]</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getVariance">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getVariance">[docs]</a>
+    <span class="k">def</span> <span class="nf">getVariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns full variance of par</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getCovariance</span><span class="p">(</span><span class="n">par</span><span class="p">,</span><span class="n">par</span><span class="p">)</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getSigma">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getSigma">[docs]</a>
+    <span class="k">def</span> <span class="nf">getSigma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns full standard deviation of par,</span>
+<span class="sd">        marginalized over all other parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getVariance</span><span class="p">(</span><span class="n">par</span><span class="p">))</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getSigmaNoPriors">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getSigmaNoPriors">[docs]</a>
+    <span class="k">def</span> <span class="nf">getSigmaNoPriors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns standard deviation of par, marginalized over all other </span>
+<span class="sd">        parameters, but ignoring priors on this parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        
+        <span class="c1"># make temporary priors with the ones corresponding to par removed</span>
+        <span class="n">temp_priors</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">priors</span><span class="p">)</span>
+        <span class="n">temp_priors</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        
+        <span class="c1"># calculate covariance with these priors</span>
+        <span class="n">temp_covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mf">1.</span><span class="o">/</span><span class="n">s</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">temp_priors</span><span class="p">])</span>
+        <span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">temp_covariance</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span><span class="n">idx</span><span class="p">])</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getSigmaStatistical">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getSigmaStatistical">[docs]</a>
+    <span class="k">def</span> <span class="nf">getSigmaStatistical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns standard deviation of par,</span>
+<span class="sd">        if all other parameters are fixed (i.e. known infinitely well)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParameterIndex</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span><span class="n">idx</span><span class="p">])</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getSigmaSystematic">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getSigmaSystematic">[docs]</a>
+    <span class="k">def</span> <span class="nf">getSigmaSystematic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns standard deviation of par for infinite statistics</span>
+<span class="sd">        (i.e. systematic error)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getSigmaNoPriors</span><span class="p">(</span><span class="n">par</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">getSigmaStatistical</span><span class="p">(</span><span class="n">par</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getErrorEllipse">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getErrorEllipse">[docs]</a>
+    <span class="k">def</span> <span class="nf">getErrorEllipse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">,</span> <span class="n">confLevel</span><span class="o">=</span><span class="mf">0.6827</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a, b, tan(2 theta) of confLevel error ellipse </span>
+<span class="sd">        in par1-par2-plane with:</span>
+<span class="sd">        </span>
+<span class="sd">        a: large half axis</span>
+<span class="sd">        b: small half axis</span>
+<span class="sd">        tan(2 theta): tilt angle, has to be divided by the aspect</span>
+<span class="sd">                      ratio of the actual plot before taking arctan</span>
+<span class="sd">        </span>
+<span class="sd">        Formulae taken from arXiv:0906.4123</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">sigma1</span><span class="p">,</span> <span class="n">sigma2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSigma</span><span class="p">(</span><span class="n">par1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSigma</span><span class="p">(</span><span class="n">par2</span><span class="p">)</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getCovariance</span><span class="p">(</span><span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">)</span>
+        
+        <span class="c1">#for this we need sigma1 &gt; sigma2, otherwise just swap parameters</span>
+        <span class="k">if</span> <span class="n">sigma1</span> <span class="o">&gt;</span> <span class="n">sigma2</span><span class="p">:</span>
+            <span class="n">a_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma1</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">sigma2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">sigma1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">sigma2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">4.</span> <span class="o">+</span> <span class="n">cov</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">b_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma1</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">sigma2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">sigma1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">sigma2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">4.</span> <span class="o">+</span> <span class="n">cov</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">a_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma2</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">sigma1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">sigma2</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">sigma1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">4.</span> <span class="o">+</span> <span class="n">cov</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">b_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma2</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">sigma1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">sigma2</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">sigma1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">4.</span> <span class="o">+</span> <span class="n">cov</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1">#Note: this has weird dimensions (actual size of the plot)!</span>
+        <span class="n">tan_2_th</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">cov</span> <span class="o">/</span> <span class="p">(</span><span class="n">sigma1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">sigma2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        
+        <span class="c1"># we are dealing with a 2D error ellipse here</span>
+        <span class="n">scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">chi2</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">confLevel</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">scaling</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a_sq</span><span class="p">),</span> <span class="n">scaling</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b_sq</span><span class="p">),</span> <span class="n">tan_2_th</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.getCorrelation">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getCorrelation">[docs]</a>
+    <span class="k">def</span> <span class="nf">getCorrelation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns correlation coefficient between par1 and par2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getCovariance</span><span class="p">(</span><span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getSigma</span><span class="p">(</span><span class="n">par1</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">getSigma</span><span class="p">(</span><span class="n">par2</span><span class="p">))</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.printResults">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.printResults">[docs]</a>
+    <span class="k">def</span> <span class="nf">printResults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prints statistical, systematic errors, priors, best fits </span>
+<span class="sd">        for specified (default: all) parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pars</span> <span class="o">=</span> <span class="n">parameters</span> <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="n">pars</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>    <span class="c1"># redirect stdout</span>
+            <span class="n">orig_stdout</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        
+        <span class="n">param_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pars</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="s1">&#39;parameters&#39;</span><span class="p">)])</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="p">(</span><span class="n">param_width</span><span class="p">,</span> <span class="s1">&#39;parameter&#39;</span><span class="p">,</span> <span class="s1">&#39;best fit&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;stat&#39;</span><span class="p">,</span> <span class="s1">&#39;syst&#39;</span><span class="p">,</span> <span class="s1">&#39;priors&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%*s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">header</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="p">(</span><span class="mi">70</span><span class="o">+</span><span class="n">param_width</span><span class="p">))</span>
+        
+        <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">pars</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">param_width</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBestFit</span><span class="p">(</span><span class="n">par</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSigma</span><span class="p">(</span><span class="n">par</span><span class="p">),</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">getSigmaStatistical</span><span class="p">(</span><span class="n">par</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSigmaSystematic</span><span class="p">(</span><span class="n">par</span><span class="p">),</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">getPrior</span><span class="p">(</span><span class="n">par</span><span class="p">))</span>
+            <span class="n">par_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%*s</span><span class="s1">    </span><span class="si">%10.3e</span><span class="s1">     </span><span class="si">%.3e</span><span class="s1">     </span><span class="si">%.3e</span><span class="s1">     </span><span class="si">%.3e</span><span class="s1">     </span><span class="si">%.3e</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">result</span>
+            <span class="n">par_str</span> <span class="o">=</span> <span class="n">par_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">,</span> <span class="s1">&#39;free&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">par_str</span><span class="p">)</span>
+<span class="w">        </span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        # needed for PINGU only:</span>
+<span class="sd">        if &#39;hierarchy&#39; in pars: </span>
+<span class="sd">            </span>
+<span class="sd">            # calculate proper significance according to arXiv:1305.5150</span>
+<span class="sd">            sigma_gauss = 1./self.getSigma(&#39;hierarchy&#39;)</span>
+<span class="sd">            sigma_bin = conv_sigma_to_bin_sigma(sigma_gauss)</span>
+<span class="sd">            </span>
+<span class="sd">            print &#39;\nSignificance of hierarchy measurement: %.2f sigma&#39; %sigma_bin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>    <span class="c1"># switch stdout back</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">orig_stdout</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.printResultsSorted">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.printResultsSorted">[docs]</a>
+    <span class="k">def</span> <span class="nf">printResultsSorted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prints statistical, systematic errors, priors, best fits </span>
+<span class="sd">        sorted by parameter par</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>    <span class="c1"># redirect stdout</span>
+            <span class="n">orig_stdout</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">latex</span><span class="p">:</span>
+            <span class="c1"># table header</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">begin</span><span class="si">{tabular}{lrrrrrr}</span><span class="s1"> </span><span class="se">\n\\</span><span class="s1">toprule&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Parameter &amp; Impact &amp; Best Fit &amp; Full &amp; Stat. &amp; Syst. &amp; Prior </span><span class="se">\\\\</span><span class="s1"> </span><span class="se">\n\\</span><span class="s1">midrule&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">param_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="s1">&#39;parameters&#39;</span><span class="p">)])</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="p">(</span><span class="n">param_width</span><span class="p">,</span> <span class="s1">&#39;parameter&#39;</span><span class="p">,</span> <span class="s1">&#39;impact [%]&#39;</span><span class="p">,</span><span class="s1">&#39;best fit&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;stat&#39;</span><span class="p">,</span> <span class="s1">&#39;syst&#39;</span><span class="p">,</span> <span class="s1">&#39;priors&#39;</span><span class="p">)</span>
+            
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%*s</span><span class="s1">     </span><span class="si">%10s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">     </span><span class="si">%9s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">header</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="p">(</span><span class="mi">85</span><span class="o">+</span><span class="n">param_width</span><span class="p">))</span>
+        
+        <span class="n">sortedp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sortByParam</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">impact</span><span class="p">)</span> <span class="ow">in</span> <span class="n">sortedp</span><span class="p">:</span>
+        
+            <span class="c1"># print the line</span>
+            <span class="k">if</span> <span class="n">latex</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getLabel</span><span class="p">(</span><span class="n">par</span><span class="p">),</span> <span class="n">impact</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBestFit</span><span class="p">(</span><span class="n">par</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSigma</span><span class="p">(</span><span class="n">par</span><span class="p">),</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">getSigmaStatistical</span><span class="p">(</span><span class="n">par</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSigmaSystematic</span><span class="p">(</span><span class="n">par</span><span class="p">),</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">getPrior</span><span class="p">(</span><span class="n">par</span><span class="p">))</span>
+                <span class="n">par_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> &amp; </span><span class="si">%.1f</span><span class="s1"> &amp; </span><span class="se">\\</span><span class="s1">num{</span><span class="si">%.2e</span><span class="s1">} &amp; </span><span class="se">\\</span><span class="s1">num{</span><span class="si">%.2e</span><span class="s1">} &amp; </span><span class="se">\\</span><span class="s1">num{</span><span class="si">%.2e</span><span class="s1">} &amp; </span><span class="se">\\</span><span class="s1">num{</span><span class="si">%.2e</span><span class="s1">} &amp; </span><span class="se">\\</span><span class="s1">num{</span><span class="si">%.2e</span><span class="s1">} </span><span class="se">\\\\</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">result</span>
+                <span class="n">par_str</span> <span class="o">=</span> <span class="n">par_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">num</span><span class="si">{inf}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;free&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">param_width</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">impact</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBestFit</span><span class="p">(</span><span class="n">par</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSigma</span><span class="p">(</span><span class="n">par</span><span class="p">),</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">getSigmaStatistical</span><span class="p">(</span><span class="n">par</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSigmaSystematic</span><span class="p">(</span><span class="n">par</span><span class="p">),</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">getPrior</span><span class="p">(</span><span class="n">par</span><span class="p">))</span>
+                <span class="n">par_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%*s</span><span class="s1">          </span><span class="si">%5.1f</span><span class="s1">    </span><span class="si">%10.3e</span><span class="s1">     </span><span class="si">%.3e</span><span class="s1">     </span><span class="si">%.3e</span><span class="s1">     </span><span class="si">%.3e</span><span class="s1">     </span><span class="si">%.3e</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">result</span>
+                <span class="n">par_str</span> <span class="o">=</span> <span class="n">par_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">,</span> <span class="s1">&#39;free&#39;</span><span class="p">)</span>
+            
+            <span class="nb">print</span><span class="p">(</span><span class="n">par_str</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">latex</span><span class="p">:</span>
+            <span class="c1"># table outro</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">bottomrule </span><span class="se">\n\\</span><span class="s1">end</span><span class="si">{tabular}</span><span class="s1">&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>    <span class="c1"># switch stdout back</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">orig_stdout</span></div>
+
+    
+    
+<div class="viewcode-block" id="FisherMatrix.sortByParam">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.sortByParam">[docs]</a>
+    <span class="k">def</span> <span class="nf">sortByParam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sorts the parameters by their impact on parameter par.</span>
+<span class="sd">        Relevant quantity is covariance(par,i)/sigma_i.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns sorted list of (parameters, impact), par first, </span>
+<span class="sd">        then ordered descendingly by impact.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># calculate impact</span>
+        <span class="n">impact</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([[</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getCorrelation</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="mi">100</span><span class="p">]</span> \
+                        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">])</span>
+        
+        <span class="c1"># sort the dict by value</span>
+        <span class="c1"># FIXME</span>
+        <span class="n">sorted_impact</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">impact</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(),</span> 
+                               <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+                               <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">sorted_impact</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

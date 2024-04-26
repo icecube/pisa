@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.osc.decoherence &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.osc.decoherence</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.osc.decoherence</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Implementing an environmentally-induced decoherence model for neutrino oscillations</span>
+<span class="sd">Based on reference [1], which uses an energy-indepedence deocherence matrix in vacuum</span>
+
+<span class="sd">References:</span>
+<span class="sd">  [1] arxiv:1702.04738</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">pisa.stages.osc.osc_params</span> <span class="kn">import</span> <span class="n">OscParams</span>
+<span class="kn">from</span> <span class="nn">pisa.stages.osc.layers</span> <span class="kn">import</span> <span class="n">Layers</span>
+<span class="kn">from</span> <span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span> <span class="kn">import</span> <span class="n">fill_probs</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">WHERE</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DecoherenceParams&#39;</span><span class="p">,</span> <span class="s1">&#39;calc_decoherence_probs&#39;</span><span class="p">,</span> <span class="s2">&quot;decoherence&quot;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;T. Stuttard, M. Jensen&#39;</span>
+
+
+<div class="viewcode-block" id="DecoherenceParams">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.DecoherenceParams">[docs]</a>
+<span class="k">class</span> <span class="nc">DecoherenceParams</span><span class="p">(</span><span class="n">OscParams</span><span class="p">):</span> <span class="c1">#TODO Start using osc_params instead...</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Container for decoherence oscillation params</span>
+<span class="sd">    This includes standard oscillation params plus additional &#39;Gamma&#39; terms parameterising decoherence</span>
+<span class="sd">    gamma21,31,32 params have units of energy</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deltam21</span><span class="p">,</span> <span class="n">deltam31</span><span class="p">,</span> <span class="n">theta12</span><span class="p">,</span> <span class="n">theta13</span><span class="p">,</span> <span class="n">theta23</span><span class="p">,</span> <span class="n">deltacp</span><span class="p">,</span> <span class="n">gamma21</span><span class="p">,</span> <span class="n">gamma31</span><span class="p">,</span> <span class="n">gamma32</span><span class="p">):</span>
+
+        <span class="c1"># Call base class constructor</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Store args</span>
+        <span class="c1"># Note that keeping them as quantities here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm21</span> <span class="o">=</span> <span class="n">deltam21</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm31</span> <span class="o">=</span> <span class="n">deltam31</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theta12</span> <span class="o">=</span> <span class="n">theta12</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theta13</span> <span class="o">=</span> <span class="n">theta13</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theta23</span> <span class="o">=</span> <span class="n">theta23</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deltacp</span> <span class="o">=</span> <span class="n">deltacp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma21</span> <span class="o">=</span> <span class="n">gamma21</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma31</span> <span class="o">=</span> <span class="n">gamma31</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma32</span> <span class="o">=</span> <span class="n">gamma32</span>
+
+        <span class="c1"># Get deltam32 (this is what is used in [1])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm32</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm31</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm21</span></div>
+
+
+
+<div class="viewcode-block" id="calc_decoherence_probs">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.calc_decoherence_probs">[docs]</a>
+<span class="k">def</span> <span class="nf">calc_decoherence_probs</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">prob_tau</span><span class="p">,</span> <span class="n">two_flavor</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Oscillation probability calculator function, with decoherence included</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    decoh_params :</span>
+<span class="sd">        DecoherenceParams instance</span>
+
+<span class="sd">    flav :</span>
+<span class="sd">        str : Neutrino flavor</span>
+
+<span class="sd">    energy :</span>
+<span class="sd">        Neutrino true energy values as float(s), either a single value or an array</span>
+<span class="sd">        If no units attached, must be [GeV]</span>
+
+<span class="sd">    baseline :</span>
+<span class="sd">        Neutrino true propagation distance values as float(s), either a single value or an array</span>
+<span class="sd">        If no units attached, must be [km]</span>
+
+<span class="sd">    prob_e :</span>
+<span class="sd">        Array of floats of same dimensions as `energy` and `baseline`. Will be filled with probabilities to oscillate to a nue</span>
+
+<span class="sd">    prob_mu :</span>
+<span class="sd">        Array of floats of same dimensions as `energy` and `baseline`. Will be filled with probabilities to oscillate to a numu</span>
+
+<span class="sd">    prob_tau :</span>
+<span class="sd">        Array of floats of same dimensions as `energy` and `baseline`. Will be filled with probabilities to oscillate to a nutau</span>
+
+<span class="sd">    two_flavor :</span>
+<span class="sd">        bool : Flag indicating whether a two- or 3-flavor model should be used</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Electron neutrino case</span>
+    <span class="c1"># For nu_e case, in this approiximation we are essential neglecting nu_e oscillations</span>
+    <span class="c1"># If a particle starts as a nu_e, it stays as a nu_e</span>
+    <span class="k">if</span> <span class="n">flav</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;nue&quot;</span><span class="p">):</span>
+        <span class="n">prob_e</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+        <span class="n">prob_mu</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+
+    <span class="c1"># Muon neutrino case</span>
+    <span class="c1"># For nu_mu case, in this approximation there is 0. probability of becoming a nu_e</span>
+    <span class="c1"># Use numu disappearance calculation to get numu/tau probs</span>
+    <span class="k">elif</span> <span class="n">flav</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;numu&quot;</span><span class="p">):</span>
+        <span class="n">prob_e</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="n">numu_disappearance_func</span> <span class="o">=</span> <span class="n">_calc_numu_disappearance_prob_2flav</span> <span class="k">if</span> <span class="n">two_flavor</span> <span class="k">else</span> <span class="n">_calc_numu_disappearance_prob_3flav</span>
+        <span class="n">numu_survival_prob</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">numu_disappearance_func</span><span class="p">(</span> <span class="n">decoh_params</span><span class="o">=</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="n">energy</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">baseline</span> <span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">numu_survival_prob</span><span class="p">,</span><span class="n">dst</span><span class="o">=</span><span class="n">prob_mu</span><span class="p">)</span> <span class="c1">#TODO avoid this wasted data copy</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span> <span class="s2">&quot;Input flavor &#39;</span><span class="si">%s</span><span class="s2">&#39; not supported&quot;</span> <span class="o">%</span> <span class="n">flav</span><span class="p">)</span>
+
+    <span class="c1"># Assume unitarity</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="mf">1.</span><span class="o">-</span><span class="n">prob_e</span><span class="o">-</span><span class="n">prob_mu</span><span class="p">,</span><span class="n">dst</span><span class="o">=</span><span class="n">prob_tau</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_calc_numu_disappearance_prob_2flav</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span><span class="n">E</span><span class="p">,</span><span class="n">L</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate numu disppearance in 2-flavor model</span>
+<span class="sd">    User should no call this directly, instead use `calc_decoherence_probs`</span>
+<span class="sd">    Define two-flavor decoherence approximation according to Eqn 2 from [1]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    decoh_params :</span>
+<span class="sd">        DecoherenceParams instance</span>
+
+<span class="sd">    E :</span>
+<span class="sd">        Neutrino true energy values as float(s), either a single value or an array</span>
+<span class="sd">        If no units attached, must be [GeV]</span>
+
+<span class="sd">    L :</span>
+<span class="sd">        Neutrino true propagation distance values as float(s), either a single value or an array</span>
+<span class="sd">        If no units attached, must be [km]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># This line is a standard oscillations (no decoherence) 2 flavour approximation, can use for debugging</span>
+    <span class="c1">#return np.sin(2.*decoh_params.theta23.m_as(&quot;rad&quot;))**2 * np.square(np.sin(1.27*decoh_params.dm32.m_as(&quot;eV**2&quot;)*L/E))</span>
+
+    <span class="c1"># Assume units if none provided for main input arrays</span>
+    <span class="c1"># Would prefer to get units but is not always the case</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">E</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;GeV&quot;</span><span class="p">]</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">L</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">L</span><span class="p">,</span><span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">L</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;km&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Calculate normalisation term</span>
+    <span class="n">norm_term</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;rad&quot;</span><span class="p">)</span> <span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="p">)</span>
+
+    <span class="c1"># Calculate decoherence term</span>
+    <span class="n">decoh_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span> <span class="o">-</span><span class="n">decoh_params</span><span class="o">.</span><span class="n">gamma32</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;eV&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span> <span class="n">L</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;m&quot;</span><span class="p">)</span><span class="o">/</span><span class="mf">1.97e-7</span> <span class="p">)</span> <span class="p">)</span> <span class="c1">#Convert L from [m] to natural units</span>
+
+    <span class="c1"># Calculate oscillation term</span>
+    <span class="n">osc_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span> <span class="p">(</span> <span class="mf">2.</span> <span class="o">*</span> <span class="mf">1.27</span> <span class="o">*</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">dm32</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;eV**2&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">L</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;km&quot;</span><span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="p">(</span> <span class="n">E</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;GeV&quot;</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">norm_term</span> <span class="o">*</span> <span class="p">(</span> <span class="mf">1.</span> <span class="o">-</span> <span class="p">(</span><span class="n">decoh_term</span><span class="o">*</span><span class="n">osc_term</span><span class="p">)</span> <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_update_pmns_matrix</span><span class="p">(</span><span class="n">theta12</span><span class="p">,</span> <span class="n">theta13</span><span class="p">,</span> <span class="n">theta23</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function used by _calc_numu_disappearance_prob_3flav</span>
+<span class="sd">    Updates the PMNS matrix and its complex conjugate.</span>
+<span class="sd">    Must be called by the class each time one of the PMNS matrix parameters are changed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># TODO Mikkel needs to reference code he used as inspiration here</span>
+
+    <span class="n">c12</span>  <span class="o">=</span>  <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span> <span class="n">theta12</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;rad&quot;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">c13</span>  <span class="o">=</span>  <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span> <span class="n">theta13</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;rad&quot;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">c23</span>  <span class="o">=</span>  <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span> <span class="n">theta23</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;rad&quot;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">s12</span>  <span class="o">=</span>  <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span> <span class="n">theta12</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;rad&quot;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">s13</span>  <span class="o">=</span>  <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span> <span class="n">theta13</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;rad&quot;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">s23</span>  <span class="o">=</span>  <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span> <span class="n">theta23</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;rad&quot;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">eid</span>  <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># e^( i * delta_cp)</span>
+    <span class="n">emid</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># e^(-i * delta_cp)</span>
+
+    <span class="n">matrix</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+    <span class="n">anti_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+
+    <span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">c12</span> <span class="o">*</span> <span class="n">c13</span>
+    <span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">s12</span> <span class="o">*</span> <span class="n">c13</span>
+    <span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">s13</span> <span class="o">*</span> <span class="n">emid</span>
+
+    <span class="n">matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.</span> <span class="o">-</span> <span class="n">s12</span><span class="o">*</span><span class="n">c23</span> <span class="p">)</span> <span class="o">-</span> <span class="p">(</span> <span class="n">c12</span><span class="o">*</span><span class="n">s23</span><span class="o">*</span><span class="n">s13</span><span class="o">*</span><span class="n">eid</span> <span class="p">)</span>
+    <span class="n">matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span> <span class="n">c12</span><span class="o">*</span><span class="n">c23</span> <span class="p">)</span> <span class="o">-</span> <span class="p">(</span> <span class="n">s12</span><span class="o">*</span><span class="n">s23</span><span class="o">*</span><span class="n">s13</span><span class="o">*</span><span class="n">eid</span> <span class="p">)</span>
+    <span class="n">matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">s23</span><span class="o">*</span><span class="n">c13</span>
+
+    <span class="n">matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span> <span class="n">s12</span><span class="o">*</span><span class="n">s23</span> <span class="p">)</span> <span class="o">-</span> <span class="p">(</span> <span class="n">c12</span><span class="o">*</span><span class="n">c23</span><span class="o">*</span><span class="n">s13</span><span class="o">*</span><span class="n">eid</span><span class="p">)</span>
+    <span class="n">matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span> <span class="mf">0.</span> <span class="o">-</span> <span class="n">c12</span><span class="o">*</span><span class="n">s23</span> <span class="p">)</span> <span class="o">-</span> <span class="p">(</span> <span class="n">s12</span><span class="o">*</span><span class="n">c23</span><span class="o">*</span><span class="n">s13</span><span class="o">*</span><span class="n">eid</span> <span class="p">)</span>
+    <span class="n">matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">c23</span><span class="o">*</span><span class="n">c13</span>
+
+    <span class="n">anti_matrix</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">conjugate</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">anti_matrix</span>
+
+
+<span class="k">def</span> <span class="nf">_calc_numu_disappearance_prob_3flav</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate numu disppearance in 3-flavor model</span>
+
+<span class="sd">    User should no call this directly, instead use `calc_decoherence_probs`</span>
+
+<span class="sd">    Define three-flavor decoherence approximation according to the equation that is not numbered but can be</span>
+<span class="sd">    found between equations 2 and 3 in [1],with the notable difference that we are using the vacuum case</span>
+<span class="sd">    (e.g. not substituting in the effeective matter values for parameters)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    decoh_params :</span>
+<span class="sd">        DecoherenceParams instance</span>
+
+<span class="sd">    E :</span>
+<span class="sd">        Neutrino true energy values as float(s), either a single value or an array</span>
+<span class="sd">        If no units attached, must be [GeV]</span>
+
+<span class="sd">    L :</span>
+<span class="sd">        Neutrino true propagation distance values as float(s), either a single value or an array</span>
+<span class="sd">        If no units attached, must be [km]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">E</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;GeV&quot;</span><span class="p">]</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">L</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">L</span><span class="p">,</span><span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">L</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;km&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Get PMNS matrix</span>
+    <span class="n">U</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">_update_pmns_matrix</span><span class="p">(</span><span class="n">decoh_params</span><span class="o">.</span><span class="n">theta12</span><span class="p">,</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">theta13</span><span class="p">,</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">theta23</span><span class="p">)</span>
+
+    <span class="c1"># Decoherence matrix</span>
+    <span class="n">Gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">Gamma</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">gamma21</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;GeV&quot;</span><span class="p">)</span>
+    <span class="n">Gamma</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">gamma31</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;GeV&quot;</span><span class="p">)</span>
+    <span class="n">Gamma</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">gamma32</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;GeV&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Mass splitting matrix</span>
+    <span class="n">delta_jk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">delta_jk</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">dm21</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;eV**2&quot;</span><span class="p">)</span>
+    <span class="n">delta_jk</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">dm31</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;eV**2&quot;</span><span class="p">)</span>
+    <span class="n">delta_jk</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">decoh_params</span><span class="o">.</span><span class="n">dm32</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;eV**2&quot;</span><span class="p">)</span>
+
+    <span class="n">prob_dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">E</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">i_j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i_k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i_j</span> <span class="o">&gt;</span> <span class="n">i_k</span><span class="p">:</span>
+                <span class="n">prob_dec</span> <span class="o">+=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">U</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">i_j</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">U</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">i_k</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span> <span class="o">-</span> <span class="n">Gamma</span><span class="p">[</span><span class="n">i_j</span><span class="p">][</span><span class="n">i_k</span><span class="p">]</span> <span class="o">*</span> <span class="n">L</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;km&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mf">5.07e+18</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">delta_jk</span><span class="p">[</span><span class="n">i_j</span><span class="p">][</span><span class="n">i_k</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.0e-18</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">E</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;GeV&quot;</span><span class="p">))</span> <span class="o">*</span> <span class="n">L</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;km&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mf">5.07e+18</span><span class="p">))</span>
+    <span class="n">prob_array</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">prob_dec</span><span class="o">.</span><span class="n">real</span>
+
+    <span class="k">return</span> <span class="n">prob_array</span>
+
+
+
+
+<div class="viewcode-block" id="decoherence">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence">[docs]</a>
+<span class="k">class</span> <span class="nc">decoherence</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    PISA Pi stage representing oscillations in the presence of decoherence</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params</span>
+<span class="sd">        Expected contents of `params` ParamSet: .. ::</span>
+
+<span class="sd">            detector_depth : float</span>
+<span class="sd">            earth_model : PREM file path</span>
+<span class="sd">            prop_height : quantity (dimensionless)</span>
+<span class="sd">            YeI : quantity (dimensionless)</span>
+<span class="sd">            YeO : quantity (dimensionless)</span>
+<span class="sd">            YeM : quantity (dimensionless)</span>
+<span class="sd">            theta12 : quantity (angle)</span>
+<span class="sd">            theta13 : quantity (angle)</span>
+<span class="sd">            theta23 : quantity (angle)</span>
+<span class="sd">            deltam21 : quantity (mass^2)</span>
+<span class="sd">            deltam31 : quantity (mass^2)</span>
+<span class="sd">            deltacp : quantity (angle)</span>
+<span class="sd">            gamma12 : quantity (energy)</span>
+<span class="sd">            gamma13 : quantity (energy)</span>
+<span class="sd">            gamma23 : quantity (energy)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+                <span class="p">):</span>
+
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;detector_depth&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;earth_model&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;prop_height&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;YeI&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;YeO&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;YeM&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;theta12&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;theta13&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;theta23&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;deltam21&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;deltam31&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;deltacp&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;gamma21&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;gamma31&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;gamma32&#39;</span><span class="p">,</span>
+                          <span class="p">)</span>
+
+        <span class="c1"># init base class</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">decoherence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+                                       <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+                                       <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+                                      <span class="p">)</span>
+
+        <span class="c1">#Have not yet implemented matter effects</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">earth_model</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Matter effects not yet implemented for decoherence, must set &#39;earth_model&#39; to None&quot;</span><span class="p">)</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1">#Toggle between 2-flavor and 3-flavor models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">two_flavor</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<div class="viewcode-block" id="decoherence.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># setup Earth model</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">earth_model</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">earth_model</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">earth_model</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">YeI</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">YeI</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+            <span class="n">YeO</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">YeO</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+            <span class="n">YeM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">YeM</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">earth_model</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># setup the layers</span>
+        <span class="n">prop_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">prop_height</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+        <span class="n">detector_depth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detector_depth</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="n">earth_model</span><span class="p">,</span> <span class="n">detector_depth</span><span class="p">,</span> <span class="n">prop_height</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">earth_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="n">YeI</span><span class="p">,</span> <span class="n">YeO</span><span class="p">,</span> <span class="n">YeM</span><span class="p">)</span>
+
+        <span class="c1"># set the correct data mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+
+        <span class="c1"># --- calculate the layers ---</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="c1"># speed up calculation by adding links</span>
+            <span class="c1"># as layers don&#39;t care about flavour</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nue_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">earth_model</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;densities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">max_layers</span><span class="p">))</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;distances&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">max_layers</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">calcPathLength</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;distances&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">distance</span>
+
+        <span class="c1"># don&#39;t forget to un-link everything again</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span>
+
+        <span class="c1"># --- setup empty arrays ---</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nue_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nubar&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span>
+                                                <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;probability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span>
+
+        <span class="c1"># setup more empty arrays</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;prob_e&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;prob_mu&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="decoherence.compute_function">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.compute_function">[docs]</a>
+    <span class="nd">@profile</span>
+    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># set the correct data mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="c1"># speed up calculation by adding links</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nue_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nubar&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span>
+                                                <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">])</span>
+
+        <span class="c1"># --- update params ---</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoh_params</span> <span class="o">=</span> <span class="n">DecoherenceParams</span><span class="p">(</span><span class="n">deltam21</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">deltam21</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                            <span class="n">deltam31</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">deltam31</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                            <span class="n">theta12</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta12</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                            <span class="n">theta13</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta13</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                            <span class="n">theta23</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                            <span class="n">deltacp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">deltacp</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                            <span class="n">gamma21</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">gamma21</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                            <span class="n">gamma31</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">gamma31</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                            <span class="n">gamma32</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">gamma32</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Calculate oscillation probabilities</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calc_probs</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">],</span>
+                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">],</span>
+                            <span class="c1">#container[&#39;densities&#39;],</span>
+                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;distances&#39;</span><span class="p">],</span>
+                            <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;probability&#39;</span><span class="p">],</span>
+                           <span class="p">)</span>
+
+        <span class="c1"># the following is flavour specific, hence unlink</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="c1"># initial electrons (0)</span>
+            <span class="n">fill_probs</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;probability&#39;</span><span class="p">],</span>
+                       <span class="mi">0</span><span class="p">,</span> <span class="c1"># electron</span>
+                       <span class="n">container</span><span class="p">[</span><span class="s1">&#39;flav&#39;</span><span class="p">],</span>
+                       <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;prob_e&#39;</span><span class="p">],</span>
+                      <span class="p">)</span>
+            <span class="c1"># initial muons (1)</span>
+            <span class="n">fill_probs</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;probability&#39;</span><span class="p">],</span>
+                       <span class="mi">1</span><span class="p">,</span> <span class="c1"># muon</span>
+                       <span class="n">container</span><span class="p">[</span><span class="s1">&#39;flav&#39;</span><span class="p">],</span>
+                       <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;prob_mu&#39;</span><span class="p">],</span>
+                      <span class="p">)</span>
+
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;prob_e&#39;</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;prob_mu&#39;</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="decoherence.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.apply_function">[docs]</a>
+    <span class="nd">@profile</span>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># update the outputted weights</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">apply_probs</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;sys_flux&#39;</span><span class="p">],</span>
+                        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;prob_e&#39;</span><span class="p">],</span>
+                        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;prob_mu&#39;</span><span class="p">],</span>
+                        <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">])</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="decoherence.calc_probs">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.calc_probs">[docs]</a>
+    <span class="k">def</span> <span class="nf">calc_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">e_array</span><span class="p">,</span> <span class="n">len_array</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+
+        <span class="c1">#Get the probability values output array</span>
+        <span class="n">prob_array</span> <span class="o">=</span> <span class="n">out</span>
+
+        <span class="c1">#Attach units</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">len_array</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;km&quot;</span><span class="p">]</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">e_array</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;GeV&quot;</span><span class="p">]</span>
+
+        <span class="c1">#nue</span>
+        <span class="n">calc_decoherence_probs</span><span class="p">(</span> <span class="n">decoh_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="s2">&quot;nue&quot;</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">baseline</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">prob_e</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">prob_mu</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">prob_tau</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">two_flavor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">two_flavor</span> <span class="p">)</span>
+
+        <span class="c1">#numu</span>
+        <span class="n">calc_decoherence_probs</span><span class="p">(</span> <span class="n">decoh_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="s2">&quot;numu&quot;</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">baseline</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">prob_e</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">prob_mu</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">prob_tau</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">two_flavor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">two_flavor</span> <span class="p">)</span>
+
+        <span class="c1">#nutau (basically just the inverse of the numu case)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">dst</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">src</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">dst</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">src</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">dst</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">src</span><span class="o">=</span><span class="n">prob_array</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1">#Register that arrays have changed</span>
+        <span class="n">out</span></div>
+</div>
+
+
+
+
+<span class="c1"># vectorized function to apply (flux * prob)</span>
+<span class="c1"># must be outside class</span>
+<span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="n">signature</span> <span class="o">=</span> <span class="s1">&#39;(f8[:], f8, f8, f8[:])&#39;</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">signature</span> <span class="o">=</span> <span class="s1">&#39;(f4[:], f4, f4, f4[:])&#39;</span>
+<span class="nd">@guvectorize</span><span class="p">([</span><span class="n">signature</span><span class="p">],</span> <span class="s1">&#39;(d),(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">apply_probs</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="n">flux</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">prob_e</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">flux</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">prob_mu</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

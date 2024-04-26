@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.utils.resample &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.utils.resample</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.utils.resample</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Stage to transform binned data from one binning to another while also dealing with</span>
+<span class="sd">uncertainty estimates in a reasonable way. In particular, this allows up-sampling from a</span>
+<span class="sd">more coarse binning to a finer binning.</span>
+
+<span class="sd">The implementation is similar to that of the hist stage, hence the over-writing of</span>
+<span class="sd">the `apply` method.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
+<span class="kn">from</span> <span class="nn">pisa.core</span> <span class="kn">import</span> <span class="n">translation</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
+
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+
+<div class="viewcode-block" id="ResampleMode">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.ResampleMode">[docs]</a>
+<span class="k">class</span> <span class="nc">ResampleMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumerates sampling methods of the `resample` stage.&quot;&quot;&quot;</span>
+
+    <span class="n">UP</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">DOWN</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ARB</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="resample">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.resample">[docs]</a>
+<span class="k">class</span> <span class="nc">resample</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stage to resample weighted MC histograms from one binning to another.</span>
+<span class="sd">    </span>
+<span class="sd">    The origin binning is given as `calc_mode` and the output binning is given in </span>
+<span class="sd">    `apply_mode`.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    </span>
+<span class="sd">    scale_errors : bool, optional</span>
+<span class="sd">        If `True` (default), apply scaling to errors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">scale_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="c1"># init base class</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># This stage only makes sense when going binned to binned.</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">),</span> <span class="s2">&quot;stage only produces binned output&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">),</span> <span class="s2">&quot;stage only produces binned output&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span> <span class="o">=</span> <span class="n">scale_errors</span>
+        
+        <span class="c1"># The following tests whether `apply_mode` is a strict up-sample</span>
+        
+        <span class="c1"># TODO: Test for ability to resample in two steps</span>
+        <span class="c1"># TODO: Update to new test nomenclature</span>
+
+        <span class="c1"># ToDo: check logic after pisa4 upgrade</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="o">.</span><span class="n">is_compat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rs_mode</span> <span class="o">=</span> <span class="n">ResampleMode</span><span class="o">.</span><span class="n">UP</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">is_compat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rs_mode</span> <span class="o">=</span> <span class="n">ResampleMode</span><span class="o">.</span><span class="n">DOWN</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Binnings are not compatible with each other for resample&quot;</span><span class="p">)</span>
+
+        <span class="c1"># TODO: Implement downsampling</span>
+        <span class="c1"># TODO: Implement arbitrary resampling</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rs_mode</span> <span class="o">==</span> <span class="n">ResampleMode</span><span class="o">.</span><span class="n">DOWN</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Downsampling not yet implemented.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rs_mode</span> <span class="o">==</span> <span class="n">ResampleMode</span><span class="o">.</span><span class="n">ARB</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Arbitrary resampling not yet implemented.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="resample.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.resample.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Set up a container for intermediate storage of variances in input specs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;variances&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="c1"># set up containers for the resampled output in the output specs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="resample.apply">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.resample.apply">[docs]</a>
+    <span class="nd">@profile</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># DO NOT USE THIS STAGE AS YOUR TEMPLATE IF YOU ARE NEW TO PISA!</span>
+        <span class="c1"># --------------------------------------------------------------</span>
+        <span class="c1">#</span>
+        <span class="c1"># We are overwriting the `apply` method rather than the `apply_function` method</span>
+        <span class="c1"># because we are manipulating the data binning in a delicate way that doesn&#39;t</span>
+        <span class="c1"># work with automatic rebinning.</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">vectorizer</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span>
+                    <span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">],</span>
+                    <span class="n">pwr</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;variances&quot;</span><span class="p">],</span>
+                <span class="p">)</span>
+
+        <span class="n">input_binvols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="o">.</span><span class="n">weighted_bin_volumes</span><span class="p">(</span><span class="n">attach_units</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">output_binvols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">weighted_bin_volumes</span><span class="p">(</span><span class="n">attach_units</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+            <span class="n">weights_flat_hist</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span><span class="p">:</span>
+                <span class="n">vars_flat_hist</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;variances&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rs_mode</span> <span class="o">==</span> <span class="n">ResampleMode</span><span class="o">.</span><span class="n">UP</span><span class="p">:</span>
+                <span class="c1"># The `unroll_binning` function returns the midpoints of the bins in the</span>
+                <span class="c1"># dimension `name`.</span>
+                <span class="n">fine_gridpoints</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">container</span><span class="o">.</span><span class="n">unroll_binning</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">names</span>
+                <span class="p">]</span>
+                <span class="c1"># We look up at which bin index of the input binning the midpoints of</span>
+                <span class="c1"># the output binning can be found, and assign to each the content of the</span>
+                <span class="c1"># bin of that index.</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">translation</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span>
+                    <span class="n">fine_gridpoints</span><span class="p">,</span>
+                    <span class="n">weights_flat_hist</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span><span class="p">:</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">translation</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span>
+                        <span class="n">fine_gridpoints</span><span class="p">,</span>
+                        <span class="n">vars_flat_hist</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+                    <span class="p">)</span>
+                <span class="c1"># These are the volumes of the bins we sample *from*</span>
+                <span class="n">origin_binvols</span> <span class="o">=</span> <span class="n">translation</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span>
+                    <span class="n">fine_gridpoints</span><span class="p">,</span>
+                    <span class="n">input_binvols</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+                <span class="p">)</span>
+                <span class="c1"># Finally, we scale the weights and variances by the ratio of the</span>
+                <span class="c1"># bin volumes in place:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights_resampled&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">output_binvols</span> <span class="o">/</span> <span class="n">origin_binvols</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span><span class="p">:</span>
+                        <span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">output_binvols</span> <span class="o">/</span> <span class="n">origin_binvols</span>
+                    <span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">rs_mode</span> <span class="o">==</span> <span class="n">ResampleMode</span><span class="o">.</span><span class="n">DOWN</span><span class="p">:</span>
+                <span class="k">pass</span>  <span class="c1"># not yet implemented</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">])</span></div>
+</div>
+
+    
+<div class="viewcode-block" id="test_resample">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.test_resample">[docs]</a>
+<span class="k">def</span> <span class="nf">test_resample</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for the resampling stage.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pisa.core.distribution_maker</span> <span class="kn">import</span> <span class="n">DistributionMaker</span>
+    <span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">parse_pipeline_config</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+    <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+    <span class="kn">from</span> <span class="nn">numpy.testing</span> <span class="kn">import</span> <span class="n">assert_allclose</span>
+    
+    <span class="n">example_cfg</span> <span class="o">=</span> <span class="n">parse_pipeline_config</span><span class="p">(</span><span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">)</span>
+    <span class="n">reco_binning</span> <span class="o">=</span> <span class="n">example_cfg</span><span class="p">[(</span><span class="s1">&#39;utils&#39;</span><span class="p">,</span> <span class="s1">&#39;hist&#39;</span><span class="p">)][</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span>
+    <span class="n">coarse_binning</span> <span class="o">=</span> <span class="n">reco_binning</span><span class="o">.</span><span class="n">downsample</span><span class="p">(</span><span class="n">reco_energy</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">reco_coszen</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">coarse_binning</span><span class="o">.</span><span class="n">is_compat</span><span class="p">(</span><span class="n">reco_binning</span><span class="p">)</span>
+    <span class="c1"># replace binning of output with coarse binning</span>
+    <span class="n">example_cfg</span><span class="p">[(</span><span class="s1">&#39;utils&#39;</span><span class="p">,</span> <span class="s1">&#39;hist&#39;</span><span class="p">)][</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coarse_binning</span>
+    <span class="c1"># New in PISA4: We explicitly tell the pipeline which keys and binning to use for </span>
+    <span class="c1"># the output. We must manually set this to the same binning as the output from the</span>
+    <span class="c1"># hist stage because otherwise it would attempt to automatically rebin everything.</span>
+    <span class="n">example_cfg</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="s1">&#39;errors&#39;</span><span class="p">)</span>
+    <span class="n">example_cfg</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;output_binning&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coarse_binning</span>
+    <span class="c1"># make another pipeline with an upsampling stage to the original binning</span>
+    <span class="n">upsample_cfg</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">example_cfg</span><span class="p">)</span>
+    <span class="n">resample_cfg</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">resample_cfg</span><span class="p">[</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco_binning</span>
+    <span class="n">resample_cfg</span><span class="p">[</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coarse_binning</span>
+    <span class="n">resample_cfg</span><span class="p">[</span><span class="s1">&#39;scale_errors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">upsample_cfg</span><span class="p">[(</span><span class="s1">&#39;utils&#39;</span><span class="p">,</span> <span class="s1">&#39;resample&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">resample_cfg</span>
+    <span class="c1"># Here we want to take the resampled output to generate Maps from the pipeline</span>
+    <span class="n">upsample_cfg</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;weights_resampled&#39;</span><span class="p">,</span> <span class="s1">&#39;errors_resampled&#39;</span><span class="p">)</span>
+    <span class="n">upsample_cfg</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;output_binning&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco_binning</span>
+
+    <span class="n">example_maker</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">([</span><span class="n">example_cfg</span><span class="p">])</span>
+    <span class="n">upsampled_maker</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">([</span><span class="n">upsample_cfg</span><span class="p">])</span>
+    
+    <span class="n">example_map</span> <span class="o">=</span> <span class="n">example_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">example_map_upsampled</span> <span class="o">=</span> <span class="n">upsampled_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># First check: The upsampled map must have the same total count as the original map</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">example_map</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">example_map_upsampled</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">),</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Check consistency of modified chi-square</span>
+    <span class="c1"># ----------------------------------------</span>
+    <span class="c1"># When the assumption holds that events are uniformly distributed over the coarse</span>
+    <span class="c1"># bins, the modified chi-square should not change from upscaling the maps. We test</span>
+    <span class="c1"># this by making a fluctuated coarse map and then upsampling that map according to</span>
+    <span class="c1"># the assumption by bin volumes. We should find that the modified chi-square between</span>
+    <span class="c1"># the coarse map and the coarse fluctuated map is the same as the upsampled map and</span>
+    <span class="c1"># the upsampled fluctuated map.</span>
+    
+    <span class="c1"># It doesn&#39;t matter precisely how we fluctuate it here, we just want any different</span>
+    <span class="c1"># map...</span>
+    <span class="n">random_map_coarse</span> <span class="o">=</span> <span class="n">example_map</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;scaled_poisson&#39;</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+    <span class="n">random_map_coarse</span><span class="o">.</span><span class="n">set_errors</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+    
+    <span class="c1"># This bit is an entirely independent implementation of the upsampling. The count</span>
+    <span class="c1"># in every bin is scaled according to the reatio of weighted bin volumes.</span>
+    <span class="n">upsampled_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">example_map_upsampled</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">)</span>
+    <span class="n">upsampled_errs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">example_map_upsampled</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">)</span>
+    <span class="n">up_binning</span> <span class="o">=</span> <span class="n">example_map_upsampled</span><span class="o">.</span><span class="n">binning</span>
+
+    <span class="n">coarse_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">random_map_coarse</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">)</span>
+    <span class="n">coarse_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">random_map_coarse</span><span class="o">.</span><span class="n">std_devs</span><span class="p">)</span>
+    <span class="n">coarse_binning</span> <span class="o">=</span> <span class="n">random_map_coarse</span><span class="o">.</span><span class="n">binning</span>
+
+    <span class="k">for</span> <span class="n">bin_idx</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">upsampled_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+        <span class="n">one_bin</span> <span class="o">=</span> <span class="n">up_binning</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">]</span>
+        <span class="n">fine_bin_volume</span> <span class="o">=</span> <span class="n">one_bin</span><span class="o">.</span><span class="n">weighted_bin_volumes</span><span class="p">(</span>
+            <span class="n">attach_units</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="c1"># the following is basically an independent implementation of translate.lookup</span>
+        <span class="n">coarse_index</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># index where the upsampled bin came from</span>
+        <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">up_binning</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">one_bin</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">weighted_centers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">m</span>  <span class="c1"># middle point of the one bin</span>
+            <span class="n">bins</span> <span class="o">=</span> <span class="n">coarse_binning</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">m</span>  <span class="c1"># coarse bin edges in that dim</span>
+            <span class="n">coarse_index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">digitize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># index 1 means bin 0</span>
+        <span class="n">coarse_index</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">coarse_index</span><span class="p">)</span>
+        <span class="n">coarse_bin_volume</span> <span class="o">=</span> <span class="n">coarse_binning</span><span class="o">.</span><span class="n">weighted_bin_volumes</span><span class="p">(</span>
+            <span class="n">attach_units</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)[</span><span class="n">coarse_index</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    
+        <span class="n">upsampled_hist</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">coarse_hist</span><span class="p">[</span><span class="n">coarse_index</span><span class="p">]</span>
+        <span class="n">upsampled_hist</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">]</span> <span class="o">*=</span> <span class="n">fine_bin_volume</span>
+        <span class="n">upsampled_hist</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">]</span> <span class="o">/=</span> <span class="n">coarse_bin_volume</span>
+    
+    <span class="c1"># done, at last!</span>
+    <span class="n">random_map_upsampled</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;random_upsampled&quot;</span><span class="p">,</span>
+        <span class="n">hist</span><span class="o">=</span><span class="n">upsampled_hist</span><span class="p">,</span>
+        <span class="n">binning</span><span class="o">=</span><span class="n">up_binning</span>
+    <span class="p">)</span>
+    <span class="n">random_map_upsampled</span><span class="o">.</span><span class="n">set_errors</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+    
+    <span class="c1"># After ALL THIS, we get the same modified chi-square from the coarse and the</span>
+    <span class="c1"># upsampled pair of maps. Neat, huh?</span>
+    <span class="n">assert_allclose</span><span class="p">(</span><span class="n">random_map_coarse</span><span class="o">.</span><span class="n">mod_chi2</span><span class="p">(</span><span class="n">example_map</span><span class="p">),</span>
+                    <span class="n">random_map_upsampled</span><span class="o">.</span><span class="n">mod_chi2</span><span class="p">(</span><span class="n">example_map_upsampled</span><span class="p">),</span>
+                    <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : resample &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">test_resample</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

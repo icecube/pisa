@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.osc.prob3numba package &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pisa.stages.pid package" href="pisa.stages.pid.html" />
+    <link rel="prev" title="pisa.stages.osc package" href="pisa.stages.osc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pisa.html">pisa package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pisa.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="pisa.stages.html">pisa.stages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.utils.html">pisa.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.html#module-pisa">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pisa</a></li>
+          <li class="breadcrumb-item"><a href="pisa.html">pisa package</a></li>
+          <li class="breadcrumb-item"><a href="pisa.stages.html">pisa.stages package</a></li>
+          <li class="breadcrumb-item"><a href="pisa.stages.osc.html">pisa.stages.osc package</a></li>
+      <li class="breadcrumb-item active">pisa.stages.osc.prob3numba package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pisa.stages.osc.prob3numba.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pisa-stages-osc-prob3numba-package">
+<h1>pisa.stages.osc.prob3numba package<a class="headerlink" href="#pisa-stages-osc-prob3numba-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pisa.stages.osc.prob3numba.numba_osc_hostfuncs">
+<span id="pisa-stages-osc-prob3numba-numba-osc-hostfuncs-module"></span><h2>pisa.stages.osc.prob3numba.numba_osc_hostfuncs module<a class="headerlink" href="#module-pisa.stages.osc.prob3numba.numba_osc_hostfuncs" title="Link to this heading"></a></h2>
+<p>Host function wrappers for numba_osc_kernels.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_hostfuncs.CX">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_hostfuncs.</span></span><span class="sig-name descname"><span class="pre">CX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'c16'</span></em><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_hostfuncs.CX" title="Link to this definition"></a></dt>
+<dd><p>Complex string code to use, understood by both Numba and Numpy</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_hostfuncs.FX">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_hostfuncs.</span></span><span class="sig-name descname"><span class="pre">FX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'f8'</span></em><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_hostfuncs.FX" title="Link to this definition"></a></dt>
+<dd><p>Float string code to use, understood by both Numba and Numpy</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_hostfuncs.IX">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_hostfuncs.</span></span><span class="sig-name descname"><span class="pre">IX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'i8'</span></em><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_hostfuncs.IX" title="Link to this definition"></a></dt>
+<dd><p>Signed integer string code to use, understood by both Numba and Numpy</p>
+</dd></dl>
+
+</section>
+<section id="module-pisa.stages.osc.prob3numba.numba_osc_kernels">
+<span id="pisa-stages-osc-prob3numba-numba-osc-kernels-module"></span><h2>pisa.stages.osc.prob3numba.numba_osc_kernels module<a class="headerlink" href="#module-pisa.stages.osc.prob3numba.numba_osc_kernels" title="Link to this heading"></a></h2>
+<p>Neutrino flavour oscillation in matter calculation
+Based on the original prob3++ implementation of Roger Wendell
+<a class="reference external" href="http://www.phy.duke.edu/~raw22/public/Prob3++/">http://www.phy.duke.edu/~raw22/public/Prob3++/</a> (2012)</p>
+<p>See <cite>numba_osc_tests.py</cite> for unit tests of functions in this module.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_kernels.get_transition_matrix">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_kernels.</span></span><span class="sig-name descname"><span class="pre">get_transition_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nubar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseline</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix_nubar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix_nubar_conj_transp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_pot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H_vac</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay_flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H_decay</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lri_pot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transition_matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_kernels.get_transition_matrix" title="Link to this definition"></a></dt>
+<dd><p>Calculate neutrino flavour transition amplitude matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nubar</strong> (<em>int</em>) – +1 for neutrinos, -1 for antineutrinos</p></li>
+<li><p><strong>energy</strong> (<em>real float</em>) – Neutrino energy, GeV</p></li>
+<li><p><strong>rho</strong> (<em>real float</em>) – Electron number density (in moles/cm^3) (numerically, this is just the
+product of electron fraction and mass density in g/cm^3, since the
+number of grams per cm^3 corresponds to the number of moles of nucleons
+per cm^3)</p></li>
+<li><p><strong>baseline</strong> (<em>real float</em>) – Baseline, km</p></li>
+<li><p><strong>mix_nubar</strong> (<em>complex 2d array</em>) – Mixing matrix, already conjugated if antineutrino</p></li>
+<li><p><strong>mix_nubar_conj_transp</strong> (<em>complex conjugate 2d array</em>) – Conjugate transpose of mix_nubar</p></li>
+<li><p><strong>mat_pot</strong> (<em>complex 2d array</em>) – Generalised matter potential matrix without “a” factor (will be
+multiplied with “a” factor); set to diag([1, 0, 0]) for only standard
+oscillations</p></li>
+<li><p><strong>H_vac</strong> (<em>complex 2d array</em>) – Hamiltonian in vacuum, without the 1/2E term</p></li>
+<li><p><strong>H_decay</strong> (<em>complex 2d array</em>) – Decay matrix, without the 1/2E term</p></li>
+<li><p><strong>decay_flag</strong> (<em>int</em>) – +1 forstandard oscillations + decay, -1 for standard oscillations</p></li>
+<li><p><strong>lri_pot</strong> (<em>real 2d array</em>) – Potential contribution due to matter with the consideration of
+Long Range Interaction. this potential not a generalised one, so
+it passed as a separate matrix.</p></li>
+<li><p><strong>dm</strong> (<em>real 2d array</em>) – Mass splitting matrix, eV^2</p></li>
+<li><p><strong>transition_matrix</strong> (<em>complex 2d array</em><em> (</em><em>empty</em><em>)</em>) – Transition matrix in mass eigenstate basis</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For neutrino (nubar &gt; 0) or antineutrino (nubar &lt; 0) with energy energy
+traversing layer of matter of uniform density rho with thickness baseline</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_kernels.osc_probs_layers_kernel">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_kernels.</span></span><span class="sig-name descname"><span class="pre">osc_probs_layers_kernel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_pot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay_flag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_decay</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lri_pot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nubar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density_in_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_in_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">osc_probs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_kernels.osc_probs_layers_kernel" title="Link to this definition"></a></dt>
+<dd><p>Calculate oscillation probabilities</p>
+<p>given layers of length and density</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dm</strong> (<em>real 2d array</em>) – Mass splitting matrix, eV^2</p></li>
+<li><p><strong>mix</strong> (<em>complex 2d array</em>) – PMNS mixing matrix</p></li>
+<li><p><strong>mat_pot</strong> (<em>complex 2d array</em>) – Generalised matter potential matrix without “a” factor (will be
+multiplied with “a” factor); set to diag([1, 0, 0]) for only standard
+oscillations</p></li>
+<li><p><strong>decay_flag</strong> (<em>int</em>) – +1 forstandard oscillations + decay, -1 for standard oscillations</p></li>
+<li><p><strong>mat_decay</strong> (<em>complex 2d array</em>) – decay matrix with -j*alpha3 = [2,2] element</p></li>
+<li><p><strong>lri_pot</strong> (<em>real 2d array</em>) – Potential contribution due to matter with the consideration of
+Long Range Interaction. this potential not a generalised one, so
+it passed as a separate matrix.</p></li>
+<li><p><strong>nubar</strong> (<em>real int</em><em>, </em><em>scalar</em><em> or </em><em>Nd array</em><em> (</em><em>broadcast dim</em><em>)</em>) – 1 for neutrinos, -1 for antineutrinos</p></li>
+<li><p><strong>energy</strong> (<em>real float</em><em>, </em><em>scalar</em><em> or </em><em>Nd array</em><em> (</em><em>broadcast dim</em><em>)</em>) – Neutrino energy, GeV</p></li>
+<li><p><strong>density_in_layer</strong> (<em>real 1d array</em>) – Density of each layer, moles of electrons / cm^2</p></li>
+<li><p><strong>distance_in_layer</strong> (<em>real 1d array</em>) – Distance of each layer traversed, km</p></li>
+<li><p><strong>osc_probs</strong> (<em>real</em><em> (</em><em>N+2</em><em>)</em><em>-d array</em><em> (</em><em>empty</em><em>)</em>) – Returned oscillation probabilities in the form:
+osc_prob[i,j] = probability of flavor i to oscillate into flavor j
+with 0 = electron, 1 = muon, 3 = tau</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>!!! Right now, because of CUDA, the maximum number of layers
+is hard coded and set to 120 (59Layer PREM + Atmosphere).
+This is used for cached layer computation, where earth layer, which
+are typically traversed twice (it’s symmetric) are not recalculated
+but rather cached..</p>
+</dd></dl>
+
+</section>
+<section id="module-pisa.stages.osc.prob3numba.numba_osc_tests">
+<span id="pisa-stages-osc-prob3numba-numba-osc-tests-module"></span><h2>pisa.stages.osc.prob3numba.numba_osc_tests module<a class="headerlink" href="#module-pisa.stages.osc.prob3numba.numba_osc_tests" title="Link to this heading"></a></h2>
+<p>Tests for prob3numba code</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.MAT_DOT_MAT_SUBSCR">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">MAT_DOT_MAT_SUBSCR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'in,nj-&gt;ij'</span></em><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.MAT_DOT_MAT_SUBSCR" title="Link to this definition"></a></dt>
+<dd><p>matrix dot matrix subscripts for use by <cite>numpy.einsum</cite></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.ary2str">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">ary2str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/numba_osc_tests.html#ary2str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.ary2str" title="Link to this definition"></a></dt>
+<dd><p>Convert a numpy ndarray to string easy to copy back into code</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.auto_populate_test_case">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">auto_populate_test_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaults</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/numba_osc_tests.html#auto_populate_test_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.auto_populate_test_case" title="Link to this definition"></a></dt>
+<dd><p>Populate defaults and construct dm / PMNS matrices if they aren’t
+present in a test case.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test_case</strong> (<em>mutable mapping</em>)</p></li>
+<li><p><strong>defaults</strong> (<em>mapping</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.check">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ac_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'atol':</span> <span class="pre">1.0000000000000002e-14,</span> <span class="pre">'rtol':</span> <span class="pre">1e-10}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_fails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/numba_osc_tests.html#check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.check" title="Link to this definition"></a></dt>
+<dd><p>Check that <cite>test</cite> matches <cite>ref</cite> (closely enough).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test</strong></p></li>
+<li><p><strong>ref</strong></p></li>
+<li><p><strong>ac_kw</strong> (<em>mapping</em><em>, </em><em>optional</em>) – Kwargs to <cite>np.allclose</cite>, as used by
+<cite>pisa.utils.comparisons.recursiveEquality</cite></p></li>
+<li><p><strong>ignore_fails</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True and comparison fails, do not raise AssertionError</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – If <cite>test</cite> is not close enough to <cite>ref</cite> and ignore_fails is False</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.compare_numeric">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">compare_numeric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ac_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'atol':</span> <span class="pre">1.0000000000000002e-14,</span> <span class="pre">'rtol':</span> <span class="pre">1e-10}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_fails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/numba_osc_tests.html#compare_numeric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.compare_numeric" title="Link to this definition"></a></dt>
+<dd><p>Compare scalars or numpy ndarrays.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test</strong> (<em>scalar</em><em> or </em><em>numpy.ndarray</em>)</p></li>
+<li><p><strong>ref</strong> (<em>scalar</em><em> or </em><em>numpy.ndarray</em>)</p></li>
+<li><p><strong>label</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>ac_kw</strong> (<em>mapping</em><em>, </em><em>optional</em>) – Keyword args to pass via <a href="#id1"><span class="problematic" id="id2">**</span></a>ac_kw to <cite>numpy.isclose</cite> / <cite>numpy.allclose</cite></p></li>
+<li><p><strong>ignore_fails</strong> (<em>bool</em><em>, </em><em>optional</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rslt</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.execute_func">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">execute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/numba_osc_tests.html#execute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.execute_func" title="Link to this definition"></a></dt>
+<dd><p>Run <cite>func</cite> with <a href="#id3"><span class="problematic" id="id4">*</span></a>func_kw.values() where <cite>outputs</cite> specify names in
+<cite>func_kw</cite> taken to be outputs of the function; for these, mark changed.
+Retrieve both input and output values as Numpy arrays on the host and
+aggregate together in a single dict before returning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func</strong> (<em>numba CPUDispatcher</em><em> or </em><em>CUDADispatcher</em>)</p></li>
+<li><p><strong>func_kw</strong> (<a class="reference internal" href="pisa.html#pisa.OrderedDict" title="pisa.OrderedDict"><em>OrderedDict</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ret_dict</strong> – Keys are arg names and vals are type-“correct” values; all arrays are
+converted to host Numpy arrays</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pisa.html#pisa.OrderedDict" title="pisa.OrderedDict">OrderedDict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.main">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\nTests</span> <span class="pre">for</span> <span class="pre">prob3numba</span> <span class="pre">code\n'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/numba_osc_tests.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.main" title="Link to this definition"></a></dt>
+<dd><p>Script interface for <cite>test_prob3numba</cite> function</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.run_test_case">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">run_test_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tc_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_fails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">define_as_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/numba_osc_tests.html#run_test_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.run_test_case" title="Link to this definition"></a></dt>
+<dd><p>Run one test case</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.stability_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">stability_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_kw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_fails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">define_as_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/numba_osc_tests.html#stability_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.stability_test" title="Link to this definition"></a></dt>
+<dd><p>basic stability test of a Numba CPUDispatcher function (i.e., function
+compiled via &#64;jit / &#64;njit)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.numba_osc_tests.test_prob3numba">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.numba_osc_tests.</span></span><span class="sig-name descname"><span class="pre">test_prob3numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_fails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">define_as_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/numba_osc_tests.html#test_prob3numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.numba_osc_tests.test_prob3numba" title="Link to this definition"></a></dt>
+<dd><p>Run all unit test cases for prob3numba code</p>
+</dd></dl>
+
+</section>
+<section id="module-pisa.stages.osc.prob3numba.test_numba">
+<span id="pisa-stages-osc-prob3numba-test-numba-module"></span><h2>pisa.stages.osc.prob3numba.test_numba module<a class="headerlink" href="#module-pisa.stages.osc.prob3numba.test_numba" title="Link to this heading"></a></h2>
+<p>Test functions used during developpement of the osc. code
+Please ignore unless you are the author</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3numba.test_numba.main">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3numba.test_numba.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3numba/test_numba.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3numba.test_numba.main" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pisa.stages.osc.prob3numba">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pisa.stages.osc.prob3numba" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pisa.stages.osc.html" class="btn btn-neutral float-left" title="pisa.stages.osc package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pisa.stages.pid.html" class="btn btn-neutral float-right" title="pisa.stages.pid package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

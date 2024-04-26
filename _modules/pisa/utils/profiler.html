@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.profiler &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.profiler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.profiler</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tools for profiling code</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+
+<span class="kn">from</span> <span class="nn">line_profiler</span> <span class="kn">import</span> <span class="n">LineProfiler</span>
+
+<span class="c1"># Note this relative import (might be) necessary to avoid circular imports</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">log</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;line_profile&#39;</span><span class="p">,</span> <span class="s1">&#39;test_line_profile&#39;</span><span class="p">,</span> <span class="s1">&#39;profile&#39;</span><span class="p">,</span> <span class="s1">&#39;test_profile&#39;</span><span class="p">]</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">Log</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to redirect output into our logging stream.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">string</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+
+<span class="n">TLOG</span> <span class="o">=</span> <span class="n">Log</span><span class="p">()</span>
+<span class="sd">&quot;&quot;&quot;Instance of a global timing logger&quot;&quot;&quot;</span>
+
+<span class="n">LINE_PROFILER</span> <span class="o">=</span> <span class="n">LineProfiler</span><span class="p">()</span>
+<span class="sd">&quot;&quot;&quot;Instance of a global LineProfiler&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="line_profile">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.profiler.line_profile">[docs]</a>
+<span class="k">def</span> <span class="nf">line_profile</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use as `@line_profile` decorator for a function or class method to log</span>
+<span class="sd">    how long each line in the function/method takes to run.</span>
+
+<span class="sd">    Note that timings can be skewed by overhead from the line_profiler module,</span>
+<span class="sd">    which is used as the core timing mechanism for this function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : callable</span>
+<span class="sd">        Function or method to be profiled</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_func : callable</span>
+<span class="sd">        New version of `func` that is callable just like `func` but that logs</span>
+<span class="sd">        the time spent in each line of code in `func`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">profiled_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;&lt;&lt; docstring will be inherited from wrapped `func` &gt;&gt;&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">LINE_PROFILER</span><span class="o">.</span><span class="n">enable_by_count</span><span class="p">()</span>
+            <span class="n">LINE_PROFILER</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">LINE_PROFILER</span><span class="o">.</span><span class="n">disable_by_count</span><span class="p">()</span>
+            <span class="c1"># Only print if it is the outermost function</span>
+            <span class="k">if</span> <span class="n">LINE_PROFILER</span><span class="o">.</span><span class="n">functions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">func</span><span class="p">:</span>
+                <span class="n">LINE_PROFILER</span><span class="o">.</span><span class="n">print_stats</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">TLOG</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">profiled_func</span></div>
+
+
+
+<div class="viewcode-block" id="test_line_profile">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.profiler.test_line_profile">[docs]</a>
+<span class="k">def</span> <span class="nf">test_line_profile</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `line_profile` functional (decorator)&quot;&quot;&quot;</span>
+    <span class="nd">@line_profile</span>
+    <span class="k">def</span> <span class="nf">get_number</span><span class="p">():</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;hello, i am get_number&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500000</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">x</span>
+
+    <span class="nd">@line_profile</span>
+    <span class="k">def</span> <span class="nf">expensive_function</span><span class="p">():</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;hello, i am expensive fun&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">get_number</span><span class="p">():</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">x</span> <span class="o">^</span> <span class="n">x</span> <span class="o">^</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="s1">&#39;some result!&#39;</span>
+
+    <span class="n">_</span> <span class="o">=</span> <span class="n">expensive_function</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; ??? : test_line_profile &gt;&gt; Inspect above outputs&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="profile">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.profiler.profile">[docs]</a>
+<span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use as `@profile` decorator for a function or class method to log the</span>
+<span class="sd">    time that it takes to complete.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : callable</span>
+<span class="sd">        Function or method to profile</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_func : callable</span>
+<span class="sd">        New version of `func` that is callable just like `func` but that logs</span>
+<span class="sd">        the total time spent in `func`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">profiled_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;&lt;&lt; docstring will be inherited from wrapped `func` &gt;&gt;&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s1">&#39;module </span><span class="si">%s</span><span class="s1">, function </span><span class="si">%s</span><span class="s1">: </span><span class="si">%.4f</span><span class="s1"> ms&#39;</span><span class="p">,</span>
+                <span class="n">func</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">profiled_func</span></div>
+
+
+
+<div class="viewcode-block" id="test_profile">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.profiler.test_profile">[docs]</a>
+<span class="k">def</span> <span class="nf">test_profile</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `profile` functional (decorator)&quot;&quot;&quot;</span>
+    <span class="nd">@profile</span>
+    <span class="k">def</span> <span class="nf">get_number</span><span class="p">():</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;hello, i am get_number&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500000</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">x</span>
+
+    <span class="nd">@profile</span>
+    <span class="k">def</span> <span class="nf">expensive_function</span><span class="p">():</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;hello, i am expensive fun&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">get_number</span><span class="p">():</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">x</span> <span class="o">^</span> <span class="n">x</span> <span class="o">^</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="s1">&#39;some result!&#39;</span>
+
+    <span class="n">_</span> <span class="o">=</span> <span class="n">expensive_function</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; ??? : test_profile &gt;&gt; inspect above outputs&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">set_verbosity</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">test_line_profile</span><span class="p">()</span>
+    <span class="n">test_profile</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

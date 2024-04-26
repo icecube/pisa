@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.callable &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.callable</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.callable</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This is used to define a serializable object used for functions assigned to the DerivedParams </span>
+
+<span class="sd">These can be constructed and evaluated symbolically and procedurally. </span>
+<span class="sd">In principle, we may even be able to include a filepath to a seriialized Funct object such that the pipeline configs can include definitions for these therein </span>
+
+<span class="sd">Contains</span>
+<span class="sd">    OPS - an Enum listing recognized operations </span>
+<span class="sd">    TrigOps - some definitions for handling some of the trig functions, shared by Vars and Functs </span>
+<span class="sd">    Var - a class for representing variables </span>
+<span class="sd">    Funct - a series of operations done representing the functions </span>
+
+<span class="sd">Uses - quite simple! </span>
+
+<span class="sd">create some vars and do math on them </span>
+
+<span class="sd">x = Var(&#39;x&#39;)</span>
+<span class="sd">y = Var(&#39;y&#39;)</span>
+
+<span class="sd">function = sin(x**2) + 3*cos(y+1)**2 </span>
+
+<span class="sd">The object `function` is now callable with keyword arguments passed to the instantiated `Vars`</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># from typing import Callable</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">jsons</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="OPS">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.OPS">[docs]</a>
+<span class="k">class</span> <span class="nc">OPS</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enumerate different operations so that the Funct class can do math </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ADD</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">MUL</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">POW</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">SIN</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">COS</span> <span class="o">=</span> <span class="mi">4</span> 
+    <span class="n">TAN</span> <span class="o">=</span> <span class="mi">5</span> 
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializable_state</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ops&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span><span class="s2">&quot;ops&quot;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="OPS.from_state">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.OPS.from_state">[docs]</a>
+    <span class="nd">@classmethod</span> 
+    <span class="k">def</span> <span class="nf">from_state</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;ops&quot;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="OPS.to_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.OPS.to_json">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the state to a JSON file that can be instantiated as a new</span>
+<span class="sd">        object later.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">jsons</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serializable_state</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OPS.from_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.OPS.from_json">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a new Param from a JSON file&quot;&quot;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">jsons</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">OPS</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;ops&quot;</span><span class="p">])</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="TrigOps">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.TrigOps">[docs]</a>
+<span class="k">class</span> <span class="nc">TrigOps</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    These are all used by both the Var and Funct classes, so there&#39;s some fun python hierarchy stuff going on instead </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">new_op</span> <span class="o">=</span> <span class="n">Funct</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new_op</span><span class="o">.</span><span class="n">add_opp</span><span class="p">(</span><span class="n">OPS</span><span class="o">.</span><span class="n">SIN</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">new_op</span> <span class="o">=</span> <span class="n">Funct</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new_op</span><span class="o">.</span><span class="n">add_opp</span><span class="p">(</span><span class="n">OPS</span><span class="o">.</span><span class="n">COS</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">new_op</span> <span class="o">=</span> <span class="n">Funct</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new_op</span><span class="o">.</span><span class="n">add_opp</span><span class="p">(</span><span class="n">OPS</span><span class="o">.</span><span class="n">TAN</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_op</span></div>
+
+
+<div class="viewcode-block" id="Var">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.Var">[docs]</a>
+<span class="k">class</span> <span class="nc">Var</span><span class="p">(</span><span class="n">TrigOps</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A variable</span>
+
+<span class="sd">    These are a lot like functions in how they are combined, but instead evaluate simply to one of the keyword arguments passed to Functions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># the id is used to assign unique names to each variable in the event that the user does not manually specify a name </span>
+    <span class="n">_ids</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="s2">&quot;arg&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">Var</span><span class="o">.</span><span class="n">_ids</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">Var</span><span class="o">.</span><span class="n">_ids</span><span class="o">+=</span><span class="mi">1</span> 
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;kind&quot;</span><span class="p">:</span><span class="s2">&quot;var&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+        <span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
+
+<div class="viewcode-block" id="Var.to_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.Var.to_json">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the state to a JSON file that can be instantiated as a new</span>
+<span class="sd">        object later.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">jsons</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serializable_state</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Var.from_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.Var.from_json">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a new Param from a JSON file&quot;&quot;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">jsons</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Var</span><span class="o">.</span><span class="n">from_state</span><span class="p">(</span><span class="n">state</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Var.from_state">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.Var.from_state">[docs]</a>
+    <span class="nd">@classmethod</span> 
+    <span class="k">def</span> <span class="nf">from_state</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span></div>
+
+
+    <span class="nd">@property</span> 
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># NOTE we implicitly down-cast everything to a float/int here! </span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">==</span><span class="nb">list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Lists aren&#39;t supported. This is probably wrong&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">Funct</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">new</span> <span class="o">+</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="n">new</span>
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">Funct</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">new</span> <span class="o">*</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="n">new</span>
+
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">Funct</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">new</span> <span class="o">**</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="n">new</span></div>
+
+
+<div class="viewcode-block" id="Funct">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.Funct">[docs]</a>
+<span class="k">class</span> <span class="nc">Funct</span><span class="p">(</span><span class="n">TrigOps</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Functions are constructed as a series of operations one to some starting value. </span>
+<span class="sd">    The starting value can be whatever - a value, function or variable </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_var</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ops</span> <span class="o">=</span> <span class="p">[(</span><span class="n">OPS</span><span class="o">.</span><span class="n">ADD</span><span class="p">,</span> <span class="n">first_var</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ops</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">op</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">OPS</span><span class="o">.</span><span class="n">ADD</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">[</span><span class="mi">1</span><span class="p">],(</span><span class="n">Funct</span><span class="p">,</span> <span class="n">Var</span><span class="p">)):</span>
+                    <span class="n">value</span> <span class="o">+=</span> <span class="n">op</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">+=</span> <span class="n">op</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">op</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">OPS</span><span class="o">.</span><span class="n">MUL</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="n">Funct</span><span class="p">,</span> <span class="n">Var</span><span class="p">)):</span>
+                    <span class="n">value</span> <span class="o">*=</span> <span class="n">op</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">*=</span> <span class="n">op</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">op</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">OPS</span><span class="o">.</span><span class="n">POW</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="n">Funct</span><span class="p">,</span> <span class="n">Var</span><span class="p">)):</span>
+                    <span class="n">value</span> <span class="o">**=</span> <span class="n">op</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">**=</span> <span class="n">op</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">op</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">OPS</span><span class="o">.</span><span class="n">SIN</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> 
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="c1"># significantly faster for non-arrays </span>
+            <span class="k">elif</span> <span class="n">op</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">OPS</span><span class="o">.</span><span class="n">COS</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">op</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">OPS</span><span class="o">.</span><span class="n">TAN</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="Funct.add_opp">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.Funct.add_opp">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_opp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span><span class="n">OPS</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ops</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">kind</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_opp</span><span class="p">(</span><span class="n">OPS</span><span class="o">.</span><span class="n">ADD</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+        
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_opp</span><span class="p">(</span><span class="n">OPS</span><span class="o">.</span><span class="n">MUL</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_opp</span><span class="p">(</span><span class="n">OPS</span><span class="o">.</span><span class="n">POW</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="c1">############## some functions to handle serializing these objects </span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">statekind</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">statekind</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span><span class="s2">&quot;Funct&quot;</span>
+        <span class="n">statekind</span><span class="p">[</span><span class="s2">&quot;ops&quot;</span><span class="p">]</span><span class="o">=</span><span class="p">[]</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ops</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="n">Funct</span><span class="p">,</span> <span class="n">Var</span><span class="p">,</span> <span class="n">OPS</span><span class="p">)):</span>
+                <span class="n">sub_state</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">state</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sub_state</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">statekind</span><span class="p">[</span><span class="s2">&quot;ops&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">serializable_state</span><span class="p">,</span> <span class="n">sub_state</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">statekind</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
+    
+
+<div class="viewcode-block" id="Funct.from_state">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.Funct.from_state">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_state</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="n">new_op</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">statedict</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;ops&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">statedict</span><span class="p">:</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">OPS</span><span class="o">.</span><span class="n">from_state</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;Funct&quot;</span><span class="p">:</span>
+                    <span class="n">entry_class</span> <span class="o">=</span> <span class="n">Funct</span>
+                <span class="k">elif</span> <span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;var&quot;</span><span class="p">:</span>
+                    <span class="n">entry_class</span> <span class="o">=</span> <span class="n">Var</span>
+                <span class="k">elif</span> <span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;ops&quot;</span><span class="p">:</span>
+                    <span class="n">entry_class</span> <span class="o">=</span> <span class="n">OPS</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot de-serialzie </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]))</span>
+                
+                <span class="n">value</span> <span class="o">=</span> <span class="n">entry_class</span><span class="o">.</span><span class="n">from_state</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">new_op</span><span class="o">.</span><span class="n">add_opp</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_op</span></div>
+
+
+
+<div class="viewcode-block" id="Funct.to_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.Funct.to_json">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the state to a JSON file that can be instantiated as a new</span>
+<span class="sd">        object later.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">jsons</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serializable_state</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Funct.from_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.Funct.from_json">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a new Param from a JSON file&quot;&quot;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">jsons</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Funct</span><span class="o">.</span><span class="n">from_state</span><span class="p">(</span><span class="n">state</span><span class="p">)</span></div>
+</div>
+
+
+<span class="c1"># some macros for readability </span>
+<div class="viewcode-block" id="sin">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.sin">[docs]</a>
+<span class="k">def</span> <span class="nf">sin</span><span class="p">(</span><span class="n">target</span><span class="p">:</span><span class="n">Funct</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">target</span><span class="o">.</span><span class="n">sin</span></div>
+
+<div class="viewcode-block" id="cos">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.cos">[docs]</a>
+<span class="k">def</span> <span class="nf">cos</span><span class="p">(</span><span class="n">target</span><span class="p">:</span><span class="n">Funct</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">target</span><span class="o">.</span><span class="n">cos</span></div>
+
+<div class="viewcode-block" id="tan">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.callable.tan">[docs]</a>
+<span class="k">def</span> <span class="nf">tan</span><span class="p">(</span><span class="n">target</span><span class="p">:</span><span class="n">Funct</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">target</span><span class="o">.</span><span class="n">tan</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

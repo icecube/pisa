@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.core.events &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.core.events</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.core.events</h1><div class="highlight"><pre>
+<span></span><span class="ch">#! /usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Events class for working with PISA events files and Data class for working</span>
+<span class="sd">with arbitrary Monte Carlo and datasets</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">inf</span><span class="p">,</span> <span class="n">nan</span> <span class="c1"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">resources</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">normQuant</span><span class="p">,</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.flavInt</span> <span class="kn">import</span> <span class="p">(</span><span class="n">FlavIntData</span><span class="p">,</span> <span class="n">FlavIntDataGroup</span><span class="p">,</span>
+                                <span class="n">flavintGroupsFromString</span><span class="p">,</span> <span class="n">NuFlavIntGroup</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">text2tex</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">hdf</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Events&#39;</span><span class="p">,</span> <span class="s1">&#39;Data&#39;</span><span class="p">,</span> <span class="s1">&#39;test_Events&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi, S. Mandalia&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="c1"># TODO: test hash function (attr)</span>
+<div class="viewcode-block" id="Events">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events">[docs]</a>
+<span class="k">class</span> <span class="nc">Events</span><span class="p">(</span><span class="n">FlavIntData</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for storing events, including metadata about the events.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from pisa.core.binning import OneDimBinning, MultiDimBinning</span>
+
+<span class="sd">    &gt;&gt;&gt; # Load events from a PISA HDF5 file</span>
+<span class="sd">    &gt;&gt;&gt; events = Events(&#39;events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e2evts_set0__unjoined__with_fluxes_honda-2015-spl-solmin-aa.hdf5&#39;)</span>
+
+<span class="sd">    &gt;&gt;&gt; # Apply a simple cut</span>
+<span class="sd">    &gt;&gt;&gt; events = events.applyCut(&#39;(true_coszen &lt;= 0.5) &amp; (true_energy &lt;= 70)&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; np.max(events[fi][&#39;true_coszen&#39;]) &lt;= 0.5</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &gt;&gt;&gt; # Apply an &quot;inbounds&quot; cut via a OneDimBinning</span>
+<span class="sd">    &gt;&gt;&gt; true_e_binning = OneDimBinning(</span>
+<span class="sd">    ...    name=&#39;true_energy&#39;, num_bins=80, is_log=True,</span>
+<span class="sd">    ...    domain=[10, 60]*ureg.GeV</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; events = events.keepInbounds(true_e_binning)</span>
+<span class="sd">    &gt;&gt;&gt; np.min(events[fi][&#39;true_energy&#39;]) &gt;= 10</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &gt;&gt;&gt; print([(k, events.metadata[k]) for k in sorted(events.metadata.keys())])</span>
+<span class="sd">    [(&#39;cuts&#39;, [&#39;analysis&#39;]),</span>
+<span class="sd">      (&#39;detector&#39;, &#39;pingu&#39;),</span>
+<span class="sd">      (&#39;flavints_joined&#39;,</span>
+<span class="sd">         [&#39;nue_cc+nuebar_cc&#39;,</span>
+<span class="sd">             &#39;numu_cc+numubar_cc&#39;,</span>
+<span class="sd">             &#39;nutau_cc+nutaubar_cc&#39;,</span>
+<span class="sd">             &#39;nuall_nc+nuallbar_nc&#39;]),</span>
+<span class="sd">      (&#39;geom&#39;, &#39;v39&#39;),</span>
+<span class="sd">      (&#39;proc_ver&#39;, &#39;5.1&#39;),</span>
+<span class="sd">      (&#39;runs&#39;, [620, 621, 622])]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([</span>
+            <span class="p">(</span><span class="s1">&#39;detector&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;geom&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;runs&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="p">(</span><span class="s1">&#39;proc_ver&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;cuts&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="p">(</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+        <span class="p">])</span>
+
+        <span class="n">meta</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">FlavIntData</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Group</span><span class="p">)):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">hdf</span><span class="o">.</span><span class="n">from_hdf</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;attrs&#39;</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Events</span><span class="p">):</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;metadata&#39;</span><span class="p">):</span>
+                <span class="n">meta</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;attrs&#39;</span><span class="p">):</span>
+                <span class="n">meta</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val_</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val_</span><span class="p">,</span> <span class="s1">&#39;tolist&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="n">val_</span><span class="o">.</span><span class="n">tolist</span><span class="p">):</span>
+                <span class="n">meta</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val_</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_hash</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; : &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+        <span class="c1">#fields =</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash value&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
+
+<div class="viewcode-block" id="Events.update_hash">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.update_hash">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the cached hash value&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">normQuant</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">))</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">flavint_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All flavor/interaction type groups (even singletons) present&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">flavintGroupsFromString</span><span class="p">(</span>
+            <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">])</span>
+        <span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">joined_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Concise string identifying _only_ joined flavints&quot;&quot;&quot;</span>
+        <span class="n">joined_groups</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]]</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">joined_groups</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;unjoined&#39;</span>
+        <span class="k">return</span> <span class="s1">&#39;joined_G_&#39;</span> <span class="o">+</span> <span class="s1">&#39;_G_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">joined_groups</span><span class="p">])</span>
+
+<div class="viewcode-block" id="Events.meta_eq">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.meta_eq">[docs]</a>
+    <span class="k">def</span> <span class="nf">meta_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test whether the metadata for this object matches that of `other`&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Events.data_eq">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.data_eq">[docs]</a>
+    <span class="k">def</span> <span class="nf">data_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test whether the data for this object matches that of `other`&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_eq</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_eq</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Events.save">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.save">[docs]</a>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">hdf</span><span class="o">.</span><span class="n">to_hdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Events.histogram">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.histogram">[docs]</a>
+    <span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kinds</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">binning_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights_col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">errors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Histogram the events of all `kinds` specified, with `binning` and</span>
+<span class="sd">        optionally applying `weights`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kinds : string, sequence of NuFlavInt, or NuFlavIntGroup</span>
+<span class="sd">        binning : OneDimBinning, MultiDimBinning or sequence of arrays (one array per binning dimension)</span>
+<span class="sd">        binning_cols : string or sequence of strings</span>
+<span class="sd">            Bin only these dimensions, ignoring other dimensions in `binning`</span>
+<span class="sd">        weights_col : None or string</span>
+<span class="sd">            Column to use for weighting the events</span>
+<span class="sd">        errors : bool</span>
+<span class="sd">            Whether to attach errors to the resulting Map</span>
+<span class="sd">        name : None or string</span>
+<span class="sd">            Name to give to resulting Map. If None, a default is derived from</span>
+<span class="sd">            `kinds` and `weights_col`.</span>
+<span class="sd">        tex : None or string</span>
+<span class="sd">            TeX label to give to the resulting Map. If None, default is</span>
+<span class="sd">            dereived from the `name` specified (or its value derived from</span>
+<span class="sd">            `kinds` and `weights_col`).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map : numpy ndarray with as many dimensions as specified by `binning`</span>
+<span class="sd">            argument</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: make able to take integer for `binning` and--in combination</span>
+        <span class="c1"># with units in the Events columns--generate an appropriate</span>
+        <span class="c1"># MultiDimBinning object, attach this and return the package as a Map.</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kinds</span><span class="p">,</span> <span class="n">NuFlavIntGroup</span><span class="p">):</span>
+            <span class="n">kinds</span> <span class="o">=</span> <span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning_cols</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">binning_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">binning_cols</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">weights_col</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights_col</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+        <span class="c1"># TODO: units of columns, and convert bin edges if necessary</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">binning</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span>
+              <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unhandled type </span><span class="si">%s</span><span class="s1"> for `binning`.&#39;</span> <span class="o">%</span><span class="nb">type</span><span class="p">(</span><span class="n">binning</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s1">&#39;Simle sequences not handled at this time. Please specify a&#39;</span>
+                <span class="s1">&#39; OneDimBinning or MultiDimBinning object for `binning`.&#39;</span>
+            <span class="p">)</span>
+            <span class="c1">#assert len(binning_cols) == len(binning)</span>
+            <span class="c1">#bin_edges = binning</span>
+
+        <span class="c1"># TODO: units support for Events will mean we can do `m_as(...)` here!</span>
+        <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">for</span> <span class="n">edges</span> <span class="ow">in</span> <span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">binning_cols</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">binning_cols</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">names</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">binning_cols</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">names</span><span class="p">))</span>
+
+        <span class="c1"># Extract the columns&#39; data into a list of array(s) for histogramming</span>
+        <span class="n">repr_flavint</span> <span class="o">=</span> <span class="n">kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="n">repr_flavint</span><span class="p">][</span><span class="n">colname</span><span class="p">]</span> <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">binning_cols</span><span class="p">]</span>
+        <span class="n">err_weights</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">hist_weights</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">weights_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hist_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">repr_flavint</span><span class="p">][</span><span class="n">weights_col</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+                <span class="n">err_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">hist_weights</span><span class="p">)</span>
+
+        <span class="n">hist</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span>
+                                     <span class="n">weights</span><span class="o">=</span><span class="n">hist_weights</span><span class="p">,</span>
+                                     <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+            <span class="n">sumw2</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span>
+                                          <span class="n">weights</span><span class="o">=</span><span class="n">err_weights</span><span class="p">,</span>
+                                          <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
+            <span class="n">hist</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">(</span><span class="n">hist</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sumw2</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">tex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tex</span> <span class="o">=</span> <span class="n">kinds</span><span class="o">.</span><span class="n">tex</span>
+                <span class="k">if</span> <span class="n">weights_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">tex</span> <span class="o">+=</span> <span class="sa">r</span><span class="s1">&#39;, \; {\rm weights=&#39;</span> <span class="o">+</span> <span class="n">text2tex</span><span class="p">(</span><span class="n">weights_col</span><span class="p">)</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;}&#39;</span>
+
+            <span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">weights_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">+=</span> <span class="s1">&#39;, weights=&#39;</span> <span class="o">+</span> <span class="n">weights_col</span>
+
+        <span class="k">if</span> <span class="n">tex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tex</span> <span class="o">=</span> <span class="n">text2tex</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="n">hist</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="n">tex</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Events.applyCut">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.applyCut">[docs]</a>
+    <span class="k">def</span> <span class="nf">applyCut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a cut by specifying criteria for keeping events. The cut must</span>
+<span class="sd">        be successfully applied to all flav/ints in the events object before</span>
+<span class="sd">        the changes are kept, otherwise the cuts are reverted.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keep_criteria : string</span>
+<span class="sd">            Any string interpretable as numpy boolean expression.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Keep events with true energies in [1, 80] GeV (note that units are not</span>
+<span class="sd">        recognized, so have to be handled outside this method)</span>
+
+<span class="sd">        &gt;&gt;&gt; events = events.applyCut(&quot;(true_energy &gt;= 1) &amp; (true_energy &lt;= 80)&quot;)</span>
+
+<span class="sd">        Do the opposite with &quot;~&quot; inverting the criteria</span>
+
+<span class="sd">        &gt;&gt;&gt; events = events.applyCut(&quot;~((true_energy &gt;= 1) &amp; (true_energy &lt;= 80))&quot;)</span>
+
+<span class="sd">        Numpy namespace is available for use via `np` prefix</span>
+
+<span class="sd">        &gt;&gt;&gt; events = events.applyCut(&quot;np.log10(true_energy) &gt;= 0&quot;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">keep_criteria</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Criteria &#39;</span><span class="si">%s</span><span class="s2">&#39; have already been applied. Returning&quot;</span>
+                          <span class="s2">&quot; events unmodified.&quot;</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="c1"># Nothing to do if no cuts specified</span>
+        <span class="k">if</span> <span class="n">keep_criteria</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keep_criteria</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+        <span class="c1">#Only get the flavints for which we have data</span>
+        <span class="n">flavints_to_process</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavints_present</span>
+        <span class="n">flavints_processed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">remaining_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="n">flavints_to_process</span><span class="p">:</span>
+            <span class="c1">#Get the evets for this flavor/interaction</span>
+            <span class="n">data_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">flavint</span><span class="p">]</span>
+
+            <span class="n">field_names</span> <span class="o">=</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+            <span class="c1"># TODO: handle unicode:</span>
+            <span class="c1">#  * translate crit to unicode (easiest to hack but could be</span>
+            <span class="c1">#    problematic elsewhere)</span>
+            <span class="c1">#  * translate field names to ascii (probably should be done at</span>
+            <span class="c1">#    the from_hdf stage?)</span>
+
+            <span class="c1"># Replace simple field names with full paths into the data that</span>
+            <span class="c1"># lives in this object</span>
+            <span class="n">crit_str</span> <span class="o">=</span> <span class="n">keep_criteria</span>
+            <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">field_names</span><span class="p">:</span>
+                <span class="n">crit_str</span> <span class="o">=</span> <span class="n">crit_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                    <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39;self[&quot;</span><span class="si">%s</span><span class="s1">&quot;][&quot;</span><span class="si">%s</span><span class="s1">&quot;]&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">flavint</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">crit_str</span><span class="p">)</span>
+            <span class="n">remaining_data</span><span class="p">[</span><span class="n">flavint</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">{</span><span class="n">k</span> <span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="n">flavint</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="p">)</span>
+            <span class="n">flavints_processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flavint</span><span class="p">)</span>
+
+        <span class="n">remaining_events</span> <span class="o">=</span> <span class="n">Events</span><span class="p">()</span>
+        <span class="n">remaining_events</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">))</span>
+        <span class="n">remaining_events</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keep_criteria</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="n">flavints_processed</span><span class="p">:</span>
+            <span class="n">remaining_events</span><span class="p">[</span><span class="n">flavint</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">remaining_data</span><span class="p">[</span><span class="n">flavint</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">remaining_events</span></div>
+
+
+<div class="viewcode-block" id="Events.keepInbounds">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.keepInbounds">[docs]</a>
+    <span class="k">def</span> <span class="nf">keepInbounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cut out any events that fall outside `binning`. Note that events</span>
+<span class="sd">        that fall exactly on an outer edge are kept.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        binning : OneDimBinning or MultiDimBinning</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        remaining_events : Events</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="p">[</span><span class="n">binning</span><span class="p">]</span>
+        <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+
+        <span class="n">current_cuts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]</span>
+        <span class="n">new_cuts</span> <span class="o">=</span> <span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">inbounds_criteria</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">]</span>
+        <span class="n">unapplied_cuts</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_cuts</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">current_cuts</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">unapplied_cuts</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;All inbounds criteria &#39;</span><span class="si">%s</span><span class="s2">&#39; have already been&quot;</span>
+                          <span class="s2">&quot; applied. Returning events unmodified.&quot;</span><span class="p">,</span> <span class="n">new_cuts</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="n">all_cuts</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">current_cuts</span><span class="p">)</span> <span class="o">+</span> <span class="n">unapplied_cuts</span>
+
+        <span class="c1"># Create a single cut from all unapplied cuts</span>
+        <span class="n">keep_criteria</span> <span class="o">=</span> <span class="s1">&#39; &amp; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;(</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">unapplied_cuts</span><span class="p">])</span>
+
+        <span class="c1"># Do the cutting</span>
+        <span class="n">remaining_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">applyCut</span><span class="p">(</span><span class="n">keep_criteria</span><span class="o">=</span><span class="n">keep_criteria</span><span class="p">)</span>
+
+        <span class="c1"># Replace the combined &#39;cuts&#39; string with individual cut strings</span>
+        <span class="n">remaining_events</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_cuts</span>
+
+        <span class="k">return</span> <span class="n">remaining_events</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">flavints_present</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a tuple of the flavints that are present in the events&quot;&quot;&quot;</span>
+
+        <span class="n">flavints_present_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1">#Loop over a tuple of all possible flav/int combinations</span>
+        <span class="k">for</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavints</span><span class="p">:</span>
+
+            <span class="c1"># If a particular flavor/interaction combination is not present in the events, then</span>
+            <span class="c1"># self[flavint] will be set to np.nan</span>
+            <span class="c1"># Check this here, using a try block to catch exceptions throw if the data is actually</span>
+            <span class="c1"># there (in which case it is a dict, and np.isnan will raise an exception as cannot</span>
+            <span class="c1"># take a dit as input)</span>
+            <span class="n">found_data_for_this_flavint</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">flavint</span><span class="p">]):</span>
+                    <span class="n">found_data_for_this_flavint</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">if</span> <span class="n">found_data_for_this_flavint</span><span class="p">:</span>
+                <span class="n">flavints_present_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flavint</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">flavints_present_list</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Data">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data">[docs]</a>
+<span class="k">class</span> <span class="nc">Data</span><span class="p">(</span><span class="n">FlavIntDataGroup</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for storing events, including metadata about the events.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">        [(&#39;cuts&#39;, [&#39;analysis&#39;]),</span>
+<span class="sd">         (&#39;detector&#39;, &#39;pingu&#39;),</span>
+<span class="sd">         (&#39;flavints_joined&#39;,</span>
+<span class="sd">            [&#39;nue_cc+nuebar_cc&#39;,</span>
+<span class="sd">                &#39;numu_cc+numubar_cc&#39;,</span>
+<span class="sd">                &#39;nutau_cc+nutaubar_cc&#39;,</span>
+<span class="sd">                &#39;nuall_nc+nuallbar_nc&#39;]),</span>
+<span class="sd">         (&#39;geom&#39;, &#39;v39&#39;),</span>
+<span class="sd">         (&#39;proc_ver&#39;, &#39;5.1&#39;),</span>
+<span class="sd">         (&#39;runs&#39;, [620, 621, 622])]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># TODO(shivesh): add noise implementation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([</span>
+            <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;detector&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;geom&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;runs&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="p">(</span><span class="s1">&#39;proc_ver&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;cuts&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="p">(</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+        <span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contains_neutrinos</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Get data and metadata from val</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Group</span><span class="p">)):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">hdf</span><span class="o">.</span><span class="n">from_hdf</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;attrs&#39;</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Data</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;metadata&#39;</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">FlavIntDataGroup</span><span class="p">)):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;metadata&#39;</span><span class="p">):</span>
+                <span class="n">meta</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">metadata</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;attrs&#39;</span><span class="p">):</span>
+                <span class="n">meta</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unrecognized `val` type </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val_</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val_</span><span class="p">,</span> <span class="s1">&#39;tolist&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="n">val_</span><span class="o">.</span><span class="n">tolist</span><span class="p">):</span>
+                <span class="n">meta</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val_</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="c1"># Check consistency of metadata from val and from input</span>
+        <span class="k">if</span> <span class="n">meta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">meta</span> <span class="o">!=</span> <span class="n">metadata</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s1">&#39;Input `metadata` does not match &#39;</span>
+                                     <span class="s1">&#39;metadata inside `val`&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+
+        <span class="c1"># Find and deal with any muon data if it exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">list</span><span class="p">([]):</span>
+            <span class="k">if</span> <span class="s1">&#39;muons&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">muons</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;muons&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;muons&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s1">&#39;muons&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s1">&#39;Metadata has muons specified but &#39;</span>
+                                     <span class="s1">&#39;they are not found in the data&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">muons</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;muons&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;muons&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s1">&#39;Found muons in data but not found in &#39;</span>
+                                 <span class="s1">&#39;metadata key `flavints_joined`&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Find and deal with any noise data if it exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">list</span><span class="p">([]):</span>
+            <span class="k">if</span> <span class="s1">&#39;noise&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;noise&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;noise&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s1">&#39;noise&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s1">&#39;Metadata has noise specified but &#39;</span>
+                                     <span class="s1">&#39;they are not found in the data&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;noise&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;noise&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s1">&#39;Found noise in data but not found in &#39;</span>
+                                 <span class="s1">&#39;metadata key `flavints_joined`&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Instantiate a FlavIntDataGroup</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_flavint_groups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">val</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="o">=</span><span class="n">flavint_groups</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">contains_neutrinos</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Check consistency of flavints_joined</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]:</span>
+            <span class="n">combined_types</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_neutrinos</span><span class="p">:</span>
+                <span class="n">combined_types</span> <span class="o">+=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+                <span class="n">combined_types</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+                <span class="n">combined_types</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">])</span> <span class="o">!=</span> \
+               <span class="nb">set</span><span class="p">(</span><span class="n">combined_types</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
+                    <span class="s1">&#39;`flavint_groups` metadata does not match the &#39;</span>
+                    <span class="s1">&#39;flavint_groups in the data</span><span class="se">\n</span><span class="si">{0}</span><span class="s1"> != &#39;</span>
+                    <span class="s1">&#39;</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]),</span>
+                                 <span class="nb">set</span><span class="p">(</span><span class="n">combined_types</span><span class="p">))</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                                                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_hash</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Probabilistically unique identifier&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span>
+
+    <span class="nd">@hash</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
+
+<div class="viewcode-block" id="Data.update_hash">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.update_hash">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the cached hash value&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">normQuant</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">))</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">muons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;muon data&quot;&quot;&quot;</span>
+        <span class="c1"># TODO: it seems more sensible to return None rather than raise</span>
+        <span class="c1"># AttributeError, since the attribute `muons` absolutely exists, just</span>
+        <span class="c1"># it contains no information... hence, `None` value.</span>
+        <span class="c1"># Same for `neutrinos` property.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;No muons loaded in Data&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_muons</span>
+
+    <span class="nd">@muons</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">muons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_muons</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">noise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;No noise loaded in Data&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise</span>
+
+    <span class="nd">@noise</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">noise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_noise</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">neutrinos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;neutrino data&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_neutrinos</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;No neutrinos loaded in Data&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+    <span class="c1"># TODO: make sure this returns all flavints, and not just joined (grouped)</span>
+    <span class="c1"># flavints, as is the case for the Events object</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Names of flavints joined&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Data.meta_eq">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.meta_eq">[docs]</a>
+    <span class="k">def</span> <span class="nf">meta_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test whether the metadata for this object matches that of `other`&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Data.data_eq">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.data_eq">[docs]</a>
+    <span class="k">def</span> <span class="nf">data_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test whether the data for this object matche that of `other`&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Data.applyCut">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.applyCut">[docs]</a>
+    <span class="k">def</span> <span class="nf">applyCut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a cut by specifying criteria for keeping events. The cut must</span>
+<span class="sd">        be successfully applied to all flav/ints in the events object before</span>
+<span class="sd">        the changes are kept, otherwise the cuts are reverted.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keep_criteria : string</span>
+<span class="sd">            Any string interpretable as numpy boolean expression.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        remaining_events : Events</span>
+<span class="sd">            An Events object with the remaining events (deepcopied) and with</span>
+<span class="sd">            updated cut metadata including `keep_criteria`.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Keep events with true energies in [1, 80] GeV (note that units are not</span>
+<span class="sd">        recognized, so have to be handled outside this method)</span>
+
+<span class="sd">        &gt;&gt;&gt; remaining = applyCut(&quot;(true_energy &gt;= 1) &amp; (true_energy &lt;= 80)&quot;)</span>
+
+<span class="sd">        Do the opposite with &quot;~&quot; inverting the criteria</span>
+
+<span class="sd">        &gt;&gt;&gt; remaining = applyCut(&quot;~((true_energy &gt;= 1) &amp; (true_energy &lt;= 80))&quot;)</span>
+
+<span class="sd">        Numpy namespace is available for use via `np` prefix</span>
+
+<span class="sd">        &gt;&gt;&gt; remaining = applyCut(&quot;np.log10(true_energy) &gt;= 0&quot;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO(shivesh): function does not pass tests</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+        <span class="k">if</span> <span class="n">keep_criteria</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Criteria &#39;</span><span class="si">%s</span><span class="s2">&#39; have already been applied. Returning&quot;</span>
+                          <span class="s2">&quot; events unmodified.&quot;</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keep_criteria</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+        <span class="n">fig_to_process</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_neutrinos</span><span class="p">:</span>
+            <span class="n">fig_to_process</span> <span class="o">+=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+            <span class="n">fig_to_process</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+            <span class="n">fig_to_process</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying cut to </span><span class="si">%s</span><span class="s2"> : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fig_to_process</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">)</span>
+
+        <span class="n">fig_processed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">remaining_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">fig</span> <span class="ow">in</span> <span class="n">fig_to_process</span><span class="p">:</span>
+            <span class="n">data_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">fig</span><span class="p">]</span>
+            <span class="n">field_names</span> <span class="o">=</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+            <span class="c1"># TODO: handle unicode:</span>
+            <span class="c1">#  * translate crit to unicode (easiest to hack but could be</span>
+            <span class="c1">#    problematic elsewhere)</span>
+            <span class="c1">#  * translate field names to ascii (probably should be done at</span>
+            <span class="c1">#    the from_hdf stage?)</span>
+
+            <span class="c1"># Replace simple field names with full paths into the data that</span>
+            <span class="c1"># lives in this object</span>
+            <span class="n">crit_str</span> <span class="o">=</span> <span class="p">(</span><span class="n">keep_criteria</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">field_names</span><span class="p">:</span>
+                <span class="n">crit_str</span> <span class="o">=</span> <span class="n">crit_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                    <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39;self[&quot;</span><span class="si">%s</span><span class="s1">&quot;][&quot;</span><span class="si">%s</span><span class="s1">&quot;]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">crit_str</span><span class="p">)</span>
+            <span class="n">remaining_data</span><span class="p">[</span><span class="n">fig</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                                   <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="n">fig</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">fig_processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+
+        <span class="n">remaining_events</span> <span class="o">=</span> <span class="n">Events</span><span class="p">()</span>
+        <span class="n">remaining_events</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">))</span>
+        <span class="n">remaining_events</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keep_criteria</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fig</span> <span class="ow">in</span> <span class="n">fig_to_process</span><span class="p">:</span>
+            <span class="n">remaining_events</span><span class="p">[</span><span class="n">fig</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">remaining_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fig</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">remaining_events</span></div>
+
+
+<div class="viewcode-block" id="Data.keepInbounds">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.keepInbounds">[docs]</a>
+    <span class="k">def</span> <span class="nf">keepInbounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cut out any events that fall outside `binning`. Note that events</span>
+<span class="sd">        that fall exactly on the outer edge are kept.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        binning : OneDimBinning or MultiDimBinning</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="p">[</span><span class="n">binning</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+        <span class="n">current_cuts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]</span>
+        <span class="n">new_cuts</span> <span class="o">=</span> <span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">inbounds_criteria</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">]</span>
+        <span class="n">unapplied_cuts</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_cuts</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">current_cuts</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">cut</span> <span class="ow">in</span> <span class="n">unapplied_cuts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">applyCut</span><span class="p">(</span><span class="n">keep_criteria</span><span class="o">=</span><span class="n">cut</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Data.transform_groups">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.transform_groups">[docs]</a>
+    <span class="k">def</span> <span class="nf">transform_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform Data into a structure given by the input</span>
+<span class="sd">        flavint_groups. Calls the corresponding inherited function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        flavint_groups : string, or sequence of strings or sequence of</span>
+<span class="sd">                         NuFlavIntGroups</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        t_data : Data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">t_fidg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">transform_groups</span><span class="p">(</span><span class="n">flavint_groups</span><span class="p">)</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">t_fidg</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">]</span>
+        <span class="n">t_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">t_fidg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">]</span>
+            <span class="n">t_dict</span><span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span>
+            <span class="n">t_dict</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">])</span>
+        <span class="n">t_fidg</span> <span class="o">=</span> <span class="n">t_dict</span>
+        <span class="n">ret_obj</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">t_fidg</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="n">ret_obj</span><span class="o">.</span><span class="n">update_hash</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ret_obj</span></div>
+
+
+<div class="viewcode-block" id="Data.digitize">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.digitize">[docs]</a>
+    <span class="k">def</span> <span class="nf">digitize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kinds</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">binning_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper for numpy&#39;s digitize function.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kinds</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">kinds</span> <span class="o">=</span> <span class="p">[</span><span class="n">kinds</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;muons&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kinds</span> <span class="ow">and</span> <span class="s1">&#39;noise&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kinds</span><span class="p">:</span>
+            <span class="n">kinds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_flavint_groups</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span>
+        <span class="n">kinds</span> <span class="o">=</span> <span class="n">kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning_cols</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">binning_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">binning_cols</span><span class="p">]</span>
+
+        <span class="c1"># TODO: units of columns, and convert bin edges if necessary</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">binning</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span>
+              <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unhandled type </span><span class="si">%s</span><span class="s1"> for `binning`.&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">binning</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s1">&#39;Simle sequences not handled at this time. Please specify a&#39;</span>
+                <span class="s1">&#39; OneDimBinning or MultiDimBinning object for `binning`.&#39;</span>
+            <span class="p">)</span>
+            <span class="c1"># assert len(binning_cols) == len(binning)</span>
+            <span class="c1"># bin_edges = binning</span>
+
+        <span class="c1"># TODO: units support for Data will mean we can do `m_as(...)` here!</span>
+        <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">for</span> <span class="n">edges</span> <span class="ow">in</span> <span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">binning_cols</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">binning_cols</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">names</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">binning_cols</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">names</span><span class="p">))</span>
+
+        <span class="n">hist_idxs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">binning_cols</span><span class="p">:</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">kinds</span><span class="p">][</span><span class="n">colname</span><span class="p">]</span>
+            <span class="n">hist_idxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">digitize</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">,</span> <span class="n">binning</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span><span class="o">.</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">m</span>
+            <span class="p">))</span>
+        <span class="n">hist_idxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">hist_idxs</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="k">return</span> <span class="n">hist_idxs</span></div>
+
+
+<div class="viewcode-block" id="Data.histogram">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.histogram">[docs]</a>
+    <span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kinds</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">binning_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights_col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">errors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Histogram the events of all `kinds` specified, with `binning` and</span>
+<span class="sd">        optionally applying `weights`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kinds : string, sequence of NuFlavInt, or NuFlavIntGroup</span>
+<span class="sd">        binning : OneDimBinning, MultiDimBinning or sequence of arrays</span>
+<span class="sd">            (one array per binning dimension)</span>
+<span class="sd">        binning_cols : string or sequence of strings</span>
+<span class="sd">            Bin only these dimensions, ignoring other dimensions in `binning`</span>
+<span class="sd">        weights_col : None or string</span>
+<span class="sd">            Column to use for weighting the events</span>
+<span class="sd">        errors : bool</span>
+<span class="sd">            Whether to attach errors to the resulting Map</span>
+<span class="sd">        name : None or string</span>
+<span class="sd">            Name to give to resulting Map. If None, a default is derived from</span>
+<span class="sd">            `kinds` and `weights_col`.</span>
+<span class="sd">        tex : None or string</span>
+<span class="sd">            TeX label to give to the resulting Map. If None, default is</span>
+<span class="sd">            dereived from the `name` specified or the derived default.</span>
+<span class="sd">        **kwargs : Keyword args passed to Map object</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Map : numpy ndarray with as many dimensions as specified by `binning`</span>
+<span class="sd">            argument</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: make able to take integer for `binning` and--in combination</span>
+        <span class="c1"># with units in the Data columns--generate an appropriate</span>
+        <span class="c1"># MultiDimBinning object, attach this and return the package as a Map.</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kinds</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">kinds</span> <span class="o">=</span> <span class="p">[</span><span class="n">kinds</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;muons&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kinds</span> <span class="ow">and</span> <span class="s1">&#39;noise&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kinds</span><span class="p">:</span>
+            <span class="n">kinds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_flavint_groups</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span>
+        <span class="n">kinds</span> <span class="o">=</span> <span class="n">kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning_cols</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">binning_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">binning_cols</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">weights_col</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights_col</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+        <span class="c1"># TODO: units of columns, and convert bin edges if necessary</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">binning</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span>
+              <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unhandled type </span><span class="si">%s</span><span class="s1"> for `binning`.&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">binning</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s1">&#39;Simle sequences not handled at this time. Please specify a&#39;</span>
+                <span class="s1">&#39; OneDimBinning or MultiDimBinning object for `binning`.&#39;</span>
+            <span class="p">)</span>
+            <span class="c1"># assert len(binning_cols) == len(binning)</span>
+            <span class="c1"># bin_edges = binning</span>
+
+        <span class="c1"># TODO: units support for Data will mean we can do `m_as(...)` here!</span>
+        <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">for</span> <span class="n">edges</span> <span class="ow">in</span> <span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">binning_cols</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">binning_cols</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">names</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">binning_cols</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">names</span><span class="p">))</span>
+
+        <span class="c1"># Extract the columns&#39; data into a list of array(s) for histogramming</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="n">kinds</span><span class="p">][</span><span class="n">colname</span><span class="p">]</span> <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">binning_cols</span><span class="p">]</span>
+        <span class="n">err_weights</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">hist_weights</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">weights_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hist_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">kinds</span><span class="p">][</span><span class="n">weights_col</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+                <span class="n">err_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">hist_weights</span><span class="p">)</span>
+
+        <span class="n">hist</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span>
+                                     <span class="n">weights</span><span class="o">=</span><span class="n">hist_weights</span><span class="p">,</span>
+                                     <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+            <span class="n">sumw2</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span>
+                                          <span class="n">weights</span><span class="o">=</span><span class="n">err_weights</span><span class="p">,</span>
+                                          <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
+            <span class="n">hist</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">(</span><span class="n">hist</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sumw2</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">tex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">tex</span> <span class="o">=</span> <span class="n">kinds</span><span class="o">.</span><span class="n">tex</span>
+                <span class="c1"># TODO: specify specific exception(s)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">tex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">weights_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">tex</span> <span class="o">+=</span> <span class="sa">r</span><span class="s1">&#39;, \; {\rm weights} =&#39;</span> <span class="o">+</span> <span class="n">text2tex</span><span class="p">(</span><span class="n">weights_col</span><span class="p">)</span>
+
+            <span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">weights_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">+=</span> <span class="s1">&#39;, weights=&#39;</span> <span class="o">+</span> <span class="n">weights_col</span>
+
+        <span class="k">if</span> <span class="n">tex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tex</span> <span class="o">=</span> <span class="n">text2tex</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="n">hist</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="n">tex</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Data.histogram_set">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.histogram_set">[docs]</a>
+    <span class="k">def</span> <span class="nf">histogram_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">nu_weights_col</span><span class="p">,</span> <span class="n">mu_weights_col</span><span class="p">,</span>
+                      <span class="n">noise_weights_col</span><span class="p">,</span> <span class="n">mapset_name</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Uses the above histogram function but returns the set of all of them</span>
+<span class="sd">        for everything in the Data object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        binning : OneDimBinning, MultiDimBinning</span>
+<span class="sd">            The definition of the binning for the histograms.</span>
+<span class="sd">        nu_weights_col : None or string</span>
+<span class="sd">            The column in the Data object by which to weight the neutrino</span>
+<span class="sd">            histograms. Specify None for unweighted histograms.</span>
+<span class="sd">        mu_weights_col : None or string</span>
+<span class="sd">            The column in the Data object by which to weight the muon</span>
+<span class="sd">            histograms. Specify None for unweighted histograms.</span>
+<span class="sd">        noise_weights_col : None or string</span>
+<span class="sd">            The column in the Data object by which to weight the noise</span>
+<span class="sd">            histograms. Specify None for unweighted histograms.</span>
+<span class="sd">        mapset_name : string</span>
+<span class="sd">            The name by which the resulting MapSet will be identified.</span>
+<span class="sd">        errors : boolean</span>
+<span class="sd">            A flag for whether to calculate errors on the histograms or not.</span>
+<span class="sd">            This defaults to False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        MapSet : A MapSet containing all of the Maps for everything in this</span>
+<span class="sd">                 Data object.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;binning should be either MultiDimBinning or &#39;</span>
+                                <span class="s1">&#39;OneDimBinning object. Got </span><span class="si">%s</span><span class="s1">.&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">binning</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">nu_weights_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nu_weights_col</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;nu_weights_col should be a string. Got </span><span class="si">%s</span><span class="s1">&#39;</span>
+                                <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">nu_weights_col</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">mu_weights_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mu_weights_col</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;mu_weights_col should be a string. Got </span><span class="si">%s</span><span class="s1">&#39;</span>
+                                <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">mu_weights_col</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">errors</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;flag for whether to calculate errors or not &#39;</span>
+                            <span class="s1">&#39;should be a boolean. Got </span><span class="si">%s</span><span class="s1">.&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">errors</span><span class="p">))</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_neutrinos</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">fig</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span>
+                        <span class="n">kinds</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                        <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span>
+                        <span class="n">weights_col</span><span class="o">=</span><span class="n">nu_weights_col</span><span class="p">,</span>
+                        <span class="n">errors</span><span class="o">=</span><span class="n">errors</span><span class="p">,</span>
+                        <span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">fig</span><span class="p">))</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+            <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span>
+                    <span class="n">kinds</span><span class="o">=</span><span class="s1">&#39;muons&#39;</span><span class="p">,</span>
+                    <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span>
+                    <span class="n">weights_col</span><span class="o">=</span><span class="n">mu_weights_col</span><span class="p">,</span>
+                    <span class="n">errors</span><span class="o">=</span><span class="n">errors</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;muons&#39;</span><span class="p">,</span>
+                    <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\rm</span><span class="si">{muons}</span><span class="s1">&#39;</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+            <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span>
+                    <span class="n">kinds</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span>
+                    <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span>
+                    <span class="n">weights_col</span><span class="o">=</span><span class="n">mu_weights_col</span><span class="p">,</span>
+                    <span class="n">errors</span><span class="o">=</span><span class="n">errors</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span>
+                    <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\rm</span><span class="si">{noise}</span><span class="s1">&#39;</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">maps</span><span class="o">=</span><span class="n">outputs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">mapset_name</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;muons&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">muons</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;noise&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise</span>
+        <span class="n">tgt_obj</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tgt_obj</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;muons&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">muons</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;noise&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">return</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">muons</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Data</span><span class="p">)</span>
+
+        <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;flavints_joined&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
+                        <span class="s1">&#39;Metadata mismatch, key </span><span class="si">{0}</span><span class="s1">, </span><span class="si">{1}</span><span class="s1"> != &#39;</span>
+                        <span class="s1">&#39;</span><span class="si">{2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+                                     <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;flavints_joined&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
+                        <span class="s1">&#39;Metadata mismatch, key </span><span class="si">{0}</span><span class="s1">, </span><span class="si">{1}</span><span class="s1"> != &#39;</span>
+                        <span class="s1">&#39;</span><span class="si">{2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+                <span class="n">muons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">]),</span> <span class="n">other</span><span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">muons</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">other</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+            <span class="n">muons</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">other</span><span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+                <span class="n">noise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]),</span> <span class="n">other</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">noise</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">other</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+            <span class="n">noise</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">other</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">a_fidg</span> <span class="o">=</span> <span class="n">FlavIntDataGroup</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">a_fidg</span> <span class="o">=</span> <span class="n">FlavIntDataGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">a_fidg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">a_fidg</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">muons</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">a_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">a_fidg</span><span class="p">)</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">]</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s1">&#39;muons&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">muons</span>
+            <span class="n">a_fidg</span> <span class="o">=</span> <span class="n">a_dict</span>
+        <span class="k">if</span> <span class="n">noise</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">a_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">a_fidg</span><span class="p">)</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span>
+            <span class="n">a_dict</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">noise</span>
+            <span class="n">a_fidg</span> <span class="o">=</span> <span class="n">a_dict</span>
+        <span class="k">return</span> <span class="n">Data</span><span class="p">(</span><span class="n">a_fidg</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; : &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_eq</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_eq</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># pylint: disable=line-too-long</span>
+<div class="viewcode-block" id="test_Events">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.test_Events">[docs]</a>
+<span class="k">def</span> <span class="nf">test_Events</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for Events class&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.flavInt</span> <span class="kn">import</span> <span class="n">NuFlavInt</span>
+    <span class="c1"># Instantiate empty object</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="n">Events</span><span class="p">()</span>
+
+    <span class="c1"># Instantiate from PISA events HDF5 file</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="n">Events</span><span class="p">(</span><span class="s1">&#39;events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e2evts_set0__unjoined__with_fluxes_honda-2015-spl-solmin-aa.hdf5&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Apply a simple cut</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">applyCut</span><span class="p">(</span><span class="s1">&#39;(true_coszen &lt;= 0.5) &amp; (true_energy &lt;= 70)&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">events</span><span class="o">.</span><span class="n">flavints</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">fi</span><span class="p">][</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mf">0.5</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">fi</span><span class="p">][</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">70</span>
+
+    <span class="c1"># Apply an &quot;inbounds&quot; cut via a OneDimBinning</span>
+    <span class="n">true_e_binning</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;true_energy&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">60</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span>
+    <span class="p">)</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">keepInbounds</span><span class="p">(</span><span class="n">true_e_binning</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">events</span><span class="o">.</span><span class="n">flavints</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">fi</span><span class="p">][</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="mi">10</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">fi</span><span class="p">][</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">60</span>
+
+    <span class="c1"># Apply an &quot;inbounds&quot; cut via a MultiDimBinning</span>
+    <span class="n">true_e_binning</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;true_energy&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span>
+    <span class="p">)</span>
+    <span class="n">true_cz_binning</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.8</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">mdb</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">true_e_binning</span><span class="p">,</span> <span class="n">true_cz_binning</span><span class="p">])</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">keepInbounds</span><span class="p">(</span><span class="n">mdb</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">events</span><span class="o">.</span><span class="n">flavints</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">fi</span><span class="p">][</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="mi">20</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">fi</span><span class="p">][</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">50</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">fi</span><span class="p">][</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.8</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">fi</span><span class="p">][</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+
+    <span class="c1"># Now try to apply a cut that fails on one flav/int (since the field will</span>
+    <span class="c1"># be missing) and make sure that the cut did not get applied anywhere in</span>
+    <span class="c1"># the end (i.e., it is rolled back)</span>
+    <span class="n">sub_evts</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s1">&#39;nutaunc&#39;</span><span class="p">]</span>
+    <span class="n">sub_evts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;true_energy&#39;</span><span class="p">)</span>
+    <span class="n">events</span><span class="p">[</span><span class="s1">&#39;nutaunc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_evts</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">events</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">applyCut</span><span class="p">(</span><span class="s1">&#39;(true_energy &gt;= 30) &amp; (true_energy &lt;= 40)&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Should not have been able to apply the cut!&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">events</span><span class="o">.</span><span class="n">flavints</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fi</span> <span class="o">==</span> <span class="n">NuFlavInt</span><span class="p">(</span><span class="s1">&#39;nutaunc&#39;</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">fi</span><span class="p">][</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">30</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Events &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># TODO: requires proprietary data; remove dependence on this</span>
+<span class="k">def</span> <span class="nf">todo_test_Data</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for Data class&quot;&quot;&quot;</span>
+    <span class="c1"># Instantiate from LEESARD file - located in $PISA_RESOURCES</span>
+    <span class="n">file_loc</span> <span class="o">=</span> <span class="s1">&#39;LEESARD/PRD_extend_finalLevel/12550.pckl&#39;</span>
+    <span class="n">file_loc2</span> <span class="o">=</span> <span class="s1">&#39;LEESARD/PRD_extend_finalLevel/14550.pckl&#39;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">file_loc</span><span class="p">)</span>
+    <span class="n">f2</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">file_loc2</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;nue+nuebar&#39;</span><span class="p">:</span> <span class="n">f</span><span class="p">}</span>
+    <span class="n">d2</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;numu+numubar&#39;</span><span class="p">:</span> <span class="n">f2</span><span class="p">}</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="n">data2</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">str</span><span class="p">((</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+
+    <span class="n">muon_file</span> <span class="o">=</span> <span class="s1">&#39;GRECO/new_style_files/Level7_muongun.12370_15.pckl&#39;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;muons&#39;</span><span class="p">:</span> <span class="n">from_file</span><span class="p">(</span><span class="n">muon_file</span><span class="p">)}</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">val</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">contains_muons</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">m</span><span class="o">.</span><span class="n">contains_neutrinos</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">str</span><span class="p">((</span><span class="n">m</span><span class="p">)))</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="n">m</span>
+    <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">contains_neutrinos</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">str</span><span class="p">((</span><span class="n">data</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">contains_muons</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;data doesn&#39;t contain muons.&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">str</span><span class="p">((</span><span class="n">data</span><span class="o">.</span><span class="n">neutrinos</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+
+    <span class="n">noise_file</span> <span class="o">=</span> <span class="s1">&#39;GRECO/new_style_files/Level7_VuvuzelaPureNoise_V2.990015.pckl&#39;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;noise&#39;</span><span class="p">:</span> <span class="n">from_file</span><span class="p">(</span><span class="n">noise_file</span><span class="p">)}</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">val</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">n</span><span class="o">.</span><span class="n">contains_noise</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">n</span><span class="o">.</span><span class="n">contains_neutrinos</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">str</span><span class="p">((</span><span class="n">n</span><span class="p">)))</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="n">n</span>
+    <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">contains_neutrinos</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">str</span><span class="p">((</span><span class="n">data</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;data doesn&#39;t contain noise.&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">str</span><span class="p">((</span><span class="n">data</span><span class="o">.</span><span class="n">neutrinos</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+
+    <span class="c1"># Apply a simple cut</span>
+    <span class="c1"># data.applyCut(&#39;(zenith &lt;= 1.1) &amp; (energy &lt;= 200)&#39;)</span>
+    <span class="c1"># for fi in data.flavint_groups:</span>
+    <span class="c1">#     assert np.max(data[fi][&#39;zenith&#39;]) &lt;= 1.1</span>
+    <span class="c1">#     assert np.max(data[fi][&#39;energy&#39;]) &lt;= 200</span>
+
+    <span class="c1"># Apply an &quot;inbounds&quot; cut via a OneDimBinning</span>
+    <span class="c1"># e_binning = OneDimBinning(</span>
+    <span class="c1">#     name=&#39;energy&#39;, num_bins=80, is_log=True, domain=[10, 200]*ureg.GeV</span>
+    <span class="c1"># )</span>
+    <span class="c1"># data.keepInbounds(e_binning)</span>
+    <span class="c1"># for fi in data.flavint_groups:</span>
+    <span class="c1">#     assert np.min(data[fi][&#39;energy&#39;]) &gt;= 10</span>
+    <span class="c1">#     assert np.max(data[fi][&#39;energy&#39;]) &lt;= 200</span>
+
+    <span class="c1"># Apply an &quot;inbounds&quot; cut via a MultiDimBinning</span>
+    <span class="c1"># e_binning = OneDimBinning(</span>
+    <span class="c1">#     name=&#39;energy&#39;, num_bins=80, is_log=True, domain=[20, 210]*ureg.GeV</span>
+    <span class="c1"># )</span>
+    <span class="c1"># cz_binning = OneDimBinning(</span>
+    <span class="c1">#     name=&#39;zenith&#39;, num_bins=40, is_lin=True, domain=[0.1, 1.8*np.pi]</span>
+    <span class="c1"># )</span>
+    <span class="c1"># mdb = MultiDimBinning([e_binning, cz_binning])</span>
+    <span class="c1"># data.keepInbounds(mdb)</span>
+    <span class="c1"># for fi in data.flavint_groups:</span>
+    <span class="c1">#     assert np.min(data[fi][&#39;energy&#39;]) &gt;= 20</span>
+    <span class="c1">#     assert np.max(data[fi][&#39;energy&#39;]) &lt;= 210</span>
+    <span class="c1">#     assert np.min(data[fi][&#39;zenith&#39;]) &gt;= 0.1</span>
+    <span class="c1">#     assert np.max(data[fi][&#39;zenith&#39;]) &lt;= 1.8*np.pi</span>
+
+    <span class="c1"># # Now try to apply a cut that fails on one flav/int (since the field will</span>
+    <span class="c1"># # be missing) and make sure that the cut did not get applied anywhere in</span>
+    <span class="c1"># # the end (i.e., it is rolled back)</span>
+    <span class="c1"># sub_evts = data[&#39;nue+nuebar&#39;]</span>
+    <span class="c1"># sub_evts.pop(&#39;energy&#39;)</span>
+    <span class="c1"># data[&#39;nue+nuebar&#39;] = sub_evts</span>
+    <span class="c1"># try:</span>
+    <span class="c1">#     data.applyCut(&#39;(energy &gt;= 30) &amp; (energy &lt;= 40)&#39;)</span>
+    <span class="c1"># except Exception:</span>
+    <span class="c1">#     pass</span>
+    <span class="c1"># else:</span>
+    <span class="c1">#     raise Exception(&#39;Should not have been able to apply the cut!&#39;)</span>
+    <span class="c1"># for fi in data.flavint_groups:</span>
+    <span class="c1">#     if fi == NuFlavIntGroup(&#39;nue+nuebar&#39;):</span>
+    <span class="c1">#         continue</span>
+    <span class="c1">#     assert np.min(data[fi][&#39;energy&#39;]) &lt; 30</span>
+
+    <span class="n">data</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;/tmp/test_FlavIntDataGroup.json&#39;</span><span class="p">)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;/tmp/test_FlavIntDataGroup.hdf5&#39;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s1">&#39;/tmp/test_FlavIntDataGroup.json&#39;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">val</span><span class="o">=</span><span class="s1">&#39;/tmp/test_FlavIntDataGroup.hdf5&#39;</span><span class="p">)</span>
+
+    <span class="n">d3</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="n">data2</span> <span class="o">+</span> <span class="n">m</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">str</span><span class="p">((</span><span class="n">d3</span><span class="p">)))</span>
+    <span class="n">d3_com</span> <span class="o">=</span> <span class="n">d3</span><span class="o">.</span><span class="n">transform_groups</span><span class="p">([</span><span class="s1">&#39;nue+nuebar+numu+numubar&#39;</span><span class="p">])</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">str</span><span class="p">((</span><span class="n">d3_com</span><span class="p">)))</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Data &gt;&gt;&#39;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_Events</span><span class="p">()</span>
+    <span class="c1"># TODO: following is removed until a test dataset can be introduced</span>
+    <span class="c1">#test_Data()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

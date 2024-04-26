@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/readmes/discr_sys.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p># Stage: Discrete Systematics</p>
+<p>These stages apply parameterized systematics to the templates.</p>
+<p>## Services</p>
+<p>### Hypersurfaces</p>
+<p>#### fits</p>
+<p>This service applies the results obtained from fits to discrete samples.</p>
+<p>The fitting parameters are at the moment extracted by an external
+script, that saves them in a json file, see below.</p>
+<p>Any parameterized systematic needs to be added to the <cite>[stage:sys]</cite> section of the pipeline config.
+There the associated nuisance parameters (can be N different ones), e.g. <cite>hole_ice</cite> are specified together with a parameter <cite>hole_ice_file</cite> pointing to the <cite>.json</cite> file with the fit info.</p>
+<p>#### generating the fit values</p>
+<p>To generate the fit file, the script <cite>$PISA/pisa/scripts/fit_discrerte_sys.py</cite> (command-line alias <cite>pisa-fit_discrete_sys</cite>) can be executed together with a special configuration file.</p>
+<p>This config file specifies the discrete datasets for the fits, here an example:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`ini</span>
+<span class="pre">[dom_eff]</span>
+<span class="pre">nominal</span> <span class="pre">=</span> <span class="pre">1.0</span>
+<span class="pre">degree</span> <span class="pre">=</span> <span class="pre">1</span>
+<span class="pre">force_through_nominal</span> <span class="pre">=</span> <span class="pre">True</span>
+<span class="pre">smooth</span> <span class="pre">=</span> <span class="pre">gauss</span>
+<span class="pre">#</span> <span class="pre">discrete</span> <span class="pre">sets</span> <span class="pre">for</span> <span class="pre">param</span> <span class="pre">values</span>
+<span class="pre">runs</span> <span class="pre">=</span> <span class="pre">[1.0,</span> <span class="pre">0.88,</span> <span class="pre">0.94,</span> <span class="pre">0.97,</span> <span class="pre">1.03,</span> <span class="pre">1.06,</span> <span class="pre">1.12]</span>
+<span class="pre">`</span></code></p>
+<p>That means the systematic <cite>dom_eff</cite> is parametrized from 7 discrete datasets, with the nominal point being at <cite>dom_eff=1.0</cite>, parametrized with a linear fit that is forced through the nominal point, and gaussian smoothing is applied.</p>
+<p>All 7 datasets must be specified in a separate section.</p>
+<p>At the moment different fits are generated for <cite>cscd</cite> and <cite>trck</cite> maps only (they are added together for the fit).
+Systematics listed under <cite>sys_list</cite> are considered in the fit.
+This will generate N different <cite>.json</cite> for N systematics.
+All the info from the fit, including the fit function itself is stored in that file.
+Plotting is also available via <a href="#id1"><span class="problematic" id="id2">`</span></a>-p/–plot’ and is HIGHLY recomended to inspect the fit results.</p>
+<p>### Ultrasurfaces</p>
+<p>This is the novel treatment of detector systematics via likelihood-free inference. It assigns gradients to _every <a href="#id3"><span class="problematic" id="id4">event_</span></a> to allow event-by-event re-weighting as a function of detector uncertainties in a way that is fully decoupled from flux and oscillation effects.</p>
+<p>Once ready, the results are stored in a <cite>.feather</cite> file containing all events of the nominal MC set and their associated gradients.</p>
+<p>### Preparation</p>
+<p>The scripts producing the gradients are located in <cite>$FRIDGE_DIR/analysis/oscnext_ultrasurfaces</cite>. To produce the gradient feather file, we first need to convert PISA HDF5 files to <cite>.feather</cite> using the <cite>pisa_to_feather.py</cite> script. We need to pass the input file, the output file, and a flag setting the sample (variable names) to be used (either <cite>–verification-sample</cite>, <cite>–flercnn-sample</cite>, <cite>–flercnn-hnl-sample</cite>, <cite>–upgrade-sample</cite>, or no additional flag for the Retro sample).</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">python</span> <span class="pre">pisa_to_feather.py</span> <span class="pre">-i</span> <span class="pre">/path/to/pisa_hdf5/oscnext_genie_0151.hdf5</span> <span class="pre">-o</span> <span class="pre">/path/to/pisa_hdf5/oscnext_genie_0151.feather</span> <span class="pre">{&quot;--verification-sample&quot;,</span> <span class="pre">&quot;--flercnn-sample&quot;,</span> <span class="pre">&quot;&quot;}</span>
+<span class="pre">`</span></code>
+After converting all files and setting the appropriate paths in <cite>$FRIDGE_DIR/analysis/oscnext_ultrasurfaces/datasets/data_loading.py</cite>, we produce gradients in two steps.</p>
+<p><strong>First</strong>: Calculate event-wise probabilities with (assuming we <cite>cd</cite>’d into <cite>$FRIDGE_DIR/analysis/oscnext_ultrasurfaces/knn</cite>)</p>
+<p>(Note here that this needs to be run with an earlier version of sklearn, due to deprecation of some used functions, e.g. use: <cite>scikit-learn = 1.1.2</cite>)</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">python</span> <span class="pre">calculate_knn_probs.py</span> <span class="pre">--data-sample</span> <span class="pre">{&quot;verification&quot;,</span> <span class="pre">&quot;flercnn&quot;,</span> <span class="pre">&quot;flercnn_hnl&quot;,</span> <span class="pre">&quot;retro&quot;}</span> <span class="pre">--root-dir</span> <span class="pre">/path/to/pisa_feather/</span> <span class="pre">--outfile</span> <span class="pre">/path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather</span> <span class="pre">--neighbors-per-class</span> <span class="pre">200</span> <span class="pre">--datasets</span> <span class="pre">0000</span> <span class="pre">0001</span> <span class="pre">0002</span> <span class="pre">0003</span> <span class="pre">0004</span> <span class="pre">0100</span> <span class="pre">0101</span> <span class="pre">0102</span> <span class="pre">0103</span> <span class="pre">0104</span> <span class="pre">0105</span> <span class="pre">0106</span> <span class="pre">0107</span> <span class="pre">0109</span> <span class="pre">0151</span> <span class="pre">0500</span> <span class="pre">0501</span> <span class="pre">0502</span> <span class="pre">0503</span> <span class="pre">0504</span> <span class="pre">0505</span> <span class="pre">0506</span> <span class="pre">0507</span> <span class="pre">--jobs</span> <span class="pre">24</span>
+<span class="pre">`</span></code></p>
+<p><strong>Second</strong>: Calculate the gradients that best fit the probabilities with:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">python</span> <span class="pre">calculate_grads.py</span> <span class="pre">--input</span> <span class="pre">/path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather</span> <span class="pre">--output</span> <span class="pre">/path/to/ultrasurface_grads_vs/genie_all_bulkice_pm10pc_knn_200pc_poly2.feather</span> <span class="pre">--include-systematics</span> <span class="pre">dom_eff</span> <span class="pre">hole_ice_p0</span> <span class="pre">hole_ice_p1</span> <span class="pre">bulk_ice_abs</span> <span class="pre">bulk_ice_scatter</span> <span class="pre">--poly-features</span> <span class="pre">2</span> <span class="pre">--jobs</span> <span class="pre">24</span>
+<span class="pre">`</span></code></p>
+<p>### Usage</p>
+<p>The gradients are stored in a <cite>.feather</cite> file containing all events of the nominal MC set and their associated gradients. The Ultrasurface PISA stage needs to be pointed to the location of this file. In the unblinding version of this analysis, the file is</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">/path/to/ultrasurface_grads_vs/genie_all_bulkice_pm10pc_knn_200pc_poly2.feather</span>
+<span class="pre">`</span></code></p>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

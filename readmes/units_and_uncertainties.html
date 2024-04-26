@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/readmes/units_and_uncertainties.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p># Units and Uncertainties</p>
+<p>## Units</p>
+<p>Units were introduced for parameters and binnings in PISA Cake using the [Pint package](<a class="reference external" href="https://pint.readthedocs.io/">https://pint.readthedocs.io/</a>). The package is fully numpy and uncertainties compatible.</p>
+<p>Note the terminology used:
+* <strong>*Unit*</strong> has no attached value(s). Type: <cite>pint.unit._Unit</cite>
+* <strong>*Quantity*</strong> is a number (or array) <em>with units attached</em> to them. Type: <cite>pint.quantity._Quantity</cite>
+* <strong>*Magnitude*</strong> is the value of a quantity sans units. Type: <cite>float</cite>, <cite>int</cite>, <cite>numpy.ndarray</cite>, etc.</p>
+<p>### Pint’s quirks
+One quirk is that pint has lazy imports, so until you actually instantiate a unit registry, doing things like
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">isinstance(x,</span> <span class="pre">pint.unit._Unit)</span>
+<span class="pre">isinstance(x,</span> <span class="pre">pint.quantity._Quantity)</span>
+<span class="pre">`</span></code>
+will fail (<cite>pint.unit</cite> and <cite>pint.quantity</cite> effectively don’t exist) until you first do
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">ureg</span> <span class="pre">=</span> <span class="pre">pint.UnitRegistry()</span>
+<span class="pre">`</span></code>
+Therefore, and to assure that we alsways use the same instance, the “standard” way of importing pint in PISA is the following line:
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">from</span> <span class="pre">pisa</span> <span class="pre">import</span> <span class="pre">ureg,</span> <span class="pre">Q_</span>
+<span class="pre">`</span></code></p>
+<p>### Basic attributes of Pint quantities</p>
+<ul class="simple">
+<li><p>To access the <em>units</em> of a quantity:
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q</span> <span class="pre">=</span> <span class="pre">10.2</span> <span class="pre">*</span> <span class="pre">ureg.meter</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q.units</span>
+<span class="pre">&lt;Unit('meter')&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">units_2</span> <span class="pre">=</span> <span class="pre">q.u</span>
+<span class="pre">&lt;Unit('meter')&gt;</span>
+<span class="pre">`</span></code></p></li>
+<li><p>To access the <em>magnitude</em> of a Pint quantity:
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q</span> <span class="pre">=</span> <span class="pre">12.4</span> <span class="pre">*</span> <span class="pre">ureg.foot</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q.magnitude</span>
+<span class="pre">12.4</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q.m</span>
+<span class="pre">12.4</span>
+<span class="pre">`</span></code></p></li>
+</ul>
+<p>## Uncertainties</p>
+<p>Support for the handling of errors is available from the python [uncertainties package](<a class="reference external" href="https://pythonhosted.org/uncertainties/">https://pythonhosted.org/uncertainties/</a>). This interoperates well with units, too. Note that there <em>is</em> a performance penalty for using uncertainties, so hooks are provided to enable or disable this feature at the user’s discretion.</p>
+<p>### Basic attributes of numbers with uncertainties</p>
+<ul class="simple">
+<li><p>Nominal value:
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">x</span> <span class="pre">=</span> <span class="pre">ufloat(10.0,</span> <span class="pre">0.3)</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">x.nominal_value</span>
+<span class="pre">10.0</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">x.n</span>
+<span class="pre">10.0</span>
+<span class="pre">`</span></code></p></li>
+<li><p>Standard deviation:
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">x</span> <span class="pre">=</span> <span class="pre">ufloat(-12.3,</span> <span class="pre">0.6)</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">x.std_dev</span>
+<span class="pre">0.6</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">x.s</span>
+<span class="pre">0.6</span>
+<span class="pre">`</span></code></p></li>
+</ul>
+<p><em>Pint</em> and <em>uncertainties</em> interoperate well. So a quantity can have uncertainty. All of the above attributes work for numbers that are wrapped with both features. See examples below.</p>
+<p>## Examples</p>
+<p>More examples of how to use the above packages are given below.</p>
+<ul>
+<li><p>For ordinary numbers (floats):
+<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+&gt;&gt;&gt; from uncertainties import ufloat
+&gt;&gt;&gt; from pisa import ureg, <a href="#id5"><span class="problematic" id="id6">Q_</span></a></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">ufloat</span><span class="p">(</span><span class="mf">1.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">meter</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">m</span> <span class="c1"># magnitude</span>
+<span class="go">1.3+/-0.2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">u</span> <span class="c1"># unit</span>
+<span class="go">&lt;Unit(&#39;meter&#39;)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">n</span> <span class="c1"># nominal value</span>
+<span class="go">1.3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">s</span> <span class="c1"># standard deviation</span>
+<span class="go">0.2</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;foot&#39;</span><span class="p">)</span> <span class="c1"># conversion</span>
+<span class="go">&lt;Quantity(4.3+/-0.7, &#39;foot&#39;)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">dimensionality</span>
+<span class="go">&lt;UnitsContainer({&#39;[length]&#39;: 1.0})&gt;</span>
+<span class="go">```</span>
+</pre></div>
+</div>
+</li>
+<li><p>For numpy arrays:
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">from</span> <span class="pre">uncertainties</span> <span class="pre">import</span> <span class="pre">unumpy</span> <span class="pre">as</span> <span class="pre">unp</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">a</span> <span class="pre">=</span> <span class="pre">unp.uarray([1.,</span> <span class="pre">2.,</span> <span class="pre">3.],</span> <span class="pre">[1.,</span> <span class="pre">1.41,</span> <span class="pre">1.73])</span> <span class="pre">#</span> <span class="pre">with</span> <span class="pre">list</span> <span class="pre">of</span> <span class="pre">values,</span> <span class="pre">and</span> <span class="pre">list</span> <span class="pre">of</span> <span class="pre">errors,</span> <span class="pre">or</span> <span class="pre">alternatively:</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">a</span> <span class="pre">=</span> <span class="pre">np.array([ufloat(1.,1.),ufloat(2.,1.41),</span> <span class="pre">ufloat(</span> <span class="pre">3.,1.73)])</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">a</span> <span class="pre">*=</span> <span class="pre">ureg.seconds</span>
+<span class="pre">&lt;Quantity([1.0+/-1.0</span> <span class="pre">2.0+/-1.41</span> <span class="pre">3.0+/-1.73],</span> <span class="pre">'second')&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">a.u</span>
+<span class="pre">&lt;Unit('second')&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">a.m</span>
+<span class="pre">array([1.0+/-1.0,</span> <span class="pre">2.0+/-1.41,</span> <span class="pre">3.0+/-1.73],</span> <span class="pre">dtype=object)</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">unp.nominal_values((a)</span>
+<span class="pre">array([</span> <span class="pre">1.,</span>&#160; <span class="pre">2.,</span>&#160; <span class="pre">3.])</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">unp.std_devs(a)</span>
+<span class="pre">array([</span> <span class="pre">1.</span>&#160; <span class="pre">,</span>&#160; <span class="pre">1.41,</span>&#160; <span class="pre">1.73])</span>
+<span class="pre">`</span></code></p></li>
+<li><p>Check if units are compatible
+* Explicitly check if <cite>dimensionality</cite> is equal for two units, quantities, or a combination thereof:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">units0</span> <span class="pre">=</span> <span class="pre">ureg.meter</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">units1</span> <span class="pre">=</span> <span class="pre">ureg.yard</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">units2</span> <span class="pre">=</span> <span class="pre">ureg.kg</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">quant0</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">*</span> <span class="pre">units0</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">quant1</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">*</span> <span class="pre">units1</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">quant0.dimensionality</span> <span class="pre">==</span> <span class="pre">quant1.dimensionality</span>
+<span class="pre">True</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">quant0.dimensionality</span> <span class="pre">==</span> <span class="pre">units1.dimensionality</span>
+<span class="pre">True</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">units1.dimensionality</span> <span class="pre">==</span> <span class="pre">units2.dimensionality</span>
+<span class="pre">False</span>
+<span class="pre">`</span></code></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Implicitly check if one quantity is convertible to a different unit (whether a raw units object, the units attached to another quantity, or a string that Pint can convert into units):
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q0</span> <span class="pre">=</span> <span class="pre">ureg.meter</span> <span class="pre">*</span> <span class="pre">10</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q1</span> <span class="pre">=</span> <span class="pre">ureg.yard</span> <span class="pre">*</span> <span class="pre">2</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">u0</span> <span class="pre">=</span> <span class="pre">ureg.cm</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">u1</span> <span class="pre">=</span> <span class="pre">ureg.second</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">#</span> <span class="pre">Convert</span> <span class="pre">q0</span> <span class="pre">from</span> <span class="pre">meters</span> <span class="pre">to</span> <span class="pre">the</span> <span class="pre">units</span> <span class="pre">of</span> <span class="pre">q1</span> <span class="pre">(yards)</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q0.to(q1)</span>
+<span class="pre">&lt;Quantity(10.9361329834,</span> <span class="pre">'yard')&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q0.to(u0)</span>
+<span class="pre">&lt;Quantity(1000.0,</span> <span class="pre">'centimeter')&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q0.to('mile')</span>
+<span class="pre">&lt;Quantity(0.00621371192237,</span> <span class="pre">'mile')&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q0.to(u1)</span>
+<span class="pre">DimensionalityError:</span> <span class="pre">Cannot</span> <span class="pre">convert</span> <span class="pre">from</span> <span class="pre">'meter'</span> <span class="pre">([length])</span> <span class="pre">to</span> <span class="pre">'second'</span> <span class="pre">([time])</span>
+<span class="pre">`</span></code></p></li>
+</ul>
+</li>
+<li><p>The [<cite>pisa.core.Map</cite>](<a class="reference external" href="https://github.com/jllanfranchi/pisa/blob/cake/pisa/core/map.py">https://github.com/jllanfranchi/pisa/blob/cake/pisa/core/map.py</a>) object integrates uncertainties, which are turned off by default but can be enabled with either the <cite>set_poisson_errors()</cite> or <cite>set_errors(…)</cite> methods. Once enabled, all subsequent operations on the <cite>Map</cite> will propagate errors (to first order).</p></li>
+</ul>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

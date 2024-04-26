@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.flux.honda_ip &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.flux.honda_ip</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.flux.honda_ip</h1><div class="highlight"><pre>
+<span></span><span class="c1"># pylint: disable=not-callable</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Stage to evaluate the Honda flux tables using IP splines</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.flux_weights</span> <span class="kn">import</span> <span class="n">load_2d_table</span><span class="p">,</span> <span class="n">calculate_2d_flux_weights</span>
+
+
+<div class="viewcode-block" id="honda_ip">
+<a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.honda_ip.honda_ip">[docs]</a>
+<span class="k">class</span> <span class="nc">honda_ip</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    stage to generate nominal flux</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params</span>
+<span class="sd">        Expected params .. ::</span>
+<span class="sd">            flux_table : str</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">std_kwargs</span>
+    <span class="p">):</span>
+
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;flux_table&#39;</span><span class="p">,)</span>
+
+        <span class="c1"># init base class</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="honda_ip.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.honda_ip.honda_ip.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">flux_table</span> <span class="o">=</span> <span class="n">load_2d_table</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">flux_table</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="c1"># speed up calculation by adding links</span>
+            <span class="c1"># as nominal flux doesn&#39;t depend on the (outgoing) flavour</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nue_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nu_flux_nominal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar_flux_nominal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="c1"># container[&#39;nu_flux&#39;] = np.empty((container.size, 2), dtype=FTYPE)</span>
+
+        <span class="c1"># don&#39;t forget to un-link everything again</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="honda_ip.compute_function">
+<a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.honda_ip.honda_ip.compute_function">[docs]</a>
+    <span class="nd">@profile</span>
+    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="c1"># speed up calculation by adding links</span>
+            <span class="c1"># as nominal flux doesn&#39;t depend on the (outgoing) flavour</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nue_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">])</span>
+
+        <span class="c1"># create lists for iteration</span>
+        <span class="n">out_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nu_flux_nominal&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;nubar_flux_nominal&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nue&#39;</span><span class="p">,</span> <span class="s1">&#39;numu&#39;</span><span class="p">,</span> <span class="s1">&#39;nuebar&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">out_name</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">table</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">out_names</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">tables</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Calculating nominal </span><span class="si">%s</span><span class="s1"> flux for </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">calculate_2d_flux_weights</span><span class="p">(</span><span class="n">true_energies</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">],</span>
+                                           <span class="n">true_coszens</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">],</span>
+                                           <span class="n">en_splines</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">flux_table</span><span class="p">[</span><span class="n">table</span><span class="p">],</span>
+                                           <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="n">out_name</span><span class="p">][:,</span> <span class="n">index</span><span class="p">]</span>
+                                          <span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;nu_flux_nominal&#39;</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;nubar_flux_nominal&#39;</span><span class="p">)</span>
+
+        <span class="c1"># don&#39;t forget to un-link everything again</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
+</div>
+
+
+
+    <span class="c1"># def apply_function(self):</span>
+
+    <span class="c1">#     self.data.representation = self.apply_mode</span>
+
+    <span class="c1">#     # Set flux to be the nominal flux (choosing correct nu vs nubar flux for the container)</span>
+    <span class="c1">#     # Note that a subsequent systematic flux stage may change this</span>
+    <span class="c1">#     for container in self.data:</span>
+    <span class="c1">#         np.copyto( src=container[&quot;nu%s_flux_nominal&quot;%(&quot;&quot; if container[&quot;nubar&quot;] &gt; 0 else &quot;bar&quot;)].get(&quot;host&quot;), dst=container[&quot;nu_flux&quot;].get(&quot;host&quot;) )</span>
+    <span class="c1">#         container.mark_changed(&#39;nu_flux&#39;)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

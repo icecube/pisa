@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.data_proc_params &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.data_proc_params</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.data_proc_params</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">DataProcParams class for importing, working with, and storing data processing</span>
+<span class="sd">parameters (e.g., PINGU&#39;s V5 processing).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="c1"># Note that the form of the numpy import is intentional, so that cuts -- which</span>
+<span class="c1"># are exectuted with `eval` -- will have access to numpy&#39;s namespace without</span>
+<span class="c1"># explicit reference to numpy. It&#39;s a hack, but it works well.</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="o">*</span> <span class="c1"># pylint: disable=wildcard-import, unused-wildcard-import, redefined-builtin</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="c1"># pylint: disable=unused-import</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span> <span class="c1"># pylint: disable=reimported</span>
+
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">jsons</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.flavInt</span> <span class="kn">import</span> <span class="n">NuFlav</span><span class="p">,</span> <span class="n">IntType</span><span class="p">,</span> <span class="n">FlavIntData</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">resources</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MULTI_PART_FIELDS&#39;</span><span class="p">,</span> <span class="s1">&#39;NU_PDG_CODES&#39;</span><span class="p">,</span> <span class="s1">&#39;DataProcParams&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="n">MULTI_PART_FIELDS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;I3MCTree&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">NU_PDG_CODES</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="o">-</span><span class="mi">14</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="o">-</span><span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="DataProcParams">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams">[docs]</a>
+<span class="k">class</span> <span class="nc">DataProcParams</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for importing, working with, and storing data processing</span>
+<span class="sd">    parameters.</span>
+
+<span class="sd">    Implements cutting and particle identification (PID) functionality that can</span>
+<span class="sd">    be applied to MC/data that have the specified verion of processing applied</span>
+<span class="sd">    to it.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_proc_params : string or dict</span>
+<span class="sd">        If string: looks for the corresponding JSON resource (file) and loads</span>
+<span class="sd">          the contents as a data_proc_params dict</span>
+<span class="sd">        If dict: taken to be data_proc_params dict</span>
+<span class="sd">        The data_proc_params dict must follow the format described below.</span>
+<span class="sd">    detector : string</span>
+<span class="sd">        Converted to lower-case string which must be a detector key in</span>
+<span class="sd">        data_proc_params dict</span>
+<span class="sd">    proc_ver</span>
+<span class="sd">        Converted to lower-case string which must be a proc_ver key in</span>
+<span class="sd">        data_proc_params dict</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    All information describing the processing version is loaded from a JSON</span>
+<span class="sd">    file with the following defined format:</span>
+
+<span class="sd">    Note that the following common cuts are defined in this class and so</span>
+<span class="sd">    needn&#39;t be defined in the JSON file:</span>
+<span class="sd">                      &#39;1&#39; : Select particles</span>
+<span class="sd">                     &#39;-1&#39; : Select anti-particles</span>
+<span class="sd">                     &#39;cc&#39; : Select charged-current (CC) interactions</span>
+<span class="sd">                     &#39;nc&#39; : Select neutral-current (NC) interactions</span>
+<span class="sd">       &#39;true_upgoing_zen&#39; : Select true-upgoing events by zenith angle</span>
+<span class="sd">    &#39;true_upgoing_coszen&#39; : Select true-upgoing events by cos(zenith) angle</span>
+
+<span class="sd">    data_proc_params dictionary format (and same for corresponding JSON file)::</span>
+
+<span class="sd">        {</span>
+<span class="sd">          # Specify the detector name, lower case</span>
+
+<span class="sd">          &quot;&lt;lower-case detector name&gt;&quot;: {</span>
+
+
+<span class="sd">            # Specify the processing version, lower case</span>
+<span class="sd">            # Examples in PINGU include &quot;4&quot;, &quot;5&quot;, and &quot;5.1&quot;</span>
+
+<span class="sd">            &quot;&lt;lower-case processing version&gt;&quot;: {</span>
+
+
+<span class="sd">              # Mapping from standard names to path where these can be found in</span>
+<span class="sd">              # source HDF5 file; separate HDF5 path nodes with a forward-slash.</span>
+<span class="sd">              #</span>
+<span class="sd">              # Fields that cuts or particles in the &quot;cuts&quot;/&quot;pid&quot; sections below</span>
+<span class="sd">              # require (e.g., &quot;cuts_step_1&quot; for PINGU v5 processing), must be</span>
+<span class="sd">              # added here so the code knows how to extract the info from the</span>
+<span class="sd">              # source HDF5 file.</span>
+<span class="sd">              #</span>
+<span class="sd">              # Outputting a PID field to the destination PISA HDF5 file will *not*</span>
+<span class="sd">              # be done if the &quot;pid&quot; field is omitted below.</span>
+<span class="sd">              #</span>
+<span class="sd">              # In addition to the below-named fields, &quot;true_coszen&quot; and</span>
+<span class="sd">              # &quot;reco_coszen&quot; are generated from the data from the &quot;true_zenith&quot;</span>
+<span class="sd">              # and &quot;reco_zenith&quot; fields, respectively. So any of those fields can</span>
+<span class="sd">              # be used via the aforementioned names.</span>
+
+<span class="sd">              &quot;field_map&quot;: {</span>
+<span class="sd">                &quot;run&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;nu_code&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;true_energy&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;true_zenith&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;reco_energy&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;reco_zenith&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;one_weight&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;generator_volume&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;generator_radius&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;detection_length&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;interaction_type&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;azimuth_min&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;azimuth_max&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;zenith_min&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;zenith_max&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;energy_log_min&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;energy_log_max&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;num_events_per_file&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;sim_spectral_index&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">                &quot;pid&quot;: &quot;&lt;HDF5 path to corresponding node&gt;&quot;,</span>
+<span class="sd">              },</span>
+
+
+<span class="sd">              # Mapping from file&#39;s nu code to PDG nu codes (only necessary if</span>
+<span class="sd">              # nu_code values are not the PDG codes listed below)</span>
+
+<span class="sd">              &quot;nu_code_to_pdg_map&quot;: {</span>
+<span class="sd">                &quot;&lt;source nue code&gt;&quot;:        12,</span>
+<span class="sd">                &quot;&lt;source nue_bar code&gt;&quot;:   -12,</span>
+<span class="sd">                &quot;&lt;source numu code&gt;&quot;:       14,</span>
+<span class="sd">                &quot;&lt;source numu_bar code&gt;&quot;:  -14,</span>
+<span class="sd">                &quot;&lt;source nutau code&gt;&quot;:      16,</span>
+<span class="sd">                &quot;&lt;source nutau_bar code&gt;&quot;: -16</span>
+<span class="sd">              },</span>
+
+
+<span class="sd">              # Specify standard cuts</span>
+
+<span class="sd">              &quot;cuts&quot;: {</span>
+
+
+<span class="sd">                # Cut name; &quot;bjrej&quot; and &quot;analysis&quot; listed here are just example</span>
+<span class="sd">                # names for cuts one might specify</span>
+
+<span class="sd">                &quot;bgrej&quot;: {</span>
+
+<span class="sd">                  # Which of the fields in the field_map (and the derived fields</span>
+<span class="sd">                  # such as true_coszen and reco_coszen) are required for this cut?</span>
+
+<span class="sd">                  &quot;fields&quot;: [&quot;&lt;field1&gt;&quot;, &quot;&lt;field2&gt;&quot;, ... ],</span>
+
+<span class="sd">                  # Expression for an event to pass the cut (not get thrown away);</span>
+<span class="sd">                  # see below for details on specifying an expression</span>
+
+<span class="sd">                  &quot;pass_if&quot;: &quot;&lt;expression&gt;&quot;</span>
+<span class="sd">                },</span>
+
+<span class="sd">                &quot;analysis&quot;: {</span>
+<span class="sd">                  &quot;fields&quot;: [&quot;&lt;field1&gt;&quot;, &quot;&lt;field2&gt;&quot;, ... ],</span>
+<span class="sd">                  &quot;pass_if&quot;: &quot;&lt;expression&gt;&quot;</span>
+<span class="sd">                },</span>
+
+<span class="sd">                &quot;&lt;cut name&gt;&quot;: {</span>
+<span class="sd">                  &quot;fields&quot;: [&quot;&lt;field1&gt;&quot;, &quot;&lt;field2&gt;&quot;, ... ],</span>
+<span class="sd">                  &quot;pass_if&quot;: &quot;&lt;expression&gt;&quot;</span>
+<span class="sd">                }</span>
+<span class="sd">              },</span>
+
+
+<span class="sd">              # Particle identification section</span>
+
+<span class="sd">              &quot;pid&quot;: {</span>
+
+
+<span class="sd">                # Name of the particle (case-insensitive); e.g., in PINGU this</span>
+<span class="sd">                # would be &quot;trck&quot; or &quot;cscd&quot;</span>
+
+<span class="sd">                &quot;&lt;particle name 1&gt;&quot;: {</span>
+
+
+<span class="sd">                  # Which of the fields in the field_map (and the derived fields</span>
+<span class="sd">                  # such as true_coszen and reco_coszen) are required for this cut?</span>
+
+<span class="sd">                  &quot;field&quot;: [&lt;field1&gt;, &lt;field2&gt;, ...],</span>
+
+
+<span class="sd">                  # Expression for an event to be classified as this type of</span>
+<span class="sd">                  # particle; # see below for details on specifying an expression</span>
+
+<span class="sd">                  &quot;criteria&quot;: &quot;&lt;expression&gt;&quot;</span>
+<span class="sd">                }</span>
+
+<span class="sd">                &quot;&lt;particle name 2&gt;&quot;: {</span>
+<span class="sd">                  &quot;field&quot;: [&lt;field1&gt;, &lt;field2&gt;, ...],</span>
+<span class="sd">                  &quot;criteria&quot;: &quot;&lt;expression&gt;&quot;</span>
+<span class="sd">                }</span>
+<span class="sd">              }</span>
+<span class="sd">            }</span>
+<span class="sd">          }</span>
+<span class="sd">        }</span>
+
+<span class="sd">    Note that cuts &quot;pass_if&quot; and pid &quot;criteria&quot; expressions can make use of the</span>
+<span class="sd">    numpy namespace and have access to any columns extracted from the source</span>
+<span class="sd">    HDF5 file, by the standardized names given in the &quot;field_map&quot;. For example,</span>
+<span class="sd">    if the following &quot;fields&quot; are specified for a cut in the data_proc_params</span>
+<span class="sd">    dict:</span>
+<span class="sd">        [&quot;cuts_step_1&quot;, &quot;cuts_step_2&quot;]</span>
+<span class="sd">    then the following is a valid &quot;pass_if&quot; expression:</span>
+<span class="sd">        &quot;(reco_zenith &gt; pi/2) &amp; (cuts_step_1 == 1) &amp; (cuts_step_2 == 1)&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">proc_ver</span><span class="p">,</span> <span class="n">data_proc_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">data_proc_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data_proc_params</span> <span class="o">=</span> <span class="s1">&#39;events/data_proc_params.json&#39;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_proc_params</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">ps</span> <span class="o">=</span> <span class="n">jsons</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">resources</span><span class="o">.</span><span class="n">find_resource</span><span class="p">(</span><span class="n">data_proc_params</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_proc_params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">ps</span> <span class="o">=</span> <span class="n">data_proc_params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unhandled data_proc_params type passed in arg: &#39;</span> <span class="o">+</span>
+                            <span class="nb">type</span><span class="p">(</span><span class="n">data_proc_params</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span> <span class="o">=</span> <span class="n">detector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_ver</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">proc_ver</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">det_key</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ps</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">lower</span><span class="p">()][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ps</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">det_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">lk</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">lpv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_ver</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">lk</span> <span class="o">==</span> <span class="n">lpv</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="o">+</span><span class="n">lk</span> <span class="o">==</span> <span class="n">lpv</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">lk</span> <span class="o">==</span> <span class="s1">&#39;v&#39;</span><span class="o">+</span><span class="n">lpv</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">procver_key</span> <span class="o">=</span> <span class="n">key</span>
+                <span class="c1"># This works for PINGU</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="s1">&#39;msu_&#39;</span><span class="o">+</span><span class="n">lk</span> <span class="o">==</span> <span class="n">lpv</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">lk</span> <span class="o">==</span> <span class="s1">&#39;msu_&#39;</span><span class="o">+</span><span class="n">lpv</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">procver_key</span> <span class="o">=</span> <span class="n">key</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="s1">&#39;nbi_&#39;</span><span class="o">+</span><span class="n">lk</span> <span class="o">==</span> <span class="n">lpv</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">lk</span> <span class="o">==</span> <span class="s1">&#39;nbi_&#39;</span><span class="o">+</span><span class="n">lpv</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">procver_key</span> <span class="o">=</span> <span class="n">key</span>
+                <span class="c1"># Generalising for DeepCore and different selections</span>
+        <span class="n">ps</span> <span class="o">=</span> <span class="n">ps</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">det_key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">procver_key</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">trans_nu_code</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s1">&#39;nu_code_to_pdg_map&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trans_nu_code</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nu_code_to_pdg_map</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">code</span><span class="p">):</span> <span class="n">pdg</span>
+                    <span class="k">for</span> <span class="n">code</span><span class="p">,</span> <span class="n">pdg</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;nu_code_to_pdg_map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="p">}</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nu_code_to_pdg_map</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;nu_code_to_pdg_map&#39;</span><span class="p">]</span>
+
+        <span class="c1"># NOTE: the keys are strings so the particular string formatting is</span>
+        <span class="c1"># important for indexing into the dict!</span>
+
+        <span class="c1"># Add generic cuts</span>
+        <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+            <span class="c1"># Cut for particles only (no anti-particles)</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">NuFlav</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span><span class="o">.</span><span class="n">bar_code</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="p">{</span><span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;nu_code&#39;</span><span class="p">],</span> <span class="s1">&#39;pass_if&#39;</span><span class="p">:</span> <span class="s1">&#39;nu_code &gt; 0&#39;</span><span class="p">},</span>
+            <span class="c1"># Cut for anti-particles only (no particles)</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">NuFlav</span><span class="p">(</span><span class="o">-</span><span class="mi">12</span><span class="p">)</span><span class="o">.</span><span class="n">bar_code</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="p">{</span><span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;nu_code&#39;</span><span class="p">],</span> <span class="s1">&#39;pass_if&#39;</span><span class="p">:</span> <span class="s1">&#39;nu_code &lt; 0&#39;</span><span class="p">},</span>
+            <span class="c1"># Cut for charged-current interactions only</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">IntType</span><span class="p">(</span><span class="s1">&#39;cc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="p">{</span><span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;interaction_type&#39;</span><span class="p">],</span>
+                 <span class="s1">&#39;pass_if&#39;</span><span class="p">:</span> <span class="s1">&#39;interaction_type == 1&#39;</span><span class="p">},</span>
+            <span class="c1"># Cut for neutral-current interactions only</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">IntType</span><span class="p">(</span><span class="s1">&#39;nc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="p">{</span><span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;interaction_type&#39;</span><span class="p">],</span>
+                 <span class="s1">&#39;pass_if&#39;</span><span class="p">:</span> <span class="s1">&#39;interaction_type == 2&#39;</span><span class="p">},</span>
+            <span class="c1"># True-upgoing cut usinng the zenith field</span>
+            <span class="s1">&#39;true_upgoing_zen&#39;</span><span class="p">:</span>
+                <span class="p">{</span><span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;true_zenith&#39;</span><span class="p">],</span> <span class="s1">&#39;pass_if&#39;</span><span class="p">:</span> <span class="s1">&#39;true_zenith &gt; pi/2&#39;</span><span class="p">},</span>
+            <span class="c1"># True-upgoing cut usinng the cosine-zenith field</span>
+            <span class="s1">&#39;true_upgoing_coszen&#39;</span><span class="p">:</span>
+                <span class="p">{</span><span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">],</span> <span class="s1">&#39;pass_if&#39;</span><span class="p">:</span> <span class="s1">&#39;true_coszen &lt; 0&#39;</span><span class="p">},</span>
+        <span class="p">})</span>
+
+        <span class="c1"># Enforce rules on cuts:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_cut_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">])</span>
+
+<div class="viewcode-block" id="DataProcParams.validate_cut_spec">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.validate_cut_spec">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">validate_cut_spec</span><span class="p">(</span><span class="n">cuts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate a cut specification dictionary&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">cutname</span><span class="p">,</span> <span class="n">cutspec</span> <span class="ow">in</span> <span class="n">cuts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Cut names are lower-case strings with no surrounding whitespace</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cutname</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">cutname</span> <span class="o">==</span> <span class="n">cutname</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">cutname</span> <span class="o">==</span> <span class="n">cutname</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="c1"># Has appropriate keys (and no extra)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">cutspec</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="k">assert</span> <span class="s1">&#39;fields&#39;</span> <span class="ow">in</span> <span class="n">cutspec</span>
+            <span class="k">assert</span> <span class="s1">&#39;pass_if&#39;</span> <span class="ow">in</span> <span class="n">cutspec</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cutspec</span><span class="p">[</span><span class="s1">&#39;fields&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="c1"># &#39;fields&#39; contains a sequence</span>
+            <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cutspec</span><span class="p">[</span><span class="s1">&#39;fields&#39;</span><span class="p">],</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">)</span> <span class="ow">and</span> \
+                    <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cutspec</span><span class="p">[</span><span class="s1">&#39;fields&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="c1"># &#39;pass_if&#39; contains a string</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cutspec</span><span class="p">[</span><span class="s1">&#39;pass_if&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataProcParams.validate_pid_spec">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.validate_pid_spec">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">validate_pid_spec</span><span class="p">(</span><span class="n">pids</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate a PID specification dictionary&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">particle_name</span><span class="p">,</span> <span class="n">pidspec</span> <span class="ow">in</span> <span class="n">pids</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Particle names are lower-case strings with no surrounding</span>
+            <span class="c1"># whitespace</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">particle_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">particle_name</span> <span class="o">==</span> <span class="n">particle_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">particle_name</span> <span class="o">==</span> <span class="n">particle_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="c1"># Has appropriate keys (and no extra)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">pidspec</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="k">assert</span> <span class="s1">&#39;fields&#39;</span> <span class="ow">in</span> <span class="n">pidspec</span>
+            <span class="k">assert</span> <span class="s1">&#39;criteria&#39;</span> <span class="ow">in</span> <span class="n">pidspec</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pidspec</span><span class="p">[</span><span class="s1">&#39;fields&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="c1"># &#39;fields&#39; contains a sequence</span>
+            <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pidspec</span><span class="p">[</span><span class="s1">&#39;fields&#39;</span><span class="p">],</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">)</span> <span class="ow">and</span> \
+                    <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pidspec</span><span class="p">[</span><span class="s1">&#39;fields&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="c1"># &#39;criteria&#39; contains a string</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pidspec</span><span class="p">[</span><span class="s1">&#39;criteria&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span></div>
+
+
+    <span class="c1"># TODO: prefix the field names with e.g. &quot;$&quot; such that anything that is</span>
+    <span class="c1"># _not_ prefixed by this is not replaced. This allows for righer</span>
+    <span class="c1"># expresssions (but also dangerous things...).</span>
+<div class="viewcode-block" id="DataProcParams.retrieve_expression">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.retrieve_expression">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">retrieve_expression</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">expression</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve data from an HDF5 group `h5group` according to</span>
+<span class="sd">        `expresssion`. This can apply expressions with simple mathematical</span>
+<span class="sd">        operators and numpy functions to multiple fields within the HDF5 file</span>
+<span class="sd">        to derive the output. Python keywords are _not_ allowed, since they</span>
+<span class="sd">        may alias with a name.</span>
+
+<span class="sd">        Refer to any numpy functions by prefixing with either &quot;np.&lt;func&gt;&quot; or</span>
+<span class="sd">        &quot;numpy.&lt;func&gt;&quot;. In order to specify division, spaces must surround the</span>
+<span class="sd">        forward slash, such that it isn&#39;t interpreted as a path.</span>
+
+<span class="sd">        Nodes in the HDF5 hierarchy are separated by forward slashes (&quot;/&quot;) in a</span>
+<span class="sd">        path spec. We restrict valid HDF5 node names to contain the characters</span>
+<span class="sd">        a-z, A-Z, 0-9, peroids (&quot;.&quot;), and underscores (&quot;_&quot;). with the</span>
+<span class="sd">        additional restriction that the node name must not start with a period</span>
+<span class="sd">        or a number, and a path cannot start with a slash.</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        h5group : h5py Group</span>
+<span class="sd">        expression : string</span>
+<span class="sd">            Expression to evaluate.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        result : result of evaluating `expression`</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; retrieve_expression(&#39;np.sqrt(MCneutrino/x**2 + MCneutrino/y**2)&#39;)</span>
+
+<span class="sd">        Indexing into the data arrays can also be performed, and numpy masks</span>
+<span class="sd">        used as usual:</span>
+
+<span class="sd">        &gt;&gt;&gt; expr = &#39;I3MCTree/energy[I3MCTree/event == I3EventHeader[0]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">h5path_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">            ([a-z_]          # First character must be letter or underscore</span>
+<span class="sd">             [a-z0-9_.]*     # 0 or more legal chars: letters, numbers, _, .</span>
+<span class="sd">             (?:             # (Do not return the following group separately)</span>
+<span class="sd">                [/]{0,1}     # Next character CAN be no or 1 front-slash</span>
+<span class="sd">                [a-z0-9_.]+  # But a slash *must* be followed by legal chars</span>
+<span class="sd">             )*              # Slash+chars pattern might not occur, or repeat</span>
+<span class="sd">            )&#39;&#39;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span>
+        <span class="p">)</span>
+        <span class="n">numpy_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^(np|numpy)\.[a-z_.]+&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+
+        <span class="n">eval_str</span> <span class="o">=</span> <span class="n">expression</span>
+        <span class="n">intermediate_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">h5path</span> <span class="ow">in</span> <span class="n">h5path_re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">numpy_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">h5path</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">intermediate_data</span><span class="p">[</span><span class="n">h5path</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataProcParams</span><span class="o">.</span><span class="n">retrieve_node_data</span><span class="p">(</span>
+                <span class="n">h5group</span><span class="p">,</span> <span class="n">h5path</span>
+            <span class="p">)</span>
+            <span class="n">eval_str</span> <span class="o">=</span> <span class="n">eval_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">h5path</span><span class="p">,</span>
+                                        <span class="s2">&quot;intermediate_data[&#39;</span><span class="si">%s</span><span class="s2">&#39;]&quot;</span><span class="o">%</span><span class="n">h5path</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">eval_str</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;`expression` &quot;</span><span class="si">%s</span><span class="s1">&quot; was translated into `eval_str`&#39;</span>
+                          <span class="s1">&#39; &quot;</span><span class="si">%s</span><span class="s1">&quot; and failed to evaluate.&#39;</span><span class="p">,</span>
+                          <span class="n">expression</span><span class="p">,</span> <span class="n">eval_str</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="DataProcParams.retrieve_node_data">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.retrieve_node_data">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">retrieve_node_data</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">allow_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve data from an HDF5 group `group` at address `address`.</span>
+<span class="sd">        Levels of hierarchy are separated by forward-slashes (&#39;/&#39;).</span>
+
+<span class="sd">        See h5py for further details on specifying a valid `address`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subgroup</span> <span class="o">=</span> <span class="n">h5group</span>
+        <span class="k">for</span> <span class="n">sub_addy</span> <span class="ow">in</span> <span class="n">address</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">subgroup</span> <span class="o">=</span> <span class="n">subgroup</span><span class="p">[</span><span class="n">sub_addy</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">allow_missing</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">None</span>
+                <span class="k">raise</span>
+        <span class="k">return</span> <span class="n">subgroup</span></div>
+
+
+<div class="viewcode-block" id="DataProcParams.populate_global_namespace">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.populate_global_namespace">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">populate_global_namespace</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">field_map</span><span class="p">,</span> <span class="n">allow_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Populate the Python global namespace with variables named as the</span>
+<span class="sd">        keys in `field_map` and values loaded from the `h5group` at addresses</span>
+<span class="sd">        specified by the corresponding values in `field_map`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">h5path</span> <span class="ow">in</span> <span class="n">field_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">DataProcParams</span><span class="o">.</span><span class="n">retrieve_node_data</span><span class="p">(</span>
+                    <span class="n">h5group</span><span class="p">,</span> <span class="n">h5path</span><span class="p">,</span> <span class="n">allow_missing</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">allow_missing</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">None</span>
+                <span class="k">raise</span>
+            <span class="nb">globals</span><span class="p">()[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
+
+
+    <span class="c1"># TODO: make the following behave like `retrieve_expression` method which</span>
+    <span class="c1"># does not rely on populating globals (just a dict, the name of which gets</span>
+    <span class="c1"># substituted in where approprite to the expression) to work.</span>
+<div class="viewcode-block" id="DataProcParams.cut_bool_idx">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.cut_bool_idx">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">cut_bool_idx</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">cut_fields</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return numpy boolean indexing for data in `h5group` given a cut</span>
+<span class="sd">        specified using `cut_fields` in the `h5group` and evaluation criteria</span>
+<span class="sd">        `keep_criteria`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        h5group : h5py node/entity</span>
+<span class="sd">        cut_fields : field_map dict</span>
+<span class="sd">        keep_criteria : string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool_idx : numpy array (1=keep, 0=reject)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">DataProcParams</span><span class="o">.</span><span class="n">populate_global_namespace</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">cut_fields</span><span class="p">)</span>
+        <span class="n">bool_idx</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">keep_criteria</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+        <span class="k">return</span> <span class="n">bool_idx</span></div>
+
+
+<div class="viewcode-block" id="DataProcParams.get_data">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.get_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h5</span><span class="p">,</span> <span class="n">run_settings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get data attached to an HDF5 node, returned as a dictionary.</span>
+
+<span class="sd">        The returned dictionary&#39;s keys match those in the field_map and the</span>
+<span class="sd">        dict&#39;s values are the data from the HDF5&#39;s nodes found at the addresses</span>
+<span class="sd">        specified as values in the field_map</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_type : string, one of {&#39;mc&#39;, &#39;data&#39;}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">not_fields_in_data</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;I3MCWeightDict&#39;</span><span class="p">,</span> <span class="s1">&#39;PrimaryNu&#39;</span><span class="p">,</span> <span class="s1">&#39;trueNeutrino&#39;</span><span class="p">]</span>
+        <span class="n">myfile</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h5</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">myfile</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">h5</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">h5</span><span class="p">)),</span>
+                               <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;field_map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">datum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_expression</span><span class="p">(</span><span class="n">h5</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+                <span class="n">path_parts</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;data&#39;</span> <span class="ow">and</span> <span class="s1">&#39;I3MCWeightDict&#39;</span> <span class="ow">in</span> <span class="n">path_parts</span>
+                        <span class="ow">or</span> <span class="s1">&#39;PrimaryNu&#39;</span> <span class="ow">in</span> <span class="n">path_parts</span> <span class="ow">or</span> <span class="s1">&#39;trueNeutrino&#39;</span> <span class="ow">in</span> <span class="n">path_parts</span><span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="n">path_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;I3MCTree&#39;</span> <span class="ow">and</span> <span class="n">path_parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;Event&#39;</span><span class="p">:</span>
+                    <span class="n">evts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_node_data</span><span class="p">(</span>
+                        <span class="n">h5</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_parts</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;Event&#39;</span><span class="p">])</span>
+                    <span class="p">)</span>
+                    <span class="n">pdgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_node_data</span><span class="p">(</span>
+                        <span class="n">h5</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_parts</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;pdg_encoding&#39;</span><span class="p">])</span>
+                    <span class="p">)</span>
+                    <span class="n">energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_node_data</span><span class="p">(</span>
+                        <span class="n">h5</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_parts</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">])</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># Looping here is ugly and slow, but people don&#39;t make the</span>
+                    <span class="c1"># Event field unique, so the only thing you can count on is</span>
+                    <span class="c1"># that if the event number changes in sequence, you&#39;re in a</span>
+                    <span class="c1"># different Event (for now, I think). The actual Event</span>
+                    <span class="c1"># number can be repeated elsewhere, though.</span>
+                    <span class="c1">#</span>
+                    <span class="c1"># This makes for wonderfully reproducible results.</span>
+                    <span class="c1"># &lt;/sardonic laughter&gt;</span>
+                    <span class="n">new_datum</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">this_evt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                    <span class="n">this_d</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">for</span> <span class="n">d</span><span class="p">,</span> <span class="n">evt</span><span class="p">,</span> <span class="n">pdg</span><span class="p">,</span> <span class="n">egy</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">datum</span><span class="p">,</span> <span class="n">evts</span><span class="p">,</span> <span class="n">pdgs</span><span class="p">,</span> <span class="n">energies</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">evt</span> <span class="o">!=</span> <span class="n">this_evt</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">this_d</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">new_datum</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this_d</span><span class="p">)</span>
+                            <span class="n">this_egy</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+                            <span class="n">this_d</span> <span class="o">=</span> <span class="kc">None</span>
+                            <span class="n">this_evt</span> <span class="o">=</span> <span class="n">evt</span>
+                        <span class="k">if</span> <span class="n">egy</span> <span class="o">&gt;</span> <span class="n">this_egy</span> <span class="ow">and</span> <span class="n">pdg</span> <span class="ow">in</span> <span class="n">NU_PDG_CODES</span><span class="p">:</span>
+                            <span class="n">this_egy</span> <span class="o">=</span> <span class="n">egy</span>
+                            <span class="n">this_d</span> <span class="o">=</span> <span class="n">d</span>
+                    <span class="k">if</span> <span class="n">this_d</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">new_datum</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this_d</span><span class="p">)</span>
+                    <span class="n">datum</span> <span class="o">=</span> <span class="n">new_datum</span>
+
+                <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">datum</span><span class="p">)</span>
+
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">myfile</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h5</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">h5</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">except</span><span class="p">:</span> <span class="c1"># TODO: specify exception type(s)!</span>
+                    <span class="k">pass</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpret_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="c1"># TODO: enable consistency checks here &amp; implement in run_settings</span>
+        <span class="c1">#if run_settings is not None:</span>
+        <span class="c1">#    run_settings.consistency_checks(data, flav=flav)</span>
+
+        <span class="c1"># TODO: implement flav filtering (or not? or more advanced filtering?)</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="DataProcParams.interpret_data">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.interpret_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">interpret_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform mappings from non-standard to standard values (such as</span>
+<span class="sd">        translating non-PDG neutrino flavor codes to PDG codes) and add</span>
+<span class="sd">        fields expected to be useful (such as coszen, derived from zen fields).</span>
+
+<span class="sd">        Attach / reattach the translated/new fields to the `data` object passed</span>
+<span class="sd">        into this methd.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trans_nu_code</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s1">&#39;nu_code&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nu_code_to_pdg_map</span><span class="p">[</span><span class="n">code</span><span class="p">]</span> <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;nu_code&#39;</span><span class="p">]</span>
+            <span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;true_zenith&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;true_zenith&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s1">&#39;reco_zenith&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;reco_zenith&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="DataProcParams.subselect">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.subselect">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">subselect</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">FlavIntData</span><span class="p">):</span>
+            <span class="n">outdata</span> <span class="o">=</span> <span class="n">FlavIntData</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">flavints</span><span class="p">:</span>
+                <span class="n">outdata</span><span class="p">[</span><span class="n">flavint</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataProcParams</span><span class="o">.</span><span class="n">subselect</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">flavint</span><span class="p">],</span>
+                                                            <span class="n">fields</span><span class="o">=</span><span class="n">fields</span><span class="p">,</span>
+                                                            <span class="n">indices</span><span class="o">=</span><span class="n">indices</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="DataProcParams.apply_cuts">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.apply_cuts">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_cuts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">cuts</span><span class="p">,</span> <span class="n">boolean_op</span><span class="o">=</span><span class="s1">&#39;&amp;&#39;</span><span class="p">,</span> <span class="n">return_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform `cuts` on `data` and return a dict containing</span>
+<span class="sd">        `return_fields` from events that pass the cuts.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : single-level dict or FlavIntData object</span>
+<span class="sd">        cuts : string or dict, or sequence thereof</span>
+<span class="sd">        boolean_op : string</span>
+<span class="sd">        return_fields : string or sequence thereof</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">FlavIntData</span><span class="p">):</span>
+            <span class="n">outdata</span> <span class="o">=</span> <span class="n">FlavIntData</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">flavints</span><span class="p">:</span>
+                <span class="n">outdata</span><span class="p">[</span><span class="n">flavint</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_cuts</span><span class="p">(</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">flavint</span><span class="p">],</span> <span class="n">cuts</span><span class="o">=</span><span class="n">cuts</span><span class="p">,</span> <span class="n">boolean_op</span><span class="o">=</span><span class="n">boolean_op</span><span class="p">,</span>
+                    <span class="n">return_fields</span><span class="o">=</span><span class="n">return_fields</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">outdata</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cuts</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
+            <span class="n">cuts</span> <span class="o">=</span> <span class="p">[</span><span class="n">cuts</span><span class="p">]</span>
+
+        <span class="c1"># Default is to return all fields</span>
+        <span class="k">if</span> <span class="n">return_fields</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">return_fields</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="c1"># If no cuts specified, return all data from specified fields</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cuts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">subselect</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">return_fields</span><span class="p">)</span>
+
+        <span class="n">cut_strings</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">cut_fields</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">cut</span> <span class="ow">in</span> <span class="n">cuts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cut</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">validate_cut_spec</span><span class="p">(</span><span class="n">cut</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">cut</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]:</span>
+                <span class="n">cut</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">][</span><span class="n">cut</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Unrecognized or invalid cut: &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">cut</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
+            <span class="n">cut_strings</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cut</span><span class="p">[</span><span class="s1">&#39;pass_if&#39;</span><span class="p">])</span>
+            <span class="n">cut_fields</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cut</span><span class="p">[</span><span class="s1">&#39;fields&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Combine cut criteria strings together with boolean operation</span>
+        <span class="n">cut_string</span> <span class="o">=</span> <span class="n">boolean_op</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;(&#39;</span><span class="o">+</span><span class="n">cs</span><span class="o">+</span><span class="s1">&#39;)&#39;</span> <span class="k">for</span> <span class="n">cs</span> <span class="ow">in</span> <span class="n">cut_strings</span><span class="p">])</span>
+
+        <span class="c1"># Load the fields necessary for the cut into the global namespace</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">cut_fields</span><span class="p">):</span>
+            <span class="nb">globals</span><span class="p">()[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+
+        <span class="c1"># Evaluate cuts, returning a boolean array</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bool_idx</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">cut_string</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Failed to evaluate `cut_string` &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">cut_string</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+        <span class="c1"># Return specified (or all) fields, indexed by boolean array</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">f</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">f</span><span class="p">])[</span><span class="n">bool_idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">return_fields</span><span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

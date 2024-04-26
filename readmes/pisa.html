@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/readmes/pisa.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p>## About PISA</p>
+<p>PISA implements a modular architecture wherein users can combine one or more analysis pipelines into distribution makers to make “data” and—separately—template distributions.
+Within each pipeline, users can choose among several implementations for each of the stages they choose to include.</p>
+<p>Finally, multiple types of analysis can be performed using the generated distributions to ultimately characterize the ability of the detector to make a measurement.</p>
+<p>### Analysis types</p>
+<p>PISA implements both what we call <strong>*parameterized-Monte Carlo (MC) stages*</strong> and <strong>*reweighted-MC stages*</strong>.
+In the former, distributions (and not individual event weights) are modified to reflect the effects of each analysis stage.
+In the latter, the individual events’ weights and properties (such as reconstructed energy) are modified directly to reflect the effects of the detector, and only in the end are the events histogrammed to characterize their distribution.</p>
+<p>See the analysis guide for more explanaton of the difference between the two.</p>
+<p>### How an analysis is structured</p>
+<p>All of the analyses possible utilize a “data” distribution.
+This can come from an actual measurement or by <em>injecting</em> a set of assumed-true values for the various parameters into the analysis pipeline(s) and producing what is called <strong>*Asimov data*</strong>—the expected distribution given those parameter values—or <strong>*pseudo data*</strong>, which is Asimov data but with random (Poisson) fluctuations applied.
+A minimizer attempts to match the “data” distribution with a template by varying the parameters used to generate the template.
+The “closeness” of match between the generated template and the “data” distribution is measured by a criterion such as chi-squared or log likelihood.</p>
+<p>An important question is the significance of the experiment to measure one or more of the above parameters (the <em>measured parameters</em>).
+To do this, the measured parameters are fixed successively to a range of values and, at each value, the matching process above is repeated with all other parameters—the <em>nuissance parameters</em>—allowed to vary.
+This shows sensitivity of the criterion to the measured parameters, and hence the ability for the experiment to measure those parameters.
+Put another way: The more the closeness creiterion varies with a change in the measurement parameters (after the nuissance parameters have done their best to try to make the templates all look like the data), the better able the experiment is to distinguish between values of the measured parameters.</p>
+<p>### An example parameterized-MC analysis pipeline</p>
+<p>![Parameterized-MC analysis pipeline](images/PINGUSimulationChain.png)</p>
+<p>The original drawing is [here](<a class="reference external" href="https://docs.google.com/drawings/edit?id=1RxQj8rPndwFygxw3BUf4bx5B35GAMk0Gsos_BiJIN34">https://docs.google.com/drawings/edit?id=1RxQj8rPndwFygxw3BUf4bx5B35GAMk0Gsos_BiJIN34</a>).</p>
+<p>### More information about analysis</p>
+<p>An excellent (and far more detailed) description of the analysis process is maintained by Elim Cheung with particular application to IceCube/DeepCore atmospheric neutrino measurements [here](<a class="reference external" href="http://umdgrb.umd.edu/~elims/Fitter/Basics">http://umdgrb.umd.edu/~elims/Fitter/Basics</a>).
+She wrote her own fitter to perform these tasks. You can evaluate her ezFit analysis software as an alternative to (or as a complementary tool for comparing results with) PISA [here](<a class="reference external" href="http://code.icecube.wisc.edu/projects/icecube/browser/IceCube/sandbox/elims/ezfit">http://code.icecube.wisc.edu/projects/icecube/browser/IceCube/sandbox/elims/ezfit</a>).</p>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

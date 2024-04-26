@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.jsons &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.jsons</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.jsons</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A set of utilities for reading (and instantiating) objects from and writing</span>
+<span class="sd">objects to JSON files.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">bz2</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="kn">import</span> <span class="n">Integral</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="n">Real</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">simplejson</span> <span class="k">as</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;JSON_EXTS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ZIP_EXTS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;XOR_EXTS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;json_string&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;dumps&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;loads&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;from_json&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;to_json&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;NumpyEncoder&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;NumpyDecoder&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_to_json_from_json&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Boeser, J.L. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2019, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="n">JSON_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">]</span>
+<span class="n">ZIP_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bz2&#39;</span><span class="p">]</span>
+<span class="n">XOR_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;xor&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="json_string">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.json_string">[docs]</a>
+<span class="k">def</span> <span class="nf">json_string</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode a json string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">string</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="dumps">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.dumps">[docs]</a>
+<span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dump object to JSON-encoded string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span>
+                      <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="loads">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.loads">[docs]</a>
+<span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load (create) object from JSON-encoded string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyDecoder</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="from_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.from_json">[docs]</a>
+<span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Open a file in JSON format (optionally compressed with bz2 or</span>
+<span class="sd">    xor-scrambled) and parse the content into Python objects.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">    cls : class (type) object, optional</span>
+<span class="sd">        If provided, the class is attempted to be instantiated as described in</span>
+<span class="sd">        Notes section.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    contents_or_obj : simple Python objects or `cls` instantiated therewith</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    If `cls` is provided as a class (type) object, this function attempts to</span>
+<span class="sd">    instantiate the class with the data loaded from the JSON file, as follows:</span>
+
+<span class="sd">        * if `cls` has a `from_json` method, that is called directly: .. ::</span>
+
+<span class="sd">                cls.from_json(filename)</span>
+
+<span class="sd">        * if the data loaded from the JSON file is a non-string sequence: .. ::</span>
+
+<span class="sd">                cls(*data)</span>
+
+<span class="sd">        * if the data loaded is a Mapping (dict, OrderedDict, etc.): .. ::</span>
+
+<span class="sd">                cls(**data)</span>
+
+<span class="sd">        * for all other types loaded from the JSON: .. ::</span>
+
+<span class="sd">                cls(data)</span>
+
+<span class="sd">    Note that this currently only recognizes files by their extensions. I.e.,</span>
+<span class="sd">    the file must be named .. ::</span>
+
+<span class="sd">        myfile.json</span>
+<span class="sd">        myfile.json.bz2</span>
+<span class="sd">        myfile.json.xor</span>
+
+<span class="sd">    represent a bsic JSON file, a bzip-compressed JSON, and an xor-scrambled</span>
+<span class="sd">    JSON, respectively.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Import here to avoid circular imports</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">open_resource</span>
+
+    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;`cls` should be a class object (type); got </span><span class="si">{}</span><span class="s2"> instead&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">type</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;from_json&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+        <span class="c1"># Otherwise, handle instantiating the class generically (which WILL</span>
+        <span class="c1"># surely fail for many types) based on the type of the object loaded</span>
+        <span class="c1"># from JSON file: Mapping is passed via cls(**data), non-string</span>
+        <span class="c1"># Sequence is passed via cls(*data), and anything else is passed via</span>
+        <span class="c1"># cls(data)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">JSON_EXTS</span> <span class="ow">or</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">ZIP_EXTS</span> <span class="o">+</span> <span class="n">XOR_EXTS</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;bz2&#39;</span><span class="p">:</span>
+            <span class="n">fobj</span> <span class="o">=</span> <span class="n">open_resource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">bz2_content</span> <span class="o">=</span> <span class="n">fobj</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">fobj</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">decompressed</span> <span class="o">=</span> <span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">bz2_content</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+            <span class="k">del</span> <span class="n">bz2_content</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+                <span class="n">decompressed</span><span class="p">,</span>
+                <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyDecoder</span><span class="p">,</span>
+                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">OrderedDict</span>
+            <span class="p">)</span>
+            <span class="k">del</span> <span class="n">decompressed</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;xor&#39;</span><span class="p">:</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
+                <span class="n">encrypted_bytes</span> <span class="o">=</span> <span class="n">infile</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+            <span class="c1"># decrypt with key 42</span>
+            <span class="n">decypted_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">byte</span> <span class="ow">in</span> <span class="n">encrypted_bytes</span><span class="p">:</span>
+                <span class="n">decypted_bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">byte</span> <span class="o">^</span> <span class="mi">42</span><span class="p">)</span>
+
+            <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">decypted_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+                                <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyDecoder</span><span class="p">,</span>
+                                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">OrderedDict</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fobj</span> <span class="o">=</span> <span class="n">open_resource</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+                    <span class="n">fobj</span><span class="p">,</span>
+                    <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyDecoder</span><span class="p">,</span>
+                    <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">OrderedDict</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">fobj</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Failed to load JSON, `filename`=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="k">raise</span>
+
+    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">content</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">content</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string_types</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">content</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">content</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="to_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.to_json">[docs]</a>
+<span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write `content` to a JSON file at `filename`.</span>
+
+<span class="sd">    Uses a custom parser that automatically converts numpy arrays to lists.</span>
+
+<span class="sd">    If `filename` has a &quot;.bz2&quot; extension, the contents will be compressed</span>
+<span class="sd">    (using bz2 and highest-level of compression, i.e., -9).</span>
+
+<span class="sd">    If `filename` has a &quot;.xor&quot; extension, the contents will be xor-scrambled to</span>
+<span class="sd">    make them human-unreadable (this is useful for, e.g., blind fits).</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    content : obj</span>
+<span class="sd">        Object to be written to file. Tries making use of the object&#39;s own</span>
+<span class="sd">        `to_json` method if it exists.</span>
+
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of the file to be written to. Extension has to be &#39;json&#39; or &#39;bz2&#39;.</span>
+
+<span class="sd">    indent : int</span>
+<span class="sd">        Pretty-printing. Cf. documentation of json.dump() or json.dumps()</span>
+
+<span class="sd">    overwrite : bool</span>
+<span class="sd">        Set to `True` (default) to allow overwriting existing file. Raise</span>
+<span class="sd">        exception and quit otherwise.</span>
+
+<span class="sd">    warn : bool</span>
+<span class="sd">        Issue a warning message if a file is being overwritten (`True`,</span>
+<span class="sd">        default). Suppress warning by setting to `False` (e.g. when overwriting</span>
+<span class="sd">        is the desired behaviour).</span>
+
+<span class="sd">    sort_keys : bool</span>
+<span class="sd">        Output of dictionaries will be sorted by key if set to `True`.</span>
+<span class="sd">        Default is `False`. Cf. json.dump() or json.dumps().</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Import here to avoid circular imports</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">check_file_exists</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s1">&#39;to_json&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">content</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+                               <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">)</span>
+
+    <span class="n">check_file_exists</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span> <span class="ow">or</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">ZIP_EXTS</span> <span class="o">+</span> <span class="n">XOR_EXTS</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;bz2&#39;</span><span class="p">:</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="n">bz2</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                        <span class="n">content</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span>
+                        <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">False</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;xor&#39;</span><span class="p">:</span>
+            <span class="n">json_bytes</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                <span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span>
+                <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+
+            <span class="c1"># encrypt with key 42</span>
+            <span class="n">encrypted_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">byte</span> <span class="ow">in</span> <span class="n">json_bytes</span><span class="p">:</span>
+                <span class="n">encrypted_bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">byte</span> <span class="o">^</span> <span class="mi">42</span><span class="p">)</span>
+
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">encrypted_bytes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                    <span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span>
+                    <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Wrote </span><span class="si">%.2f</span><span class="s1"> kiB to </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">outfile</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span><span class="o">/</span><span class="mf">1024.</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># TODO: figure out how to serialize / deserialize scalars and arrays with</span>
+<span class="c1"># uncertainties</span>
+
+<div class="viewcode-block" id="NumpyEncoder">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyEncoder">[docs]</a>
+<span class="k">class</span> <span class="nc">NumpyEncoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Subclass of ::class::`json.JSONEncoder` that overrides `default` method to</span>
+<span class="sd">    allow writing numpy arrays and other special objects PISA uses to JSON</span>
+<span class="sd">    files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="NumpyEncoder.default">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyEncoder.default">[docs]</a>
+    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>  <span class="c1"># pylint: disable=method-hidden</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Encode special objects to be representable as JSON.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;serializable_state&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">serializable_state</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+            <span class="n">converted</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">to_tuple</span><span class="p">()]</span>
+            <span class="k">return</span> <span class="n">converted</span>
+
+        <span class="c1"># must have checked for &amp; handled strings prior to this or infinite</span>
+        <span class="c1"># recursion will result</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="c1"># NOTE: np.bool_ is *Numpy* scalar bool type</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="c1"># NOTE: we check for these more generic types _after_ checking for</span>
+        <span class="c1"># np.bool_ since np.bool_ is considered to be both Integral and Real,</span>
+        <span class="c1"># but we want a boolean values (True or False) written out as such</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Integral</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Real</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span>
+
+        <span class="c1"># If we get here, we have a type that cannot be serialized. This call</span>
+        <span class="c1"># should simply raise an exception.</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="NumpyDecoder">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyDecoder">[docs]</a>
+<span class="k">class</span> <span class="nc">NumpyDecoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode JSON array(s) as numpy.ndarray; also returns python strings</span>
+<span class="sd">    instead of unicode.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">object_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_float</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">object_pairs_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+            <span class="n">object_hook</span><span class="o">=</span><span class="n">object_hook</span><span class="p">,</span>
+            <span class="n">parse_float</span><span class="o">=</span><span class="n">parse_float</span><span class="p">,</span>
+            <span class="n">parse_int</span><span class="o">=</span><span class="n">parse_int</span><span class="p">,</span>
+            <span class="n">parse_constant</span><span class="o">=</span><span class="n">parse_constant</span><span class="p">,</span>
+            <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
+            <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">object_pairs_hook</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Only need to override the default array handler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_array_numpy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_once</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">py_make_scanner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NumpyDecoder.json_array_numpy">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyDecoder.json_array_numpy">[docs]</a>
+    <span class="k">def</span> <span class="nf">json_array_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpret arrays (lists by default) as numpy arrays where this does</span>
+<span class="sd">        not yield a string or object array; also handle conversion of</span>
+<span class="sd">        particularly-formatted input to pint Quantities.&quot;&quot;&quot;</span>
+        <span class="c1"># Use the default array parser to get list-ified version of the data</span>
+        <span class="n">values</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">JSONArray</span><span class="p">(</span><span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Assumption for all below logic is the result is a Sequence (i.e., has</span>
+        <span class="c1"># attribute `__len__`)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># -- Check for pint quantity -- #</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Quantity tuple (`quantity.to_tuple()`) with a scalar produces from</span>
+            <span class="c1"># the raw JSON, e.g.,</span>
+            <span class="c1">#</span>
+            <span class="c1">#       [9.8, [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
+            <span class="c1">#</span>
+            <span class="c1"># or an ndarray (here of shape (2, 3)) produces from the raw JSON,</span>
+            <span class="c1"># e.g.,</span>
+            <span class="c1">#</span>
+            <span class="c1">#       [[[0, 1, 2], [2, 3, 4]], [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
+            <span class="c1">#</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Units part of quantity tuple (`quantity.to_tuple()[1]`)</span>
+            <span class="c1"># e.g. m / s**2 is represented as .. ::</span>
+            <span class="c1">#</span>
+            <span class="c1">#       [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]</span>
+            <span class="c1">#</span>
+            <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span>
+                <span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Individual unit (`quantity.to_tuple()[1][0]`)</span>
+            <span class="c1"># e.g. s^-2 is represented as .. ::</span>
+            <span class="c1">#</span>
+            <span class="c1">#     [&#39;second&#39;, -2.0]</span>
+            <span class="c1">#</span>
+            <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ndarray_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Things like lists of dicts, or mixed types, will result in an</span>
+            <span class="c1"># object array; these are handled in PISA as lists, not numpy</span>
+            <span class="c1"># arrays, so return the pre-converted (list) version of `values`.</span>
+            <span class="c1">#</span>
+            <span class="c1"># Similarly, sequences of strings should stay lists of strings, not</span>
+            <span class="c1"># become numpy arrays.</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">ndarray_values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">object0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str0</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="k">return</span> <span class="n">ndarray_values</span><span class="p">,</span> <span class="n">end</span>
+
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span></div>
+</div>
+
+
+<span class="c1"># TODO: include more basic types in testing (strings, etc.)</span>
+<div class="viewcode-block" id="test_to_json_from_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.test_to_json_from_json">[docs]</a>
+<span class="k">def</span> <span class="nf">test_to_json_from_json</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for writing various types of objects to and reading from JSON</span>
+<span class="sd">    files (including bz2-compressed and xor-scrambled files)&quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=unused-variable</span>
+    <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">rmtree</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">recursiveEquality</span>
+
+    <span class="n">proto_float_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+    <span class="p">)</span>
+    <span class="n">proto_int_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">proto_str_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;ab&#39;</span><span class="p">,</span> <span class="s1">&#39;abc&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+    <span class="n">floating_types</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="nb">set</span><span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">sctypeDict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">)),</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">integer_types</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="nb">set</span><span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">sctypeDict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)),</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">test_info</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">proto_array</span><span class="o">=</span><span class="n">proto_float_array</span><span class="p">,</span>
+            <span class="n">dtypes</span><span class="o">=</span><span class="n">floating_types</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">proto_array</span><span class="o">=</span><span class="n">proto_int_array</span><span class="p">,</span>
+            <span class="n">dtypes</span><span class="o">=</span><span class="n">integer_types</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="c1"># TODO: strings currently do not work</span>
+        <span class="c1">#dict(</span>
+        <span class="c1">#    proto_array=proto_str_array,</span>
+        <span class="c1">#    dtypes=[str, np.str0, np.str_, np.string_],</span>
+        <span class="c1">#),</span>
+    <span class="p">]</span>
+
+    <span class="n">test_data</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+        <span class="n">proto_array</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;proto_array&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;dtypes&#39;</span><span class="p">]:</span>
+            <span class="n">typed_array</span> <span class="o">=</span> <span class="n">proto_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">s_dtype</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">))</span>
+            <span class="n">test_data</span><span class="p">[</span><span class="s2">&quot;array_&quot;</span> <span class="o">+</span> <span class="n">s_dtype</span><span class="p">]</span> <span class="o">=</span> <span class="n">typed_array</span>
+            <span class="n">test_data</span><span class="p">[</span><span class="s2">&quot;scalar_&quot;</span> <span class="o">+</span> <span class="n">s_dtype</span><span class="p">]</span> <span class="o">=</span> <span class="n">dtype</span><span class="p">(</span><span class="n">typed_array</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">test_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Test that the object can be written / read directly</span>
+            <span class="n">base_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;.bz2&#39;</span><span class="p">,</span> <span class="s1">&#39;.xor&#39;</span><span class="p">]:</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="n">base_fname</span> <span class="o">+</span> <span class="n">ext</span>
+                <span class="n">to_json</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+                <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">floating_types</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+                        <span class="n">loaded_data</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">equal_nan</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">),</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">loaded_data</span><span class="p">,</span> <span class="n">fname</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">loaded_data</span> <span class="o">==</span> <span class="n">obj</span><span class="p">),</span> \
+                        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded_nda=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">loaded_data</span><span class="p">,</span> <span class="n">fname</span>
+                        <span class="p">)</span>
+
+            <span class="c1"># Test that the same object can be written / read as a value in a</span>
+            <span class="c1"># dictionary</span>
+            <span class="n">orig</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">),</span> <span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="p">)])</span>
+            <span class="n">base_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="s1">&#39;d.</span><span class="si">{}</span><span class="s1">.json&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;.bz2&#39;</span><span class="p">,</span> <span class="s1">&#39;.xor&#39;</span><span class="p">]:</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="n">base_fname</span> <span class="o">+</span> <span class="n">ext</span>
+                <span class="n">to_json</span><span class="p">(</span><span class="n">orig</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+                <span class="n">loaded</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="n">orig</span><span class="p">),</span> \
+                    <span class="s1">&#39;orig=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">orig</span><span class="p">,</span> <span class="n">loaded</span><span class="p">,</span> <span class="n">fname</span>
+                    <span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">rmtree</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_to_json_from_json &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_to_json_from_json</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

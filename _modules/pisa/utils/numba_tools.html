@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.numba_tools &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.numba_tools</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.numba_tools</h1><div class="highlight"><pre>
+<span></span><span class="c1"># pylint: disable=invalid-name, ungrouped-imports</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Numba tools</span>
+
+<span class="sd">This is a colection of functions used for numba functions</span>
+<span class="sd">that work for targets cpu as well as cuda</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ctype&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ftype&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;WHERE&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;myjit&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;conjugate_transpose&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;conjugate_transpose_guf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_conjugate_transpose&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;conjugate&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;conjugate_guf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_conjugate&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;matrix_dot_matrix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;matrix_dot_matrix_guf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_matrix_dot_matrix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;matrix_dot_vector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;matrix_dot_vector_guf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_matrix_dot_vector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;clear_matrix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;clear_matrix_guf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_clear_matrix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;copy_matrix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;copy_matrix_guf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_copy_matrix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cuda_copy&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.2&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Philipp Eller (pde3@psu.edu)&quot;</span>
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+
+<span class="c1"># NOTE: Following must be imported to be in the namespace for use by `myjit`</span>
+<span class="c1"># when re-compiling modified (external) function code</span>
+<span class="kn">import</span> <span class="nn">cmath</span>  <span class="c1"># pylint: disable=unused-import</span>
+<span class="kn">import</span> <span class="nn">math</span>  <span class="c1"># pylint: disable=unused-import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">numba</span>
+
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="p">(</span>  <span class="c1"># pylint: disable=unused-import</span>
+    <span class="n">complex64</span><span class="p">,</span>
+    <span class="n">complex128</span><span class="p">,</span>
+    <span class="n">float32</span><span class="p">,</span>
+    <span class="n">float64</span><span class="p">,</span>
+    <span class="n">int32</span><span class="p">,</span>
+    <span class="n">int64</span><span class="p">,</span>
+    <span class="n">uint32</span><span class="p">,</span>
+    <span class="n">uint64</span><span class="p">,</span>
+    <span class="n">guvectorize</span><span class="p">,</span>
+    <span class="n">jit</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">PISA_NUM_THREADS</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+
+<span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span><span class="p">:</span>
+    <span class="n">numba</span><span class="o">.</span><span class="n">set_num_threads</span><span class="p">(</span><span class="n">PISA_NUM_THREADS</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">TARGET</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Numba not supported.&quot;</span><span class="p">)</span>
+
+<span class="c1"># the `WHERE` variable is for usage with smart arrays</span>
+<span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
+
+    <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+        <span class="n">ctype</span> <span class="o">=</span> <span class="n">complex128</span>
+        <span class="n">ftype</span> <span class="o">=</span> <span class="n">float64</span>
+    <span class="k">elif</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
+        <span class="n">ctype</span> <span class="o">=</span> <span class="n">complex64</span>
+        <span class="n">ftype</span> <span class="o">=</span> <span class="n">float32</span>
+    <span class="n">WHERE</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+        <span class="n">ctype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">complex128</span>
+        <span class="n">ftype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+    <span class="k">elif</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
+        <span class="n">ctype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">complex64</span>
+        <span class="n">ftype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span>
+    <span class="n">cuda</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="n">cuda</span><span class="o">.</span><span class="n">jit</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+    <span class="n">WHERE</span> <span class="o">=</span> <span class="s2">&quot;host&quot;</span>
+
+
+<span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
+    <span class="n">FX</span> <span class="o">=</span> <span class="s2">&quot;f4&quot;</span>
+    <span class="n">CX</span> <span class="o">=</span> <span class="s2">&quot;c8&quot;</span>
+<span class="k">elif</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="n">FX</span> <span class="o">=</span> <span class="s2">&quot;f8&quot;</span>
+    <span class="n">CX</span> <span class="o">=</span> <span class="s2">&quot;c16&quot;</span>
+
+
+<div class="viewcode-block" id="myjit">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.myjit">[docs]</a>
+<span class="k">def</span> <span class="nf">myjit</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorator to assign the right jit for different targets</span>
+<span class="sd">    In case of non-cuda targets, all instances of `cuda.local.array`</span>
+<span class="sd">    are replaced by `np.empty`. This is a dirty fix, hopefully in the</span>
+<span class="sd">    near future numba will support numpy array allocation and this will</span>
+<span class="sd">    not be necessary anymore</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : callable</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_nb_func: numba callable</span>
+<span class="sd">        Refactored version of `func` but with `cuda.local.array` replaced by</span>
+<span class="sd">        `np.empty` if `TARGET == &quot;cpu&quot;`. For either TARGET, the returned</span>
+<span class="sd">        function will be callable within numba code for that target.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=exec-used, eval-used</span>
+
+    <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
+        <span class="n">new_nb_func</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="n">func</span><span class="p">)</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">source</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;@myjit&quot;</span><span class="p">)</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;cuda.local.array&quot;</span><span class="p">,</span> <span class="s2">&quot;np.empty&quot;</span><span class="p">)</span>
+        <span class="n">exec</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">new_py_func</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="n">new_nb_func</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="n">new_py_func</span><span class="p">,</span> <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># needs to be exported to globals</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_nb_func</span>
+
+    <span class="k">return</span> <span class="n">new_nb_func</span></div>
+
+
+
+<span class="c1"># --------------------------------------------------------------------------- #</span>
+
+
+<div class="viewcode-block" id="cuda_copy">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.cuda_copy">[docs]</a>
+<span class="k">def</span> <span class="nf">cuda_copy</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Handle copying back device array&#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;out&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">devicearray</span><span class="o">.</span><span class="n">DeviceNDArray</span><span class="p">):</span>
+            <span class="n">d_out</span> <span class="o">=</span> <span class="n">numba</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">d_out</span><span class="p">)</span>
+            <span class="n">d_out</span><span class="o">.</span><span class="n">copy_to_host</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+<div class="viewcode-block" id="conjugate_transpose">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.conjugate_transpose">[docs]</a>
+<span class="nd">@myjit</span>
+<span class="k">def</span> <span class="nf">conjugate_transpose</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;B is the conjugate (Hermitian) transpose of A .. ::</span>
+
+<span class="sd">        B[j, i] = A[i, j]*</span>
+
+<span class="sd">    A : 2d array of shape (M, N)</span>
+<span class="sd">    B : 2d array of shape (N, M)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">B</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">conjugate</span><span class="p">()</span></div>
+
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :], </span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :])&quot;</span> <span class="k">for</span> <span class="n">XX</span> <span class="ow">in</span> <span class="p">[</span><span class="n">FX</span><span class="p">,</span> <span class="n">CX</span><span class="p">]],</span> <span class="s2">&quot;(i, j) -&gt; (j, i)&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">conjugate_transpose_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;gufunc that calls conjugate_transpose&quot;&quot;&quot;</span>
+    <span class="n">conjugate_transpose</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="test_conjugate_transpose">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.test_conjugate_transpose">[docs]</a>
+<span class="k">def</span> <span class="nf">test_conjugate_transpose</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests of `conjugate_transpose` and `conjugate_transpose_guf`&quot;&quot;&quot;</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">CX</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">)</span>
+
+    <span class="n">conjugate_transpose_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">B</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="se">\n</span><span class="s2">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FX</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FX</span><span class="p">)</span>
+
+    <span class="n">conjugate_transpose_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">B</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="se">\n</span><span class="s2">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;&lt; PASS : test_conjugate_transpose &gt;&gt;&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># --------------------------------------------------------------------------- #</span>
+
+
+<div class="viewcode-block" id="conjugate">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.conjugate">[docs]</a>
+<span class="nd">@myjit</span>
+<span class="k">def</span> <span class="nf">conjugate</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;B is the element-by-element conjugate of A .. ::</span>
+
+<span class="sd">        B[i, j] = A[i, j]*</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    A : 2d array</span>
+<span class="sd">    B : 2d array</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">conjugate</span><span class="p">()</span></div>
+
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :], </span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :])&quot;</span> <span class="k">for</span> <span class="n">XX</span> <span class="ow">in</span> <span class="p">[</span><span class="n">FX</span><span class="p">,</span> <span class="n">CX</span><span class="p">]],</span> <span class="s2">&quot;(i, j) -&gt; (i, j)&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">conjugate_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;gufunc that calls `conjugate`&quot;&quot;&quot;</span>
+    <span class="n">conjugate</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="test_conjugate">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.test_conjugate">[docs]</a>
+<span class="k">def</span> <span class="nf">test_conjugate</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests of `conjugate` and `conjugate_guf`&quot;&quot;&quot;</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">CX</span><span class="p">)</span>
+    
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">)</span>
+
+    <span class="n">conjugate_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">B</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="se">\n</span><span class="s2">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FX</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FX</span><span class="p">)</span>
+
+    <span class="n">conjugate_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">B</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="se">\n</span><span class="s2">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;&lt; PASS : test_conjugate &gt;&gt;&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># --------------------------------------------------------------------------- #</span>
+
+
+<div class="viewcode-block" id="matrix_dot_matrix">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.matrix_dot_matrix">[docs]</a>
+<span class="nd">@myjit</span>
+<span class="k">def</span> <span class="nf">matrix_dot_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dot-product of two 2d arrays .. ::</span>
+
+<span class="sd">        C = A * B</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span></div>
+
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :], </span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :], </span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :])&quot;</span> <span class="k">for</span> <span class="n">XX</span> <span class="ow">in</span> <span class="p">[</span><span class="n">FX</span><span class="p">,</span> <span class="n">CX</span><span class="p">]],</span>
+    <span class="s2">&quot;(i, n), (n, j) -&gt; (i, j)&quot;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">matrix_dot_matrix_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;gufunc that calls matrix_dot_matrix&quot;&quot;&quot;</span>
+    <span class="n">matrix_dot_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="test_matrix_dot_matrix">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.test_matrix_dot_matrix">[docs]</a>
+<span class="k">def</span> <span class="nf">test_matrix_dot_matrix</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests of `matrix_dot_matrix` and `matrix_dot_matrix_guf`&quot;&quot;&quot;</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="n">matrix_dot_matrix_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">C</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="se">\n</span><span class="s2">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;&lt; PASS : test_matrix_dot_matrix &gt;&gt;&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># --------------------------------------------------------------------------- #</span>
+
+
+<div class="viewcode-block" id="matrix_dot_vector">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.matrix_dot_vector">[docs]</a>
+<span class="nd">@myjit</span>
+<span class="k">def</span> <span class="nf">matrix_dot_vector</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dot-product of a 2d array and a vector .. ::</span>
+
+<span class="sd">        w = A * v</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="n">j</span><span class="p">]</span></div>
+
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :], </span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:])&quot;</span> <span class="k">for</span> <span class="n">XX</span> <span class="ow">in</span> <span class="p">[</span><span class="n">FX</span><span class="p">,</span> <span class="n">CX</span><span class="p">]],</span>
+    <span class="s2">&quot;(i, j), (j) -&gt; (i)&quot;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">matrix_dot_vector_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;gufunc that calls matrix_dot_vector&quot;&quot;&quot;</span>
+    <span class="n">matrix_dot_vector</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="test_matrix_dot_vector">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.test_matrix_dot_vector">[docs]</a>
+<span class="k">def</span> <span class="nf">test_matrix_dot_vector</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests of `matrix_dot_vector` and `matrix_dot_vector_guf`&quot;&quot;&quot;</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="n">matrix_dot_vector_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">w</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="se">\n</span><span class="s2">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;&lt; PASS : test_matrix_dot_vector &gt;&gt;&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># --------------------------------------------------------------------------- #</span>
+
+
+<div class="viewcode-block" id="clear_matrix">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.clear_matrix">[docs]</a>
+<span class="nd">@myjit</span>
+<span class="k">def</span> <span class="nf">clear_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Zero out 2D matrix .. ::</span>
+
+<span class="sd">        A[i, j] = 0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :], </span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :])&quot;</span> <span class="k">for</span> <span class="n">XX</span> <span class="ow">in</span> <span class="p">[</span><span class="n">FX</span><span class="p">,</span> <span class="n">CX</span><span class="p">]],</span> <span class="s2">&quot;(i, j) -&gt; (i, j)&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">clear_matrix_guf</span><span class="p">(</span><span class="n">dummy</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>  <span class="c1"># pylint: disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;gufunc that calls `clear_matrix`&quot;&quot;&quot;</span>
+    <span class="n">clear_matrix</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="test_clear_matrix">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.test_clear_matrix">[docs]</a>
+<span class="k">def</span> <span class="nf">test_clear_matrix</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests of `clear_matrix` and `clear_matrix_guf`&quot;&quot;&quot;</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="n">clear_matrix_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">A</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="se">\n</span><span class="s2">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;&lt; PASS : test_clear_matrix &gt;&gt;&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># --------------------------------------------------------------------------- #</span>
+
+
+<div class="viewcode-block" id="copy_matrix">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.copy_matrix">[docs]</a>
+<span class="nd">@myjit</span>
+<span class="k">def</span> <span class="nf">copy_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy elemnts of 2d array A to array B .. ::</span>
+
+<span class="sd">        B[i, j] = A[i, j]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span></div>
+
+
+
+<span class="nd">@guvectorize</span><span class="p">(</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :], </span><span class="si">{</span><span class="n">XX</span><span class="si">}</span><span class="s2">[:, :])&quot;</span> <span class="k">for</span> <span class="n">XX</span> <span class="ow">in</span> <span class="p">[</span><span class="n">FX</span><span class="p">,</span> <span class="n">CX</span><span class="p">]],</span> <span class="s2">&quot;(i, j) -&gt; (i, j)&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">copy_matrix_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;gufunc that calls `copy_matrix`&quot;&quot;&quot;</span>
+    <span class="n">copy_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="test_copy_matrix">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.numba_tools.test_copy_matrix">[docs]</a>
+<span class="k">def</span> <span class="nf">test_copy_matrix</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests of `copy_matrix` and `copy_matrix_guf`&quot;&quot;&quot;</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="n">copy_matrix_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">B</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">A</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="se">\n</span><span class="s2">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;&lt; PASS : test_copy_matrix &gt;&gt;&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># --------------------------------------------------------------------------- #</span>
+
+
+<span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;parse command line args&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">Levels</span><span class="o">.</span><span class="n">WARN</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Verbosity&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">parse_args</span><span class="p">()[</span><span class="s2">&quot;v&quot;</span><span class="p">])</span>
+    <span class="n">test_conjugate_transpose</span><span class="p">()</span>
+    <span class="n">test_conjugate</span><span class="p">()</span>
+    <span class="n">test_matrix_dot_matrix</span><span class="p">()</span>
+    <span class="n">test_matrix_dot_vector</span><span class="p">()</span>
+    <span class="n">test_clear_matrix</span><span class="p">()</span>
+    <span class="n">test_copy_matrix</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

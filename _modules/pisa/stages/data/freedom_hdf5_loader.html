@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.data.freedom_hdf5_loader &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.data.freedom_hdf5_loader</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.data.freedom_hdf5_loader</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A Stage to load data from a FreeDOM hdf5 file (generated using the I3HDFWriter)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tables</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">split</span>
+
+<span class="n">X_36</span> <span class="o">=</span> <span class="mf">46.29</span>
+<span class="n">Y_36</span> <span class="o">=</span> <span class="o">-</span><span class="mf">34.88</span>
+
+<span class="n">FREEDOM_PARNAMES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;z&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;time&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;azimuth&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;zenith&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cascade_energy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;track_energy&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="freedom_hdf5_loader">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader">[docs]</a>
+<span class="k">class</span> <span class="nc">freedom_hdf5_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    FreeDOM hdf5 file loader</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    events_file : hdf5 file path</span>
+<span class="sd">    files_per_flavor : list</span>
+<span class="sd">        number of files for each nu flavor</span>
+<span class="sd">    reco : str</span>
+<span class="sd">        which reco to use</span>
+<span class="sd">    keys : list</span>
+<span class="sd">        which keys to unpack</span>
+<span class="sd">    cuts : dict</span>
+<span class="sd">        cuts to apply when loading the data</span>
+<span class="sd">    track_E_cut : float</span>
+<span class="sd">        track energy cut for PID.</span>
+<span class="sd">        If not set, L7_PIDClassifier_ProbTrack will be used</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Passed to Stage</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">events_file</span><span class="p">,</span>
+        <span class="n">files_per_flavor</span><span class="p">,</span>
+        <span class="n">output_names</span><span class="p">,</span>
+        <span class="n">reco</span><span class="p">,</span>
+        <span class="n">keys</span><span class="p">,</span>
+        <span class="n">cuts</span><span class="p">,</span>
+        <span class="n">track_E_cut</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="c1"># instantiation args that should not change</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_file</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">events_file</span><span class="p">)</span>
+
+        <span class="c1"># init base class</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="o">=</span> <span class="n">output_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reco</span> <span class="o">=</span> <span class="n">reco</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">files_per_flavor</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">files_per_flavor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">track_E_cut</span> <span class="o">=</span> <span class="n">track_E_cut</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cuts</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">cuts</span><span class="p">)</span>
+
+<div class="viewcode-block" id="freedom_hdf5_loader.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_hdf5_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rho36</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;unc_est&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuts</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_uncertainties</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_cuts</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuts</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">:</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+            <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s2">&quot;bar&quot;</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="s2">&quot;e&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">flav</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">n_files</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files_per_flavor</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="s2">&quot;mu&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">flav</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">n_files</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files_per_flavor</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="s2">&quot;tau&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">flav</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="n">n_files</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files_per_flavor</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+            <span class="n">pdg</span> <span class="o">=</span> <span class="n">nubar</span> <span class="o">*</span> <span class="p">(</span><span class="mi">12</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">flav</span><span class="p">)</span>
+
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;pdg_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">pdg</span>
+            <span class="k">if</span> <span class="s2">&quot;cc&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;interaction_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;interaction_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+
+            <span class="n">events</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">weight_dict</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;I3MCWeightDict&quot;</span><span class="p">]</span>
+            <span class="n">primary</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;MCInIcePrimary&quot;</span><span class="p">]</span>
+
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">primary</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">primary</span><span class="p">[</span><span class="s2">&quot;zenith&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;pdg_code&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">primary</span><span class="p">[</span><span class="s2">&quot;pdg_encoding&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;interaction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight_dict</span><span class="p">[</span><span class="s2">&quot;InteractionType&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+
+            <span class="n">CM2_TO_M2</span> <span class="o">=</span> <span class="mf">1e-4</span>
+            <span class="n">derived_weight</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">CM2_TO_M2</span>
+                <span class="o">*</span> <span class="n">weight_dict</span><span class="p">[</span><span class="s2">&quot;OneWeight&quot;</span><span class="p">]</span>
+                <span class="o">/</span> <span class="n">n_files</span>
+                <span class="o">/</span> <span class="n">weight_dict</span><span class="p">[</span><span class="s2">&quot;gen_ratio&quot;</span><span class="p">]</span>
+                <span class="o">/</span> <span class="n">weight_dict</span><span class="p">[</span><span class="s2">&quot;NEvents&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weighted_aeff&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">derived_weight</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+
+            <span class="n">reco</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reco</span>
+            <span class="n">reco_total_energy</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">events</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">reco</span><span class="si">}</span><span class="s2">_cascade_energy&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">events</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">reco</span><span class="si">}</span><span class="s2">_track_energy&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;reco_energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco_total_energy</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;reco_coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">reco</span><span class="si">}</span><span class="s2">_zenith&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;reco_z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">reco</span><span class="si">}</span><span class="s2">_z&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;reco_rho&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;rho_36&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_E_cut</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;pid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;L7_PIDClassifier_ProbTrack&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pid</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">reco</span><span class="si">}</span><span class="s2">_track_energy&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">track_E_cut</span><span class="p">)</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;pid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pid</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;initial_weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">&quot;nubar&quot;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">&quot;flav&quot;</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No containers created during data loading for some reason.&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="freedom_hdf5_loader.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.apply_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;initial_weights&quot;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="freedom_hdf5_loader.calc_rho36">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.calc_rho36">[docs]</a>
+    <span class="k">def</span> <span class="nf">calc_rho36</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">reco_x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">reco</span><span class="si">}</span><span class="s2">_x&quot;</span><span class="p">]</span>
+        <span class="n">reco_y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">reco</span><span class="si">}</span><span class="s2">_y&quot;</span><span class="p">]</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;rho_36&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">reco_x</span> <span class="o">-</span> <span class="n">X_36</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">reco_y</span> <span class="o">-</span> <span class="n">Y_36</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="freedom_hdf5_loader.calc_uncertainties">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.calc_uncertainties">[docs]</a>
+    <span class="k">def</span> <span class="nf">calc_uncertainties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-15</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;add uncertainty estimates to data; return modified data&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">FREEDOM_PARNAMES</span><span class="p">:</span>
+            <span class="n">p2s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;env_p2_</span><span class="si">{</span><span class="n">par</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;env_p2_</span><span class="si">{</span><span class="n">par</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">],</span> <span class="n">epsilon</span><span class="p">)</span>
+            <span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;unc_est_</span><span class="si">{</span><span class="n">par</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p2s</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="freedom_hdf5_loader.apply_cuts">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.apply_cuts">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_cuts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">cuts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;apply cuts in place&quot;&quot;&quot;</span>
+        <span class="n">cut_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">True</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">cut_key</span><span class="p">,</span> <span class="p">[</span><span class="n">cut_low</span><span class="p">,</span> <span class="n">cut_high</span><span class="p">]</span> <span class="ow">in</span> <span class="n">cuts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s2">&quot;</span><span class="si">{reco}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">cut_key</span><span class="p">:</span>
+                <span class="n">cut_key</span> <span class="o">=</span> <span class="n">cut_key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{reco}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reco</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cut_low</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cut_mask</span> <span class="o">=</span> <span class="n">cut_mask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">cut_key</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">cut_low</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cut_high</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cut_mask</span> <span class="o">=</span> <span class="n">cut_mask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">cut_key</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">cut_high</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="n">cut_mask</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="freedom_hdf5_loader.load_hdf5_file">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.load_hdf5_file">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_hdf5_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f_name</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">f_name</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpack_file_data</span><span class="p">(</span><span class="n">file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="freedom_hdf5_loader.unpack_file_data">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.unpack_file_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">unpack_file_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">root</span>
+
+        <span class="n">var_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">root</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;FreeDOM_test_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_params&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;best_fit&quot;</span><span class="p">,</span> <span class="s2">&quot;freedom&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">tables</span><span class="o">.</span><span class="n">NoSuchNodeError</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reco</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">freedom_hdf5_loader</span><span class="o">.</span><span class="n">fill_variable_dict</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">var_dict</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">var_dict</span></div>
+
+
+<div class="viewcode-block" id="freedom_hdf5_loader.fill_variable_dict">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.fill_variable_dict">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">fill_variable_dict</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">var_dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;vector_index&quot;</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">colnames</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">par</span><span class="p">,</span> <span class="n">parname</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">item</span><span class="p">[:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">FREEDOM_PARNAMES</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                <span class="n">FREEDOM_PARNAMES</span><span class="p">,</span>
+            <span class="p">):</span>
+                <span class="n">var_dict</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">parname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">par</span>
+        <span class="k">elif</span> <span class="s2">&quot;value&quot;</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">colnames</span><span class="p">:</span>
+            <span class="n">var_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">value</span><span class="p">[:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">var_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">read</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.data.sqlite_loader &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.data.sqlite_loader</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.data.sqlite_loader</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">sqlite3</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
+
+
+<div class="viewcode-block" id="sqlite_loader">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader">[docs]</a>
+<span class="k">class</span> <span class="nc">sqlite_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    SQLite loader PISA Pi class</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    database : path to sqlite database</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Passed to Stage</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">database</span><span class="p">,</span>
+        <span class="n">output_names</span><span class="p">,</span>
+        <span class="n">post_fix</span> <span class="o">=</span> <span class="s1">&#39;_pred&#39;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="c1"># instantiation args that should not change</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">database</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span> <span class="o">=</span> <span class="n">post_fix</span>
+
+        <span class="c1"># init base class</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="o">=</span> <span class="n">output_names</span>
+
+<div class="viewcode-block" id="sqlite_loader.get_pid_and_interaction_type">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.get_pid_and_interaction_type">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_pid_and_interaction_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Sorry&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;bar&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nubar</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">pid</span> <span class="o">=</span> <span class="mi">12</span>
+            <span class="n">flavor</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="s1">&#39;mu&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">pid</span> <span class="o">=</span> <span class="mi">14</span>
+            <span class="n">flavor</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="s1">&#39;tau&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">pid</span> <span class="o">=</span> <span class="mi">16</span>
+            <span class="n">flavor</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="s1">&#39;cc&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">interaction_type</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="s1">&#39;nc&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">interaction_type</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">nubar</span><span class="o">*</span><span class="n">pid</span><span class="p">,</span> <span class="n">interaction_type</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">flavor</span></div>
+
+
+<div class="viewcode-block" id="sqlite_loader.query_database">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.query_database">[docs]</a>
+    <span class="k">def</span> <span class="nf">query_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interaction_type</span><span class="p">,</span> <span class="n">pid</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span> <span class="k">as</span> <span class="n">con</span><span class="p">:</span>
+            <span class="c1"># Get truth</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT * FROM truth WHERE interaction_type = </span><span class="si">%s</span><span class="s1"> and pid = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">interaction_type</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
+            <span class="n">truth</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;event_no&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span> <span class="o">==</span> <span class="s1">&#39;_retro&#39;</span><span class="p">:</span>
+                <span class="c1"># Get retro reco</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT * FROM retro WHERE event_no in </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;event_no&#39;</span><span class="p">])))</span>
+                <span class="n">reco</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;event_no&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Get GNN reco</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT * FROM reconstruction WHERE event_no in </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;event_no&#39;</span><span class="p">])))</span>
+                <span class="n">reco</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;event_no&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># Get number of i3 files with specified PID by counting unique combinations of RunID and SubrunID</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT DISTINCT RunID, SubrunID FROM truth WHERE pid = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">pid</span>
+            <span class="n">n_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">truth</span><span class="p">,</span> <span class="n">reco</span><span class="p">,</span> <span class="n">n_files</span></div>
+
+
+<div class="viewcode-block" id="sqlite_loader.add_truth">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_truth">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_truth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">flavor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39; Adds truth to container&#39;&#39;&#39;</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;zenith&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">&quot;nubar&quot;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span> <span class="c1"># This sets true nu/nubar</span>
+        <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">&quot;flav&quot;</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span> <span class="c1"># This sets the true flavor</span>
+        <span class="k">return</span> <span class="n">container</span></div>
+
+
+<div class="viewcode-block" id="sqlite_loader.add_reco">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_reco">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_reco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">reco</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39; Adds reconstructed quantities to container&#39;&#39;&#39;</span>
+
+        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">reco</span><span class="p">[</span><span class="s1">&#39;zenith&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_&#39;</span> <span class="o">+</span> <span class="s1">&#39;energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span> <span class="o">==</span> <span class="s1">&#39;_retro&#39;</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">&#39;L7_PIDClassifier_FullSky_ProbTrack&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">&#39;track&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">container</span></div>
+
+    
+<div class="viewcode-block" id="sqlite_loader.add_aeff_weight">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_aeff_weight">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_aeff_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">n_files</span><span class="p">):</span>
+        <span class="n">CM2_TO_M2</span> <span class="o">=</span> <span class="mf">1e-4</span>
+        <span class="n">weighted_aeff</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">CM2_TO_M2</span>
+            <span class="o">*</span> <span class="n">truth</span><span class="p">[</span><span class="s2">&quot;OneWeight&quot;</span><span class="p">]</span>
+            <span class="o">/</span> <span class="n">n_files</span>
+            <span class="o">/</span> <span class="n">truth</span><span class="p">[</span><span class="s2">&quot;gen_ratio&quot;</span><span class="p">]</span>
+            <span class="o">/</span> <span class="n">truth</span><span class="p">[</span><span class="s2">&quot;NEvents&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weighted_aeff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weighted_aeff</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">container</span></div>
+
+
+<div class="viewcode-block" id="sqlite_loader.initialize_weights">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.initialize_weights">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialize_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">):</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">container</span></div>
+
+
+<div class="viewcode-block" id="sqlite_loader.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># create containers from the events</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">:</span>
+            <span class="c1"># make container</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">pid</span><span class="p">,</span> <span class="n">interaction_type</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">flavor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pid_and_interaction_type</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">truth</span><span class="p">,</span> <span class="n">reco</span><span class="p">,</span><span class="n">n_i3files_with_flavor</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">query_database</span><span class="p">(</span><span class="n">interaction_type</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_truth</span><span class="p">(</span><span class="n">container</span><span class="p">,</span><span class="n">truth</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_reco</span><span class="p">(</span><span class="n">container</span><span class="p">,</span><span class="n">reco</span><span class="p">)</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_weights</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
+            <span class="n">container</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_aeff_weight</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">n_i3files_with_flavor</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
+
+        <span class="c1"># check created at least one container</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;No containers created during data loading for some reason.&#39;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="sqlite_loader.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.apply_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

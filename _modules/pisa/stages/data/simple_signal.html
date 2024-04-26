@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.data.simple_signal &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.data.simple_signal</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.data.simple_signal</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Stage to generate simple 1D data consisting </span>
+<span class="sd">of a flat background + gaussian peak with a mean and a width</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+
+<span class="c1"># Load the modified index lookup function</span>
+<span class="kn">from</span> <span class="nn">pisa.core.bin_indexing</span> <span class="kn">import</span> <span class="n">lookup_indices</span>
+
+
+<div class="viewcode-block" id="simple_signal">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_signal.simple_signal">[docs]</a>
+<span class="k">class</span> <span class="nc">simple_signal</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    random toy event generator PISA class</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params</span>
+<span class="sd">        Expected params .. ::</span>
+
+<span class="sd">            n_events : int</span>
+<span class="sd">                Number of events to be generated per output name</span>
+<span class="sd">            random</span>
+<span class="sd">            seed : int</span>
+<span class="sd">                Seed to be used for random</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>  <span class="c1"># parameters fixed during fit</span>
+            <span class="s1">&#39;n_events_data&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;stats_factor&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;signal_fraction&#39;</span><span class="p">,</span>
+
+            <span class="c1"># minimum + maximum bkg values</span>
+            <span class="s1">&#39;bkg_min&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;bkg_max&#39;</span><span class="p">,</span>
+
+            <span class="c1"># fitted parameters</span>
+            <span class="s1">&#39;mu&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
+
+        <span class="c1"># init base class</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="simple_signal.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_signal.simple_signal.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        This is where we figure out how many events to generate,</span>
+<span class="sd">        define their weights relative to the data statistics</span>
+<span class="sd">        and initialize the container we will need</span>
+
+<span class="sd">        This function is run once when we instantiate the pipeline</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># figure out how many signal and background events to create</span>
+        <span class="c1">#</span>
+        <span class="n">n_data_events</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">n_events_data</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">stats_factor</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">signal_fraction</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">signal_fraction</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="c1"># Number of simulated MC events</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_mc</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_data_events</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span>
+        <span class="c1"># Number of signal MC events</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsig</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_mc</span><span class="o">*</span><span class="n">signal_fraction</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_mc</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span>                     <span class="c1"># Number of bkg MC events</span>
+
+        <span class="c1"># Go in events mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Create a signal container, with equal weights</span>
+        <span class="c1">#</span>
+        <span class="n">signal_container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="s1">&#39;signal&#39;</span><span class="p">)</span>
+        <span class="n">signal_container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+        <span class="c1"># Populate the signal physics quantity over a uniform range</span>
+        <span class="n">signal_initial</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">bkg_min</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
+                                               <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">bkg_max</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
+                                               <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span><span class="p">)</span>
+
+        <span class="c1"># guys, seriouslsy....?! &quot;stuff&quot;??</span>
+        <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;stuff&#39;</span><span class="p">,</span> <span class="n">signal_initial</span><span class="p">)</span>
+        <span class="c1"># Populate its MC weight by equal constant factors</span>
+        <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span>
+        <span class="c1"># Populate the error on those weights</span>
+        <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span> <span class="p">)</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Compute the bin indices associated with each event</span>
+        <span class="c1">#</span>
+        <span class="n">sig_indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">[</span><span class="n">signal_container</span><span class="p">[</span><span class="s1">&#39;stuff&#39;</span><span class="p">]],</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">)</span>
+        <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">,</span> <span class="n">sig_indices</span><span class="p">)</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Compute an associated bin mask for each output bin</span>
+        <span class="c1">#</span>
+        <span class="k">for</span> <span class="n">bin_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">tot_num_bins</span><span class="p">):</span>
+            <span class="n">sig_bin_mask</span> <span class="o">=</span> <span class="n">sig_indices</span> <span class="o">==</span> <span class="n">bin_i</span>
+            <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bin_i</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">sig_bin_mask</span><span class="p">)</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Add container to the data</span>
+        <span class="c1">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">signal_container</span><span class="p">)</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Create a background container</span>
+        <span class="c1">#</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="n">bkg_container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="s1">&#39;background&#39;</span><span class="p">)</span>
+            <span class="n">bkg_container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+            <span class="c1"># Create a set of background events</span>
+            <span class="n">initial_bkg_events</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">bkg_min</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">bkg_max</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span><span class="p">)</span>
+            <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;stuff&#39;</span><span class="p">,</span> <span class="n">initial_bkg_events</span><span class="p">)</span>
+            <span class="c1"># create their associated weights</span>
+            <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span>
+            <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span> <span class="p">)</span>
+            <span class="c1"># compute their bin indices</span>
+            <span class="n">bkg_indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">[</span><span class="n">bkg_container</span><span class="p">[</span><span class="s1">&#39;stuff&#39;</span><span class="p">]],</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">)</span>
+            <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">,</span> <span class="n">bkg_indices</span><span class="p">)</span>
+            <span class="c1"># Add bin indices mask (used in generalized poisson llh)</span>
+            <span class="k">for</span> <span class="n">bin_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">tot_num_bins</span><span class="p">):</span>
+                <span class="n">bkg_bin_mask</span> <span class="o">=</span> <span class="n">bkg_indices</span><span class="o">==</span><span class="n">bin_i</span>
+                <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bin_i</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">bkg_bin_mask</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">bkg_container</span><span class="p">)</span>
+
+
+        <span class="c1">#</span>
+        <span class="c1"># Add the binned counterpart of each events container</span>
+        <span class="c1">#</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="simple_signal.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_signal.simple_signal.apply_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        This is where we re-weight the signal container</span>
+<span class="sd">        based on a model gaussian with tunable parameters</span>
+<span class="sd">        mu and sigma.</span>
+
+<span class="sd">        The background is left untouched in this step.</span>
+
+<span class="sd">        A possible upgrade to this function would be to make a </span>
+<span class="sd">        small background re-weighting</span>
+
+<span class="sd">        This function will be called at every iteration of the minimizer</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Make sure we are in events mode</span>
+        <span class="c1">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+        <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;signal&#39;</span><span class="p">:</span>
+                <span class="c1">#</span>
+                <span class="c1"># Signal is a gaussian pdf, weighted to account for the MC statistics and the signal fraction</span>
+                <span class="c1">#</span>
+                <span class="n">reweighting</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;stuff&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mu&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span>
+                <span class="n">reweighting</span><span class="o">/=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">reweighting</span><span class="p">)</span>
+                <span class="n">reweighting</span><span class="o">*=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span>
+
+                <span class="n">reweighting</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">reweighting</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+                <span class="c1">#</span>
+                <span class="c1"># New MC errors = MCweights squared</span>
+                <span class="c1">#</span>
+                <span class="n">new_errors</span> <span class="o">=</span> <span class="n">reweighting</span><span class="o">**</span><span class="mf">2.</span>
+
+                <span class="c1">#</span>
+                <span class="c1"># Replace the weight information in the signal container</span>
+                <span class="c1">#</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">reweighting</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">new_errors</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">])</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">()</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">()</span>
+
+                <span class="c1"># Re-bin the events weight into new histograms</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

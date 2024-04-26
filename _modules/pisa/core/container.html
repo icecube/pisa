@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.core.container &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.core.container</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.core.container</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Class to hold generic data in container.</span>
+<span class="sd">he data can be unbinned or binned or scalar, while</span>
+<span class="sd">translation methods between such different representations</span>
+<span class="sd">are provided.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
+<span class="kn">from</span> <span class="nn">pisa.core.translation</span> <span class="kn">import</span> <span class="n">histogram</span><span class="p">,</span> <span class="n">lookup</span><span class="p">,</span> <span class="n">resample</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">line_profile</span><span class="p">,</span> <span class="n">profile</span>
+
+
+<div class="viewcode-block" id="ContainerSet">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.ContainerSet">[docs]</a>
+<span class="k">class</span> <span class="nc">ContainerSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class to hold a set of container objects</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+
+<span class="sd">    containers : list or None</span>
+
+<span class="sd">    data_specs : MultiDimBinning, &quot;events&quot; or None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">containers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_specs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">containers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">containers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">containers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="n">containers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;ContainerSet containing </span><span class="si">{</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="bp">self</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_map</span>
+            
+<div class="viewcode-block" id="ContainerSet.add_container">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.ContainerSet.add_container">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;container with name </span><span class="si">%s</span><span class="s1"> already exists&#39;</span><span class="o">%</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">representation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_representation</span>
+
+    <span class="nd">@representation</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        representation : str, MultiDimBinning or any hashable object</span>
+<span class="sd">            Data specs should be set to retreive the right representation</span>
+<span class="sd">            i.e. the representation one is working in at the moment</span>
+
+<span class="sd">            This property is meant to be changed while working with a ContainerSet</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_representation</span> <span class="o">=</span> <span class="n">representation</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">representation</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">]</span>
+
+<div class="viewcode-block" id="ContainerSet.link_containers">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.ContainerSet.link_containers">[docs]</a>
+    <span class="k">def</span> <span class="nf">link_containers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">names</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Link containers together. When containers are linked, they are</span>
+<span class="sd">        treated as a single (virtual) container for binned data</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">            name of linked object</span>
+
+<span class="sd">        names : list</span>
+<span class="sd">            name of containers to be linked under the given key</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># intersection of names for linking and available names</span>
+
+        <span class="n">link_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">link_names</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Skipping containers </span><span class="si">%s</span><span class="s2"> in linking, as those are not present&quot;</span><span class="o">%</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)))</span>
+
+        <span class="n">containers</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">link_names</span><span class="p">]</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Linking containers </span><span class="si">%s</span><span class="s1"> into </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">link_names</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+        <span class="n">new_container</span> <span class="o">=</span> <span class="n">VirtualContainer</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">containers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_container</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ContainerSet.unlink_containers">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.ContainerSet.unlink_containers">[docs]</a>
+    <span class="k">def</span> <span class="nf">unlink_containers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unlink all container&quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Unlinking all containers&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">linked_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">linked_names</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span><span class="p">[</span><span class="n">linked_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span> 
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No name `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">` in container&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over individual non-linked containers and virtual containers</span>
+<span class="sd">        for the ones that are linked together</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">containers_to_be_iterated</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">containers</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">c</span><span class="o">.</span><span class="n">linked</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">containers_to_be_iterated</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ContainerSet.get_mapset">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.ContainerSet.get_mapset">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_mapset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;For a given key, get a PISA MapSet</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str</span>
+
+<span class="sd">        error : None or str</span>
+<span class="sd">            specify a key that errors are read from</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        map_set : MapSet</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">maps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">get_map</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">error</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">maps</span><span class="o">=</span><span class="n">maps</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="VirtualContainer">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.VirtualContainer">[docs]</a>
+<span class="k">class</span> <span class="nc">VirtualContainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class providing a virtual container for linked individual containers</span>
+
+<span class="sd">    It should just behave like a normal container</span>
+
+<span class="sd">    For reading, it just uses one container as a representative (no checkng at the mment</span>
+<span class="sd">    if the others actually contain the same data)</span>
+
+<span class="sd">    For writting, it creates one object that is added to all containers</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+
+<span class="sd">    containers : list</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">containers</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="c1"># check and set link flag</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="n">containers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">linked</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot link container </span><span class="si">%s</span><span class="s1"> since it is already linked&#39;</span><span class="o">%</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">linked</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">containers</span> <span class="o">=</span> <span class="n">containers</span>
+        
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;VirtualContainer containing </span><span class="si">{</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="bp">self</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+
+<div class="viewcode-block" id="VirtualContainer.unlink">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.VirtualContainer.unlink">[docs]</a>
+    <span class="k">def</span> <span class="nf">unlink</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Reset flag and copy all accessed keys&#39;&#39;&#39;</span>
+        <span class="c1"># reset flag</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">linked</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="c1"># should we check they&#39;re all the same?</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="VirtualContainer.set_aux_data">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.VirtualContainer.set_aux_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_aux_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span></div>
+
+            
+<div class="viewcode-block" id="VirtualContainer.mark_changed">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.VirtualContainer.mark_changed">[docs]</a>
+    <span class="k">def</span> <span class="nf">mark_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="c1"># copy all</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">container</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="VirtualContainer.mark_valid">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.VirtualContainer.mark_valid">[docs]</a>
+    <span class="k">def</span> <span class="nf">mark_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_valid</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>                    </div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">representation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">representation</span>
+    
+    <span class="nd">@representation</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">representation</span>
+            
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Container">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container">[docs]</a>
+<span class="k">class</span> <span class="nc">Container</span><span class="p">():</span>
+    
+    <span class="n">default_translation_mode</span> <span class="o">=</span> <span class="s2">&quot;average&quot;</span>
+    <span class="n">translation_modes</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;average&quot;</span><span class="p">,</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">array_representations</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="s2">&quot;log_events&quot;</span><span class="p">)</span>
+    
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">representation</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">):</span>
+<span class="w">        </span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Container to hold data in multiple representations</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        </span>
+<span class="sd">        name : str</span>
+<span class="sd">            name of container</span>
+<span class="sd">        representation : hashable object, e.g. str or MultiDimBinning</span>
+<span class="sd">            Representation in which to initialize the container</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_representation</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linked</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="c1"># ToDo: simple auxillary data like scalars</span>
+        <span class="c1"># dict of form [variable]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aux_data</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># validity bit</span>
+        <span class="c1"># dict of form [variable][representation_hash]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validity</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        
+        <span class="c1"># translation mode</span>
+        <span class="c1"># dict of form [variable]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tranlation_modes</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># Actual data</span>
+        <span class="c1"># dict of form [representation_hash][variable]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        
+        <span class="c1"># Representation objects</span>
+        <span class="c1"># dict of form [representation_hash]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_representations</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># Precedence of representation (lower number = higher precedence)</span>
+        <span class="c1"># dict of form [representation_hash]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precedence</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">representation</span>
+    
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Container containing keys </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">all_keys</span><span class="si">}</span><span class="s1">&#39;</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">representation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_representation</span>
+
+    
+<div class="viewcode-block" id="Container.set_aux_data">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.set_aux_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_aux_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Add any auxillary data, which will not be translated or tied to a specific representation&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_keys</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> already exsits&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aux_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span></div>
+
+    
+    <span class="nd">@representation</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">representation</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">(</span><span class="n">representation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">representation_keys</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_representations</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">representation</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">representation</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">representation</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">representation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">array_representations</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown representation &#39;</span><span class="si">{</span><span class="n">representation</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">_representation</span> <span class="o">=</span> <span class="n">representation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span>    
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="o">.</span><span class="n">num_dims</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">representations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_representations</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">representation_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_representations</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="n">keys</span> <span class="o">+=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">keys</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;return all available keys, regardless of representation&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">validity</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Is current representation a map/grid&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="Container.mark_changed">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.mark_changed">[docs]</a>
+    <span class="k">def</span> <span class="nf">mark_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;mark a key as changed and only what is in the current representation is valid&#39;&#39;&#39;</span>
+        <span class="c1"># invalidate all</span>
+        <span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">rep</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mark_valid</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Container.mark_valid">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.mark_valid">[docs]</a>
+    <span class="k">def</span> <span class="nf">mark_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;validate data as is in current representation, regardless&#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+        
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_data</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>        
+        <span class="k">return</span> <span class="n">data</span>
+    
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Cannot add variable </span><span class="si">{key}</span><span class="s1">, as it is a binning dimension&#39;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__add_data</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>                
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tranlation_modes</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tranlation_modes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_translation_mode</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+       
+    <span class="k">def</span> <span class="nf">__add_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : string</span>
+<span class="sd">            identifier</span>
+<span class="sd">        data : ndarray, PISA Map or (array, binning)-tuple</span>
+<span class="sd">        is_flat : bool</span>
+<span class="sd">            is the data already flattened (i.e. the binning dimensions unrolled)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__add_data</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+            
+            <span class="k">else</span><span class="p">:</span>            
+                <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span>
+                <span class="k">if</span> <span class="n">shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">num_dims</span><span class="p">]</span> <span class="o">==</span> <span class="n">shape</span><span class="p">,</span> <span class="s1">&#39;Incompatible dimensions&#39;</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">current_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Map</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="p">)</span> <span class="o">==</span> <span class="nb">hash</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">binning</span><span class="p">)</span>
+            <span class="n">flat_array</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_array</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">binning</span><span class="p">,</span> <span class="n">array</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+            
+            <span class="k">assert</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="p">)</span> <span class="o">==</span> <span class="nb">hash</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+                            
+            <span class="n">is_flat</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">binning</span><span class="o">.</span><span class="n">size</span>
+            
+            <span class="k">if</span> <span class="n">is_flat</span><span class="p">:</span>
+                <span class="n">flat_array</span> <span class="o">=</span> <span class="n">array</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># first dimesnions must match</span>
+                <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span><span class="p">]</span> <span class="o">==</span> <span class="n">binning</span><span class="o">.</span><span class="n">shape</span>
+                
+                
+                <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span><span class="p">:</span>
+                    <span class="n">flat_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">flat_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="p">)</span>
+                <span class="n">flat_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flat_shape</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">flat_array</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;unknown dataformat&#39;</span><span class="p">)</span>
+            
+            
+    <span class="k">def</span> <span class="nf">__get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">representation</span>
+            <span class="c1"># check if key is binning dimension</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">binning</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">unroll_binning</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">binning</span><span class="p">)</span>
+        <span class="c1"># check validity</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_keys</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">auto_translate</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="c1">#raise KeyError(f&#39;Data {key} not present in chosen representation&#39;)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> not present in Container&#39;</span><span class="p">)</span>
+        
+        <span class="n">valid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">representation</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">valid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auto_translate</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="c1">#raise ValueError(&#39;Invalid data as it was changed in a different representation!&#39;)</span>
+        
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    
+<div class="viewcode-block" id="Container.unroll_binning">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.unroll_binning">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">unroll_binning</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Get an Array containing the unrolled binning&#39;&#39;&#39;</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">entity</span><span class="o">=</span><span class="s1">&#39;weighted_centers&#39;</span><span class="p">,</span> <span class="n">attach_units</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">grid</span><span class="p">[</span><span class="n">binning</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span></div>
+
+
+    
+<div class="viewcode-block" id="Container.get_hist">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.get_hist">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_hist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return reshaped data as normal n-dimensional histogram&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_map</span><span class="p">,</span> <span class="s1">&#39;Cannot retrieve hists from non-map data&#39;</span>
+        
+        <span class="c1"># retrieve in case needs translation</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">binning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">representation</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span><span class="p">:</span>
+            <span class="n">full_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">full_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">full_shape</span><span class="p">),</span> <span class="n">binning</span></div>
+
+
+<div class="viewcode-block" id="Container.get_map">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.get_map">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return binned data in the form of a PISA map&quot;&quot;&quot;</span>
+        <span class="n">hist</span><span class="p">,</span> <span class="n">binning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hist</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">error_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_hist</span><span class="p">(</span><span class="n">error</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_hist</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">hist</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span>
+        <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="n">hist</span><span class="p">,</span> <span class="n">error_hist</span><span class="o">=</span><span class="n">error_hist</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">)</span></div>
+
+    
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;iterate over all keys in container&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="Container.translate">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.translate">[docs]</a>
+    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;translate variable from source representation</span>
+<span class="sd">        </span>
+<span class="sd">        key : str</span>
+<span class="sd">        src_representation : representation present in container</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        
+        <span class="k">assert</span> <span class="nb">hash</span><span class="p">(</span><span class="n">src_representation</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">representation_keys</span>
+        
+        <span class="n">dest_representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">representation</span>
+
+        <span class="k">if</span> <span class="nb">hash</span><span class="p">(</span><span class="n">src_representation</span><span class="p">)</span> <span class="o">==</span> <span class="nb">hash</span><span class="p">(</span><span class="n">dest_representation</span><span class="p">):</span>
+            <span class="c1"># nothing to do</span>
+            <span class="k">return</span>    
+    
+        <span class="n">from_map</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src_representation</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+        <span class="n">to_map</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dest_representation</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+    
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tranlation_modes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;average&#39;</span><span class="p">:</span>            
+            <span class="k">if</span> <span class="n">from_map</span> <span class="ow">and</span> <span class="n">to_map</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">,</span> <span class="n">dest_representation</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">dest_representation</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">out</span>
+                
+            <span class="k">elif</span> <span class="n">to_map</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">,</span> <span class="n">dest_representation</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">dest_representation</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">out</span>
+                
+            <span class="k">elif</span> <span class="n">from_map</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binned_to_array</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">,</span> <span class="n">dest_representation</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">dest_representation</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">out</span>   
+                
+            <span class="k">elif</span> <span class="n">src_representation</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span> <span class="ow">and</span> <span class="n">dest_representation</span> <span class="o">==</span> <span class="s2">&quot;log_events&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Container `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">`: taking log of </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">dest_representation</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample</span>
+            
+            <span class="k">elif</span> <span class="n">src_representation</span> <span class="o">==</span> <span class="s2">&quot;log_events&quot;</span> <span class="ow">and</span> <span class="n">dest_representation</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;log_events&quot;</span>
+                <span class="n">sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">dest_representation</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;translating </span><span class="si">{</span><span class="n">src_representation</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">dest_representation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+            
+        <span class="c1"># validate source!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="nb">hash</span><span class="p">(</span><span class="n">src_representation</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+        
+<div class="viewcode-block" id="Container.auto_translate">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.auto_translate">[docs]</a>
+    <span class="k">def</span> <span class="nf">auto_translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">src_representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_valid_representation</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">src_representation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;No valid representation for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> in container&#39;</span><span class="p">)</span>
+        <span class="c1"># logging.debug(f&#39;Auto-translating variable `{key}` from {src_representation}&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">)</span></div>
+
+        
+                
+<div class="viewcode-block" id="Container.find_valid_representation">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.find_valid_representation">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_valid_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39; Find valid, and best representation for key&#39;&#39;&#39;</span>
+        <span class="n">validity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">precedence</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">representation</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">validity</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">validity</span><span class="p">[</span><span class="n">h</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">precedence</span><span class="p">[</span><span class="n">h</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">precedence</span><span class="p">:</span>
+                    <span class="n">precedence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precedence</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>
+                    <span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_representations</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>
+                    
+        <span class="k">return</span> <span class="n">representation</span></div>
+
+        
+<div class="viewcode-block" id="Container.resample">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.resample">[docs]</a>
+    <span class="k">def</span> <span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">,</span> <span class="n">dest_representation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resample a binned key into a different binning</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">        src_representation : MultiDimBinning</span>
+<span class="sd">        dest_representation : MultiDimBinning</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Resampling </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">src_representation</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">src_representation</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">dest_representation</span>
+        <span class="n">new_sample</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dest_representation</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
+        <span class="n">new_hist</span> <span class="o">=</span> <span class="n">resample</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">,</span> <span class="n">new_sample</span><span class="p">,</span> <span class="n">dest_representation</span><span class="p">)</span>                
+        <span class="k">return</span> <span class="n">new_hist</span>      </div>
+
+        
+<div class="viewcode-block" id="Container.array_to_binned">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.array_to_binned">[docs]</a>
+    <span class="k">def</span> <span class="nf">array_to_binned</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">,</span> <span class="n">dest_representation</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Histogram data array into binned data</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">        src_representation : str</span>
+<span class="sd">        dest_representation : MultiDimBinning</span>
+<span class="sd">        #averaged : bool</span>
+<span class="sd">        #    if True, the histogram entries are averages of the numbers that</span>
+<span class="sd">        #    end up in a given bin. This for example must be used when oscillation</span>
+<span class="sd">        #    probabilities are translated.....otherwise we end up with probability*count</span>
+<span class="sd">        #    per bin</span>
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        right now, CPU-only</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: make work for n-dim</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Transforming </span><span class="si">%s</span><span class="s1"> array to binned data&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        
+        <span class="k">assert</span> <span class="n">src_representation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">array_representations</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dest_representation</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dest_representation</span><span class="o">.</span><span class="n">is_irregular</span><span class="p">:</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">dimensions</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dest_representation</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">is_log</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;log_events&quot;</span>
+                    <span class="n">sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
+                    <span class="n">dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OneDimBinning</span><span class="p">(</span>
+                        <span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                        <span class="n">domain</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">m</span><span class="p">),</span>
+                        <span class="n">num_bins</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">num_bins</span>
+                    <span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+                    <span class="n">sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
+                    <span class="n">dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">hist_binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">dimensions</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">src_representation</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dest_representation</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
+            <span class="n">hist_binning</span> <span class="o">=</span> <span class="n">dest_representation</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">src_representation</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">dest_representation</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">hist_binning</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="n">averaged</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hist</span></div>
+
+
+<div class="viewcode-block" id="Container.binned_to_array">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.binned_to_array">[docs]</a>
+    <span class="k">def</span> <span class="nf">binned_to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">,</span> <span class="n">dest_representation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Augmented binned data to array data&quot;&quot;&quot;</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Transforming </span><span class="si">%s</span><span class="s1"> binned to array data&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">src_representation</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">src_representation</span><span class="o">.</span><span class="n">is_irregular</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Container `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">`: regularized lookup for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">dimensions</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">src_representation</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">is_log</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;log_events&quot;</span>
+                    <span class="n">sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
+                    <span class="n">dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OneDimBinning</span><span class="p">(</span>
+                        <span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                        <span class="n">domain</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">m</span><span class="p">),</span>
+                        <span class="n">num_bins</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">num_bins</span>
+                    <span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+                    <span class="n">sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
+                    <span class="n">dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">hist_binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">dimensions</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Container `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">`: irregular lookup for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">dest_representation</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">src_representation</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
+            <span class="n">hist_binning</span> <span class="o">=</span> <span class="n">src_representation</span>
+   
+        <span class="k">return</span> <span class="n">lookup</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">hist_binning</span><span class="p">)</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="test_container">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.test_container">[docs]</a>
+<span class="k">def</span> <span class="nf">test_container</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for Container class.&quot;&quot;&quot;</span>
+
+    <span class="c1"># NOTE: Right now the numbers are tuned so that the weights are identical</span>
+    <span class="c1"># per bin. If you change binning that&#39;s likely not the case anymore and you</span>
+    <span class="c1"># inevitably end up with averaged values over bins, which are then not</span>
+    <span class="c1"># equal to the individual weights anymore when those are not identical per</span>
+    <span class="c1"># bin</span>
+
+    <span class="n">n_evts</span> <span class="o">=</span> <span class="mi">10000</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">n_evts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">n_evts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="s1">&#39;events&#39;</span><span class="p">)</span>
+    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span>
+
+    <span class="n">binning_x</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">])</span>
+    <span class="n">binning_y</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">])</span>
+    <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">binning_x</span><span class="p">,</span> <span class="n">binning_y</span><span class="p">])</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Testing container and translation methods&#39;</span><span class="p">)</span>
+
+    <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">binning</span>
+    <span class="n">bx</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">midpoints</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="n">binning</span><span class="o">.</span><span class="n">midpoints</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">m</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">bx</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">bx</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="c1"># array repr</span>
+    <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+    <span class="n">array_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">array_weights</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">array_weights</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="c1"># binned repr</span>
+    <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">binning</span>
+    <span class="n">diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">bd</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">]</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">get_hist</span><span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">bd</span><span class="p">,</span> <span class="n">diag</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">bd</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">diag</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">diag</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">h</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">diag</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">assert</span> <span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">binning</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">binning</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="c1"># augment to array repr again</span>
+    <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s1">&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="test_container_set">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.test_container_set">[docs]</a>
+<span class="k">def</span> <span class="nf">test_container_set</span><span class="p">():</span>
+    <span class="n">container1</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="s1">&#39;test1&#39;</span><span class="p">)</span>
+    <span class="n">container2</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="s1">&#39;test2&#39;</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">ContainerSet</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">container1</span><span class="p">,</span> <span class="n">container2</span><span class="p">])</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container1</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;identical containers added to a containerset, this should not be possible&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">test_container</span><span class="p">()</span>
+    <span class="n">test_container_set</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

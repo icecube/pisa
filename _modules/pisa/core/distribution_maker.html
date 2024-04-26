@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.core.distribution_maker &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.core.distribution_maker</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.core.distribution_maker</h1><div class="highlight"><pre>
+<span></span><span class="ch">#! /usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">DistributionMaker class definition and a simple script to generate, save, and</span>
+<span class="sd">plot a distribution from pipeline config file(s).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ArgumentDefaultsHelpFormatter</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">MapSet</span>
+<span class="kn">from</span> <span class="nn">pisa.core.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">ParamSet</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">PISAConfigParser</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">mkdir</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DistributionMaker&#39;</span><span class="p">,</span> <span class="s1">&#39;test_DistributionMaker&#39;</span><span class="p">,</span> <span class="s1">&#39;parse_args&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi, P. Eller&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<div class="viewcode-block" id="DistributionMaker">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker">[docs]</a>
+<span class="k">class</span> <span class="nc">DistributionMaker</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for one or more pipelines; the outputs from all contained</span>
+<span class="sd">    pipelines are added together to create the distribution.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pipelines : Pipeline or convertible thereto, or iterable thereof</span>
+<span class="sd">        A new pipline is instantiated with each object passed. Legal objects</span>
+<span class="sd">        are already-instantiated Pipelines and anything interpret-able by the</span>
+<span class="sd">        Pipeline init method.</span>
+
+<span class="sd">    label : str or None, optional</span>
+<span class="sd">        A label for the DistributionMaker.</span>
+
+<span class="sd">    set_livetime_from_data : bool, optional</span>
+<span class="sd">        If a (data) pipeline is found with the attr `metadata` and which has</span>
+<span class="sd">        the contained key &quot;livetime&quot;, this livetime is used to set the livetime</span>
+<span class="sd">        on all pipelines which have param `params.livetime`. If multiple such</span>
+<span class="sd">        data pipelines are found and `set_livetime_from_data` is True, all are</span>
+<span class="sd">        checked for consistency (you should use multiple `Detector`s if you</span>
+<span class="sd">        have incompatible data sets).</span>
+
+<span class="sd">    profile : bool</span>
+<span class="sd">        timing of inidividual pipelines / stages</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Free params with the same name in two pipelines are updated at the same</span>
+<span class="sd">    time so long as you use the `update_params`, `set_free_params`, or</span>
+<span class="sd">    `_set_rescaled_free_params` methods. Also use `select_params` to select</span>
+<span class="sd">    params across all pipelines (if a pipeline does not have one or more of</span>
+<span class="sd">    the param selectors specified, those param selectors have no effect in</span>
+<span class="sd">    that pipeline).</span>
+
+<span class="sd">    `_*_rescaled_*` properties and methods are for interfacing with a</span>
+<span class="sd">    minimizer, where values are linearly mapped onto the interval [0, 1]</span>
+<span class="sd">    according to the parameter&#39;s allowed range. Avoid interfacing with these</span>
+<span class="sd">    except if using a minimizer, since, e.g., units are stripped and values and</span>
+<span class="sd">    intervals are non-physical.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pipelines</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">set_livetime_from_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span> <span class="o">=</span> <span class="n">profile</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pipelines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pipelines</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">PISAConfigParser</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">,</span>
+                                  <span class="n">Pipeline</span><span class="p">)):</span>
+            <span class="n">pipelines</span> <span class="o">=</span> <span class="p">[</span><span class="n">pipelines</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="n">pipelines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pipeline</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">):</span>
+                <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">pipeline</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pipelines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
+
+        <span class="n">data_run_livetime</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">set_livetime_from_data</span><span class="p">:</span>
+            <span class="c1">#</span>
+            <span class="c1"># Get livetime metadata if defined in any stage in any pipeline</span>
+            <span class="c1">#</span>
+            <span class="k">for</span> <span class="n">pipeline_idx</span><span class="p">,</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">stage_idx</span><span class="p">,</span> <span class="n">stage</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pipeline</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                        <span class="nb">hasattr</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">)</span>
+                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+                        <span class="ow">and</span> <span class="s2">&quot;livetime&quot;</span> <span class="ow">in</span> <span class="n">stage</span><span class="o">.</span><span class="n">metadata</span>
+                    <span class="p">):</span>
+                        <span class="k">continue</span>
+
+                    <span class="k">if</span> <span class="n">data_run_livetime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">data_run_livetime</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;livetime&quot;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">stage</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;livetime&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">data_run_livetime</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;Pipeline index </span><span class="si">{}</span><span class="s2">, stage index </span><span class="si">{}</span><span class="s2"> has data&quot;</span>
+                            <span class="s2">&quot; livetime = </span><span class="si">{}</span><span class="s2">, in disagreement with&quot;</span>
+                            <span class="s2">&quot; previously-found livetime = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">pipeline_idx</span><span class="p">,</span>
+                                <span class="n">stage_idx</span><span class="p">,</span>
+                                <span class="n">stage</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;livetime&quot;</span><span class="p">],</span>
+                                <span class="n">data_run_livetime</span><span class="p">,</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+
+            <span class="c1"># Save the last livetime found inside the pipeline&#39;s metadata</span>
+            <span class="c1"># TODO: implement metadata in the pipeline class instead</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;livetime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_run_livetime</span>
+            <span class="c1">#</span>
+            <span class="c1"># Set param `params.livetime` for any pipelines that have it</span>
+            <span class="c1">#</span>
+            <span class="k">if</span> <span class="n">data_run_livetime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+                <span class="n">data_run_livetime</span> <span class="o">*=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">sec</span>
+
+                <span class="k">for</span> <span class="n">pipeline_idx</span><span class="p">,</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+                    <span class="k">if</span> <span class="s2">&quot;livetime&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">livetime</span><span class="o">.</span><span class="n">is_fixed</span> <span class="o">=</span> <span class="kc">True</span>
+
+                    <span class="k">if</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">livetime</span> <span class="o">!=</span> <span class="n">data_run_livetime</span><span class="p">:</span>
+
+                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                            <span class="s2">&quot;Pipeline index </span><span class="si">%d</span><span class="s2"> has params.livetime = </span><span class="si">%s</span><span class="s2">, in&quot;</span>
+                            <span class="s2">&quot; disagreement with data livetime = </span><span class="si">%s</span><span class="s2"> defined by&quot;</span>
+                            <span class="s2">&quot; data. The pipeline&#39;s livetime param will be&quot;</span>
+                            <span class="s2">&quot; reset to the latter value and set to be fixed&quot;</span>
+                            <span class="s2">&quot; (if it is not alredy).&quot;</span><span class="p">,</span>
+                            <span class="n">pipeline_idx</span><span class="p">,</span>
+                            <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">livetime</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                            <span class="n">data_run_livetime</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">livetime</span> <span class="o">=</span> <span class="n">data_run_livetime</span>
+
+
+        <span class="c1">#for pipeline in self:</span>
+        <span class="c1">#    pipeline.select_params(self.param_selections,</span>
+        <span class="c1">#                           error_on_missing=False)</span>
+
+        <span class="c1"># Make sure that all the pipelines have the same detector name (or None)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector_name</span> <span class="o">=</span> <span class="s1">&#39;no_name&#39;</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pipelines</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">detector_name</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector_name</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector_name</span> <span class="o">!=</span> <span class="s1">&#39;no_name&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span>
+                    <span class="s1">&#39;Different detector names in distribution_maker pipelines&#39;</span>
+                <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">detector_name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># set parameters with an identical name to the same object</span>
+        <span class="c1"># otherwise we get inconsistent behaviour when setting repeated params</span>
+        <span class="c1"># See Isues #566 and #648</span>
+        <span class="c1"># Also, do this for all selections!</span>
+        <span class="n">original_selection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_selections</span>
+        <span class="n">all_selections</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
+                <span class="n">all_selections</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">_param_selector</span><span class="o">.</span><span class="n">_selector_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">selection</span> <span class="ow">in</span> <span class="n">all_selections</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+            <span class="n">all_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
+            <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="n">pipeline</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="n">all_params</span><span class="p">,</span> <span class="n">existing_must_match</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">original_selection</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;presto&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DistributionMaker.tabulate">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.tabulate">[docs]</a>
+    <span class="k">def</span> <span class="nf">tabulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">):</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pipeline number&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;detector name&#39;</span><span class="p">,</span> <span class="s1">&#39;output_binning&#39;</span><span class="p">,</span> <span class="s1">&#39;output_key&#39;</span><span class="p">,</span> <span class="s1">&#39;profile&#39;</span><span class="p">]</span>
+        <span class="n">colalign</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;center&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span> <span class="p">)</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pipelines</span><span class="p">):</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">detector_name</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">output_binning</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">output_key</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">profile</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">tabulate</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">tablefmt</span><span class="p">,</span> <span class="n">colalign</span><span class="o">=</span><span class="n">colalign</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pipelines</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span>
+
+    <span class="nd">@profile</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pipelines</span><span class="p">:</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span> <span class="o">=</span> <span class="n">value</span>
+
+
+<div class="viewcode-block" id="DistributionMaker.run">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.run">[docs]</a>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DistributionMaker.setup">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.setup">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup (reset) all pipelines&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DistributionMaker.get_outputs">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.get_outputs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_sum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sum_map_name</span><span class="o">=</span><span class="s1">&#39;total&#39;</span><span class="p">,</span>
+                    <span class="n">sum_map_tex_name</span><span class="o">=</span><span class="s1">&#39;Total&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute and return the outputs.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        return_sum : bool</span>
+<span class="sd">            If True, add up all Maps in all MapSets returned by all pipelines.</span>
+<span class="sd">            The result will be a single Map contained in a MapSet.</span>
+<span class="sd">            If False, return a list where each element is the full MapSet</span>
+<span class="sd">            returned by each pipeline in the DistributionMaker.</span>
+
+
+<span class="sd">        **kwargs</span>
+<span class="sd">            Passed on to each pipeline&#39;s `get_outputs` method.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        MapSet if `return_sum=True` or list of MapSets if `return_sum=False`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span> <span class="c1"># pylint: disable=redefined-outer-name</span>
+
+        <span class="k">if</span> <span class="n">return_sum</span><span class="p">:</span>
+            
+            <span class="c1"># Case where the output of a pipeline is a mapSet</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">MapSet</span><span class="p">):</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">])</span> <span class="c1"># This produces a Map</span>
+                <span class="n">outputs</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">sum_map_name</span>
+                <span class="n">outputs</span><span class="o">.</span><span class="n">tex</span> <span class="o">=</span> <span class="n">sum_map_tex_name</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span> <span class="c1"># final output must be a MapSet</span>
+
+            <span class="c1"># Case where the output of a pipeline is a dict of different MapSets</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">OrderedDict</span><span class="p">):</span>
+                <span class="n">output_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">A</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">])</span> <span class="c1"># This produces a Map objects</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">sum_map_name</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">tex</span> <span class="o">=</span> <span class="n">sum_map_tex_name</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+                <span class="n">outputs</span> <span class="o">=</span> <span class="n">output_dict</span>
+
+        <span class="k">return</span> <span class="n">outputs</span></div>
+
+
+<div class="viewcode-block" id="DistributionMaker.update_params">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.update_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DistributionMaker.select_params">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.select_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">select_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">successes</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">selections</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">pipeline</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">successes</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">error_on_missing</span> <span class="ow">and</span> <span class="n">successes</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                    <span class="s1">&#39;None of the stages from any pipeline in this distribution&#39;</span>
+                    <span class="s1">&#39; maker has all of the selections </span><span class="si">%s</span><span class="s1"> available.&#39;</span>
+                    <span class="o">%</span><span class="p">(</span><span class="n">selections</span><span class="p">,)</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="n">possible_selections</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">param_selections</span>
+                <span class="k">if</span> <span class="n">possible_selections</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">&quot;Although you didn&#39;t make a parameter &quot;</span>
+                        <span class="s2">&quot;selection, the following were available: </span><span class="si">%s</span><span class="s2">.&quot;</span>
+                        <span class="s2">&quot; This may cause issues.&quot;</span><span class="p">,</span> <span class="n">possible_selections</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DistributionMaker.add_covariance">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.add_covariance">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">covmat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Incorporates covariance between parameters. </span>
+<span class="sd">            This is done by replacing relevant correlated parameters with &quot;DerivedParams&quot;</span>
+<span class="sd">                that depend on new parameters in an uncorrelated basis</span>
+
+<span class="sd">            The parameters are all updated, but this doesn&#39;t add the new parameters in</span>
+<span class="sd">            So we go to the first stage we find that has one of the original parameters and manually add this in </span>
+<span class="sd">            </span>
+<span class="sd">            See the docstring in &quot;pisa.core.param.ParamSet&quot; for more </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">paramset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
+        
+        <span class="n">paramset</span><span class="o">.</span><span class="n">add_covariance</span><span class="p">(</span><span class="n">covmat</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="n">paramset</span><span class="p">)</span>
+        
+        <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pipelines</span><span class="p">:</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">_add_rotated</span><span class="p">(</span><span class="n">paramset</span><span class="p">,</span> <span class="n">suppress_warning</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="n">success</span> <span class="ow">or</span> <span class="n">retval</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unsuccessful?&quot;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pipelines</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="s1">&#39;list[Pipeline]&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pipelines</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">param_selections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">selections</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">selections</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pipeline</span><span class="o">.</span><span class="n">param_selections</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">source_code_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash for the source code of this object&#39;s class.</span>
+
+<span class="sd">        Not meant to be perfect, but should suffice for tracking provenance of</span>
+<span class="sd">        an object stored to disk that were produced by a Stage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">hash_obj</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">source_code_hash</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">hash</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_events_per_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        returns an array of bin indices where none of the </span>
+<span class="sd">        pipelines have MC events</span>
+
+<span class="sd">        assumes that all pipelines have the same binning output specs</span>
+
+<span class="sd">        number of events is taken out of the last stage of the pipeline</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">num_bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output_specs</span><span class="o">.</span><span class="n">tot_num_bins</span>
+        <span class="n">num_events_per_bin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_bins</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pipelines</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">p</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output_specs</span><span class="o">.</span><span class="n">tot_num_bins</span><span class="o">==</span><span class="n">num_bins</span><span class="p">,</span> <span class="s1">&#39;ERROR: different pipelines have different binning&#39;</span>
+
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_bins</span><span class="p">):</span>
+                    <span class="n">index_mask</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">array_data</span><span class="p">[</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span>
+                    <span class="n">current_weights</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">array_data</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)[</span><span class="n">index_mask</span><span class="p">]</span>
+                    <span class="n">n_weights</span> <span class="o">=</span> <span class="n">current_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">num_events_per_bin</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">n_weights</span>
+
+        <span class="k">return</span> <span class="n">num_events_per_bin</span>
+    
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">empty_bin_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Find indices where there are no events present</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">empty_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_events_per_bin</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">empty_counts</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">indices</span>
+    
+
+<div class="viewcode-block" id="DistributionMaker.set_free_params">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.set_free_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_free_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set free parameters&#39; values.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        values : list of quantities</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                        <span class="s1">&#39;Trying to set value for &quot;</span><span class="si">%s</span><span class="s1">&quot;, a parameter that is&#39;</span>
+                        <span class="s1">&#39; fixed in at least one pipeline&#39;</span> <span class="o">%</span><span class="n">name</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DistributionMaker.randomize_free_params">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.randomize_free_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">randomize_free_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">random_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">random</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">random</span> <span class="o">=</span> <span class="n">get_random_state</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
+        <span class="n">rand</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">rand</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DistributionMaker.reset_all">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.reset_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset both free and fixed parameters to their nominal values.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">reset_all</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DistributionMaker.reset_free">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.reset_free">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_free</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset only free parameters to their nominal values.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">reset_free</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DistributionMaker.set_nominal_by_current_values">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.set_nominal_by_current_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_nominal_by_current_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define the nominal values as the parameters&#39; current values.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">set_nominal_by_current_values</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_set_rescaled_free_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rvalues</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set free param values given a simple list of [0,1]-rescaled,</span>
+<span class="sd">        dimensionless values</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="o">.</span><span class="n">names</span>
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">rvalue</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">rvalues</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">_rescaled_value</span> <span class="o">=</span> <span class="n">rvalue</span> <span class="c1"># pylint: disable=protected-access</span>
+                <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                        <span class="s1">&#39;Trying to set value for &quot;</span><span class="si">%s</span><span class="s1">&quot;, a parameter that is&#39;</span>
+                        <span class="s1">&#39; fixed in at least one pipeline&#39;</span> <span class="o">%</span><span class="n">name</span>
+                    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="test_DistributionMaker">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.test_DistributionMaker">[docs]</a>
+<span class="k">def</span> <span class="nf">test_DistributionMaker</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for DistributionMaker&quot;&quot;&quot;</span>
+    <span class="c1">#</span>
+    <span class="c1"># Test: select_params and param_selections</span>
+    <span class="c1">#</span>
+
+    <span class="c1"># TODO: make test config file with materials param selector, then uncomment</span>
+    <span class="c1"># removed tests below</span>
+
+    <span class="n">hierarchies</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nh&#39;</span><span class="p">,</span> <span class="s1">&#39;ih&#39;</span><span class="p">]</span>
+    <span class="c1">#materials = [&#39;iron&#39;, &#39;pyrolite&#39;]</span>
+    <span class="n">materials</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">t23</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">ih</span><span class="o">=</span><span class="mf">49.5</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+        <span class="n">nh</span><span class="o">=</span><span class="mf">42.3</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span>
+    <span class="p">)</span>
+    <span class="n">YeO</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">iron</span><span class="o">=</span><span class="mf">0.4656</span><span class="p">,</span>
+        <span class="n">pyrolite</span><span class="o">=</span><span class="mf">0.4957</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Instantiate with two pipelines: first has both nh/ih and iron/pyrolite</span>
+    <span class="c1"># param selectors, while the second only has nh/ih param selectors.</span>
+    <span class="n">dm</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">(</span>
+        <span class="p">[</span><span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">,</span> <span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1">#current_mat = &#39;iron&#39;</span>
+    <span class="n">current_hier</span> <span class="o">=</span> <span class="s1">&#39;nh&#39;</span>
+
+    <span class="c1">#for new_hier, new_mat in product(hierarchies, materials):</span>
+    <span class="k">for</span> <span class="n">new_hier</span> <span class="ow">in</span> <span class="n">hierarchies</span><span class="p">:</span>
+        <span class="c1">#assert dm.param_selections == sorted([current_hier, current_mat]), \</span>
+        <span class="c1">#        str(dm.param_selections)</span>
+        <span class="c1">#assert dm.param_selections == sorted([current_hier, &#39;earth&#39;]), str(dm.param_selections)</span>
+        <span class="k">assert</span> <span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">t23</span><span class="p">[</span><span class="n">current_hier</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="p">)</span>
+        <span class="c1">#assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)</span>
+
+        <span class="c1"># Select just the hierarchy</span>
+        <span class="n">dm</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">new_hier</span><span class="p">)</span>
+        <span class="c1">#assert dm.param_selections == sorted([new_hier, current_mat]), \</span>
+        <span class="c1">#        str(dm.param_selections)</span>
+        <span class="c1">#assert dm.param_selections == sorted([new_hier, &#39;earth&#39;]), str(dm.param_selections)</span>
+        <span class="k">assert</span> <span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">t23</span><span class="p">[</span><span class="n">new_hier</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="p">)</span>
+        <span class="c1">#assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)</span>
+
+        <span class="c1">## Select just the material</span>
+        <span class="c1">#dm.select_params(new_mat)</span>
+        <span class="c1">#assert dm.param_selections == sorted([new_hier, new_mat]), \</span>
+        <span class="c1">#        str(dm.param_selections)</span>
+        <span class="c1">#assert dm.params.theta23.value == t23[new_hier], \</span>
+        <span class="c1">#        str(dm.params.theta23)</span>
+        <span class="c1">#assert dm.params.YeO.value == YeO[new_mat], \</span>
+        <span class="c1">#        str(dm.params.YeO)</span>
+
+        <span class="c1"># Reset both to &quot;current&quot;</span>
+        <span class="c1">#dm.select_params([current_mat, current_hier])</span>
+        <span class="n">dm</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">current_hier</span><span class="p">)</span>
+        <span class="c1">#assert dm.param_selections == sorted([current_hier, current_mat]), \</span>
+        <span class="c1">#        str(dm.param_selections)</span>
+        <span class="c1">#assert dm.param_selections == sorted([current_hier, &#39;earth&#39;]), str(dm.param_selections)</span>
+        <span class="k">assert</span> <span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">t23</span><span class="p">[</span><span class="n">current_hier</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="p">)</span></div>
+
+        <span class="c1">#assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)</span>
+
+        <span class="c1">## Select both hierarchy and material</span>
+        <span class="c1">#dm.select_params([new_mat, new_hier])</span>
+        <span class="c1">#assert dm.param_selections == sorted([new_hier, new_mat]), \</span>
+        <span class="c1">#        str(dm.param_selections)</span>
+        <span class="c1">#assert dm.params.theta23.value == t23[new_hier], \</span>
+        <span class="c1">#        str(dm.params.theta23)</span>
+        <span class="c1">#assert dm.params.YeO.value == YeO[new_mat], \</span>
+        <span class="c1">#        str(dm.params.YeO)</span>
+
+        <span class="c1">#current_hier = new_hier</span>
+        <span class="c1">#current_mat = new_mat</span>
+
+
+<div class="viewcode-block" id="parse_args">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.parse_args">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get command line arguments&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Generate, store, and plot a distribution from pipeline</span>
+<span class="s1">        configuration file(s).&#39;&#39;&#39;</span><span class="p">,</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">ArgumentDefaultsHelpFormatter</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="s1">&#39;--pipeline&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;CONFIGFILE&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Settings file for each pipeline (repeat for multiple).&#39;&#39;&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--select&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;PARAM_SELECTIONS&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Param selectors (separated by spaces) to use to override any</span>
+<span class="s1">        defaults in the config file.&#39;&#39;&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--return-sum&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Return a sum of the MapSets output by the distribution maker&#39;s</span>
+<span class="s1">        pipelines as a single map (as opposed to a list of MapSets, one per</span>
+<span class="s1">        pipeline)&#39;&#39;&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--outdir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Directory into which to store the output&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--pdf&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Produce pdf plot(s).&#39;&#39;&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--png&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Produce png plot(s).&#39;&#39;&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-v&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Set verbosity level&#39;</span>
+    <span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">args</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">return_outputs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main; call as script with `return_outputs=False` or interactively with</span>
+<span class="sd">    `return_outputs=True`&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.plotter</span> <span class="kn">import</span> <span class="n">Plotter</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">plot_formats</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">pdf</span><span class="p">:</span>
+        <span class="n">plot_formats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;pdf&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">png</span><span class="p">:</span>
+        <span class="n">plot_formats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;png&#39;</span><span class="p">)</span>
+
+    <span class="n">distribution_maker</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">(</span><span class="n">pipelines</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">pipeline</span><span class="p">)</span> <span class="c1"># pylint: disable=redefined-outer-name</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">select</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">distribution_maker</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">select</span><span class="p">)</span>
+
+    <span class="n">outputs</span> <span class="o">=</span> <span class="n">distribution_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">return_sum</span><span class="p">)</span> <span class="c1"># pylint: disable=redefined-outer-name</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">:</span>
+        <span class="c1"># TODO: unique filename: append hash (or hash per pipeline config)</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;distribution_maker_outputs.json.bz2&#39;</span>
+        <span class="n">mkdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">)</span>
+        <span class="n">fpath</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span> <span class="n">fname</span><span class="p">))</span>
+        <span class="n">to_file</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">outdir</span> <span class="ow">and</span> <span class="n">plot_formats</span><span class="p">:</span>
+        <span class="n">my_plotter</span> <span class="o">=</span> <span class="n">Plotter</span><span class="p">(</span>
+            <span class="n">outdir</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span>
+            <span class="n">fmt</span><span class="o">=</span><span class="n">plot_formats</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">annotate</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">output</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">outputs</span><span class="p">):</span>
+            <span class="n">my_plotter</span><span class="o">.</span><span class="n">plot_2d_array</span><span class="p">(</span>
+                <span class="n">output</span><span class="p">,</span>
+                <span class="n">fname</span><span class="o">=</span><span class="s1">&#39;dist_output_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">num</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_outputs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">distribution_maker</span><span class="p">,</span> <span class="n">outputs</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">distribution_maker</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">main</span><span class="p">(</span><span class="n">return_outputs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># pylint: disable=invalid-name</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

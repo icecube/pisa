@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.llh_server &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.llh_server</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.llh_server</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Server(s) for handling llh requests from a client: client passes free param</span>
+<span class="sd">values, server sets these on its DistributionMaker, generates outputs, and</span>
+<span class="sd">compares the resulting distributions against a reference template, returning</span>
+<span class="sd">the llh value.</span>
+
+<span class="sd">Code adapted from Dan Krause</span>
+<span class="sd">  https://gist.github.com/dankrause/9607475</span>
+<span class="sd">see `__license__`.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Dan Krause, adapted by J.L. Lanfranchi&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Copyright 2017 Dan Krause</span>
+
+<span class="s2">Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2">you may not use this file except in compliance with the License.</span>
+<span class="s2">You may obtain a copy of the License at</span>
+
+<span class="s2">    http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s2">Unless required by applicable law or agreed to in writing, software</span>
+<span class="s2">distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2">WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s2">See the License for the specific language governing permissions and</span>
+<span class="s2">limitations under the License.&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;DFLT_HOST&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DFLT_PORT&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DFLT_NUM_SERVERS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;send_obj&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;receive_obj&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;serve&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fork_servers&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">cpu_count</span><span class="p">,</span> <span class="n">Process</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">socketserver</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="kn">from</span> <span class="nn">pisa.core.distribution_maker</span> <span class="kn">import</span> <span class="n">DistributionMaker</span>
+<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">MapSet</span>
+
+
+<span class="n">DFLT_HOST</span> <span class="o">=</span> <span class="s2">&quot;localhost&quot;</span>
+<span class="n">DFLT_PORT</span> <span class="o">=</span> <span class="s2">&quot;9000&quot;</span>
+<span class="n">DFLT_NUM_SERVERS</span> <span class="o">=</span> <span class="n">cpu_count</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">ConnectionClosed</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Connection closed&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="send_obj">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.llh_server.send_obj">[docs]</a>
+<span class="k">def</span> <span class="nf">send_obj</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Send a Python object over a socket. Object is pickle-encoded as the</span>
+<span class="sd">    payload and sent preceded by a 4-byte header which indicates the number of</span>
+<span class="sd">    bytes of the payload.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sock : socket</span>
+<span class="sd">    obj : pickle-able Python object</span>
+<span class="sd">        Object to send</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Turn object into a string</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+    <span class="c1"># Create a header that says how large the payload is</span>
+    <span class="n">header</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;!i&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+    <span class="c1"># Send header</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+
+    <span class="c1"># Send payload</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="receive_obj">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.llh_server.receive_obj">[docs]</a>
+<span class="k">def</span> <span class="nf">receive_obj</span><span class="p">(</span><span class="n">sock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Receive an object from a socket. Payload is a pickle-encoded object, and</span>
+<span class="sd">    header (prefixing payload) is 4-byte int indicating length of the payload.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sock : socket</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    obj</span>
+<span class="sd">        Unpickled Python object</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get 4-byte header which tells how large the subsequent payload will be</span>
+    <span class="n">header</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConnectionClosed</span><span class="p">()</span>
+    <span class="n">payload_size</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;!i&#39;</span><span class="p">,</span> <span class="n">header</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Receive the payload</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">payload_size</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConnectionClosed</span><span class="p">()</span>
+
+    <span class="c1"># Payload was pickled; unpickle to recreate original Python object</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">obj</span></div>
+
+
+
+<div class="viewcode-block" id="serve">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.llh_server.serve">[docs]</a>
+<span class="k">def</span> <span class="nf">serve</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">DFLT_PORT</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiate PISA objects and run server for processing requests.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config : str or iterable thereof</span>
+<span class="sd">        Resource path(s) to pipeline config(s)</span>
+
+<span class="sd">    ref : str</span>
+<span class="sd">        Resource path to reference map</span>
+
+<span class="sd">    port : int or str, optional</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Instantiate the objects here to save having to do this repeatedly</span>
+    <span class="n">dist_maker</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">MapSet</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+
+    <span class="c1"># Define server as a closure such that it captures the above-instantiated objects</span>
+    <span class="k">class</span> <span class="nc">MyTCPHandler</span><span class="p">(</span><span class="n">socketserver</span><span class="o">.</span><span class="n">BaseRequestHandler</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The request handler class for our server.</span>
+
+<span class="sd">        It is instantiated once per connection to the server, and must override</span>
+<span class="sd">        the handle() method to implement communication to the client.</span>
+
+<span class="sd">        See socketserver.BaseRequestHandler for documentation of args.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">param_values</span> <span class="o">=</span> <span class="n">receive_obj</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">ConnectionClosed</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="n">dist_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">param_values</span><span class="p">)</span>  <span class="c1"># pylint: disable=protected-access</span>
+            <span class="n">test_map</span> <span class="o">=</span> <span class="n">dist_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">llh</span> <span class="o">=</span> <span class="n">test_map</span><span class="o">.</span><span class="n">llh</span><span class="p">(</span>
+                <span class="n">expected_values</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+                <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># return sum over llh from all bins (not per-bin llh&#39;s)</span>
+            <span class="p">)</span>
+            <span class="n">send_obj</span><span class="p">(</span><span class="n">llh</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">)</span>
+
+    <span class="n">server</span> <span class="o">=</span> <span class="n">socketserver</span><span class="o">.</span><span class="n">TCPServer</span><span class="p">((</span><span class="n">DFLT_HOST</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">port</span><span class="p">)),</span> <span class="n">MyTCPHandler</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;llh server started on </span><span class="si">{}</span><span class="s2">:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">DFLT_HOST</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+    <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="fork_servers">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.llh_server.fork_servers">[docs]</a>
+<span class="k">def</span> <span class="nf">fork_servers</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">DFLT_PORT</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">DFLT_NUM_SERVERS</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fork multiple servers for handling LLH requests. Objects are identically</span>
+<span class="sd">    configured, and ports used are sequential starting from `port`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config : str or iterable thereof</span>
+<span class="sd">    ref : str</span>
+<span class="sd">    port : str or int, optional</span>
+<span class="sd">    num : int, optional</span>
+<span class="sd">        Defaults to number of CPUs returned by `multiple.cpu_count()`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">processes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">port_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">port</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">port</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">num</span><span class="p">)):</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">port_</span><span class="p">))</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">serve</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">processes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">process</span><span class="p">)</span>
+
+    <span class="c1"># Start all processes</span>
+    <span class="k">for</span> <span class="n">process</span> <span class="ow">in</span> <span class="n">processes</span><span class="p">:</span>
+        <span class="n">process</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="c1"># Wait for all processes to finish</span>
+    <span class="k">for</span> <span class="n">process</span> <span class="ow">in</span> <span class="n">processes</span><span class="p">:</span>
+        <span class="n">process</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.llh_server.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command line arguments&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--config&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Resource location of one or more pipeline configs&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--ref&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Resource location of reference (truth) map&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--port&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">DFLT_PORT</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--num&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of servers to fork (&gt;= 1); if set to 1, no forking occurs&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">serve</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fork_servers</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

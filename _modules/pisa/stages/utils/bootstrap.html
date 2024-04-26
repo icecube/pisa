@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.utils.bootstrap &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.utils.bootstrap</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.utils.bootstrap</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Make bootstrap samples of data.</span>
+
+<span class="sd">This stage allows one to resample datasets to estimate MC uncertainties without having</span>
+<span class="sd">to decrease statistics. Bootstrap samples are produced by random selection with</span>
+<span class="sd">replacement, which is implemented in this stage by an equivalent re-weighting of</span>
+<span class="sd">events.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">WHERE</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
+
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;A. Trettin&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2022, The IceCube Collaboration</span>
+
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> you may not use this file except in compliance with the License.</span>
+<span class="s2"> You may obtain a copy of the License at</span>
+
+<span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s2"> See the License for the specific language governing permissions and</span>
+<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="bootstrap">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.bootstrap.bootstrap">[docs]</a>
+<span class="k">class</span> <span class="nc">bootstrap</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stage to make bootstrap samples from input data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Seed for the random number generator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># init base class</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span>
+
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<div class="viewcode-block" id="bootstrap.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.bootstrap.bootstrap.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Setting up bootstrap with seed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">default_rng</span>
+
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">sample_size</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+            <span class="c1"># indices of events are randomly chosen from the entire sample until</span>
+            <span class="c1"># we have a new sample of the same size</span>
+            <span class="n">sample_idx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">sample_size</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">sample_size</span><span class="p">)</span>
+            <span class="c1"># Instead of manipulating all of the data arrays, we count how often each</span>
+            <span class="c1"># index was chosen and take that as a weight, i.e. an event that was selected</span>
+            <span class="c1"># twice will have a weight of 2.</span>
+            <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">sample_idx</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">sample_size</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;bootstrap_weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_weights</span></div>
+
+
+<div class="viewcode-block" id="bootstrap.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.bootstrap.bootstrap.apply_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;bootstrap_weights&quot;</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="insert_bootstrap_after_data_loader">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.bootstrap.insert_bootstrap_after_data_loader">[docs]</a>
+<span class="k">def</span> <span class="nf">insert_bootstrap_after_data_loader</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a pipeline configuration parsed with `parse_pipeline_config`, insert the</span>
+<span class="sd">    bootstrap stage directly after the `simple_data_loader` stage and return the</span>
+<span class="sd">    modified config dict.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cfg_dict : collections.OrderedDict</span>
+<span class="sd">        Pipeline configuration in the form of an ordered dictionary.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Seed to be placed into the pipeline configuration.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    collections.OrderedDict</span>
+<span class="sd">        A deepcopy of the original input `cfg_dict` with the configuration of the</span>
+<span class="sd">        bootstrap stage inserted after the data loader.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">bootstrap_stage_cfg</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">bootstrap_stage_cfg</span><span class="p">[</span><span class="s2">&quot;apply_mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+    <span class="n">bootstrap_stage_cfg</span><span class="p">[</span><span class="s2">&quot;calc_mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+    <span class="n">bootstrap_stage_cfg</span><span class="p">[</span><span class="s2">&quot;seed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">seed</span>
+
+    <span class="n">bootstrap_pipe_cfg</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">)</span>
+
+    <span class="c1"># Important: Cannot mutate dict while iterating over it, instantiate list instead</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">bootstrap_pipe_cfg</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="n">bootstrap_pipe_cfg</span><span class="o">.</span><span class="n">move_to_end</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;simple_data_loader&quot;</span><span class="p">):</span>
+            <span class="n">bootstrap_pipe_cfg</span><span class="p">[(</span><span class="s2">&quot;utils&quot;</span><span class="p">,</span> <span class="s2">&quot;bootstrap&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">bootstrap_stage_cfg</span>
+
+    <span class="k">return</span> <span class="n">bootstrap_pipe_cfg</span></div>
+
+
+
+<div class="viewcode-block" id="test_bootstrap">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.bootstrap.test_bootstrap">[docs]</a>
+<span class="k">def</span> <span class="nf">test_bootstrap</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for the bootstrap stage.&quot;&quot;&quot;</span>
+
+    <span class="kn">from</span> <span class="nn">pisa.core.distribution_maker</span> <span class="kn">import</span> <span class="n">DistributionMaker</span>
+    <span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">parse_pipeline_config</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+
+    <span class="kn">from</span> <span class="nn">numpy.testing</span> <span class="kn">import</span> <span class="n">assert_allclose</span>
+
+    <span class="n">example_cfg</span> <span class="o">=</span> <span class="n">parse_pipeline_config</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/example.cfg&quot;</span><span class="p">)</span>
+
+    <span class="c1"># We need to insert the bootstrap stage right after the data loading stage</span>
+    <span class="n">bootstrap_pipe_cfg</span> <span class="o">=</span> <span class="n">insert_bootstrap_after_data_loader</span><span class="p">(</span><span class="n">example_cfg</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;bootstrapped pipeline stage order:&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">bootstrap_pipe_cfg</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+    <span class="c1"># get a baseline</span>
+    <span class="n">dmaker</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">([</span><span class="n">example_cfg</span><span class="p">])</span>
+    <span class="n">map_baseline</span> <span class="o">=</span> <span class="n">dmaker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Make sure that different seeds produce different maps, and that the same seed will</span>
+    <span class="c1"># produce the same map.</span>
+    <span class="n">dmaker</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">([</span><span class="n">bootstrap_pipe_cfg</span><span class="p">])</span>
+    <span class="n">map_seed0</span> <span class="o">=</span> <span class="n">dmaker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># find key of bootstrap stage</span>
+    <span class="n">bootstrap_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">stage</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dmaker</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stages</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">stage</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span>
+            <span class="n">bootstrap_idx</span> <span class="o">=</span> <span class="n">i</span>
+
+    <span class="c1"># without re-loading the entire pipeline, we set the seed and call the setup function</span>
+    <span class="c1"># to save time for the test</span>
+    <span class="n">dmaker</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="n">bootstrap_idx</span><span class="p">]</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">dmaker</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="n">bootstrap_idx</span><span class="p">]</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+
+    <span class="n">map_seed1</span> <span class="o">=</span> <span class="n">dmaker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">map_seed0</span> <span class="o">==</span> <span class="n">map_seed1</span>
+
+    <span class="n">dmaker</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="n">bootstrap_idx</span><span class="p">]</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">dmaker</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="n">bootstrap_idx</span><span class="p">]</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+    <span class="n">map_seed0_reprod</span> <span class="o">=</span> <span class="n">dmaker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="n">map_seed0</span> <span class="o">==</span> <span class="n">map_seed0_reprod</span>
+
+    <span class="c1"># Quantify the variance of the resulting maps. They should be about the size of the</span>
+    <span class="c1"># expectation from sum of weights-squared.</span>
+
+    <span class="n">nominal_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">dmaker</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="n">bootstrap_idx</span><span class="p">]</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">dmaker</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="n">bootstrap_idx</span><span class="p">]</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+        <span class="n">map_bootstrap</span> <span class="o">=</span> <span class="n">dmaker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">nominal_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">map_bootstrap</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">)</span>
+
+    <span class="n">nominal_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">nominal_values</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+        <span class="c1"># calculate the ratio between the bootstrap nominal and the baseline nominal</span>
+        <span class="n">bs_nom_ratios</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">nominal_values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">map_baseline</span><span class="o">.</span><span class="n">nominal_values</span>
+        <span class="c1"># and the standard deviation ratio as well</span>
+        <span class="n">bs_std_ratios</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">nominal_values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">map_baseline</span><span class="o">.</span><span class="n">std_devs</span>
+        <span class="c1"># assert that both nominal and standard deviation match the expectation from</span>
+        <span class="c1"># baseline up to a small error</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">bs_nom_ratios</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.01</span>
+        <span class="c1"># the standard deviations are a little harder to match in 100 samples</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">bs_std_ratios</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.02</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;&lt; PASS : bootstrap &gt;&gt;&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_bootstrap</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

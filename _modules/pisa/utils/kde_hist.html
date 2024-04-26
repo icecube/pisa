@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.kde_hist &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.kde_hist</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.kde_hist</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions to get KDE smoothed historgams</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">from</span> <span class="nn">kde.cudakde</span> <span class="kn">import</span> <span class="n">gaussian_kde</span><span class="p">,</span> <span class="n">bootstrap_kde</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;get_hist&quot;</span><span class="p">,</span> <span class="s2">&quot;kde_histogramdd&quot;</span><span class="p">,</span> <span class="s2">&quot;test_kde_histogramdd&quot;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;P. Eller&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> you may not use this file except in compliance with the License.</span>
+<span class="s2"> You may obtain a copy of the License at</span>
+
+<span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s2"> See the License for the specific language governing permissions and</span>
+<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="get_hist">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.kde_hist.get_hist">[docs]</a>
+<span class="k">def</span> <span class="nf">get_hist</span><span class="p">(</span>
+    <span class="n">sample</span><span class="p">,</span>
+    <span class="n">binning</span><span class="p">,</span>
+    <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">bw_method</span><span class="o">=</span><span class="s2">&quot;scott&quot;</span><span class="p">,</span>
+    <span class="n">adaptive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">use_cuda</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">coszen_reflection</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+    <span class="n">coszen_name</span><span class="o">=</span><span class="s2">&quot;coszen&quot;</span><span class="p">,</span>
+    <span class="n">oversample</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">bootstrap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">bootstrap_niter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function for histograms from KDE</span>
+
+<span class="sd">    For description of args see kde_histogramdd()</span>
+
+<span class="sd">    Handling the reflctions at the coszen edges</span>
+
+<span class="sd">    ToDo:</span>
+<span class="sd">    ----</span>
+<span class="sd">    * Handle zenith like coszen? Or better: Define set of variables to perform</span>
+<span class="sd">      reflection on and reflection parameters (e.g. `reflect_fract` or somesuch</span>
+<span class="sd">      to stand in for for `coszen_reflection` and `reflect_dims` as standin for</span>
+<span class="sd">      `coszen_name`; also need some way to specify whether to reflect about lower</span>
+<span class="sd">      and/or upper edge); each such parameter can either be a single value, or a</span>
+<span class="sd">      sequence with one value per variable.</span>
+<span class="sd">    * Any good reason for 0.25 and &#39;scott&#39; defaults? If not, don&#39;t define a</span>
+<span class="sd">      default and force the user to explicitly set this when function is called.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">bootstrap</span> <span class="ow">and</span> <span class="n">oversample</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># Because the errors within a bin are highly correlated, they could not just</span>
+        <span class="c1"># be added in quadrature to create an oversampled histogram with errors.</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Bootstrapping cannot be combined with oversampling.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># the KDE implementation expects an empty weights array instead of `None`</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Get the overall normalization here, because the KDE will be normalized</span>
+    <span class="c1"># to one and we&#39;ll need to rescale in the end</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
+
+    <span class="n">binning</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">oversample</span><span class="p">(</span><span class="n">oversample</span><span class="p">)</span>
+
+    <span class="c1"># Flip around to satisfy the kde implementation</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="c1"># Must have same amount of dimensions as binning dimensions</span>
+    <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+
+    <span class="c1"># TODO: What if coszen isn&#39;t in binning? Does this fail?</span>
+    <span class="c1"># Yes, coszen is expected</span>
+    <span class="n">cz_bin</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">coszen_name</span><span class="p">)</span>
+
+    <span class="c1"># Swap out cz bin to first place (index 0)</span>
+    <span class="k">if</span> <span class="n">cz_bin</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Also swap binning:</span>
+        <span class="n">new_binning</span> <span class="o">=</span> <span class="p">[</span><span class="n">binning</span><span class="p">[</span><span class="n">coszen_name</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="n">coszen_name</span><span class="p">:</span>
+                <span class="n">new_binning</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">new_binning</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="n">cz_bin</span><span class="p">]]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[[</span><span class="n">cz_bin</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+
+    <span class="c1"># Check if edge needs to be reflected</span>
+    <span class="n">reflect_lower</span> <span class="o">=</span> <span class="n">binning</span><span class="p">[</span><span class="n">coszen_name</span><span class="p">]</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">reflect_upper</span> <span class="o">=</span> <span class="n">binning</span><span class="p">[</span><span class="n">coszen_name</span><span class="p">]</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+
+    <span class="c1"># Get the kernel weights</span>
+    <span class="n">kde_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">weights</span><span class="p">),</span>
+        <span class="n">bw_method</span><span class="o">=</span><span class="n">bw_method</span><span class="p">,</span>
+        <span class="n">adaptive</span><span class="o">=</span><span class="n">adaptive</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+        <span class="n">use_cuda</span><span class="o">=</span><span class="n">use_cuda</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+        <span class="n">kernel_weights_adaptive</span> <span class="o">=</span> <span class="n">bootstrap_kde</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">bootstrap_niter</span><span class="p">,</span> <span class="o">**</span><span class="n">kde_kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">kernel_weights_adaptive</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kde_kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Get the bin centers, where we&#39;re going to evaluate the KDEs, and extend</span>
+    <span class="c1"># the bin range for reflection</span>
+    <span class="n">bin_points</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">weighted_centers</span><span class="o">.</span><span class="n">m</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">coszen_name</span><span class="p">:</span>
+            <span class="c1"># how many bins to add for reflection</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">coszen_reflection</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">reflect_lower</span><span class="p">:</span>
+                <span class="n">c0</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span> <span class="p">:</span> <span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">c0</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">reflect_upper</span><span class="p">:</span>
+                <span class="n">c1</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="o">-</span><span class="n">l</span> <span class="o">-</span> <span class="mi">1</span> <span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">c1</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">c0</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">c1</span><span class="p">])</span>
+        <span class="n">bin_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+    <span class="c1"># Shape including reflection edges</span>
+    <span class="n">megashape</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">reflect_upper</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">reflect_lower</span><span class="p">))</span> <span class="o">*</span> <span class="n">l</span><span class="p">,</span>
+        <span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Shape of the reflection edges alone</span>
+    <span class="n">minishape</span> <span class="o">=</span> <span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">l</span><span class="p">,</span> <span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Create a set of points</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="o">*</span><span class="n">bin_points</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s2">&quot;ij&quot;</span><span class="p">)</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">g</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">])</span>
+
+    <span class="c1"># Evaluate KDEs at given points</span>
+    <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+        <span class="n">hist</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="n">kernel_weights_adaptive</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="c1"># variances can simply be added together when we apply reflections, we take</span>
+        <span class="c1"># the root afterwards</span>
+        <span class="n">variances</span> <span class="o">=</span> <span class="n">errors</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">kernel_weights_adaptive</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+    <span class="c1"># Reshape 1d array into nd</span>
+    <span class="n">hist</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">megashape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+        <span class="n">variances</span> <span class="o">=</span> <span class="n">variances</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">megashape</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">apply_reflection</span><span class="p">(</span><span class="n">hist_</span><span class="p">):</span>
+        <span class="c1"># Cut off the reflection edges, mirror them, fill up remaining space with</span>
+        <span class="c1"># zeros and add to histo</span>
+        <span class="k">if</span> <span class="n">reflect_lower</span><span class="p">:</span>
+            <span class="n">hist0</span> <span class="o">=</span> <span class="n">hist_</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">l</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">hist0_0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">minishape</span><span class="p">)</span>
+            <span class="n">hist0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">hist0_0</span><span class="p">,</span> <span class="n">hist0</span><span class="p">]))</span>
+            <span class="n">hist_</span> <span class="o">=</span> <span class="n">hist_</span><span class="p">[</span><span class="n">l</span><span class="p">:,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hist0</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">reflect_upper</span><span class="p">:</span>
+            <span class="n">hist1</span> <span class="o">=</span> <span class="n">hist_</span><span class="p">[</span><span class="o">-</span><span class="n">l</span><span class="p">:,</span> <span class="p">:]</span>
+            <span class="n">hist1_0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">minishape</span><span class="p">)</span>
+            <span class="n">hist1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">hist1</span><span class="p">,</span> <span class="n">hist1_0</span><span class="p">]))</span>
+            <span class="n">hist_</span> <span class="o">=</span> <span class="n">hist_</span><span class="p">[:</span><span class="o">-</span><span class="n">l</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hist1</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">hist_</span> <span class="o">=</span> <span class="n">hist_</span> <span class="o">+</span> <span class="n">hist1</span> <span class="o">+</span> <span class="n">hist0</span>
+        <span class="k">return</span> <span class="n">hist_</span>
+
+    <span class="n">hist</span> <span class="o">=</span> <span class="n">apply_reflection</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+        <span class="n">variances</span> <span class="o">=</span> <span class="n">apply_reflection</span><span class="p">(</span><span class="n">variances</span><span class="p">)</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variances</span><span class="p">)</span>
+
+    <span class="c1"># Bin volumes</span>
+    <span class="n">volume</span> <span class="o">=</span> <span class="n">binning</span><span class="o">.</span><span class="n">bin_volumes</span><span class="p">(</span><span class="n">attach_units</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">hist</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">*</span> <span class="n">volume</span>
+    <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="n">errors</span> <span class="o">*</span> <span class="n">volume</span>
+
+    <span class="c1"># Downsample, not applicable when bootstrapping</span>
+    <span class="k">if</span> <span class="n">oversample</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">binning</span><span class="p">):</span>
+            <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">reduceat</span><span class="p">(</span>
+                <span class="n">hist</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">oversample</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">i</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Swap back the axes</span>
+    <span class="k">if</span> <span class="n">cz_bin</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">hist</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cz_bin</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+            <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">errors</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cz_bin</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hist</span> <span class="o">*</span> <span class="n">norm</span><span class="p">,</span> <span class="n">errors</span> <span class="o">*</span> <span class="n">norm</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hist</span> <span class="o">*</span> <span class="n">norm</span></div>
+
+
+
+<div class="viewcode-block" id="kde_histogramdd">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.kde_hist.kde_histogramdd">[docs]</a>
+<span class="k">def</span> <span class="nf">kde_histogramdd</span><span class="p">(</span>
+    <span class="n">sample</span><span class="p">,</span>
+    <span class="n">binning</span><span class="p">,</span>
+    <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">bw_method</span><span class="o">=</span><span class="s2">&quot;scott&quot;</span><span class="p">,</span>
+    <span class="n">adaptive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">use_cuda</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">coszen_reflection</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+    <span class="n">coszen_name</span><span class="o">=</span><span class="s2">&quot;coszen&quot;</span><span class="p">,</span>
+    <span class="n">oversample</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">stack_pid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">bootstrap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">bootstrap_niter</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run kernel density estimation (KDE) for an array of data points, and</span>
+<span class="sd">    then evaluate them on a histogram-like grid to effectively produce a</span>
+<span class="sd">    histogram-like output.</span>
+<span class="sd">    Handles reflection at coszen edges, and will expect coszen to be in the binning</span>
+
+<span class="sd">    Based on Sebastian Schoenen&#39;s KDE implementation:</span>
+<span class="sd">    http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample : array</span>
+<span class="sd">        Shape (N_evts, vars), with vars in the right order corresponding to the</span>
+<span class="sd">        binning order.</span>
+
+<span class="sd">    binning : MultiDimBinning</span>
+<span class="sd">        A coszen dimension is expected</span>
+
+<span class="sd">    weights : None or array</span>
+<span class="sd">        Same shape as `sample`</span>
+
+<span class="sd">    bw_method: string</span>
+<span class="sd">        &#39;scott&#39; or &#39;silverman&#39; (see kde module)</span>
+
+<span class="sd">    adaptive : bool</span>
+<span class="sd">        (see kde module)</span>
+
+<span class="sd">    alpha : float</span>
+<span class="sd">        A parameter for the KDEs (see kde module)</span>
+
+<span class="sd">    use_cuda : bool</span>
+<span class="sd">        Run on GPU (only works with &lt;= 2d)</span>
+
+<span class="sd">    coszen_reflection : float</span>
+<span class="sd">        Part (number between 0 and 1) of binning that is reflected at the</span>
+<span class="sd">        coszen -1 and 1 edges</span>
+
+<span class="sd">    coszen_name : string</span>
+<span class="sd">        Binning name to identify the coszen bin that needs to undergo special</span>
+<span class="sd">        treatment for reflection</span>
+
+<span class="sd">    oversample : int</span>
+<span class="sd">        Evaluate KDE at more points per bin, takes longer, but is more accurate</span>
+
+<span class="sd">    stack_pid : bool</span>
+<span class="sd">        Treat each pid bin separately, not as another dimension of the KDEs</span>
+<span class="sd">        Only supported for two additional dimensions, pid binning must be named `pid`</span>
+
+<span class="sd">    bootstrap : bool</span>
+<span class="sd">        Use the ``bootstrap_kde`` class to produce error estimates on the KDE histograms.</span>
+<span class="sd">        Slow, not recommended during fits.</span>
+
+<span class="sd">    bootstrap_niter : int</span>
+<span class="sd">        Number of bootstrap iterations.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    histogram : numpy.ndarray</span>
+
+<span class="sd">    ToDo:</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    * Maybe return Map with binnings attached insted of nd-array?</span>
+<span class="sd">    * Generalize to handle any dimensions with any reflection criterias</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="n">sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Length of sample (</span><span class="si">%s</span><span class="s2">) and weights (</span><span class="si">%s</span><span class="s2">) incompatible&quot;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">stack_pid</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_hist</span><span class="p">(</span>
+            <span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span>
+            <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+            <span class="n">bw_method</span><span class="o">=</span><span class="n">bw_method</span><span class="p">,</span>
+            <span class="n">adaptive</span><span class="o">=</span><span class="n">adaptive</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">use_cuda</span><span class="o">=</span><span class="n">use_cuda</span><span class="p">,</span>
+            <span class="n">coszen_reflection</span><span class="o">=</span><span class="n">coszen_reflection</span><span class="p">,</span>
+            <span class="n">coszen_name</span><span class="o">=</span><span class="n">coszen_name</span><span class="p">,</span>
+            <span class="n">oversample</span><span class="o">=</span><span class="n">oversample</span><span class="p">,</span>
+            <span class="n">bootstrap</span><span class="o">=</span><span class="n">bootstrap</span><span class="p">,</span>
+            <span class="n">bootstrap_niter</span><span class="o">=</span><span class="n">bootstrap_niter</span>
+        <span class="p">)</span>
+
+    <span class="c1"># treat pid bins separately</span>
+    <span class="c1"># asuming we&#39;re dealing with 2d apart from PID</span>
+    <span class="n">bin_names</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">m</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">]</span>
+    <span class="n">pid_bin</span> <span class="o">=</span> <span class="n">bin_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;pid&quot;</span><span class="p">)</span>
+    <span class="n">other_bins</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">other_bins</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">pid_bin</span><span class="p">)</span>
+    <span class="n">bin_names</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">pid_bin</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="n">pid_bin_edges</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">pid_bin</span><span class="p">)</span>
+    <span class="n">d2d_binning</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;pid&quot;</span><span class="p">:</span>
+            <span class="n">d2d_binning</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">d2d_binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">d2d_binning</span><span class="p">)</span>
+    <span class="n">pid_stack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+        <span class="n">pid_stack_errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pid_bin_edges</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">mask_pid</span> <span class="o">=</span> <span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">pid_bin</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">pid_bin_edges</span><span class="p">[</span><span class="n">pid</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">pid_bin</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">pid_bin_edges</span><span class="p">[</span><span class="n">pid</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">sample</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">other_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">mask_pid</span><span class="p">],</span> <span class="n">sample</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">other_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="n">mask_pid</span><span class="p">]]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights_pid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">weights_pid</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">mask_pid</span><span class="p">]</span>
+
+        <span class="n">hist_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">sample</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="n">weights_pid</span><span class="p">,</span>
+            <span class="n">binning</span><span class="o">=</span><span class="n">d2d_binning</span><span class="p">,</span>
+            <span class="n">coszen_name</span><span class="o">=</span><span class="n">coszen_name</span><span class="p">,</span>
+            <span class="n">use_cuda</span><span class="o">=</span><span class="n">use_cuda</span><span class="p">,</span>
+            <span class="n">bw_method</span><span class="o">=</span><span class="n">bw_method</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">oversample</span><span class="o">=</span><span class="n">oversample</span><span class="p">,</span>
+            <span class="n">coszen_reflection</span><span class="o">=</span><span class="n">coszen_reflection</span><span class="p">,</span>
+            <span class="n">adaptive</span><span class="o">=</span><span class="n">adaptive</span><span class="p">,</span>
+            <span class="n">bootstrap</span><span class="o">=</span><span class="n">bootstrap</span><span class="p">,</span>
+            <span class="n">bootstrap_niter</span><span class="o">=</span><span class="n">bootstrap_niter</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+            <span class="n">hist</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="n">get_hist</span><span class="p">(</span><span class="o">**</span><span class="n">hist_kwargs</span><span class="p">)</span>
+            <span class="n">pid_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span>
+            <span class="n">pid_stack_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pid_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">get_hist</span><span class="p">(</span><span class="o">**</span><span class="n">hist_kwargs</span><span class="p">))</span>
+
+    <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dstack</span><span class="p">(</span><span class="n">pid_stack</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dstack</span><span class="p">(</span><span class="n">pid_stack_errors</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">pid_bin</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">hist</span><span class="p">,</span> <span class="n">pid_bin</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+            <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">errors</span><span class="p">,</span> <span class="n">pid_bin</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">bootstrap</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hist</span><span class="p">,</span> <span class="n">errors</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hist</span></div>
+
+
+
+<span class="c1"># TODO: make the plotting optional but add comparisons against some known</span>
+<span class="c1"># results. This can be accomplished by seeding before calling random to obtain</span>
+<span class="c1"># a reference result, and check that the same values are returned when run</span>
+<span class="c1"># below.</span>
+
+
+<div class="viewcode-block" id="test_kde_histogramdd">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.kde_hist.test_kde_histogramdd">[docs]</a>
+<span class="k">def</span> <span class="nf">test_kde_histogramdd</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for kde_histogramdd&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+    <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">rmtree</span>
+    <span class="kn">from</span> <span class="nn">tempfile</span> <span class="kn">import</span> <span class="n">mkdtemp</span>
+    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+    <span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.plotter</span> <span class="kn">import</span> <span class="n">Plotter</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;set verbosity level&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">mkdtemp</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">my_plotter</span> <span class="o">=</span> <span class="n">Plotter</span><span class="p">(</span>
+            <span class="n">stamp</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">outdir</span><span class="o">=</span><span class="n">temp_dir</span><span class="p">,</span>
+            <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;pdf&quot;</span><span class="p">,</span>
+            <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">annotate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">symmetric</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">ratio</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">b1</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;coszen&quot;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;\cos(\theta)&quot;</span>
+        <span class="p">)</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;E&quot;</span>
+        <span class="p">)</span>
+        <span class="n">b3</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pid&quot;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;pid&quot;</span><span class="p">)</span>
+        <span class="n">binning</span> <span class="o">=</span> <span class="n">b1</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">*</span> <span class="n">b3</span>
+
+        <span class="c1"># now let&#39;s generate some toy data</span>
+
+        <span class="n">N</span> <span class="o">=</span> <span class="mi">100000</span>
+        <span class="n">cz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+        <span class="c1"># cut away coszen outside -1, 1</span>
+        <span class="n">cz</span> <span class="o">=</span> <span class="n">cz</span><span class="p">[(</span><span class="n">cz</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">cz</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cz</span><span class="p">))</span>
+        <span class="n">pid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cz</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cz</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">pid</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="c1"># make numpy histogram for validation</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="p">[</span><span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">]</span>
+        <span class="n">raw_hist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">)</span>
+
+        <span class="c1"># get KDE&#39;ed histo</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">kde_histogramdd</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span>
+            <span class="n">binning</span><span class="p">,</span>
+            <span class="n">bw_method</span><span class="o">=</span><span class="s2">&quot;silverman&quot;</span><span class="p">,</span>
+            <span class="n">coszen_name</span><span class="o">=</span><span class="s2">&quot;coszen&quot;</span><span class="p">,</span>
+            <span class="n">oversample</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+            <span class="n">use_cuda</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">stack_pid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># put into mapsets and plot</span>
+        <span class="n">m1</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;KDE&quot;</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="n">hist</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">)</span>
+        <span class="n">m2</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="n">raw_hist</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+            <span class="n">m3</span> <span class="o">=</span> <span class="n">m2</span> <span class="o">/</span> <span class="n">m1</span>
+        <span class="n">m3</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;hist/KDE&quot;</span>
+        <span class="n">m3</span><span class="o">.</span><span class="n">tex</span> <span class="o">=</span> <span class="n">m3</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">m4</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">-</span> <span class="n">m2</span>
+        <span class="n">m4</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;KDE - hist&quot;</span>
+        <span class="n">m4</span><span class="o">.</span><span class="n">tex</span> <span class="o">=</span> <span class="n">m4</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">ms</span> <span class="o">=</span> <span class="n">MapSet</span><span class="p">([</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">m3</span><span class="p">,</span> <span class="n">m4</span><span class="p">])</span>
+        <span class="n">my_plotter</span><span class="o">.</span><span class="n">plot_2d_array</span><span class="p">(</span><span class="n">ms</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="s2">&quot;test_kde&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;summer&quot;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">rmtree</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span>
+        <span class="k">raise</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Inspect and manually clean up output(s) saved to </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">temp_dir</span>
+        <span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">test_kde_histogramdd</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.scripts.convert_config_format &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.scripts.convert_config_format</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.scripts.convert_config_format</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Convert PISA config files from format used up until July 2017 to the new config</span>
+<span class="sd">file format.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">MissingSectionHeaderError</span>
+
+<span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">PISAConfigParser</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;OLD_SUB_RE&#39;</span><span class="p">,</span> <span class="s1">&#39;parse_args&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="n">OLD_SUB_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        &lt;!          # Start with &lt;! delimiter</span>
+<span class="sd">          ([^|]+)   # section is characters that are not pipe</span>
+<span class="sd">          \|        # pipe as divider</span>
+<span class="sd">          (.+?)     # at least one character (non-greedy match)</span>
+<span class="sd">        !&gt;          # end with !&gt; delimiter</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span>
+<span class="p">)</span>
+
+<span class="n">OLD_STAGE_SECTION_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        \[           # Start with [</span>
+<span class="sd">            \s*      # optional whitespace</span>
+<span class="sd">            stage    # must start with &quot;stage&quot;</span>
+<span class="sd">            \s*      # optional whitespace</span>
+<span class="sd">            :        # colon as separator</span>
+<span class="sd">            \s*      # optional whitespace</span>
+<span class="sd">            (\S+)    # non-whitespace key</span>
+<span class="sd">            \s*      # optional whitespace</span>
+<span class="sd">        \]           # end with ]</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span>
+<span class="p">)</span>
+
+<span class="n">OLD_STAGE_VARIABLE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    \${            # Start with ${</span>
+<span class="sd">        \s*        # optional whitespace (technically illegal, will remove)</span>
+<span class="sd">        stage      # variable must be named &quot;stage&quot;</span>
+<span class="sd">        \s*        # optional whitespace (technially illegal, will remove)</span>
+<span class="sd">        :          # colon separator</span>
+<span class="sd">        \s*        # optional whitespace (technically illegal, will remove)</span>
+<span class="sd">        ([^ }]+)   # any character besides space or endbrace</span>
+<span class="sd">        \s*        # optional whitespace (technically illegal, will remove)</span>
+<span class="sd">    }</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span>
+<span class="p">)</span>
+
+<span class="n">OLD_ORDER_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;order\s*(?:=|:)\s*(\S.*)\s*&#39;</span><span class="p">)</span>
+<span class="n">ORDER_SUBSTRING_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s*(\S+)\s*(?::|\.)\s*(\S+)\s*&#39;</span><span class="p">)</span>
+<span class="n">JSON_NO_BZ2_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(\.json)(?!\.bz2)&#39;</span><span class="p">)</span>
+
+<span class="n">SECTION_NAME_WITH_COLON_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    ^\s*                  # only possibly whitespace before opening bracket</span>
+<span class="sd">    \[                    # open bracket</span>
+<span class="sd">        (                 # capture text found within these parens</span>
+<span class="sd">            (?:           # do not capture text within these parens</span>
+<span class="sd">                [^\]]*:   # non-&quot;]&quot; followed by &quot;:&#39;</span>
+<span class="sd">            )+            # stop no-capture group; one or more of this pattern</span>
+<span class="sd">            [^\]]*        # any number of non-&quot;]&quot; before closing bracket</span>
+<span class="sd">        )                 # stop capturing text;</span>
+<span class="sd">    \]                    # closing bracket</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span>
+<span class="p">)</span>
+<span class="n">NEW_SECTION_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    (</span>
+<span class="sd">        ^\s*           # only possibly whitespace before opening bracket</span>
+<span class="sd">        \[             # open bracket</span>
+<span class="sd">            ([^\]]*)   # capture anything besides &quot;]&quot;</span>
+<span class="sd">        \]             # closing bracket</span>
+<span class="sd">    )                  # stop capturing text;</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span>
+<span class="p">)</span>
+<span class="n">NEW_VARIABLE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    (               # start capturing text</span>
+<span class="sd">        \${         # start with ${</span>
+<span class="sd">            ([^}]*) # any character besides closing brace</span>
+<span class="sd">        }           # closing brace</span>
+<span class="sd">    )               # stop capturing text</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span>
+<span class="p">)</span>
+
+<span class="n">OTHER_SECTION_NAME_SEPARATOR</span> <span class="o">=</span> <span class="s1">&#39;|&#39;</span>
+<span class="sd">&quot;&quot;&quot;If section names (and any corresponding variable names) use colons as</span>
+<span class="sd">separators (and we haven&#39;t converted the colons to periods), the colons will be</span>
+<span class="sd">replaced with this character instead.&quot;&quot;&quot;</span>
+
+<span class="n">MULTI_COLON_VAR_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    (                # Capture</span>
+<span class="sd">    \${              # start with ${</span>
+<span class="sd">        (?:          # do not capture this group</span>
+<span class="sd">            [^}]*:   # anything besides closing brace</span>
+<span class="sd">        ){2,}        # sto non-capturing group; must be 2 or more of these</span>
+<span class="sd">        [^}]*        # any amount of non-closing-brace characters</span>
+<span class="sd">    }                # closing brace</span>
+<span class="sd">    )                # stop capture</span>
+<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span>
+<span class="p">)</span>
+
+<span class="n">PARAM_RE_STR</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">    param                             # must start with &quot;param&quot;</span>
+<span class="s1">    (\.[_A-Za-z][_a-zA-Z0-9]*){0,1}   # optional param sel. (valid Python name)</span>
+<span class="s1">    \.                                # period before param name</span>
+<span class="s1">    </span><span class="si">%s</span><span class="s1">                                # get actual param name from elsewhere</span>
+<span class="s1">&#39;&#39;&#39;</span>
+<span class="n">NSI_PARAM_RE_MAP</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">e_ij</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">PARAM_RE_STR</span> <span class="o">%</span> <span class="n">e_ij</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">e_ij</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;eps_ee&#39;</span><span class="p">,</span> <span class="s1">&#39;eps_emu&#39;</span><span class="p">,</span> <span class="s1">&#39;eps_etau&#39;</span><span class="p">,</span> <span class="s1">&#39;eps_mumu&#39;</span><span class="p">,</span> <span class="s1">&#39;eps_mutau&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;eps_tautau&#39;</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">INCLUDE_AS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;settings/binning/example.cfg&#39;</span><span class="p">:</span> <span class="s1">&#39;binning&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;settings/binning/pingu_nutau.cfg&#39;</span><span class="p">:</span> <span class="s1">&#39;binning&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;settings/osc/loiv2.cfg&#39;</span><span class="p">:</span> <span class="s1">&#39;osc&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;settings/osc/nufitv20.cfg&#39;</span><span class="p">:</span> <span class="s1">&#39;osc&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;settings/osc/nufitv22.cfg&#39;</span><span class="p">:</span> <span class="s1">&#39;osc&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;settings/osc/earth.cfg&#39;</span><span class="p">:</span> <span class="s1">&#39;earth&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">JSON_TO_JSON_BZ2</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;PISAV2IPHonda2015SPLSolMaxFlux-atm_delta_index0.05&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PISAV2IPHonda2015SPLSolMaxFlux-atm_delta_index0.05&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PISAV2IPHonda2015SPLSolMaxFlux-nu_nubar_ratio1.10&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PISAV2IPHonda2015SPLSolMaxFlux-nue_numu_ratio1.03&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PISAV2IPHonda2015SPLSolMaxFlux&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PISAV2bisplrepHonda2015SPLSolMaxFlux&#39;</span>
+<span class="p">]</span>
+<span class="n">JSON_NO_BZ2_RE_LIST</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(\.json)(?!\.bz2)&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">JSON_TO_JSON_BZ2</span>
+<span class="p">]</span>
+
+<span class="n">NAMES_CHANGED_MAP</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;nutau_holice_domeff_fits_mc.ini&#39;</span><span class="p">:</span> <span class="s1">&#39;nutau_holice_domeff_fits_mc.cfg&#39;</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">replace_substitution</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace old substitution syntax ``&lt;!section|key!&gt;`` with new syntax</span>
+<span class="sd">    ``${section:key}``. Also, convert any colons in `section` or `key` to</span>
+<span class="sd">    ``OTHER_SECTION_NAME_SEPARATOR``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    match : re._pattern_type</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    repl : string</span>
+<span class="sd">        Replacement text</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">substrs</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">substrs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;stage:&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">loc</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">postloc</span> <span class="o">=</span> <span class="n">loc</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="s1">&#39;stage:&#39;</span><span class="p">)</span>
+        <span class="n">s0</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">substrs</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="n">loc</span><span class="p">]</span>
+            <span class="o">+</span> <span class="s1">&#39;stage:&#39;</span>
+            <span class="o">+</span> <span class="n">substrs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">postloc</span><span class="p">:]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">OTHER_SECTION_NAME_SEPARATOR</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">s0</span> <span class="o">=</span> <span class="n">substrs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">OTHER_SECTION_NAME_SEPARATOR</span><span class="p">)</span>
+
+    <span class="n">s1</span> <span class="o">=</span> <span class="n">substrs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">OTHER_SECTION_NAME_SEPARATOR</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="s1">&#39;${</span><span class="si">%s</span><span class="s1">:</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">s0</span><span class="p">,</span> <span class="n">s1</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">replace_order</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace e.g.</span>
+<span class="sd">        ``  order = flux:honda , osc : prob3cpu,aeff :hist, reco : hist``</span>
+<span class="sd">    with</span>
+<span class="sd">        ``  order = flux.honda, osc.prob3cpu, aeff.hist, reco.hist``</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    match : re._pattern_type</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    repl : string</span>
+<span class="sd">        Replacement text, starting with ``order`` (i.e., retain whitespace</span>
+<span class="sd">        preceding the word &quot;order&quot;).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_substrings</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">old_substring</span> <span class="ow">in</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">):</span>
+        <span class="n">new_substrings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ORDER_SUBSTRING_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+                <span class="n">repl</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">(),</span>
+                <span class="n">string</span><span class="o">=</span><span class="n">old_substring</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="s1">&#39;order = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_substrings</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">append_include_as</span><span class="p">(</span><span class="n">include_match</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert ``#include x`` to ``#include x as y``, where appropriate; also,</span>
+<span class="sd">    convert incorrect &quot;as&quot; statements. See INCLUDE_AS dict for mapping from</span>
+<span class="sd">    resource to its &quot;as&quot; target.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    include_match : re._pattern_type</span>
+<span class="sd">        Match produced by INCLUDE_RE.match(string)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    repl : string</span>
+<span class="sd">        Replacement text for whatever comes after the &quot;#include &quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">include_text</span> <span class="o">=</span> <span class="n">include_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">include_as_match</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="o">.</span><span class="n">INCLUDE_AS_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">include_text</span><span class="p">)</span>
+
+    <span class="n">as_section</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">include_as_match</span><span class="p">:</span>
+        <span class="n">gd</span> <span class="o">=</span> <span class="n">include_as_match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="n">gd</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span>
+        <span class="n">as_section</span> <span class="o">=</span> <span class="n">gd</span><span class="p">[</span><span class="s1">&#39;as&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="n">include_text</span>
+        <span class="k">if</span> <span class="n">resource</span> <span class="ow">in</span> <span class="n">INCLUDE_AS</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">as_section</span> <span class="o">=</span> <span class="n">INCLUDE_AS</span><span class="p">[</span><span class="n">resource</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">as_section</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">repl</span> <span class="o">=</span> <span class="s1">&#39;#include &#39;</span> <span class="o">+</span> <span class="n">resource</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">repl</span> <span class="o">=</span> <span class="s1">&#39;#include </span><span class="si">%s</span><span class="s1"> as </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">as_section</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">repl</span>
+
+
+<div class="viewcode-block" id="parse_args">
+<a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.convert_config_format.parse_args">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_args</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command line arguments&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Pipeline config file to convert. Note that new file will have</span>
+<span class="s1">        `.new` suffix appended to filename so you can double check the</span>
+<span class="s1">        conversion before overwriting the original file.&#39;&#39;&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--validate-only&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Do not write an output file, but raise an exception if the file</span>
+<span class="s1">        _would_ be modified. I.e., specifying this flag makes the script behave</span>
+<span class="s1">        as a (rough) validator for config files.&#39;&#39;&#39;</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.convert_config_format.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Do the conversion.&quot;&quot;&quot;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">in_fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">out_fpath</span> <span class="o">=</span> <span class="n">in_fpath</span> <span class="o">+</span> <span class="s1">&#39;.new&#39;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">in_fpath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
+        <span class="n">orig_contents</span> <span class="o">=</span> <span class="n">infile</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+    <span class="n">osc_stage_header_line</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">section_names_with_colons</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">new_contents</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">lineno</span><span class="p">,</span> <span class="n">orig_line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">orig_contents</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Remove trailing whitespace, including newline character(s)</span>
+        <span class="n">new_line</span> <span class="o">=</span> <span class="n">orig_line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+
+        <span class="c1"># Empty (or whitespace-only) line is trivial</span>
+        <span class="k">if</span> <span class="n">new_line</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">new_contents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_line</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Replace text substitution (&quot;config file variables&quot;) syntax</span>
+        <span class="n">new_line</span> <span class="o">=</span> <span class="n">OLD_SUB_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">repl</span><span class="o">=</span><span class="n">replace_substitution</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="n">new_line</span><span class="p">)</span>
+
+        <span class="c1"># Replace stage headers. E.g.</span>
+        <span class="c1">#     ``  [ stage :stage_name ]``</span>
+        <span class="c1"># is replaced by</span>
+        <span class="c1">#     ``  [stage.stage_name]``</span>
+        <span class="c1"># I.e. retain any whitespace before (and after... though this is</span>
+        <span class="c1"># already removed) the brackets but swap colon for period and remove</span>
+        <span class="c1"># whitespace within the brackets.</span>
+        <span class="n">new_line</span> <span class="o">=</span> <span class="n">OLD_STAGE_SECTION_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+            <span class="n">repl</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="s1">&#39;[stage.</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">(),</span>
+            <span class="n">string</span><span class="o">=</span><span class="n">new_line</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Replace stage:key variables. E.g. what should now look like</span>
+        <span class="c1">#     ``  ${ stage : key }  ``</span>
+        <span class="c1"># should look like</span>
+        <span class="c1">#     ``  ${stage.key}  ``</span>
+        <span class="n">new_line</span> <span class="o">=</span> <span class="n">OLD_STAGE_VARIABLE_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+            <span class="n">repl</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="s1">&#39;${stage.</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">(),</span>
+            <span class="n">string</span><span class="o">=</span><span class="n">new_line</span>
+        <span class="p">)</span>
+
+        <span class="n">stripped</span> <span class="o">=</span> <span class="n">new_line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Replace order string</span>
+        <span class="k">if</span> <span class="n">stripped</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;order&#39;</span><span class="p">):</span>
+            <span class="n">new_line</span> <span class="o">=</span> <span class="n">OLD_ORDER_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">repl</span><span class="o">=</span><span class="n">replace_order</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="n">new_line</span><span class="p">)</span>
+        <span class="c1"># Record line on which the [stage.osc] section occurs (if any)</span>
+        <span class="k">elif</span> <span class="n">stripped</span> <span class="o">==</span> <span class="s1">&#39;[stage.osc]&#39;</span><span class="p">:</span>
+            <span class="n">osc_stage_header_line</span> <span class="o">=</span> <span class="n">lineno</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="c1"># Convert ``#include x`` to ``#include x as y``, where appropriate</span>
+        <span class="n">new_line</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="o">.</span><span class="n">INCLUDE_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+            <span class="n">repl</span><span class="o">=</span><span class="n">append_include_as</span><span class="p">,</span>
+            <span class="n">string</span><span class="o">=</span><span class="n">new_line</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Convert JSON filenames to .json.bz2 that are now bzipped</span>
+        <span class="k">if</span> <span class="s1">&#39;.json&#39;</span> <span class="ow">in</span> <span class="n">new_line</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">json_re</span> <span class="ow">in</span> <span class="n">JSON_NO_BZ2_RE_LIST</span><span class="p">:</span>
+                <span class="n">new_line</span> <span class="o">=</span> <span class="n">json_re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">repl</span><span class="o">=</span><span class="s1">&#39;.json.bz2&#39;</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="n">new_line</span><span class="p">)</span>
+
+        <span class="c1"># Replace changed names</span>
+        <span class="k">for</span> <span class="n">orig_name</span><span class="p">,</span> <span class="n">new_name</span> <span class="ow">in</span> <span class="n">NAMES_CHANGED_MAP</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">new_line</span> <span class="o">=</span> <span class="n">new_line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">orig_name</span><span class="p">,</span> <span class="n">new_name</span><span class="p">)</span>
+
+        <span class="c1"># Search for any colons used in section names. This is illegal, as a</span>
+        <span class="c1"># section name can be used as a variable where the syntax is</span>
+        <span class="c1">#   ``${section_name:key}``</span>
+        <span class="c1"># so any colons in section_name will make the parser choke.</span>
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">SECTION_NAME_WITH_COLON_RE</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">new_line</span><span class="p">):</span>
+            <span class="n">section_name_with_colons</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">NEW_VARIABLE_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">section_name_with_colons</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">section_name_with_colons</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s1">&#39;Multiple colons in new-style variable, line </span><span class="si">%d</span><span class="s1">:</span><span class="se">\n</span><span class="s1">&#39;</span>
+                        <span class="s1">&#39;&gt;&gt; Original line:</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&gt;&gt; New line:</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span>
+                        <span class="o">%</span> <span class="p">(</span><span class="n">lineno</span><span class="p">,</span> <span class="n">orig_line</span><span class="p">,</span> <span class="n">new_line</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="n">section_name_without_colons</span> <span class="o">=</span> <span class="n">section_name_with_colons</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">OTHER_SECTION_NAME_SEPARATOR</span>
+            <span class="p">)</span>
+            <span class="n">section_names_with_colons</span><span class="p">[</span><span class="n">section_name_with_colons</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">section_name_without_colons</span>
+            <span class="p">)</span>
+
+        <span class="n">new_contents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_line</span><span class="p">)</span>
+
+    <span class="c1">#for item in  section_names_with_colons.items():</span>
+    <span class="c1">#    print &#39;%s --&gt; %s&#39; % item</span>
+
+    <span class="c1"># Go back through and replace colon-sparated section names with</span>
+    <span class="c1"># ``OTHER_SECTION_NAME_SEPARATOR``-separated section names</span>
+    <span class="n">all_names_to_replace</span> <span class="o">=</span> <span class="n">section_names_with_colons</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">replace_var</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Closure to replace variable names&quot;&quot;&quot;</span>
+        <span class="n">whole_string</span><span class="p">,</span> <span class="n">var_name</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">all_names_to_replace</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;${</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">section_names_with_colons</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">whole_string</span>
+
+    <span class="k">def</span> <span class="nf">replace_section_name</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Closure to replace section names&quot;&quot;&quot;</span>
+        <span class="n">whole_string</span><span class="p">,</span> <span class="n">section_name</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">section_name</span> <span class="ow">in</span> <span class="n">all_names_to_replace</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">whole_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                <span class="n">section_name</span><span class="p">,</span> <span class="n">section_names_with_colons</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">whole_string</span>
+
+    <span class="k">for</span> <span class="n">lineno</span><span class="p">,</span> <span class="n">new_line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_contents</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">new_line</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">new_line</span> <span class="o">=</span> <span class="n">NEW_VARIABLE_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">repl</span><span class="o">=</span><span class="n">replace_var</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="n">new_line</span><span class="p">)</span>
+        <span class="n">new_line</span> <span class="o">=</span> <span class="n">NEW_SECTION_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">repl</span><span class="o">=</span><span class="n">replace_section_name</span><span class="p">,</span>
+                                      <span class="n">string</span><span class="o">=</span><span class="n">new_line</span><span class="p">)</span>
+
+        <span class="c1">#new_line = NEW_SECTION_RE.sub(repl=replace_colon_names,</span>
+        <span class="c1">#                              string=new_line)</span>
+
+        <span class="c1">#for with_colons, without_colons in section_names_with_colons:</span>
+        <span class="c1">#    new_line = new_line.replace(with_colons, without_colons)</span>
+
+        <span class="c1"># Check for multiple colons in a variable (which is illegal)</span>
+        <span class="k">if</span> <span class="n">MULTI_COLON_VAR_RE</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">new_line</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Multiple colons in variable, line </span><span class="si">%d</span><span class="s1">:</span><span class="se">\n</span><span class="s1">&gt;&gt; Original&#39;</span>
+                <span class="s1">&#39; line:</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&gt;&gt; New line:</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">lineno</span><span class="p">,</span> <span class="n">orig_contents</span><span class="p">[</span><span class="n">lineno</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">new_line</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">new_contents</span><span class="p">[</span><span class="n">lineno</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_line</span>
+
+    <span class="c1"># Parse the new config file with the PISAConfigParser to see if NSI</span>
+    <span class="c1"># parameters are defined in the `stage.osc` section (if the latter is</span>
+    <span class="c1"># present). If needed, insert appropriate #include in the section</span>
+    <span class="n">pcp</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="p">()</span>
+    <span class="n">missing_section_header</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">pcp</span><span class="o">.</span><span class="n">read_string</span><span class="p">((</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_contents</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">MissingSectionHeaderError</span><span class="p">:</span>
+        <span class="n">missing_section_header</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">pcp</span><span class="o">.</span><span class="n">read_string</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;[dummy section header]&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">new_contents</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="s1">&#39;stage.osc&#39;</span> <span class="ow">in</span> <span class="n">pcp</span><span class="p">:</span>
+        <span class="n">keys_containing_eps</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">pcp</span><span class="p">[</span><span class="s1">&#39;stage.osc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                               <span class="k">if</span> <span class="s1">&#39;.eps_&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">k</span><span class="p">]</span>
+
+        <span class="n">nsi_params_present</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">nsi_params_missing</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">nsi_param</span><span class="p">,</span> <span class="n">nsi_param_re</span> <span class="ow">in</span> <span class="n">NSI_PARAM_RE_MAP</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">found</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">key_idx</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">keys_containing_eps</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">nsi_param_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+                    <span class="n">found</span> <span class="o">=</span> <span class="n">key_idx</span>
+                    <span class="n">nsi_params_present</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nsi_param</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">nsi_params_missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nsi_param</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># No need to search this key again</span>
+                <span class="n">keys_containing_eps</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">found</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">nsi_params_present</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">NSI_PARAM_RE_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">all_nsi_params_defined</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">nsi_params_missing</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">NSI_PARAM_RE_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">all_nsi_params_defined</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Found a subset of NSI params defined; missing </span><span class="si">%s</span><span class="s1">&#39;</span>
+                             <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">nsi_params_missing</span><span class="p">))</span>
+
+        <span class="c1"># NOTE: since for now the contents of nsi_null.cfg are commented out</span>
+        <span class="c1"># (until merging NSI branch), the above check will say NSI params are</span>
+        <span class="c1"># missing if the #include statement was made. So check to see if</span>
+        <span class="c1"># settings/osc/nsi_null.cfg _has_ been included (we can&#39;t tell what</span>
+        <span class="c1"># section it is in, but we&#39;ll have to just accept that).</span>
+        <span class="c1">#</span>
+        <span class="c1"># We will probably want to remove this stanza as soon as NSI brnach is</span>
+        <span class="c1"># merged, since this is imprecise and can introduce other weird corner</span>
+        <span class="c1"># cases.</span>
+        <span class="n">rsrc_loc</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="s1">&#39;settings/osc/nsi_null.cfg&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">file_iter</span> <span class="ow">in</span> <span class="n">pcp</span><span class="o">.</span><span class="n">file_iterators</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rsrc_loc</span> <span class="ow">in</span> <span class="n">file_iter</span><span class="o">.</span><span class="n">fpaths_processed</span><span class="p">:</span>
+                <span class="n">all_nsi_params_defined</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">all_nsi_params_defined</span> <span class="ow">and</span> <span class="n">osc_stage_header_line</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Found a stage.osc section without NSI params defined (using&quot;</span>
+                <span class="s2">&quot; PISAConfigParser) but could not find the line of the&quot;</span>
+                <span class="s2">&quot; `[stage.osc]` header. This could occur if `[stage.osc]` came&quot;</span>
+                <span class="s2">&quot; from an `#include`&#39;d file. You can manually define the NSI&quot;</span>
+                <span class="s2">&quot; parameters in this file or in the included file e.g. as&quot;</span>
+                <span class="s2">&quot; found in `settings/osc/nsi_null.cfg` or simply add the&quot;</span>
+                <span class="s2">&quot; statement ``#include settings/osc/nsi_null.cfg`` to either&quot;</span>
+                <span class="s2">&quot; file (so long as that statement it falls within the&quot;</span>
+                <span class="s2">&quot; stage.osc section).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Add ``#include settings/osc/nsi_null.cfg`` at top of stage.osc</span>
+        <span class="c1"># section if a stage.osc section is present and no NSI params were</span>
+        <span class="c1"># specified in that section</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">all_nsi_params_defined</span><span class="p">:</span>
+            <span class="c1"># Add an #include to set all NSI parameters to 0</span>
+            <span class="n">new_contents</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span>
+                <span class="n">osc_stage_header_line</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;#include settings/osc/nsi_null.cfg&#39;</span>
+            <span class="p">)</span>
+            <span class="c1"># Add an extra blank line after the #include line</span>
+            <span class="n">new_contents</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">osc_stage_header_line</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">new_contents</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Empty file after conversion; quitting.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Note that newlines are added but no join is performed for comparison</span>
+    <span class="c1"># against `orig_contents`</span>
+    <span class="n">new_contents</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">new_contents</span><span class="p">]</span>
+
+    <span class="c1"># Now for validation, try to parse the new config file with the</span>
+    <span class="c1"># PISAConfigParser</span>
+    <span class="n">pcp</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">missing_section_header</span><span class="p">:</span>
+        <span class="n">pcp</span><span class="o">.</span><span class="n">read_string</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;[dummy section header]</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">new_contents</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pcp</span><span class="o">.</span><span class="n">read_string</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_contents</span><span class="p">))</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">new_contents</span> <span class="o">==</span> <span class="n">orig_contents</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Nothing modified in the original file (ok!).</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">validate_only</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;Original config file &quot;</span><span class="si">%s</span><span class="s1">&quot; would be modfied (and so may be&#39;</span>
+            <span class="s1">&#39; invalid). Re-run this script without the --validate-only flag to&#39;</span>
+            <span class="s1">&#39; produce an appropriately-converted config file.&#39;</span>
+            <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Writing modified config file to &quot;</span><span class="si">%s</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">out_fpath</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out_fpath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+        <span class="n">outfile</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">new_contents</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

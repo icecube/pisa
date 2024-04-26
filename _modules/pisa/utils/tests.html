@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.tests &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.tests</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.tests</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions to help compare and plot differences between PISA 2 and PISA 3 maps</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">get_valid_filename</span><span class="p">,</span> <span class="n">mkdir</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">,</span> <span class="s1">&#39;order_str&#39;</span><span class="p">,</span> <span class="s1">&#39;check_agreement&#39;</span><span class="p">,</span> <span class="s1">&#39;print_agreement&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;print_event_rates&#39;</span><span class="p">,</span> <span class="s1">&#39;validate_maps&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;make_delta_map&#39;</span><span class="p">,</span> <span class="s1">&#39;make_ratio_map&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_map_objs&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;baseplot&#39;</span><span class="p">,</span> <span class="s1">&#39;baseplot2&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;plot_comparisons&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_map_comparisons&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_cmp&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;pisa2_map_to_pisa3_map&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Wren&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="c1"># TODO: make functions work transparently (i.e. autodetect) whether it&#39;s a</span>
+<span class="c1"># PISA 2 or PISA 3 style map object, convert to PISA 3 maps, and go from</span>
+<span class="c1"># there.</span>
+
+
+<div class="viewcode-block" id="order">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.order">[docs]</a>
+<span class="k">def</span> <span class="nf">order</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">o</span></div>
+
+
+
+<div class="viewcode-block" id="order_str">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.order_str">[docs]</a>
+<span class="k">def</span> <span class="nf">order_str</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">order_float</span> <span class="o">=</span> <span class="n">order</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">order_float</span><span class="p">))</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OverflowError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">order_float</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_agreement">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.check_agreement">[docs]</a>
+<span class="k">def</span> <span class="nf">check_agreement</span><span class="p">(</span><span class="n">testname</span><span class="p">,</span> <span class="n">thresh_ratio</span><span class="p">,</span> <span class="n">ratio</span><span class="p">,</span> <span class="n">thresh_diff</span><span class="p">,</span> <span class="n">diff</span><span class="p">):</span>
+    <span class="n">ratio_pass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">thresh_ratio</span><span class="p">)</span>
+    <span class="n">diff_pass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">thresh_diff</span><span class="p">)</span>
+
+    <span class="n">thresh_ratio_str</span> <span class="o">=</span> <span class="n">order_str</span><span class="p">(</span><span class="n">thresh_ratio</span><span class="p">)</span>
+    <span class="n">ratio_ord_str</span> <span class="o">=</span> <span class="n">order_str</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span>
+    <span class="n">ratio_pass_str</span> <span class="o">=</span> <span class="s1">&#39;PASS&#39;</span> <span class="k">if</span> <span class="n">ratio_pass</span> <span class="k">else</span> <span class="s1">&#39;FAIL&#39;</span>
+
+    <span class="n">thresh_diff_str</span> <span class="o">=</span> <span class="n">order_str</span><span class="p">(</span><span class="n">thresh_diff</span><span class="p">)</span>
+    <span class="n">diff_ord_str</span> <span class="o">=</span> <span class="n">order_str</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span>
+    <span class="n">diff_pass_str</span> <span class="o">=</span> <span class="s1">&#39;PASS&#39;</span> <span class="k">if</span> <span class="n">diff_pass</span> <span class="k">else</span> <span class="s1">&#39;FAIL&#39;</span>
+
+    <span class="n">headline</span> <span class="o">=</span> <span class="s1">&#39;&lt;&lt; </span><span class="si">{pass_str:s}</span><span class="s1"> : </span><span class="si">{testname:s}</span><span class="s1">, </span><span class="si">{kind:s}</span><span class="s1"> &gt;&gt;&#39;</span>
+    <span class="n">detail_str</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;... agree to (( 10^</span><span class="si">{level:s}</span><span class="s1"> )) ; &#39;</span>
+                  <span class="s1">&#39;thresh = (( 10^</span><span class="si">{thresh:s}</span><span class="s1"> ))&#39;</span><span class="p">)</span>
+
+    <span class="n">ratio_headline</span> <span class="o">=</span> <span class="n">headline</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">testname</span><span class="o">=</span><span class="n">testname</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;fract diff&#39;</span><span class="p">,</span> <span class="n">pass_str</span><span class="o">=</span><span class="n">ratio_pass_str</span>
+    <span class="p">)</span>
+    <span class="n">ratio_detail</span> <span class="o">=</span> <span class="n">detail_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">level</span><span class="o">=</span><span class="n">ratio_ord_str</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="n">thresh_ratio_str</span>
+    <span class="p">)</span>
+
+    <span class="n">diff_headline</span> <span class="o">=</span> <span class="n">headline</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">testname</span><span class="o">=</span><span class="n">testname</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;diff&#39;</span><span class="p">,</span> <span class="n">pass_str</span><span class="o">=</span><span class="n">diff_pass_str</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">diff_detail</span> <span class="o">=</span> <span class="n">detail_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">level</span><span class="o">=</span><span class="n">diff_ord_str</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="n">thresh_diff_str</span>
+    <span class="p">)</span>
+
+    <span class="n">err_messages</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">ratio_pass</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">ratio_headline</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">ratio_detail</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">err_messages</span> <span class="o">+=</span> <span class="p">[</span><span class="n">ratio_headline</span><span class="p">,</span> <span class="n">ratio_detail</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">diff_pass</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">diff_headline</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">diff_detail</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">err_messages</span> <span class="o">+=</span> <span class="p">[</span><span class="n">diff_headline</span><span class="p">,</span> <span class="n">diff_detail</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">ratio_pass</span> <span class="ow">and</span> <span class="n">diff_pass</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">err_messages</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">err_messages</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="print_agreement">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.print_agreement">[docs]</a>
+<span class="k">def</span> <span class="nf">print_agreement</span><span class="p">(</span><span class="n">testname</span><span class="p">,</span> <span class="n">ratio</span><span class="p">):</span>
+    <span class="n">ratio_ord_str</span> <span class="o">=</span> <span class="n">order_str</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;&lt;&lt; </span><span class="si">{testname:s}</span><span class="s1">, </span><span class="si">{kind:s}</span><span class="s1"> &gt;&gt;</span><span class="se">\n</span><span class="s1">&#39;</span> \
+        <span class="s1">&#39; agreement to 10^</span><span class="si">{level:s}</span><span class="s1">&#39;</span>
+
+    <span class="n">s_ratio</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">testname</span><span class="o">=</span><span class="n">testname</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;fract diff&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">ratio_ord_str</span>
+    <span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">s_ratio</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="print_event_rates">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.print_event_rates">[docs]</a>
+<span class="k">def</span> <span class="nf">print_event_rates</span><span class="p">(</span><span class="n">testname1</span><span class="p">,</span> <span class="n">testname2</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">map1_events</span><span class="p">,</span> <span class="n">map2_events</span><span class="p">):</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;&lt;&lt; </span><span class="si">{testname:s}</span><span class="s1"> total </span><span class="si">{kind:s}</span><span class="s1"> events &gt;&gt;&#39;</span> \
+        <span class="s1">&#39; </span><span class="si">{events:s}</span><span class="s1">&#39;</span>
+
+    <span class="n">test1_events</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">testname</span><span class="o">=</span><span class="n">testname1</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span> <span class="n">events</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%.2f</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">map1_events</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">test2_events</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">testname</span><span class="o">=</span><span class="n">testname2</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span> <span class="n">events</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%.2f</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">map2_events</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">test1_events</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">test2_events</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># TODO: specify `allclose` parameters `rtol` and `atol` excplicitly</span>
+<div class="viewcode-block" id="validate_maps">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.validate_maps">[docs]</a>
+<span class="k">def</span> <span class="nf">validate_maps</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that two PISA 2 style maps are compatible binning.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">amap</span><span class="p">[</span><span class="s1">&#39;ebins&#39;</span><span class="p">],</span> <span class="n">bmap</span><span class="p">[</span><span class="s1">&#39;ebins&#39;</span><span class="p">])</span> <span class="ow">and</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">amap</span><span class="p">[</span><span class="s1">&#39;czbins&#39;</span><span class="p">],</span> <span class="n">bmap</span><span class="p">[</span><span class="s1">&#39;czbins&#39;</span><span class="p">])):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Maps&#39; binnings do not match!&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># TODO: specify `allclose` parameters `rtol` and `atol` excplicitly</span>
+<div class="viewcode-block" id="validate_map_objs">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.validate_map_objs">[docs]</a>
+<span class="k">def</span> <span class="nf">validate_map_objs</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that two PISA 3 style maps are compatible binning.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">ae</span><span class="p">,</span> <span class="n">be</span><span class="p">)</span> <span class="k">for</span> <span class="n">ae</span><span class="p">,</span> <span class="n">be</span>
+                <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">amap</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">bmap</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">)]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Maps&#39; binnings do not match! Got first map as </span><span class="se">\n</span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">and second &quot;</span>
+            <span class="s2">&quot; map as </span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="n">amap</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">,</span> <span class="n">bmap</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="make_delta_map">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.make_delta_map">[docs]</a>
+<span class="k">def</span> <span class="nf">make_delta_map</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the difference between two PISA 2 style maps (amap-bmap) and return</span>
+<span class="sd">    as another PISA 2 style map.&quot;&quot;&quot;</span>
+    <span class="n">validate_maps</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;ebins&#39;</span><span class="p">:</span> <span class="n">amap</span><span class="p">[</span><span class="s1">&#39;ebins&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;czbins&#39;</span><span class="p">:</span> <span class="n">amap</span><span class="p">[</span><span class="s1">&#39;czbins&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;map&#39;</span><span class="p">:</span> <span class="n">amap</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">bmap</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">]}</span></div>
+
+
+
+<div class="viewcode-block" id="make_ratio_map">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.make_ratio_map">[docs]</a>
+<span class="k">def</span> <span class="nf">make_ratio_map</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the ratio of two PISA 2 style maps (amap/bmap) and return as another</span>
+<span class="sd">    PISA 2 style map.&quot;&quot;&quot;</span>
+    <span class="n">validate_maps</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ebins&#39;</span><span class="p">:</span> <span class="n">amap</span><span class="p">[</span><span class="s1">&#39;ebins&#39;</span><span class="p">],</span>
+                  <span class="s1">&#39;czbins&#39;</span><span class="p">:</span> <span class="n">amap</span><span class="p">[</span><span class="s1">&#39;czbins&#39;</span><span class="p">],</span>
+                  <span class="s1">&#39;map&#39;</span><span class="p">:</span> <span class="n">amap</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">bmap</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">]}</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="baseplot">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.baseplot">[docs]</a>
+<span class="k">def</span> <span class="nf">baseplot</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">clabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">symm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">evtrate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">afmhot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple plotting of a 2D histogram (map)&quot;&quot;&quot;</span>
+    <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">])</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="s1">&#39;ebins&#39;</span><span class="p">]</span>
+    <span class="n">coszen</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="s1">&#39;czbins&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">symm</span><span class="p">:</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">seismic</span>
+        <span class="n">extr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">hist</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="n">extr</span>
+        <span class="n">vmin</span> <span class="o">=</span> <span class="o">-</span><span class="n">extr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">evtrate</span><span class="p">:</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span>
+    <span class="n">cmap</span><span class="o">.</span><span class="n">set_bad</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">coszen</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="n">pcmesh</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">hist</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+    <span class="n">cbar</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">mappable</span><span class="o">=</span><span class="n">pcmesh</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">clabel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cbar</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="n">clabel</span><span class="p">)</span>
+    <span class="n">cbar</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="s1">&#39;large&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\cos\theta_Z$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Energy (GeV)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.03</span><span class="p">)</span>
+    <span class="n">min_e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+    <span class="n">max_e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+    <span class="n">lin_yticks</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">min_e</span><span class="p">)),</span>
+                               <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">max_e</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lin_yticks</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">yt</span><span class="p">))</span> <span class="k">for</span> <span class="n">yt</span> <span class="ow">in</span> <span class="n">lin_yticks</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="baseplot2">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.baseplot2">[docs]</a>
+<span class="k">def</span> <span class="nf">baseplot2</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">symm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">evtrate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple plotting of a 2D map.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    map : Map</span>
+<span class="sd">    title : str</span>
+<span class="sd">    ax : axis</span>
+<span class="sd">    symm : bool</span>
+<span class="sd">    evtrate : bool</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ax, pcmesh, cbar</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="nb">map</span><span class="o">.</span><span class="n">hist</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">symm</span><span class="p">:</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">seismic</span>
+        <span class="n">extr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">hist</span><span class="p">))</span>
+        <span class="n">vmax</span> <span class="o">=</span> <span class="n">extr</span>
+        <span class="n">vmin</span> <span class="o">=</span> <span class="o">-</span><span class="n">extr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">afmhot</span>
+        <span class="k">if</span> <span class="n">evtrate</span><span class="p">:</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span>
+    <span class="n">cmap</span><span class="o">.</span><span class="n">set_bad</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">magnitude</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">magnitude</span>
+
+    <span class="k">if</span> <span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_log</span><span class="p">:</span>
+        <span class="n">xticks</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">x</span><span class="p">))),</span>
+                               <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">is_log</span><span class="p">:</span>
+        <span class="n">yticks</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">y</span><span class="p">))),</span>
+                               <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="n">pcmesh</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">hist</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+    <span class="n">cbar</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">mappable</span><span class="o">=</span><span class="n">pcmesh</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">cbar</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="s1">&#39;large&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tex</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tex</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.03</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_log</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">xticks</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">xt</span><span class="p">))</span> <span class="k">for</span> <span class="n">xt</span> <span class="ow">in</span> <span class="n">xticks</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">is_log</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">yticks</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">yt</span><span class="p">))</span> <span class="k">for</span> <span class="n">yt</span> <span class="ow">in</span> <span class="n">yticks</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">ax</span><span class="p">,</span> <span class="n">pcmesh</span><span class="p">,</span> <span class="n">cbar</span></div>
+
+
+
+<div class="viewcode-block" id="plot_comparisons">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.plot_comparisons">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_comparisons</span><span class="p">(</span><span class="n">ref_map</span><span class="p">,</span> <span class="n">new_map</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">,</span> <span class="n">new_abv</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">subdir</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                     <span class="n">texname</span><span class="p">,</span> <span class="n">stagename</span><span class="p">,</span> <span class="n">servicename</span><span class="p">,</span> <span class="n">shorttitles</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot comparisons between two identically-binned PISA 2 style maps&quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="n">outdir</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">subdir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">subdir</span> <span class="o">=</span> <span class="n">stagename</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subdir</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">),</span> <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">stagename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">_comparisons&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ref_abv</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">new_abv</span><span class="o">.</span><span class="n">lower</span><span class="p">()),</span>
+                 <span class="s1">&#39;stage_&#39;</span><span class="o">+</span><span class="n">stagename</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">_comparisons&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ref_abv</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">new_abv</span><span class="o">.</span><span class="n">lower</span><span class="p">())]</span>
+    <span class="k">if</span> <span class="n">servicename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fname</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;service_&#39;</span><span class="o">+</span><span class="n">servicename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fname</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">ftype</span>
+
+    <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+
+    <span class="n">basetitle</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">stagename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">basetitle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">stagename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">texname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">basetitle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$</span><span class="si">%s</span><span class="s1">$&#39;</span> <span class="o">%</span> <span class="n">texname</span><span class="p">)</span>
+    <span class="n">basetitle</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">basetitle</span><span class="p">)</span>
+
+    <span class="n">ratio_map</span> <span class="o">=</span> <span class="n">make_ratio_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">,</span> <span class="n">ref_map</span><span class="p">)</span>
+    <span class="n">diff_map</span> <span class="o">=</span> <span class="n">make_delta_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">,</span> <span class="n">ref_map</span><span class="p">)</span>
+    <span class="n">diff_ratio_map</span> <span class="o">=</span> <span class="n">make_ratio_map</span><span class="p">(</span><span class="n">diff_map</span><span class="p">,</span> <span class="n">ref_map</span><span class="p">)</span>
+
+    <span class="n">max_diff_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff_ratio_map</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">]))</span>
+
+    <span class="c1"># Handle cases where ratio returns infinite</span>
+    <span class="c1"># This isn&#39;t necessarily a fail, since all it means is the referene was</span>
+    <span class="c1"># zero If the new value is sufficiently close to zero then it&#39;s still fine</span>
+    <span class="k">if</span> <span class="n">max_diff_ratio</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s1">&#39;Infinite value found in ratio tests. Difference tests &#39;</span>
+            <span class="s1">&#39;now also being calculated&#39;</span>
+        <span class="p">)</span>
+        <span class="c1"># First find all the finite elements</span>
+        <span class="n">finite_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">diff_ratio_map</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">])</span>
+        <span class="c1"># Then find the nanmax of this, will be our new test value</span>
+        <span class="n">max_diff_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff_ratio_map</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">][</span><span class="n">finite_map</span><span class="p">]))</span>
+        <span class="c1"># Also find all the infinite elements</span>
+        <span class="n">infinite_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">finite_map</span><span class="p">)</span>
+        <span class="c1"># This will be a second test value</span>
+        <span class="n">max_diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff_map</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">][</span><span class="n">infinite_map</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Without any infinite elements we can ignore this second test</span>
+        <span class="n">max_diff</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">gridspec_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">0.03</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.968</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.32</span><span class="p">)</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">gridspec_kw</span><span class="o">=</span><span class="n">gridspec_kw</span><span class="p">,</span>
+                                 <span class="n">sharex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">shorttitles</span><span class="p">:</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">ref_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">ref_abv</span><span class="o">+</span><span class="s1">&#39; (A)&#39;</span><span class="p">,</span>
+                     <span class="n">evtrate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">new_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">new_abv</span><span class="o">+</span><span class="s1">&#39; (B)&#39;</span><span class="p">,</span>
+                     <span class="n">evtrate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">ratio_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="s1">&#39;A/B&#39;</span><span class="p">,</span>
+                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">diff_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="s1">&#39;A-B&#39;</span><span class="p">,</span>
+                     <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">diff_ratio_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="s1">&#39;(A-B)/A&#39;</span><span class="p">,</span>
+                     <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">ref_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">ref_abv</span><span class="p">,</span>
+                     <span class="n">evtrate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">new_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">new_abv</span><span class="p">,</span>
+                     <span class="n">evtrate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">ratio_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; </span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">new_abv</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">),</span>
+                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">diff_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; </span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">new_abv</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">),</span>
+                     <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">baseplot</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">diff_ratio_map</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; (</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">)/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">new_abv</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">),</span>
+                     <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt;&gt; Plot for inspection saved at </span><span class="si">%s</span><span class="s1">&#39;</span>
+                      <span class="o">%</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">max_diff_ratio</span><span class="p">,</span> <span class="n">max_diff</span></div>
+
+
+
+<div class="viewcode-block" id="plot_map_comparisons">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.plot_map_comparisons">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_map_comparisons</span><span class="p">(</span><span class="n">ref_map</span><span class="p">,</span> <span class="n">new_map</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">,</span> <span class="n">new_abv</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">subdir</span><span class="p">,</span>
+                         <span class="n">name</span><span class="p">,</span> <span class="n">texname</span><span class="p">,</span> <span class="n">stagename</span><span class="p">,</span> <span class="n">servicename</span><span class="p">,</span>
+                         <span class="n">shorttitles</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot comparisons between two identically-binned PISA 3 style maps&quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="n">outdir</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">subdir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">subdir</span> <span class="o">=</span> <span class="n">stagename</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subdir</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">),</span> <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">stagename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">_comparisons&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ref_abv</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">new_abv</span><span class="o">.</span><span class="n">lower</span><span class="p">()),</span>
+                 <span class="s1">&#39;stage_&#39;</span><span class="o">+</span><span class="n">stagename</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">_comparisons&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ref_abv</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">new_abv</span><span class="o">.</span><span class="n">lower</span><span class="p">())]</span>
+    <span class="k">if</span> <span class="n">servicename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fname</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;service_&#39;</span><span class="o">+</span><span class="n">servicename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fname</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">ftype</span>
+
+    <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+
+    <span class="n">basetitle</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">stagename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">basetitle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">stagename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">texname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">basetitle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$</span><span class="si">%s</span><span class="s1">$&#39;</span> <span class="o">%</span> <span class="n">texname</span><span class="p">)</span>
+    <span class="n">basetitle</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">basetitle</span><span class="p">)</span>
+
+    <span class="n">validate_map_objs</span><span class="p">(</span><span class="n">new_map</span><span class="p">,</span> <span class="n">ref_map</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+        <span class="n">ratio_map</span> <span class="o">=</span> <span class="n">new_map</span><span class="o">/</span><span class="n">ref_map</span>
+    <span class="n">diff_map</span> <span class="o">=</span> <span class="n">new_map</span> <span class="o">-</span> <span class="n">ref_map</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+        <span class="n">diff_ratio_map</span> <span class="o">=</span> <span class="n">diff_map</span><span class="o">/</span><span class="n">ref_map</span>
+
+    <span class="n">max_diff_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff_ratio_map</span><span class="o">.</span><span class="n">hist</span><span class="p">))</span>
+
+    <span class="c1"># Handle cases where ratio returns infinite</span>
+    <span class="c1"># This isn&#39;t necessarily a fail, since all it means is the referene was</span>
+    <span class="c1"># zero If the new value is sufficiently close to zero then it&#39;s still fine</span>
+    <span class="k">if</span> <span class="n">max_diff_ratio</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s1">&#39;Infinite value found in ratio tests. Difference tests &#39;</span>
+            <span class="s1">&#39;now also being calculated&#39;</span>
+        <span class="p">)</span>
+        <span class="c1"># First find all the finite elements</span>
+        <span class="n">finite_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">diff_ratio_map</span><span class="o">.</span><span class="n">hist</span><span class="p">)</span>
+        <span class="c1"># Then find the nanmax of this, will be our new test value</span>
+        <span class="n">max_diff_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff_ratio_map</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="n">finite_map</span><span class="p">]))</span>
+        <span class="c1"># Also find all the infinite elements</span>
+        <span class="n">infinite_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">finite_map</span><span class="p">)</span>
+        <span class="c1"># This will be a second test value</span>
+        <span class="n">max_diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff_map</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="n">infinite_map</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Without any infinite elements we can ignore this second test</span>
+        <span class="n">max_diff</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">gridspec_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">0.03</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.968</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.32</span><span class="p">)</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">gridspec_kw</span><span class="o">=</span><span class="n">gridspec_kw</span><span class="p">,</span>
+                                 <span class="n">sharex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">shorttitles</span><span class="p">:</span>
+            <span class="n">ref_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">ref_abv</span><span class="o">+</span><span class="s1">&#39; (A)&#39;</span><span class="p">,</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">afmhot</span>
+            <span class="p">)</span>
+            <span class="n">new_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">new_abv</span><span class="o">+</span><span class="s1">&#39; (B)&#39;</span><span class="p">,</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">afmhot</span>
+            <span class="p">)</span>
+            <span class="n">ratio_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="s1">&#39;A/B&#39;</span><span class="p">,</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">afmhot</span>
+            <span class="p">)</span>
+            <span class="n">diff_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="s1">&#39;A-B&#39;</span><span class="p">,</span>
+                <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">seismic</span>
+            <span class="p">)</span>
+            <span class="n">diff_ratio_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="s1">&#39;(A-B)/A&#39;</span><span class="p">,</span>
+                <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">seismic</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ref_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">ref_abv</span><span class="p">,</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">afmhot</span>
+            <span class="p">)</span>
+            <span class="n">new_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">new_abv</span><span class="p">,</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">afmhot</span>
+            <span class="p">)</span>
+            <span class="n">ratio_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; </span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">new_abv</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">),</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">afmhot</span>
+            <span class="p">)</span>
+            <span class="n">diff_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; </span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">new_abv</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">),</span>
+                <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">seismic</span>
+            <span class="p">)</span>
+            <span class="n">diff_ratio_map</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+                <span class="n">title</span><span class="o">=</span><span class="n">basetitle</span><span class="o">+</span><span class="s1">&#39; (</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">)/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">new_abv</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">),</span>
+                <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">seismic</span>
+            <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt;&gt; Plot for inspection saved at </span><span class="si">%s</span><span class="s1">&#39;</span>
+                      <span class="o">%</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">max_diff_ratio</span><span class="p">,</span> <span class="n">max_diff</span></div>
+
+
+
+<div class="viewcode-block" id="plot_cmp">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.plot_cmp">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_cmp</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">new_label</span><span class="p">,</span> <span class="n">ref_label</span><span class="p">,</span> <span class="n">plot_label</span><span class="p">,</span> <span class="n">file_label</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span>
+             <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot comparisons between two (identically-binned) maps or map sets.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    new : Map or MapSet</span>
+<span class="sd">    ref : Map or MapSet</span>
+<span class="sd">    new_label : str</span>
+<span class="sd">    ref_label : str</span>
+<span class="sd">    plot_label : str</span>
+<span class="sd">    file_label : str</span>
+<span class="sd">    outdir : str</span>
+<span class="sd">    ftype : str</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="n">outdir</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">Map</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">Map</span><span class="p">)</span>
+        <span class="n">ref_maps</span> <span class="o">=</span> <span class="p">[</span><span class="n">ref</span><span class="p">]</span>
+        <span class="n">new_maps</span> <span class="o">=</span> <span class="p">[</span><span class="n">new</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">),</span> <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">ref</span><span class="p">,</span> <span class="n">new</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ref_maps</span><span class="p">,</span> <span class="n">new_maps</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">ref</span><span class="o">.</span><span class="n">binning</span> <span class="o">==</span> <span class="n">new</span><span class="o">.</span><span class="n">binning</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">get_valid_filename</span><span class="p">(</span>
+            <span class="s1">&#39;__&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+                <span class="n">get_valid_filename</span><span class="p">(</span><span class="n">file_label</span><span class="p">),</span>
+                <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_vs_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">get_valid_filename</span><span class="p">(</span><span class="n">new_label</span><span class="o">.</span><span class="n">lower</span><span class="p">()),</span>
+                             <span class="n">get_valid_filename</span><span class="p">(</span><span class="n">ref_label</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+            <span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">ftype</span>
+        <span class="p">)</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+
+        <span class="n">ratio</span> <span class="o">=</span> <span class="n">new</span> <span class="o">/</span> <span class="n">ref</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">new</span> <span class="o">-</span> <span class="n">ref</span>
+        <span class="n">fract_diff</span> <span class="o">=</span> <span class="n">diff</span> <span class="o">/</span> <span class="n">ref</span>
+
+        <span class="n">finite_ratio</span> <span class="o">=</span> <span class="n">ratio</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">ratio</span><span class="o">.</span><span class="n">hist</span><span class="p">)]</span>
+        <span class="n">ratio_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">finite_ratio</span><span class="p">)</span>
+        <span class="n">ratio_median</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">finite_ratio</span><span class="p">)</span>
+
+        <span class="n">finite_diff</span> <span class="o">=</span> <span class="n">diff</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">diff</span><span class="o">.</span><span class="n">hist</span><span class="p">)]</span>
+        <span class="n">diff_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">finite_diff</span><span class="p">)</span>
+        <span class="n">diff_median</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">finite_diff</span><span class="p">)</span>
+
+        <span class="n">finite_fract_diff</span> <span class="o">=</span> <span class="n">fract_diff</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">fract_diff</span><span class="o">.</span><span class="n">hist</span><span class="p">)]</span>
+        <span class="n">fract_diff_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">finite_fract_diff</span><span class="p">)</span>
+        <span class="n">fract_diff_median</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">finite_fract_diff</span><span class="p">)</span>
+
+        <span class="n">max_diff_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">fract_diff</span><span class="o">.</span><span class="n">hist</span><span class="p">)</span>
+
+        <span class="c1"># Handle cases where ratio returns infinite</span>
+        <span class="c1"># This isn&#39;t necessarily a fail, since all it means is the referene was</span>
+        <span class="c1"># zero. If the new value is sufficiently close to zero then it&#39;s stil</span>
+        <span class="c1"># fine.</span>
+        <span class="k">if</span> <span class="n">max_diff_ratio</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;Infinite value found in ratio tests. Difference tests&#39;</span>
+                <span class="s1">&#39; now also being calculated&#39;</span>
+            <span class="p">)</span>
+            <span class="c1"># First find all the finite elements</span>
+            <span class="n">finite_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">fract_diff</span><span class="o">.</span><span class="n">hist</span><span class="p">)</span>
+            <span class="c1"># Then find the nanmax of this, will be our new test value</span>
+            <span class="n">max_diff_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">fract_diff</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="n">finite_mask</span><span class="p">])</span>
+            <span class="c1"># Also find all the infinite elements; compute a second test value</span>
+            <span class="n">max_diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">diff</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="o">~</span><span class="n">finite_mask</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Without any infinite elements we can ignore this second test</span>
+            <span class="n">max_diff</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">new</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">n_dims</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="n">n_third_dim_bins</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">new</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">n_dims</span> <span class="o">=</span> <span class="mi">3</span>
+                <span class="n">odd_dim_idx</span> <span class="o">=</span> <span class="n">new</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">new</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;odd_dim_idx: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">odd_dim_idx</span><span class="p">)</span>
+                <span class="n">n_third_dim_bins</span> <span class="o">=</span> <span class="n">new</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">odd_dim_idx</span><span class="p">]</span>
+
+            <span class="n">gridspec_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">0.03</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.968</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.32</span><span class="p">)</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="n">n_third_dim_bins</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                                     <span class="n">gridspec_kw</span><span class="o">=</span><span class="n">gridspec_kw</span><span class="p">,</span>
+                                     <span class="n">squeeze</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                     <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+            <span class="n">refslice</span> <span class="o">=</span> <span class="n">ref</span>
+            <span class="n">newslice</span> <span class="o">=</span> <span class="n">new</span>
+            <span class="n">bin_names</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">n_dims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">odd_dim_idx</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">refslice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">odd_dim_idx</span><span class="p">,</span>
+                                           <span class="n">destination</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">newslice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">odd_dim_idx</span><span class="p">,</span>
+                                           <span class="n">destination</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">bin_names</span> <span class="o">=</span> <span class="n">new</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">odd_dim_idx</span><span class="p">]</span><span class="o">.</span><span class="n">bin_names</span>
+
+            <span class="k">for</span> <span class="n">odd_bin_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_third_dim_bins</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">n_dims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">thisbin_ref</span> <span class="o">=</span> <span class="n">refslice</span>
+                    <span class="n">thisbin_new</span> <span class="o">=</span> <span class="n">newslice</span>
+                    <span class="n">tmp_ref_label</span> <span class="o">=</span> <span class="n">ref_label</span>
+                    <span class="n">tmp_new_label</span> <span class="o">=</span> <span class="n">new_label</span>
+
+                <span class="k">elif</span> <span class="n">n_dims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">thisbin_ref</span> <span class="o">=</span> <span class="n">refslice</span><span class="p">[</span><span class="n">odd_bin_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+                    <span class="n">thisbin_new</span> <span class="o">=</span> <span class="n">newslice</span><span class="p">[</span><span class="n">odd_bin_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+
+                    <span class="k">if</span> <span class="n">bin_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">suffix</span> <span class="o">=</span> <span class="n">bin_names</span><span class="p">[</span><span class="n">odd_bin_idx</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">suffix</span> <span class="o">=</span> <span class="nb">format</span><span class="p">(</span><span class="n">odd_bin_idx</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">)</span>
+                    <span class="n">tmp_new_label</span> <span class="o">=</span> <span class="n">new_label</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">suffix</span>
+                    <span class="n">tmp_ref_label</span> <span class="o">=</span> <span class="n">ref_label</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">suffix</span>
+
+                    <span class="n">ratio</span> <span class="o">=</span> <span class="n">thisbin_new</span> <span class="o">/</span> <span class="n">thisbin_ref</span>
+                    <span class="n">diff</span> <span class="o">=</span> <span class="n">thisbin_new</span> <span class="o">-</span> <span class="n">thisbin_ref</span>
+                    <span class="n">fract_diff</span> <span class="o">=</span> <span class="n">diff</span> <span class="o">/</span> <span class="n">thisbin_ref</span>
+
+                <span class="n">refmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">thisbin_ref</span><span class="o">.</span><span class="n">hist</span><span class="p">)</span>
+                <span class="n">newmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">thisbin_new</span><span class="o">.</span><span class="n">hist</span><span class="p">)</span>
+                <span class="n">vmax</span> <span class="o">=</span> <span class="n">refmax</span> <span class="k">if</span> <span class="n">refmax</span> <span class="o">&gt;</span> <span class="n">newmax</span> <span class="k">else</span> <span class="n">newmax</span>
+
+                <span class="n">baseplot2</span><span class="p">(</span><span class="nb">map</span><span class="o">=</span><span class="n">thisbin_new</span><span class="p">,</span>
+                          <span class="n">title</span><span class="o">=</span><span class="n">tmp_new_label</span><span class="p">,</span>
+                          <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
+                          <span class="n">evtrate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                          <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="n">odd_bin_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="n">baseplot2</span><span class="p">(</span><span class="nb">map</span><span class="o">=</span><span class="n">thisbin_ref</span><span class="p">,</span>
+                          <span class="n">title</span><span class="o">=</span><span class="n">tmp_ref_label</span><span class="p">,</span>
+                          <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
+                          <span class="n">evtrate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                          <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="n">odd_bin_idx</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+                <span class="n">ax</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">baseplot2</span><span class="p">(</span><span class="nb">map</span><span class="o">=</span><span class="n">ratio</span><span class="p">,</span>
+                                     <span class="n">title</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">tmp_new_label</span><span class="p">,</span>
+                                                     <span class="n">tmp_ref_label</span><span class="p">),</span>
+                                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="n">odd_bin_idx</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="s2">&quot;Mean: </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">ratio_mean</span><span class="p">,</span>
+                        <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                        <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">))</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.91</span><span class="p">,</span> <span class="s2">&quot;Median: </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">ratio_median</span><span class="p">,</span>
+                        <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                        <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">))</span>
+
+                <span class="n">ax</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">baseplot2</span><span class="p">(</span><span class="nb">map</span><span class="o">=</span><span class="n">diff</span><span class="p">,</span>
+                                     <span class="n">title</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">tmp_new_label</span><span class="p">,</span>
+                                                     <span class="n">tmp_ref_label</span><span class="p">),</span>
+                                     <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="n">odd_bin_idx</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="s2">&quot;Mean: </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">diff_mean</span><span class="p">,</span>
+                        <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                        <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.91</span><span class="p">,</span> <span class="s2">&quot;Median: </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">diff_median</span><span class="p">,</span>
+                        <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                        <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+
+                <span class="n">ax</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">baseplot2</span><span class="p">(</span><span class="nb">map</span><span class="o">=</span><span class="n">fract_diff</span><span class="p">,</span>
+                                     <span class="n">title</span><span class="o">=</span><span class="s1">&#39;(</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">)/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">tmp_new_label</span><span class="p">,</span>
+                                                          <span class="n">tmp_ref_label</span><span class="p">,</span>
+                                                          <span class="n">tmp_ref_label</span><span class="p">),</span>
+                                     <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                     <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="n">odd_bin_idx</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="s2">&quot;Mean: </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">fract_diff_mean</span><span class="p">,</span>
+                        <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                        <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.91</span><span class="p">,</span> <span class="s2">&quot;Median: </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">fract_diff_median</span><span class="p">,</span>
+                        <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                        <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt;&gt; Plot for inspection saved at </span><span class="si">%s</span><span class="s1">&#39;</span>
+                          <span class="o">%</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">))</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">max_diff_ratio</span><span class="p">,</span> <span class="n">max_diff</span></div>
+
+
+
+<div class="viewcode-block" id="pisa2_map_to_pisa3_map">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.pisa2_map_to_pisa3_map">[docs]</a>
+<span class="k">def</span> <span class="nf">pisa2_map_to_pisa3_map</span><span class="p">(</span><span class="n">pisa2_map</span><span class="p">,</span> <span class="n">ebins_name</span><span class="o">=</span><span class="s1">&#39;ebins&#39;</span><span class="p">,</span> <span class="n">czbins_name</span><span class="o">=</span><span class="s1">&#39;czbins&#39;</span><span class="p">,</span>
+                           <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">expected_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="s1">&#39;ebins&#39;</span><span class="p">,</span> <span class="s1">&#39;czbins&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pisa2_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">expected_keys</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;PISA 2 map should be a dict containining entries: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                         <span class="o">%</span><span class="n">expected_keys</span><span class="p">)</span>
+    <span class="n">ebins</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">ebins_name</span><span class="p">,</span>
+        <span class="n">bin_edges</span><span class="o">=</span><span class="n">pisa2_map</span><span class="p">[</span><span class="s1">&#39;ebins&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span>
+        <span class="n">is_log</span><span class="o">=</span><span class="n">is_log</span><span class="p">,</span>
+        <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;E_{\nu}&#39;</span>
+    <span class="p">)</span>
+    <span class="n">czbins</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">czbins_name</span><span class="p">,</span>
+        <span class="n">bin_edges</span><span class="o">=</span><span class="n">pisa2_map</span><span class="p">[</span><span class="s1">&#39;czbins&#39;</span><span class="p">],</span>
+        <span class="n">is_lin</span><span class="o">=</span><span class="n">is_lin</span><span class="p">,</span>
+        <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\cos\theta_Z&#39;</span>
+    <span class="p">)</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">ebins</span><span class="p">,</span> <span class="n">czbins</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">Map</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;pisa2equivalent&#39;</span><span class="p">,</span>
+        <span class="n">hist</span><span class="o">=</span><span class="n">pisa2_map</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">],</span>
+        <span class="n">binning</span><span class="o">=</span><span class="n">bins</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

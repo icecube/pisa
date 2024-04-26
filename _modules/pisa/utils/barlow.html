@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.barlow &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.barlow</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.barlow</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">`Likelihoods` class for computing Poisson and Barlow likelihoods.</span>
+
+<span class="sd">The Poisson likelihood assumes the template being compared against is the</span>
+<span class="sd">perfect expectation, while the Barlow likelihood accounts for the template</span>
+<span class="sd">being imperfect due to being generated from finite Monte Carlo statistics.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Likelihoods&#39;</span><span class="p">]</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Michael Larson&#39;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s1">&#39;mlarson@nbi.ku.dk&#39;</span>
+<span class="n">__date__</span> <span class="o">=</span> <span class="s1">&#39;2016-03-14&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="c1">#------------------------------------------------------------------------------</span>
+<span class="c1"># The following is adapted from user Alfe, https://stackoverflow.com/a/16787722</span>
+<span class="k">def</span> <span class="nf">handle_uncaught_exception</span><span class="p">(</span><span class="n">exctype</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">trace</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception hook that allows for exiting with a specified exit code.</span>
+
+<span class="sd">    Replaces sys.exithook; see :class:`ExitCodeException`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">OLD_EXCEPTHOOK</span><span class="p">(</span><span class="n">exctype</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">trace</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;exitcode&#39;</span><span class="p">):</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">exitcode</span><span class="p">)</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">excepthook</span><span class="p">,</span> <span class="n">OLD_EXCEPTHOOK</span> <span class="o">=</span> <span class="n">handle_uncaught_exception</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">excepthook</span>
+<span class="c1">#------------------------------------------------------------------------------</span>
+
+
+<span class="k">class</span> <span class="nc">ShapeError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="n">exitcode</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="k">class</span> <span class="nc">NaNValueError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="n">exitcode</span> <span class="o">=</span> <span class="mi">101</span>
+
+<span class="k">class</span> <span class="nc">ArgValueError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="n">exitcode</span> <span class="o">=</span> <span class="mi">102</span>
+
+
+<div class="viewcode-block" id="Likelihoods">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods">[docs]</a>
+<span class="k">class</span> <span class="nc">Likelihoods</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A class to handle the likelihood calculations in OscFit. It can</span>
+<span class="sd">be used in other poisson binned-likelihood calculators as well.</span>
+<span class="sd">The class includes two likelihood spaces: the Poisson and the</span>
+<span class="sd">Barlow LLH.</span>
+
+<span class="sd">The Poisson likelihood is the ideal case and assumes infinite</span>
+<span class="sd">statistical accuracy on the Monte Carlo distributions. This is</span>
+<span class="sd">the simple case and has been used in the past for analyses, but</span>
+<span class="sd">should not be used if there&#39;s a significant statistical error on</span>
+<span class="sd">one of the samples.</span>
+
+<span class="sd">The Barlow likelihood is an implementation of the likelihood model</span>
+<span class="sd">given in doi:10.1016/0010-4655(93)90005-W (&quot;Fitting using finite</span>
+<span class="sd">Monte Carlo samples&quot; by Barlow and Beeston). This requires the</span>
+<span class="sd">unweighted distributions of the MC and involves assuming that each</span>
+<span class="sd">MC samples is drawn from an underlying &quot;true&quot; expectation distribution</span>
+<span class="sd">which should be fit. This gives (number of bins)x(number of samples)</span>
+<span class="sd">new parameters to fit and allows the shape of the distributions to</span>
+<span class="sd">fluctuate in order to fit both the observed MC and the observed</span>
+<span class="sd">data. This gives a more informed result and allows one to estimate</span>
+<span class="sd">the effect of the finite MC samples.</span>
+
+<span class="sd">To use this, you need to run set_data, set_mc, and the set_unweighted</span>
+<span class="sd">functions. </span>
+
+<span class="sd">.. important:: the `set_mc` function takes a histogram of the average</span>
+<span class="sd">    weight per event for each bin! not the total weighted histogram!</span>
+
+<span class="sd">Simply calling the get_llh function after these will return the</span>
+<span class="sd">best fit LLH for your chosen likelihood function. The function takes</span>
+<span class="sd">the name of the likelihood space (&quot;Poisson&quot; or &quot;Barlow&quot;). You can</span>
+<span class="sd">retrieve the best fit weighted plots using the get_plot (total best-fit</span>
+<span class="sd">histogram including all samples) and the get_single_plots (the list</span>
+<span class="sd">of best-fit weighted histograms for each sample).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mc_histograms</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">unweighted_histograms</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">data_histogram</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">bestfit_plots</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">current_bin</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate and set all of the defaults&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mc_histograms</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unweighted_histograms</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_histogram</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bestfit_plots</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_bin</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Likelihoods.reset">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Re-instantiate so that we can reuse the object&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Likelihoods.set_data">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods.set_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_histogram</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up the data histogram. This histogram is flattened in order to</span>
+<span class="sd">        make the looping later on a bit simpler to handle.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">data_histogram</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="n">data_histogram</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ShapeError</span><span class="p">(</span>
+                <span class="s2">&quot;Data histogram has shape </span><span class="si">{}</span><span class="s2"> but expected histogram shape </span><span class="si">{}</span><span class="s2">&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data_histogram</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
+                <span class="n">exitcode</span><span class="o">=</span><span class="mi">100</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_histogram</span> <span class="o">=</span> <span class="n">data_histogram</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Likelihoods.set_mc">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods.set_mc">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_mc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mc_histograms</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up the MC histogram. Each histogram is flattened in order to</span>
+<span class="sd">        make the looping later on a bit simpler to handle. The values in each</span>
+<span class="sd">        bin should correspond to the weight-per-event in that bin, NOT the</span>
+<span class="sd">        total weight in that bin!</span>
+
+<span class="sd">        Make sure you don&#39;t have any nulls here.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">mc_histograms</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">mc_histograms</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">NaNValueError</span><span class="p">(</span>
+                <span class="s2">&quot;At least one bin in your MC histogram is NaN! Take a look&quot;</span>
+                <span class="s2">&quot; and decide how best to handle this&quot;</span><span class="p">,</span>
+                <span class="n">exitcode</span><span class="o">=</span><span class="mi">101</span>
+            <span class="p">)</span>
+
+        <span class="n">flat_histograms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mc_histograms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">mc_histograms</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ShapeError</span><span class="p">(</span>
+                    <span class="s2">&quot;MC Histogram </span><span class="si">{}</span><span class="s2"> has shape </span><span class="si">{}</span><span class="s2"> but expected shape </span><span class="si">{}</span><span class="s2">&quot;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">mc_histograms</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="n">flat_histograms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mc_histograms</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mc_histograms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flat_histograms</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Likelihoods.set_unweighted">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods.set_unweighted">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_unweighted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unweighted_histograms</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the unweighted distributions in the MC. These can include 0s.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">unweighted_histograms</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">flat_histograms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">unweighted_histograms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">unweighted_histograms</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ShapeError</span><span class="p">(</span>
+                    <span class="s2">&quot;Unweighted histogram </span><span class="si">{}</span><span class="s2"> has shape </span><span class="si">{}</span><span class="s2"> but expected shape&quot;</span>
+                    <span class="s2">&quot; </span><span class="si">{}</span><span class="s2">&quot;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">unweighted_histograms</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">flat_histograms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unweighted_histograms</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">unweighted_histograms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flat_histograms</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Likelihoods.get_plot">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods.get_plot">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the total weighted best-fit histogram post-fit.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bestfit_plots</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_single_plots</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="Likelihoods.get_single_plots">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods.get_single_plots">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_single_plots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the individual weighted best-fit histograms post-fit.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bestfit_plots</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mc_histograms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bestfit_plots</span><span class="p">)</span>
+        <span class="n">target_shape</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">target_shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Likelihoods.get_llh">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods.get_llh">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">llh_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the likelihood given the data, average weights, and the</span>
+<span class="sd">        unweighted histograms. You can choose between &quot;Poisson&quot; and &quot;Barlow&quot;</span>
+<span class="sd">        likelihoods at the moment.</span>
+
+<span class="sd">        If using the &quot;Barlow&quot; LLH, note that the method is picked to be Powell</span>
+<span class="sd">        with 25 iterations maximum per step. This is not optimized at all and</span>
+<span class="sd">        was explicitly chosen simply because it &quot;worked&quot;. This doesn&#39;t work</span>
+<span class="sd">        with the bounds set in the normal way, so the positive-definiteness of</span>
+<span class="sd">        the rates is enforced in the get_llh_barlow_bin method.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">llh_type</span> <span class="o">=</span> <span class="n">llh_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bestfit_plots</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unweighted_histograms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_bin</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># The simplest case: the Poisson binned likelihood</span>
+        <span class="k">if</span> <span class="n">llh_type</span> <span class="o">==</span> <span class="s2">&quot;poisson&quot;</span><span class="p">:</span>
+            <span class="n">poisson_llh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_llh_poisson</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">poisson_llh</span>
+
+        <span class="c1"># The more complicated case: The Barlow LLH</span>
+        <span class="c1"># This requires a separate minimization step in each bin to estimate</span>
+        <span class="c1">#  the expected rate in each bin from each MC sample using constraints</span>
+        <span class="c1">#  from the data and the observed MC distribution.</span>
+        <span class="k">elif</span> <span class="n">llh_type</span> <span class="o">==</span> <span class="s2">&quot;barlow&quot;</span><span class="p">:</span>
+            <span class="n">llh</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">bin_n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_histogram</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">current_bin</span> <span class="o">=</span> <span class="n">bin_n</span>
+                <span class="n">bin_result</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
+                    <span class="n">fun</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_llh_barlow_bin</span><span class="p">,</span>
+                    <span class="n">x0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bestfit_plots</span><span class="p">[:,</span> <span class="n">bin_n</span><span class="p">],</span>
+                    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;Powell&quot;</span><span class="p">,</span>
+                    <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span> <span class="s1">&#39;disp&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bestfit_plots</span><span class="p">[:,</span> <span class="n">bin_n</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_result</span><span class="o">.</span><span class="n">x</span>
+                <span class="n">llh</span> <span class="o">+=</span> <span class="n">bin_result</span><span class="o">.</span><span class="n">fun</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_bin</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="n">llh</span>
+
+        <span class="k">raise</span> <span class="n">ArgValueError</span><span class="p">(</span>
+            <span class="s1">&#39;Unknown `llh_type` &quot;</span><span class="si">{}</span><span class="s1">&quot;. Choose either &quot;Poisson&quot; (ideal) or&#39;</span>
+            <span class="s1">&#39; &quot;Barlow&quot; (including MC statistical errors).&#39;</span>
+            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">llh_type</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Likelihoods.get_llh_barlow_bin">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods.get_llh_barlow_bin">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_llh_barlow_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_i</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The Barlow LLH finds the best-fit &quot;expected&quot; MC distribution using</span>
+<span class="sd">        both the data and observed MC as constraints. Each bin is independent</span>
+<span class="sd">        in this calculation, since the assumption is that there are no</span>
+<span class="sd">        correlations between bins. This likely leads to a somewhat worse limit</span>
+<span class="sd">        than you might get otherwise, but at least its conservative.</span>
+
+<span class="sd">        If you have a good idea for how to extend this to include bin-to-bin,</span>
+<span class="sd">        let me know and I can help implement it.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">a_i</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a_i</span><span class="p">))]):</span>
+            <span class="k">return</span> <span class="mf">1e10</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_bin</span>
+        <span class="n">di</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_histogram</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">fi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mc_histograms</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">a_i</span><span class="p">))</span>
+        <span class="n">ai</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unweighted_histograms</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+
+        <span class="n">llh</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># This is the standard Poisson LLH comparing data to the total weighted</span>
+        <span class="c1"># MC</span>
+        <span class="k">if</span> <span class="n">fi</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">llh</span> <span class="o">+=</span> <span class="n">di</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">fi</span><span class="p">)</span> <span class="o">-</span> <span class="n">fi</span>
+        <span class="k">if</span> <span class="n">di</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">llh</span> <span class="o">-=</span> <span class="n">di</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">di</span><span class="p">)</span> <span class="o">-</span> <span class="n">di</span>
+
+        <span class="c1"># The heart of the Barlow LLH. Fitting the a_i (expected number of</span>
+        <span class="c1"># events in the MC sample for this bin) using the observed MC events as</span>
+        <span class="c1"># a constraint.</span>
+        <span class="n">cut</span> <span class="o">=</span> <span class="n">a_i</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="c1">#a_i[a_i &lt;= 0] = 10e-10</span>
+        <span class="c1">#llh += np.sum(np.dot(ai, np.log(a_i)) - np.sum(a_i))</span>
+        <span class="n">llh</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ai</span><span class="p">[</span><span class="n">cut</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">a_i</span><span class="p">[</span><span class="n">cut</span><span class="p">]))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">a_i</span><span class="p">[</span><span class="n">cut</span><span class="p">]))</span>
+
+        <span class="c1"># This is simply a normalization term that helps by centering the LLH</span>
+        <span class="c1"># near 0</span>
+        <span class="c1"># It&#39;s an expansion of Ln(ai!) using the Sterling expansion</span>
+        <span class="n">cut</span> <span class="o">=</span> <span class="n">ai</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">llh</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ai</span><span class="p">[</span><span class="n">cut</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ai</span><span class="p">[</span><span class="n">cut</span><span class="p">]))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ai</span><span class="p">[</span><span class="n">cut</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="n">llh</span></div>
+
+
+<div class="viewcode-block" id="Likelihoods.get_llh_poisson">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.barlow.Likelihoods.get_llh_poisson">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_llh_poisson</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The standard binned-poisson likelihood comparing the weighted MC</span>
+<span class="sd">        distribution to the data, ignoring MC statistical uncertainties.&quot;&quot;&quot;</span>
+        <span class="n">di</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_histogram</span>
+        <span class="n">fi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mc_histograms</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">unweighted_histograms</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">llh</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># The normal definition of the LLH, dropping the Ln(di!) constant term</span>
+        <span class="n">cut</span> <span class="o">=</span> <span class="n">fi</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">llh</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">di</span><span class="p">[</span><span class="n">cut</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">fi</span><span class="p">[</span><span class="n">cut</span><span class="p">])</span> <span class="o">-</span> <span class="n">fi</span><span class="p">[</span><span class="n">cut</span><span class="p">])</span>
+
+        <span class="c1"># This is simply a normalization term that helps by centering the LLH</span>
+        <span class="c1"># near 0</span>
+        <span class="c1"># It&#39;s an expansion of Ln(di!) using the Sterling expansion</span>
+        <span class="n">cut</span> <span class="o">=</span> <span class="n">di</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">llh</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">di</span><span class="p">[</span><span class="n">cut</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">di</span><span class="p">[</span><span class="n">cut</span><span class="p">])</span> <span class="o">-</span> <span class="n">di</span><span class="p">[</span><span class="n">cut</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="n">llh</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

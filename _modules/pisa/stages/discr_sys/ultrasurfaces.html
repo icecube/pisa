@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.discr_sys.ultrasurfaces &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.discr_sys.ultrasurfaces</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.discr_sys.ultrasurfaces</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">PISA pi stage to apply ultrasurface fits from discrete systematics parameterizations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span>
+
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span><span class="p">,</span> <span class="n">line_profile</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">Levels</span>
+
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span><span class="p">,</span> <span class="n">chain</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;ultrasurfaces&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;A. Trettin, L. Fischer&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2022, The IceCube Collaboration</span>
+
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> you may not use this file except in compliance with the License.</span>
+<span class="s2"> You may obtain a copy of the License at</span>
+
+<span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s2"> See the License for the specific language governing permissions and</span>
+<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="ultrasurfaces">
+<a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces">[docs]</a>
+<span class="k">class</span> <span class="nc">ultrasurfaces</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Service to apply ultrasurface parameterisation stored in a feather file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fit_results_file : str</span>
+<span class="sd">        Path to .feather file containing all nominal events with gradients.</span>
+<span class="sd">    nominal_points : str or dict</span>
+<span class="sd">        Dictionary (or str that can be evaluated thereto) of the form</span>
+<span class="sd">        {&#39;parameter_name&#39;: &lt;nominal value&gt;} containing the nominal value for each</span>
+<span class="sd">        parameter that was used to fit the gradients with.</span>
+<span class="sd">    varnames : list of str</span>
+<span class="sd">        List of variables to match the pisa events to the pre-fitted events.</span>
+<span class="sd">    approx_exponential : bool</span>
+<span class="sd">        Approximate the exponential using exp(x) = 1 + x. This is appropriate when</span>
+<span class="sd">        gradients have been fit with the purely linear `hardmax` activation function.</span>
+<span class="sd">        (If you don&#39;t know what that is, just leave it at `False`.)</span>
+<span class="sd">    support : str or dict</span>
+<span class="sd">        Dictionary (or str that can be evaluated thereto) of the form {&#39;parameter_name&#39;:</span>
+<span class="sd">        (lower bound, upper bound)} containing the bounds of the parameter space inside</span>
+<span class="sd">        which the gradients are valid. If a value outside of these bounds is requested,</span>
+<span class="sd">        we have to extrapolate using the strategy defined in the `extrapolation`</span>
+<span class="sd">        parameter.</span>
+<span class="sd">    extrapolation : str</span>
+<span class="sd">        Strategy to use for extrapolating beyond the bounds set by the `bounds` option.</span>
+<span class="sd">        Options are `continue`, `linear` and `constant`. If `continue`, polynomial</span>
+<span class="sd">        features are simply extended at the risk of weights getting out of control.</span>
+<span class="sd">        If `linear`, second order features are extrapolated using their derivative at</span>
+<span class="sd">        the closest bound. If `constant`, the value at the closest boundary is returned.</span>
+<span class="sd">    params : ParamSet</span>
+<span class="sd">        Note that the params required to be in `params` are determined from</span>
+<span class="sd">        those listed in the `systematics`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fit_results_file</span><span class="p">,</span>
+        <span class="n">nominal_points</span><span class="p">,</span>
+        <span class="n">varnames</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pid&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span> <span class="s2">&quot;reco_coszen&quot;</span><span class="p">,</span> <span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;reco_energy&quot;</span><span class="p">],</span>
+        <span class="n">approx_exponential</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">support</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">extrapolation</span><span class="o">=</span><span class="s2">&quot;continue&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># evaluation only works on event-by-event basis</span>
+        <span class="k">assert</span> <span class="n">std_kwargs</span><span class="p">[</span><span class="s2">&quot;calc_mode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span>
+
+        <span class="c1"># Store args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span> <span class="o">=</span> <span class="n">fit_results_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varnames</span> <span class="o">=</span> <span class="n">varnames</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">approx_exponential</span> <span class="o">=</span> <span class="n">approx_exponential</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nominal_points</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nominal_points</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">nominal_points</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nominal_points</span> <span class="o">=</span> <span class="n">nominal_points</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nominal_points</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">support</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">support</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">support</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">support</span> <span class="o">=</span> <span class="n">support</span>
+        <span class="k">elif</span> <span class="n">support</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">support</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown input format for `support`.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation</span> <span class="o">=</span> <span class="n">extrapolation</span>
+
+        <span class="n">param_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nominal_points</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">pname</span> <span class="ow">in</span> <span class="n">param_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">support</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">support</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Support range is missing for parameter </span><span class="si">{</span><span class="n">pname</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># -- Initialize base class -- #</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="n">param_names</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ultrasurfaces.setup_function">
+<a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces.setup_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the fit results from the file and make some compatibility checks&quot;&quot;&quot;</span>
+
+        <span class="c1"># make this an optional dependency</span>
+        <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+        <span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="kn">import</span> <span class="n">KDTree</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+
+        <span class="c1"># create containers for scale factors</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;us_scales&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+        <span class="c1"># load the feather file and extract gradient names</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_feather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;grad&quot;</span><span class="p">)]</span>
+
+        <span class="c1"># create containers for gradients</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">gradient_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+        <span class="c1"># Convert the variable columns to an array</span>
+        <span class="n">X_pandas</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">varnames</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="c1"># We will use a nearest-neighbor tree to search for matching events in the</span>
+        <span class="c1"># DataFrame. Ideally, these should actually be the exact same events with a</span>
+        <span class="c1"># distance of zero. We will raise a warning if we had to approximate an</span>
+        <span class="c1"># event by its nearest neighbor with a distance &gt; 0.</span>
+
+        <span class="c1"># At least in theory, this should always pick out the one exact event from the</span>
+        <span class="c1"># correct event category. If an event is not exactly matched, however, it&#39;s</span>
+        <span class="c1"># possible that the gradient for a numu_cc event might get picked from</span>
+        <span class="c1"># a nu_nc event, for example. We don&#39;t have any safeguards against that</span>
+        <span class="c1"># at this time, even though the information is in the DataFrame to do it.</span>
+
+        <span class="c1"># TODO: Ensure event category of nearest neighbor matches that of query</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">KDTree</span><span class="p">(</span><span class="n">X_pandas</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">n_container</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">])</span>
+            <span class="c1"># It&#39;s important to match the datatype of the loaded DataFrame (single prec.)</span>
+            <span class="c1"># so that matches will be exact.</span>
+            <span class="n">X_pisa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_container</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varnames</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">X_pandas</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">vname</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varnames</span><span class="p">):</span>
+                <span class="n">X_pisa</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="n">vname</span><span class="p">]</span>
+            <span class="c1"># Query the tree for the single nearest neighbor</span>
+            <span class="n">dists</span><span class="p">,</span> <span class="n">ind</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">X_pisa</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dists</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Could not find exact match for </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dists</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;events (</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dists</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">))</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">n_container</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">%) &quot;</span>
+                    <span class="s2">&quot;in the loaded DataFrame. Their &quot;</span>
+                    <span class="s2">&quot;gradients will be taken from the nearest neighbor.&quot;</span>
+                <span class="p">)</span>
+            <span class="c1"># TODO: since we read out all gradients we could loop over the</span>
+            <span class="c1"># parameters outside and then over the containers inside</span>
+            <span class="k">for</span> <span class="n">gradient_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span><span class="p">:</span>
+                <span class="n">grads</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+                <span class="n">container</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">grads</span><span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">ravel</span><span class="p">()]</span></div>
+
+
+<div class="viewcode-block" id="ultrasurfaces.compute_function">
+<a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces.compute_function">[docs]</a>
+    <span class="nd">@profile</span>
+    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
+
+        <span class="c1"># Calculate the `delta_p` matrix containing the polynomial features.</span>
+        <span class="c1"># If requested, these feature may be extrapolated using the strategy defined</span>
+        <span class="c1"># by `self.extrapolation`.</span>
+
+        <span class="n">delta_p_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c1"># The gradients may be of arbitrary order and have interaction</span>
+        <span class="c1"># terms. For example, if the gradient&#39;s name is</span>
+        <span class="c1"># `grad__dom_eff__hole_ice_p0`, then the corresponding feature is</span>
+        <span class="c1"># (delta dom_eff) * (delta hole_ice_p0).</span>
+        <span class="k">for</span> <span class="n">count</span><span class="p">,</span> <span class="n">gradient_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span><span class="p">):</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="c1"># extract the parameter names from the name of the gradient</span>
+            <span class="n">param_names</span> <span class="o">=</span> <span class="n">gradient_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;grad&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">grad_order</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_names</span><span class="p">)</span>
+            <span class="n">has_interactions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">param_names</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pname</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">param_names</span><span class="p">):</span>
+                <span class="c1"># If support has been set and a parameter is evaluated outside of those</span>
+                <span class="c1"># bounds, we evaluate it at the nearest bound.</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">support</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">bounded_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">pname</span><span class="p">]</span><span class="o">.</span><span class="n">m</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">bounded_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">pname</span><span class="p">]</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">support</span><span class="p">[</span><span class="n">pname</span><span class="p">])</span>
+
+                <span class="c1"># The bounded value of the parameter shift from nominal</span>
+                <span class="n">x_b</span> <span class="o">=</span> <span class="n">bounded_value</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">nominal_points</span><span class="p">[</span><span class="n">pname</span><span class="p">]</span>
+                <span class="c1"># The unbounded value</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">pname</span><span class="p">]</span><span class="o">.</span><span class="n">m</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">nominal_points</span><span class="p">[</span><span class="n">pname</span><span class="p">]</span>
+
+                <span class="c1"># The extrapolation strategy `continue` is equivalent to just evaluating</span>
+                <span class="c1"># at the unbounded point.</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation</span> <span class="o">==</span> <span class="s2">&quot;continue&quot;</span><span class="p">:</span>
+                    <span class="c1"># For a squared parameter, this will be done twice, i.e. the feature</span>
+                    <span class="c1"># will be (dom_eff)^2 if the gradient is `grad__dom_eff__dom_eff`.</span>
+                    <span class="n">feature</span> <span class="o">*=</span> <span class="n">x</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation</span> <span class="o">==</span> <span class="s2">&quot;constant&quot;</span><span class="p">:</span>
+                    <span class="c1"># Constant extrapolation simply means that we evaluate the bounded</span>
+                    <span class="c1"># value.</span>
+                    <span class="n">feature</span> <span class="o">*=</span> <span class="n">x_b</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+                    <span class="c1"># The linear extrapolation of a squared feature is given by</span>
+                    <span class="c1">#   y = x_b^2 + (2x_b)(x - x_b),</span>
+                    <span class="c1"># which can be re-written as</span>
+                    <span class="c1">#   y = x_b (2x - x_b).</span>
+                    <span class="c1"># We see right away that y = x^2 when x is within the bounds.</span>
+                    <span class="c1"># We also want to pass through the first order gradients, since</span>
+                    <span class="c1"># the linear extrapolation of x is trivially x.</span>
+
+                    <span class="k">if</span> <span class="n">grad_order</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">feature</span> <span class="o">*=</span> <span class="n">x</span>
+                        <span class="k">continue</span>
+
+                    <span class="k">if</span> <span class="n">has_interactions</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                            <span class="s2">&quot;Cannot calculate linear extrapolation for gradients with &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;interaction terms: </span><span class="si">{</span><span class="n">gradient_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">feature</span> <span class="o">*=</span> <span class="n">x_b</span>
+                    <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">feature</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="n">x_b</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                            <span class="s2">&quot;Cannot use linear extrapolation for orders &gt; 2&quot;</span>
+                        <span class="p">)</span>
+
+            <span class="n">delta_p_dict</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span>
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+
+            <span class="c1"># The &quot;gradient shift&quot; is the sum of the gradients times the parameter shifts,</span>
+            <span class="c1"># i.e. grad * delta_p.</span>
+            <span class="c1"># We allocate this array just once and accumulate the sum over all gradients</span>
+            <span class="c1"># into it.</span>
+
+            <span class="c1"># Also using zeros_like ensures consistent dtype</span>
+            <span class="n">grad_shifts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span>
+
+            <span class="k">for</span> <span class="n">count</span><span class="p">,</span> <span class="n">gradient_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span><span class="p">):</span>
+                <span class="n">shift</span> <span class="o">=</span> <span class="n">delta_p_dict</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">]</span>
+                <span class="n">grad_shift_inplace</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">],</span> <span class="n">shift</span><span class="p">,</span> <span class="n">grad_shifts</span><span class="p">)</span>
+            <span class="c1"># In the end, the equation for the re-weighting scale is</span>
+            <span class="c1">#    exp(grad_p1 * shift_p1 + grad_p2 * shift_p2 + ...)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">approx_exponential</span><span class="p">:</span>
+                <span class="c1"># We can approximate an exponential with exp(x) = 1 + x,</span>
+                <span class="c1"># but this is not recommended unless the gradients have also been fit</span>
+                <span class="c1"># using this approximation.</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;us_scales&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">grad_shifts</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;us_scales&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">grad_shifts</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ultrasurfaces.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces.apply_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;us_scales&quot;</span><span class="p">]</span></div>
+</div>
+
+
+
+<span class="nd">@njit</span>
+<span class="k">def</span> <span class="nf">grad_shift_inplace</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="n">shift</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">grads</span><span class="p">):</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">shift</span> <span class="o">*</span> <span class="n">g</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

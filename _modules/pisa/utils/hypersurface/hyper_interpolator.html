@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.utils.hypersurface.hyper_interpolator &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.utils.hypersurface.hyper_interpolator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.utils.hypersurface.hyper_interpolator</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Classes and methods needed to do hypersurface interpolation over arbitrary parameters.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HypersurfaceInterpolator&#39;</span><span class="p">,</span> <span class="s1">&#39;run_interpolated_fit&#39;</span><span class="p">,</span> <span class="s1">&#39;prepare_interpolated_fit&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;assemble_interpolated_fits&#39;</span><span class="p">,</span> <span class="s1">&#39;load_interpolated_hypersurfaces&#39;</span><span class="p">,</span> <span class="s1">&#39;pipeline_cfg_from_states&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;serialize_pipeline_cfg&#39;</span><span class="p">,</span> <span class="s1">&#39;get_incomplete_job_idx&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;T. Stuttard, A. Trettin&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">interpolate</span>
+<span class="kn">from</span> <span class="nn">.hypersurface</span> <span class="kn">import</span> <span class="n">Hypersurface</span><span class="p">,</span> <span class="n">HypersurfaceParam</span><span class="p">,</span> <span class="n">load_hypersurfaces</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">matrix</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.jsons</span> <span class="kn">import</span> <span class="n">from_json</span><span class="p">,</span> <span class="n">to_json</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span> <span class="nn">pisa.core.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">is_binning</span>
+<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">mkdir</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">ufloat</span><span class="p">,</span> <span class="n">correlated_values</span>
+<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+
+<div class="viewcode-block" id="HypersurfaceInterpolator">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator">[docs]</a>
+<span class="k">class</span> <span class="nc">HypersurfaceInterpolator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory for interpolated hypersurfaces.</span>
+
+<span class="sd">    After being initialized with a set of hypersurface fits produced at different</span>
+<span class="sd">    parameters, it uses interpolation to produce a Hypersurface object</span>
+<span class="sd">    at a given point in parameter space using scipy&#39;s `RegularGridInterpolator`.</span>
+
+<span class="sd">    The interpolation is piecewise-linear between points. All points must lie on a</span>
+<span class="sd">    rectilinear ND grid.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    interpolation_param_spec : dict</span>
+<span class="sd">        Specification of interpolation parameter grid of the form::</span>
+<span class="sd">            interpolation_param_spec = {</span>
+<span class="sd">                &#39;param1&#39;: {&quot;values&quot;: [val1_1, val1_2, ...], &quot;scales_log&quot;: True/False}</span>
+<span class="sd">                &#39;param2&#39;: {&quot;values&quot;: [val2_1, val2_2, ...], &quot;scales_log&quot;: True/False}</span>
+<span class="sd">                ...</span>
+<span class="sd">                &#39;paramN&#39;: {&quot;values&quot;: [valN_1, valN_2, ...], &quot;scales_log&quot;: True/False}</span>
+<span class="sd">            }</span>
+<span class="sd">        where values are given as :obj:`Quantity`.</span>
+<span class="sd">    hs_fits : list of dict</span>
+<span class="sd">        list of dicts with hypersurfacesthat were fit at the points of the parameter mesh</span>
+<span class="sd">        defined by interpolation_param_spec</span>
+<span class="sd">    ignore_nan : bool</span>
+<span class="sd">        Ignore empty bins in hypersurfaces. The intercept in those bins is set to 1 and</span>
+<span class="sd">        all slopes are set to 0.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Be sure to give a support that covers the entire relevant parameter range and a</span>
+<span class="sd">    good distance beyond! To prevent minimization failure from NaNs, extrapolation</span>
+<span class="sd">    is used if hypersurfaces outside the support are requested but needless to say</span>
+<span class="sd">    these numbers are unreliable.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    scipy.interpolate.RegularGridInterpolator :</span>
+<span class="sd">        class used for interpolation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interpolation_param_spec</span><span class="p">,</span> <span class="n">hs_fits</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">interpolation_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># key ordering is important to guarantee that dimensions stay consistent</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;interpolation params must be specified as a dict with ordered keys&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation_param_spec</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">),</span> <span class="n">msg</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">interpolation_param_spec</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">,</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">}</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">],</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span> <span class="o">=</span> <span class="n">interpolation_param_spec</span>
+        <span class="n">reference_hs</span> <span class="o">=</span> <span class="n">hs_fits</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">]</span>
+        <span class="c1"># we are going to produce the hypersurface from a state that is the same</span>
+        <span class="c1"># as the reference, only the coefficients and covariance matrices are</span>
+        <span class="c1"># injected from the interpolation.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">reference_hs</span><span class="o">.</span><span class="n">serializable_state</span><span class="p">)</span>
+        <span class="c1"># for cleanliness we wipe numbers from the original state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s2">&quot;intercept_sigma&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s2">&quot;fit_maps_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s2">&quot;fit_maps_raw&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s2">&quot;fit_chi2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">param</span><span class="p">[</span><span class="s1">&#39;fit_coeffts_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span>
+                <span class="n">param</span><span class="p">[</span><span class="s1">&#39;fit_coeffts_sigma&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="c1"># Instead of holding numbers, these coefficients and covariance matrices are</span>
+        <span class="c1"># interpolator objects the produce them at the requested point.</span>
+        <span class="c1"># The shape of fit_coeffts is [binning ..., fit coeffts]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coeff_shape</span> <span class="o">=</span> <span class="n">reference_hs</span><span class="o">.</span><span class="n">fit_coeffts</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefficients</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># The shape of fit_cov_mat is [binning ..., fit coeffts, fit coeffts]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covars_shape</span> <span class="o">=</span> <span class="n">reference_hs</span><span class="o">.</span><span class="n">fit_cov_mat</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covars</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># We now need to massage the fit coefficients into the correct shape</span>
+        <span class="c1"># for interpolation.</span>
+        <span class="c1"># The dimensions of the interpolation parameters come first, the dimensions</span>
+        <span class="c1"># of the hypersurface coefficients comes last.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interp_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="c1"># dimension is [interp_shape, binning..., fit coeffts]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coeff_z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeff_shape</span><span class="p">)</span>
+        <span class="c1"># dimension is [interp_shape, binning..., fit coeffts, fit coeffts]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_covar_z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars_shape</span><span class="p">)</span>
+        <span class="c1"># Here we use the same indexing as below in `fit_hypersurfaces`</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_shape</span><span class="p">)):</span>
+            <span class="c1"># As an additional safety measure, we check that the parameters are what</span>
+            <span class="c1"># we expect to find at this index.</span>
+            <span class="n">expected_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">[</span><span class="n">j</span><span class="p">]])</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="p">)</span>
+            <span class="n">param_values</span> <span class="o">=</span> <span class="n">hs_fits</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;param_values&quot;</span><span class="p">]</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;The stored values where hypersurfaces were fit do not match those&quot;</span>
+                   <span class="s2">&quot;in the interpolation grid.&quot;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">expected_params</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">m</span> <span class="o">==</span> <span class="n">param_values</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">m</span>
+                           <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">()]),</span> <span class="n">msg</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_coeff_z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs_fits</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fit_coeffts</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_covar_z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs_fits</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fit_cov_mat</span>
+
+        <span class="n">grid_coords</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">val</span><span class="o">.</span><span class="n">m</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">val_list</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">]])</span>
+            <span class="k">for</span> <span class="n">val_list</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_bounds</span> <span class="o">=</span> <span class="p">[(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">grid_vals</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">grid_vals</span><span class="p">))</span>
+                             <span class="k">for</span> <span class="n">grid_vals</span> <span class="ow">in</span> <span class="n">grid_coords</span><span class="p">]</span>
+        <span class="c1"># If a parameter scales as log, we give the log of the parameter to the</span>
+        <span class="c1"># interpolator. We must not forget to do this again when we call the</span>
+        <span class="c1"># interpolator later!</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation_param_names</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">param_name</span><span class="p">][</span><span class="s2">&quot;scales_log&quot;</span><span class="p">]:</span>
+                <span class="n">grid_coords</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">grid_coords</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefficients</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RegularGridInterpolator</span><span class="p">(</span>
+            <span class="n">grid_coords</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_coeff_z</span><span class="p">,</span>
+            <span class="c1"># We disable extrapolation, but clip parameter values inside the valid</span>
+            <span class="c1"># range.</span>
+            <span class="n">bounds_error</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covars</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RegularGridInterpolator</span><span class="p">(</span>
+            <span class="n">grid_coords</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_covar_z</span><span class="p">,</span>
+            <span class="n">bounds_error</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="c1"># In order not to spam warnings, we only want to warn about non positive</span>
+        <span class="c1"># semi definite covariance matrices once for each bin. We store the bin</span>
+        <span class="c1"># indeces for which the warning has already been issued.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covar_bins_warning_issued</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_nan</span> <span class="o">=</span> <span class="n">ignore_nan</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">interpolation_param_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">param_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">binning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s2">&quot;binning&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_binning</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="o">**</span><span class="n">binning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">binning</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_interp_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+<div class="viewcode-block" id="HypersurfaceInterpolator.get_hypersurface">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.get_hypersurface">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_hypersurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kw</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a Hypersurface object with interpolated coefficients.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **param_kw</span>
+<span class="sd">            Parameters are given as keyword arguments, where the names</span>
+<span class="sd">            of the arguments must match the names of the parameters over</span>
+<span class="sd">            which the hypersurfaces are interpolated. The values</span>
+<span class="sd">            are given as :obj:`Quantity` objects with units.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">param_kw</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="s2">&quot;invalid parameters&quot;</span>
+        <span class="c1"># getting param magnitudes in the same units as the parameter specification</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="n">param_kw</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
+            <span class="c1"># we have checked that this is an OrderedDict so that the order of x is not</span>
+            <span class="c1"># ambiguous here</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">])</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_bounds</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bounds</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_bounds</span><span class="p">):</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="o">*</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="c1"># if a parameter scales as log, we have to take the log here again</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation_param_names</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">param_name</span><span class="p">][</span><span class="s2">&quot;scales_log&quot;</span><span class="p">]:</span>
+                <span class="c1"># We must be strict with raising errors here, because otherwise</span>
+                <span class="c1"># the Hypersurface will suddenly have NaNs everywhere! This shouldn&#39;t</span>
+                <span class="c1"># happen because we clip values into the valid parameter range.</span>
+                <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;A log-scaling parameter cannot become zero &quot;</span>
+                                       <span class="s2">&quot;or negative!&quot;</span><span class="p">)</span>
+                <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">)</span>
+        <span class="c1"># fit covariance matrices are stored directly in the state while fit coeffts</span>
+        <span class="c1"># must be assigned with the setter method...</span>
+        <span class="c1"># need squeeze here because the RegularGridInterpolator always puts another</span>
+        <span class="c1"># dimension around the output</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;fit_cov_mat&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;fit_cov_mat&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars_shape</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;fit_cov_mat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_nan</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;fit_cov_mat&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">]),</span> <span class="p">(</span><span class="s2">&quot;invalid cov matrix &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;element encountered at </span><span class="si">{</span><span class="n">param_kw</span><span class="si">}</span><span class="s2"> in loc </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># check covariance matrices for symmetry, positive semi-definiteness</span>
+        <span class="k">for</span> <span class="n">bin_idx</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;fit_cov_mat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;fit_cov_mat&#39;</span><span class="p">][</span><span class="n">bin_idx</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_nan</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">m</span><span class="p">)):</span>
+                <span class="n">state</span><span class="p">[</span><span class="s1">&#39;fit_cov_mat&#39;</span><span class="p">][</span><span class="n">bin_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;fit_cov_mat&#39;</span><span class="p">][</span><span class="n">bin_idx</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+                <span class="n">m</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="n">ALLCLOSE_KW</span><span class="p">[</span><span class="s1">&#39;rtol&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">10.</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;cov matrix not symmetric in bin </span><span class="si">{</span><span class="n">bin_idx</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">matrix</span><span class="o">.</span><span class="n">is_psd</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+                <span class="n">state</span><span class="p">[</span><span class="s1">&#39;fit_cov_mat&#39;</span><span class="p">][</span><span class="n">bin_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">fronebius_nearest_psd</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">bin_idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">covar_bins_warning_issued</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Invalid covariance matrix fixed in bin: </span><span class="si">{</span><span class="n">bin_idx</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">covar_bins_warning_issued</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bin_idx</span><span class="p">)</span>
+        <span class="n">hypersurface</span> <span class="o">=</span> <span class="n">Hypersurface</span><span class="o">.</span><span class="n">from_state</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">coeffts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coefficients</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>  <span class="c1"># calls interpolator</span>
+        <span class="k">assert</span> <span class="n">coeffts</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeff_shape</span>
+        <span class="c1"># check that coefficients exist and if not replace with default values</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff_shape</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_nan</span> <span class="ow">and</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">coeffts</span><span class="p">[</span><span class="n">idx</span><span class="p">]):</span>
+                <span class="n">coeffts</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>  <span class="c1"># set intercept to 1, slopes 0</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">coeffts</span><span class="p">[</span><span class="n">idx</span><span class="p">]),</span> <span class="p">(</span><span class="s2">&quot;invalid coeff encountered at &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param_kw</span><span class="si">}</span><span class="s2"> in loc </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># the setter method defined in the Hypersurface class takes care of</span>
+        <span class="c1"># putting the coefficients in the right place in their respective parameters</span>
+        <span class="n">hypersurface</span><span class="o">.</span><span class="n">fit_coeffts</span> <span class="o">=</span> <span class="n">coeffts</span>
+        <span class="k">return</span> <span class="n">hypersurface</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_make_slices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">xi</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make slices of hypersurfaces for plotting.</span>
+
+<span class="sd">        In some covariance matrices, the spline fits are corrected to make</span>
+<span class="sd">        the matrix positive semi-definite. The slices produced by this function</span>
+<span class="sd">        include all of those effects.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        xi : list of ndarray</span>
+<span class="sd">            Points at which the hypersurfaces are to be evaluated. The length of the</span>
+<span class="sd">            list must equal the number of parameters, each ndarray in the list must have</span>
+<span class="sd">            the same shape (slice_shape).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        coeff_slices : numpy.ndarray</span>
+<span class="sd">            slices in fit coefficients. Size: (binning..., number of coeffs) + slice_shape</span>
+<span class="sd">        covar_slices : numpy.ndarray</span>
+<span class="sd">            slices in covariance matrix elements.</span>
+<span class="sd">            Size: (binning..., number of coeffs, number of coeffs) + slice_shape</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slice_shape</span> <span class="o">=</span> <span class="n">xi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xi</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">slice_shape</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">xi</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_interp_params</span>
+        <span class="n">coeff_slices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff_shape</span> <span class="o">+</span> <span class="n">slice_shape</span><span class="p">)</span>
+        <span class="n">covar_slices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covars_shape</span> <span class="o">+</span> <span class="n">slice_shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">slice_shape</span><span class="p">):</span>
+            <span class="n">pars</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation_param_names</span><span class="p">):</span>
+                <span class="n">pars</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">xi</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hypersurface</span><span class="p">(</span><span class="o">**</span><span class="n">pars</span><span class="p">)</span>
+            <span class="n">slice_idx</span> <span class="o">=</span> <span class="p">(</span><span class="bp">Ellipsis</span><span class="p">,)</span> <span class="o">+</span> <span class="n">idx</span>
+            <span class="n">coeff_slices</span><span class="p">[</span><span class="n">slice_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">fit_coeffts</span>
+            <span class="n">covar_slices</span><span class="p">[</span><span class="n">slice_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">fit_cov_mat</span>
+        <span class="k">return</span> <span class="n">coeff_slices</span><span class="p">,</span> <span class="n">covar_slices</span>
+
+<div class="viewcode-block" id="HypersurfaceInterpolator.plot_fits_in_bin">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.plot_fits_in_bin">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot_fits_in_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kw</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the coefficients as well as covariance matrix elements as a function</span>
+<span class="sd">        of the interpolation parameters.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">            bin_idx : tuple</span>
+<span class="sd">                index of the bin for which to plot the fits</span>
+<span class="sd">            ax : 2D array of axes, optional</span>
+<span class="sd">                axes into which to place the plots. If None (default),</span>
+<span class="sd">                appropriate axes will be generated. Must have at least</span>
+<span class="sd">                size (n_coeff, n_coeff + 1).</span>
+<span class="sd">            n_steps : int, optional</span>
+<span class="sd">                number of steps to plot between minimum and maximum</span>
+<span class="sd">            **param_kw :</span>
+<span class="sd">                Parameters to be fixed when producing slices. If the interpolation</span>
+<span class="sd">                is in N-D, then (N-2) parameters need to be fixed to produce 2D plots</span>
+<span class="sd">                of the remaining 2 parameters and (N-1) need to be fixed to produce a</span>
+<span class="sd">                1D slice.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">plot_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_kw</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">assert</span> <span class="n">plot_dim</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;plotting only supported in 1D or 2D&quot;</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="n">n_coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeff_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">hs_param_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">hs_param_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;intercept&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2"> p</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">hs_param_names</span>
+                                           <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="n">p</span><span class="p">][</span><span class="s1">&#39;num_fit_coeffts&#39;</span><span class="p">])]</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="n">n_coeff</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="n">n_coeff</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+                                   <span class="n">squeeze</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="o">+</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="p">(</span><span class="n">n_coeff</span><span class="o">+</span><span class="mi">1</span><span class="p">)),</span> <span class="mi">2</span><span class="o">+</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">n_coeff</span><span class="p">))</span> <span class="p">)</span>
+        <span class="c1"># remember whether the plots need log scale or not, by default not</span>
+        <span class="n">x_is_log</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">y_is_log</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># names of the variables we are plotting</span>
+        <span class="n">plot_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation_param_names</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">param_kw</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">plot_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">x_name</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">plot_names</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x_name</span><span class="p">,</span> <span class="n">y_name</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">plot_names</span><span class="p">)</span>
+
+        <span class="c1"># in both 1D and 2D cases, we always plot at least an x-variable</span>
+        <span class="n">x_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">x_name</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">u</span>
+        <span class="c1"># we need the magnitudes here so that units are unambiguous when we make</span>
+        <span class="c1"># the linspace/geomspace for plotting</span>
+        <span class="n">x_mags</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="n">x_unit</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">x_name</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">x_name</span><span class="p">][</span><span class="s2">&quot;scales_log&quot;</span><span class="p">]:</span>
+            <span class="n">x_plot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x_mags</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x_mags</span><span class="p">),</span> <span class="n">n_steps</span><span class="p">)</span>
+            <span class="n">x_is_log</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x_plot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x_mags</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x_mags</span><span class="p">),</span> <span class="n">n_steps</span><span class="p">)</span>
+        <span class="c1"># we put the unit back later</span>
+        <span class="k">if</span> <span class="n">plot_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># To make slices, we need to set any variables we do not plot over to the</span>
+            <span class="c1"># value given in param_kw.</span>
+            <span class="n">slice_args</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># We need to make sure that we give the values in the correct order!</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation_param_names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="n">x_name</span><span class="p">:</span>
+                    <span class="n">slice_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_plot</span> <span class="o">*</span> <span class="n">x_unit</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">param_kw</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="c1"># again, insure that the same unit is used that went into the</span>
+                    <span class="c1"># interpolation</span>
+                    <span class="n">param_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">u</span>
+                    <span class="n">slice_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">x_plot</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">param_kw</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="n">param_unit</span><span class="p">))</span> <span class="o">*</span> <span class="n">param_unit</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;parameter neither specified nor plotted&quot;</span><span class="p">)</span>
+            <span class="n">coeff_slices</span><span class="p">,</span> <span class="n">covar_slices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_slices</span><span class="p">(</span><span class="o">*</span><span class="n">slice_args</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if we are in 2D, we need to do the same procedure again for the y-variable</span>
+            <span class="n">y_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">y_name</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">u</span>
+            <span class="n">y_mags</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="n">y_unit</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">y_name</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">y_name</span><span class="p">][</span><span class="s2">&quot;scales_log&quot;</span><span class="p">]:</span>
+                <span class="c1"># we add one step to the size in y so that transposition is unambiguous</span>
+                <span class="n">y_plot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y_mags</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y_mags</span><span class="p">),</span> <span class="n">n_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">y_is_log</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">y_plot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y_mags</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y_mags</span><span class="p">),</span> <span class="n">n_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">x_mesh</span><span class="p">,</span> <span class="n">y_mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">y_plot</span><span class="p">)</span>
+            <span class="n">slice_args</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation_param_names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="n">x_name</span><span class="p">:</span>
+                    <span class="n">slice_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_mesh</span> <span class="o">*</span> <span class="n">x_unit</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="n">y_name</span><span class="p">:</span>
+                    <span class="n">slice_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_mesh</span> <span class="o">*</span> <span class="n">y_unit</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">param_kw</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="c1"># again, insure that the same unit is used that went into the</span>
+                    <span class="c1"># interpolation</span>
+                    <span class="n">param_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">u</span>
+                    <span class="n">slice_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">x_mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">param_kw</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="n">param_unit</span><span class="p">))</span> <span class="o">*</span> <span class="n">param_unit</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;parameter neither specified nor plotted&quot;</span><span class="p">)</span>
+            <span class="n">coeff_slices</span><span class="p">,</span> <span class="n">covar_slices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_slices</span><span class="p">(</span><span class="o">*</span><span class="n">slice_args</span><span class="p">)</span>
+
+        <span class="c1"># first column plots fit coefficients</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_coeff</span><span class="p">):</span>
+            <span class="n">z_slice</span> <span class="o">=</span> <span class="n">coeff_slices</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">plot_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">z_slice</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;interpolation&#39;</span><span class="p">)</span>
+                <span class="c1"># Plotting the original input points only works if the interpolation</span>
+                <span class="c1"># is in 1D. If we are plotting a 1D slice from a 2D interpolation, this</span>
+                <span class="c1"># does not work.</span>
+                <span class="c1"># The number of fit points is the first dimension in self._coeff_z</span>
+                <span class="k">if</span> <span class="n">plot_dim</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
+                    <span class="n">slice_idx</span> <span class="o">=</span> <span class="p">(</span><span class="bp">Ellipsis</span><span class="p">,)</span> <span class="o">+</span> <span class="n">bin_idx</span> <span class="o">+</span> <span class="p">(</span><span class="n">i</span><span class="p">,)</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x_mags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coeff_z</span><span class="p">[</span><span class="n">slice_idx</span><span class="p">],</span>
+                                     <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;fit points&#39;</span><span class="p">)</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">hs_param_labels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pc</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">x_mesh</span><span class="p">,</span> <span class="n">y_mesh</span><span class="p">,</span> <span class="n">z_slice</span><span class="p">)</span>
+                <span class="n">cbar</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">pc</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+                <span class="n">cbar</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">ticklabel_format</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">scilimits</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">y_name</span><span class="p">)</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">x_name</span><span class="p">)</span>
+
+            <span class="c1"># later column plots the elements of the covariance matrix</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_coeff</span><span class="p">):</span>
+                <span class="n">z_slice</span> <span class="o">=</span> <span class="n">covar_slices</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">plot_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">z_slice</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;interpolation&#39;</span><span class="p">)</span>
+                    <span class="c1"># Same problem as above, only in 1D case can this be shown</span>
+                    <span class="c1"># the number of points is the first dim in self._covar_z</span>
+                    <span class="k">if</span> <span class="n">plot_dim</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
+                        <span class="n">coeff_idx</span> <span class="o">=</span> <span class="p">(</span><span class="bp">Ellipsis</span><span class="p">,)</span> <span class="o">+</span> <span class="n">bin_idx</span> <span class="o">+</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+                        <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x_mags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_covar_z</span><span class="p">[</span><span class="n">coeff_idx</span><span class="p">],</span>
+                                           <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;fit points&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pc</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">x_mesh</span><span class="p">,</span> <span class="n">y_mesh</span><span class="p">,</span> <span class="n">z_slice</span><span class="p">)</span>
+                    <span class="n">cbar</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">pc</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">cbar</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">ticklabel_format</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">scilimits</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">y_name</span><span class="p">)</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">x_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plot_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># in the 1D case, labels can be placed on the x and y axes</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_coeff</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">x_name</span><span class="p">)</span>
+            <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;coefficient&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_coeff</span><span class="p">):</span>
+                <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;cov. </span><span class="si">{</span><span class="n">hs_param_labels</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># in the 2D case, we need separate annotations</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">hs_param_labels</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;coefficient&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;cov. </span><span class="si">{</span><span class="n">hl</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">hl</span> <span class="ow">in</span> <span class="n">hs_param_labels</span><span class="p">]</span>
+            <span class="n">pad</span> <span class="o">=</span> <span class="mi">20</span>
+            <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cols</span><span class="p">):</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pad</span><span class="p">),</span>
+                           <span class="n">xycoords</span><span class="o">=</span><span class="s1">&#39;axes fraction&#39;</span><span class="p">,</span> <span class="n">textcoords</span><span class="o">=</span><span class="s1">&#39;offset points&#39;</span><span class="p">,</span>
+                           <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-large&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;baseline&#39;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ax</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">rows</span><span class="p">):</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">labelpad</span> <span class="o">-</span> <span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                           <span class="n">xycoords</span><span class="o">=</span><span class="n">a</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">textcoords</span><span class="o">=</span><span class="s1">&#39;offset points&#39;</span><span class="p">,</span>
+                           <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-large&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">((</span><span class="n">n_coeff</span><span class="p">,</span> <span class="n">n_coeff</span><span class="o">+</span><span class="mi">1</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">x_is_log</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">y_is_log</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">plot_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+            <span class="c1"># ax[i, j].relim()</span>
+            <span class="c1"># ax[i, j].autoscale_view()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">x_is_log</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">ticklabel_format</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">scilimits</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">y_is_log</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">ticklabel_format</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">scilimits</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fig</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">plot_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">fig</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="k">return</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="pipeline_cfg_from_states">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.pipeline_cfg_from_states">[docs]</a>
+<span class="k">def</span> <span class="nf">pipeline_cfg_from_states</span><span class="p">(</span><span class="n">state_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recover a pipeline cfg containing PISA objects from a raw state.</span>
+
+<span class="sd">    When a pipeline configuration is stored to JSON, the PISA objects turn into</span>
+<span class="sd">    their serialized states. This function looks through the dictionary returned by</span>
+<span class="sd">    `from_json` and recovers the PISA objects such as `ParamSet` and `MultiDimBinning`.</span>
+
+<span class="sd">    It should really become part of PISA file I/O functionality to read and write</span>
+<span class="sd">    PISA objects inside dictionaries/lists into a JSON and be able to recover</span>
+<span class="sd">    them...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># TODO: Make this a core functionality of PISA</span>
+
+    <span class="c1"># This is just a mess... some objects have a `from_state` method, some take the</span>
+    <span class="c1"># unpacked state dict as input, some take the state...</span>
+
+    <span class="n">pipeline_cfg</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">stage_key</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># need to check all of this manually... no automatic way to do it :(</span>
+        <span class="k">if</span> <span class="n">stage_key</span> <span class="o">==</span> <span class="s2">&quot;pipeline&quot;</span><span class="p">:</span>
+            <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">stage_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="n">stage_key</span><span class="p">])</span>
+            <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">stage_key</span><span class="p">][</span><span class="s2">&quot;output_key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">stage_key</span><span class="p">][</span><span class="s2">&quot;output_key&quot;</span><span class="p">])</span>
+            <span class="n">binning_state</span> <span class="o">=</span> <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">stage_key</span><span class="p">][</span><span class="s2">&quot;output_binning&quot;</span><span class="p">]</span>
+            <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">stage_key</span><span class="p">][</span><span class="s2">&quot;output_binning&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="o">**</span><span class="n">binning_state</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="c1"># undo what we did in `serialize_pipeline_cfg` by splitting the keys into tuples</span>
+        <span class="n">tuple_key</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">stage_key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">))</span>
+        <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">tuple_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="n">stage_key</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;calc_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;apply_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;node_mode&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">tuple_key</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">tuple_key</span><span class="p">][</span><span class="n">k</span><span class="p">],</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
+                    <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">tuple_key</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span>
+                        <span class="o">**</span><span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">tuple_key</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">&quot;params&quot;</span> <span class="ow">in</span> <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">tuple_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">tuple_key</span><span class="p">][</span><span class="s2">&quot;params&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">(</span>
+                <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">tuple_key</span><span class="p">][</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
+    <span class="c1"># if any stage takes any other arguments that we didn&#39;t think of here, they</span>
+    <span class="c1"># won&#39;t work</span>
+    <span class="k">return</span> <span class="n">pipeline_cfg</span></div>
+
+
+<div class="viewcode-block" id="serialize_pipeline_cfg">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.serialize_pipeline_cfg">[docs]</a>
+<span class="k">def</span> <span class="nf">serialize_pipeline_cfg</span><span class="p">(</span><span class="n">pipeline_cfg</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Turn a pipeline configuration into something we can store to JSON.</span>
+
+<span class="sd">    It doesn&#39;t work by default because tuples are not allowed as keys when storing to</span>
+<span class="sd">    JSON. All we do is to turn the tuples into strings divided by a double underscore.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">serializable_state</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">serializable_state</span><span class="p">[</span><span class="s2">&quot;pipeline&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipeline_cfg</span><span class="p">[</span><span class="s2">&quot;pipeline&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">pipeline_cfg</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;pipeline&quot;</span><span class="p">:</span> <span class="k">continue</span>
+        <span class="n">flat_key</span> <span class="o">=</span> <span class="s2">&quot;__&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">serializable_state</span><span class="p">[</span><span class="n">flat_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipeline_cfg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    <span class="c1"># this isn&#39;t _really_ a serializable state, the objects are still PISA objects...</span>
+    <span class="c1"># bit it will convert correctly when thrown into `to_json`</span>
+    <span class="k">return</span> <span class="n">serializable_state</span></div>
+
+
+
+<div class="viewcode-block" id="assemble_interpolated_fits">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.assemble_interpolated_fits">[docs]</a>
+<span class="k">def</span> <span class="nf">assemble_interpolated_fits</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">drop_fit_maps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">leftout_param</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">leftout_surface</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;After all of the fits on the cluster are done, assemble the results to one JSON.</span>
+
+<span class="sd">    The JSON produced by this function is what `load_interpolated_hypersurfaces`</span>
+<span class="sd">    expects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">),</span> <span class="s2">&quot;fit directory does not exist&quot;</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="s2">&quot;metadata.json&quot;</span><span class="p">))</span>
+
+    <span class="n">combined_data</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">combined_data</span><span class="p">[</span><span class="s2">&quot;interpolation_param_spec&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;interpolation_param_spec&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Loop over grid points</span>
+    <span class="n">hs_fits</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">grid_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;grid_shape&quot;</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">job_idx</span><span class="p">,</span> <span class="n">grid_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">grid_shape</span><span class="p">)):</span>
+
+        <span class="c1"># Load grid point data</span>
+        <span class="n">gridpoint_json</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;gridpoint_</span><span class="si">{</span><span class="n">job_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">.json.bz2&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading </span><span class="si">{</span><span class="n">gridpoint_json</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">gridpoint_data</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">gridpoint_json</span><span class="p">)</span>
+
+        <span class="c1"># Check the loaded data</span>
+        <span class="k">assert</span> <span class="n">job_idx</span> <span class="o">==</span> <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;job_idx&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">grid_idx</span> <span class="o">==</span> <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;grid_idx&quot;</span><span class="p">])</span>
+        <span class="c1"># TODO: Offer to run incomplete fits locally</span>
+        <span class="k">assert</span> <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;fit_successful&quot;</span><span class="p">],</span> <span class="sa">f</span><span class="s2">&quot;job no. </span><span class="si">{</span><span class="n">job_idx</span><span class="si">}</span><span class="s2"> not finished&quot;</span>
+
+        <span class="c1"># Drop fit maps if requested (can significantly reduce file size)</span>
+        <span class="k">if</span> <span class="n">drop_fit_maps</span> <span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">hs_state</span> <span class="ow">in</span> <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">:</span>
+                <span class="n">hs_state</span><span class="p">[</span><span class="s2">&quot;fit_maps_raw&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">hs_state</span><span class="p">[</span><span class="s2">&quot;fit_maps_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">leftout_param</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">surface</span> <span class="ow">in</span> <span class="n">leftout_surface</span><span class="p">:</span>
+                <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">][</span><span class="n">surface</span><span class="p">][</span><span class="s2">&quot;params&quot;</span><span class="p">][</span><span class="n">leftout_param</span><span class="p">][</span><span class="s2">&quot;fit_coeffts&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">0.0</span> 
+                <span class="nb">print</span><span class="p">(</span><span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">][</span><span class="n">surface</span><span class="p">][</span><span class="s2">&quot;params&quot;</span><span class="p">][</span><span class="n">leftout_param</span><span class="p">][</span><span class="s2">&quot;fit_coeffts&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Add grid point data to output file</span>
+        <span class="n">hs_fits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">(</span>
+            <span class="n">param_values</span><span class="o">=</span><span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;param_values&quot;</span><span class="p">],</span>
+            <span class="n">hs_fit</span><span class="o">=</span><span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">]</span>
+        <span class="p">))</span>
+
+    <span class="c1"># Write the output file</span>
+    <span class="n">combined_data</span><span class="p">[</span><span class="s2">&quot;hs_fits&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs_fits</span>
+    <span class="n">to_file</span><span class="p">(</span><span class="n">combined_data</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_incomplete_job_idx">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.get_incomplete_job_idx">[docs]</a>
+<span class="k">def</span> <span class="nf">get_incomplete_job_idx</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get job indices of fits that are not flagged as successful.&quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">),</span> <span class="s2">&quot;fit directory does not exist&quot;</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="s2">&quot;metadata.json&quot;</span><span class="p">))</span>
+    <span class="n">grid_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;grid_shape&quot;</span><span class="p">])</span>
+    <span class="n">failed_idx</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">job_idx</span><span class="p">,</span> <span class="n">grid_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">grid_shape</span><span class="p">)):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">gridpoint_json</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span>
+                                          <span class="sa">f</span><span class="s2">&quot;gridpoint_</span><span class="si">{</span><span class="n">job_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">.json.bz2&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading </span><span class="si">{</span><span class="n">gridpoint_json</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">gridpoint_data</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">gridpoint_json</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;fit_successful&quot;</span><span class="p">]:</span>
+            <span class="n">failed_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job_idx</span><span class="p">)</span>
+        <span class="n">job_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">failed_idx</span></div>
+
+
+<div class="viewcode-block" id="run_interpolated_fit">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.run_interpolated_fit">[docs]</a>
+<span class="k">def</span> <span class="nf">run_interpolated_fit</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="n">job_idx</span><span class="p">,</span> <span class="n">skip_successful</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the hypersurface fit for a grid point.</span>
+
+<span class="sd">    If `skip_successful` is true, do not run if the `fit_successful` flag is already</span>
+<span class="sd">    True.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#TODO a lot of this is copied from fit_hypersurfaces in hypersurface.py, would be safer to make more OAOO</span>
+    <span class="c1">#TODO Copy the param value storage stuff from fit_hypersurfaces across in the meantime</span>
+
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">),</span> <span class="s2">&quot;fit directory does not exist&quot;</span>
+
+    <span class="n">gridpoint_json</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;gridpoint_</span><span class="si">{</span><span class="n">job_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">.json.bz2&quot;</span><span class="p">)</span>
+    <span class="n">gridpoint_data</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">gridpoint_json</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">skip_successful</span> <span class="ow">and</span> <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;fit_successful&quot;</span><span class="p">]:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fit at job index </span><span class="si">{</span><span class="n">job_idx</span><span class="si">}</span><span class="s2"> already successful, skipping...&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="s2">&quot;metadata.json&quot;</span><span class="p">))</span>
+
+    <span class="n">interpolation_param_spec</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;interpolation_param_spec&quot;</span><span class="p">]</span>
+
+    <span class="c1"># this is a pipeline configuration in the form of an OrderedDict</span>
+    <span class="n">nominal_dataset</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;nominal_dataset&quot;</span><span class="p">]</span>
+    <span class="c1"># Why can we still not load PISA objects from JSON that are inside a dict?! Grrr...</span>
+    <span class="n">nominal_dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipeline_cfg_from_states</span><span class="p">(</span>
+        <span class="n">nominal_dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="c1"># this is a list of pipeline configurations</span>
+    <span class="n">sys_datasets</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;sys_datasets&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">sys_dataset</span> <span class="ow">in</span> <span class="n">sys_datasets</span><span class="p">:</span>
+        <span class="n">sys_dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipeline_cfg_from_states</span><span class="p">(</span>
+            <span class="n">sys_dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="c1"># this is a dict of param_name : value pairs</span>
+    <span class="n">param_values</span> <span class="o">=</span> <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;param_values&quot;</span><span class="p">]</span>
+    <span class="c1"># we do a redundant check to make sure the parameter values at this grid point are</span>
+    <span class="c1"># correct</span>
+    <span class="n">interpolation_param_names</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;interpolation_param_names&quot;</span><span class="p">]</span>
+    <span class="n">grid_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;grid_shape&quot;</span><span class="p">])</span>
+    <span class="c1"># the grid point index of this job</span>
+    <span class="n">grid_idx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">grid_shape</span><span class="p">))[</span><span class="n">job_idx</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">interpolation_param_names</span><span class="p">):</span>
+        <span class="n">ms</span> <span class="o">=</span> <span class="s2">&quot;Inconsistent parameter values at grid point!&quot;</span>
+        <span class="k">assert</span> <span class="n">interpolation_param_spec</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">][</span><span class="n">grid_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">==</span> <span class="n">param_values</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">ms</span>
+
+    <span class="c1"># now we need to adjust the values of the parameter in all pipelines for this point</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;updating pipelines with parameter values: </span><span class="si">{</span><span class="n">param_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="p">[</span><span class="n">nominal_dataset</span><span class="p">]</span> <span class="o">+</span> <span class="n">sys_datasets</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">stage_cfg</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s2">&quot;params&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stage_cfg</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span> <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">interpolation_param_names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">stage_cfg</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="n">stage_cfg</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">param_values</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+
+    <span class="c1"># these are the parameters of the hypersurface, NOT the ones we interpolate them</span>
+    <span class="c1"># over!</span>
+    <span class="n">hypersurface_params</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">param_state</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;hypersurface_params&quot;</span><span class="p">]:</span>
+        <span class="n">hypersurface_params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HypersurfaceParam</span><span class="o">.</span><span class="n">from_state</span><span class="p">(</span><span class="n">param_state</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">find_hist_stage</span><span class="p">(</span><span class="n">pipeline</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Locate the index of the hist stage in a pipeline.&quot;&quot;&quot;</span>
+        <span class="n">hist_idx_found</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;hist&quot;</span><span class="p">:</span>
+                <span class="n">hist_idx</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="n">hist_idx_found</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hist_idx_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Could not find histogram stage in pipeline, aborting.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hist_idx</span>
+
+    <span class="c1"># We create Pipeline objects, get their outputs and then forget about the Pipeline</span>
+    <span class="c1"># object on purpose! The memory requirement to hold all systematic sets at the same</span>
+    <span class="c1"># time is just too large, especially on the cluster. The way we do it below we</span>
+    <span class="c1"># only need enough memory for one dataset at a time.</span>
+
+    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="p">[</span><span class="n">nominal_dataset</span><span class="p">]</span> <span class="o">+</span> <span class="n">sys_datasets</span><span class="p">:</span>
+        <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">])</span>
+        <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mapset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
+        <span class="c1"># get the un-weighted event counts as well so that we can exclude bins</span>
+        <span class="c1"># with too little statistics</span>
+        <span class="c1"># First, find out which stage is the hist stage</span>
+        <span class="n">hist_idx</span> <span class="o">=</span> <span class="n">find_hist_stage</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
+        <span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="n">hist_idx</span><span class="p">]</span><span class="o">.</span><span class="n">unweighted</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mapset_unweighted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
+    <span class="k">del</span> <span class="n">pipeline</span>
+
+    <span class="c1"># Merge maps according to the combine regex, if one was provided</span>
+    <span class="n">combine_regex</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;combine_regex&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">combine_regex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="p">[</span><span class="n">nominal_dataset</span><span class="p">]</span> <span class="o">+</span> <span class="n">sys_datasets</span><span class="p">:</span>
+            <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mapset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mapset&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">combine_re</span><span class="p">(</span><span class="n">combine_regex</span><span class="p">)</span>
+            <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mapset_unweighted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mapset_unweighted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">combine_re</span><span class="p">(</span><span class="n">combine_regex</span><span class="p">)</span>
+
+    <span class="n">minimum_mc</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;minimum_mc&quot;</span><span class="p">]</span>
+    <span class="c1"># Remove bins (i.e. set their count to zero) that have too few MC events</span>
+    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">sys_datasets</span> <span class="o">+</span> <span class="p">[</span><span class="n">nominal_dataset</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">map_name</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mapset&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">insuff_mc</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mapset_unweighted&quot;</span><span class="p">][</span><span class="n">map_name</span><span class="p">]</span><span class="o">.</span><span class="n">nominal_values</span> <span class="o">&lt;</span> <span class="n">minimum_mc</span>
+            <span class="c1"># Setting the hist to zero sets both nominal value and std_dev to zero</span>
+            <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mapset&quot;</span><span class="p">][</span><span class="n">map_name</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="n">insuff_mc</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+    <span class="n">hypersurface_fit_kw</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;hypersurface_fit_kw&quot;</span><span class="p">]</span>
+    <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">log</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]</span>  <span class="c1"># flag determining whether hs fit is run in log-space or not</span>
+    <span class="k">for</span> <span class="n">map_name</span> <span class="ow">in</span> <span class="n">nominal_dataset</span><span class="p">[</span><span class="s2">&quot;mapset&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+        <span class="n">nominal_map</span> <span class="o">=</span> <span class="n">nominal_dataset</span><span class="p">[</span><span class="s2">&quot;mapset&quot;</span><span class="p">][</span><span class="n">map_name</span><span class="p">]</span>
+        <span class="n">nominal_param_values</span> <span class="o">=</span> <span class="n">nominal_dataset</span><span class="p">[</span><span class="s2">&quot;sys_params&quot;</span><span class="p">]</span>
+
+        <span class="n">sys_maps</span> <span class="o">=</span> <span class="p">[</span><span class="n">sys_dataset</span><span class="p">[</span><span class="s2">&quot;mapset&quot;</span><span class="p">][</span><span class="n">map_name</span><span class="p">]</span> <span class="k">for</span> <span class="n">sys_dataset</span> <span class="ow">in</span> <span class="n">sys_datasets</span><span class="p">]</span>
+        <span class="n">sys_param_values</span> <span class="o">=</span> <span class="p">[</span><span class="n">sys_dataset</span><span class="p">[</span><span class="s2">&quot;sys_params&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">sys_dataset</span> <span class="ow">in</span> <span class="n">sys_datasets</span><span class="p">]</span>
+
+        <span class="n">hypersurface</span> <span class="o">=</span> <span class="n">Hypersurface</span><span class="p">(</span>
+            <span class="c1"># Yes, this MUST be a deepcopy! Otherwise weird memory overwrites happen</span>
+            <span class="c1"># and all the numbers get jumbled across the hypersurfaces of different maps</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">hypersurface_params</span><span class="p">),</span>
+            <span class="n">initial_intercept</span><span class="o">=</span><span class="mf">0.</span> <span class="k">if</span> <span class="n">log</span> <span class="k">else</span> <span class="mf">1.</span><span class="p">,</span>  <span class="c1"># Initial value for intercept</span>
+            <span class="n">log</span><span class="o">=</span><span class="n">log</span>
+        <span class="p">)</span>
+
+        <span class="n">hypersurface</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="n">nominal_map</span><span class="o">=</span><span class="n">nominal_map</span><span class="p">,</span>
+            <span class="n">nominal_param_values</span><span class="o">=</span><span class="n">nominal_param_values</span><span class="p">,</span>
+            <span class="n">sys_maps</span><span class="o">=</span><span class="n">sys_maps</span><span class="p">,</span>
+            <span class="n">sys_param_values</span><span class="o">=</span><span class="n">sys_param_values</span><span class="p">,</span>
+            <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="c1"># Is the space or loading time really a problem?</span>
+            <span class="c1"># keep_maps=False,  # it would take a lot more space otherwise</span>
+            <span class="o">**</span><span class="n">hypersurface_fit_kw</span>
+        <span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Fitted hypersurface report:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">hypersurface</span><span class="p">)</span>
+        <span class="n">hypersurfaces</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">hypersurface</span>
+
+    <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hypersurfaces</span>
+    <span class="n">gridpoint_data</span><span class="p">[</span><span class="s2">&quot;fit_successful&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">to_json</span><span class="p">(</span><span class="n">gridpoint_data</span><span class="p">,</span> <span class="n">gridpoint_json</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="prepare_interpolated_fit">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.prepare_interpolated_fit">[docs]</a>
+<span class="k">def</span> <span class="nf">prepare_interpolated_fit</span><span class="p">(</span>
+    <span class="n">nominal_dataset</span><span class="p">,</span> <span class="n">sys_datasets</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">fit_directory</span><span class="p">,</span> <span class="n">interpolation_param_spec</span><span class="p">,</span>
+    <span class="n">combine_regex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">minimum_mc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">hypersurface_fit_kw</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Writes steering files for fitting hypersurfaces on a grid of arbitrary parameters.</span>
+<span class="sd">    The fits can then be run on a cluster with `run_interpolated_fit`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nominal_dataset : dict</span>
+<span class="sd">        Definition of the nominal dataset. Specifies the pipleline with which the maps</span>
+<span class="sd">        can be created, and the values of all systematic parameters used to produced the</span>
+<span class="sd">        dataset.</span>
+<span class="sd">        Format must be:</span>
+<span class="sd">            nominal_dataset = {</span>
+<span class="sd">                &quot;pipeline_cfg&quot; = &lt;pipeline cfg file (either cfg file path or dict)&gt;),</span>
+<span class="sd">                &quot;sys_params&quot; = { param_0_name : param_0_value_in_dataset, ..., param_N_name : param_N_value_in_dataset }</span>
+<span class="sd">            }</span>
+<span class="sd">        Sys params must correspond to the provided HypersurfaceParam instances provided</span>
+<span class="sd">        in the `params` arg.</span>
+
+<span class="sd">    sys_datasets : list of dicts</span>
+<span class="sd">        List of dicts, where each dict defines one of the systematics datasets to be</span>
+<span class="sd">        fitted. The format of each dict is the same as explained for `nominal_dataset`</span>
+
+<span class="sd">    params : list of HypersurfaceParams</span>
+<span class="sd">        List of HypersurfaceParams instances that define the hypersurface. Note that</span>
+<span class="sd">        this defined ALL hypersurfaces fitted in this function, e.g. only supports a</span>
+<span class="sd">        single parameterisation for all maps (this is almost always what you want).</span>
+
+<span class="sd">    output_directory : str</span>
+<span class="sd">        Directory in which the fits will be run. Steering files for the fits to be run</span>
+<span class="sd">        will be stored here.</span>
+
+<span class="sd">    combine_regex : list of str, or None</span>
+<span class="sd">        List of string regex expressions that will be used for merging maps. Used to</span>
+<span class="sd">        combine similar species. Must be something that can be passed to the</span>
+<span class="sd">        `MapSet.combine_re` function (see that functions docs for more details). Choose</span>
+<span class="sd">        `None` is do not want to perform this merging.</span>
+
+<span class="sd">    interpolation_param_spec : collections.OrderedDict</span>
+<span class="sd">        Specification of parameter grid that hypersurfaces should be interpolated over.</span>
+<span class="sd">        The dict should have the following form::</span>
+<span class="sd">            interpolation_param_spec = {</span>
+<span class="sd">                &#39;param1&#39;: {&quot;values&quot;: [val1_1, val1_2, ...], &quot;scales_log&quot;: True/False}</span>
+<span class="sd">                &#39;param2&#39;: {&quot;values&quot;: [val2_1, val2_2, ...], &quot;scales_log&quot;: True/False}</span>
+<span class="sd">                ...</span>
+<span class="sd">                &#39;paramN&#39;: {&quot;values&quot;: [valN_1, valN_2, ...], &quot;scales_log&quot;: True/False}</span>
+<span class="sd">            }</span>
+<span class="sd">        The hypersurfaces will be fit on an N-dimensional rectilinear grid over</span>
+<span class="sd">        parameters 1 to N. The flag `scales_log` indicates that the interpolation over</span>
+<span class="sd">        that parameter should happen in log-space.</span>
+
+<span class="sd">    minimum_mc : int, optional</span>
+<span class="sd">        Minimum number of un-weighted MC events required in each bin.</span>
+
+<span class="sd">    hypersurface_fit_kw : kwargs</span>
+<span class="sd">        kwargs will be passed on to the calls to `Hypersurface.fit`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Take (deep) copies of lists/dicts to avoid modifying the originals</span>
+    <span class="c1"># Useful for cases where this function is called in a loop (e.g. leave-one-out tests)</span>
+    <span class="n">nominal_dataset</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">nominal_dataset</span><span class="p">)</span>
+    <span class="n">sys_datasets</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">sys_datasets</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="c1"># Check types</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_datasets</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="c1"># there must not be any ambiguity between fitting the hypersurfaces and</span>
+    <span class="c1"># interpolating them later</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;interpolation params must be specified as a dict with ordered keys&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation_param_spec</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">),</span> <span class="n">msg</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">interpolation_param_spec</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">,</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">}</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">],</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span>
+        <span class="c1"># We need to extract the magnitudes from the Quantities to avoid a</span>
+        <span class="c1"># UnitStrippedWarning. For some reason, doing `np.min(v[&quot;values&quot;])` messes up</span>
+        <span class="c1"># the data structure inside the values in a way that can cause a crash when we</span>
+        <span class="c1"># try to serialize the values later. Lesson: Stripping units inadvertently can</span>
+        <span class="c1"># have strange, unforeseen consequences.</span>
+        <span class="n">mags</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">m</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;scales_log&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mags</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;A log-scaling parameter cannot be equal to or less &quot;</span>
+                <span class="s2">&quot;than zero!&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check output format and path</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">),</span> <span class="s2">&quot;fit directory does not exist&quot;</span>
+
+    <span class="c1"># Check formatting of datasets is as expected</span>
+    <span class="n">all_datasets</span> <span class="o">=</span> <span class="p">[</span><span class="n">nominal_dataset</span><span class="p">]</span> <span class="o">+</span> <span class="n">sys_datasets</span>
+    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">all_datasets</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="s2">&quot;pipeline_cfg&quot;</span> <span class="ow">in</span> <span class="n">dataset</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">],</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="s2">&quot;sys_params&quot;</span> <span class="ow">in</span> <span class="n">dataset</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;sys_params&quot;</span><span class="p">],</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
+
+        <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">serialize_pipeline_cfg</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Check params</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">HypersurfaceParam</span><span class="p">)</span>
+
+    <span class="c1"># Report inputs</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Hypersurface fit details :</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  Num params            : </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  Num fit coefficients  : </span><span class="si">{</span><span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">num_fit_coeffts</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">params</span><span class="p">])</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  Num datasets          : 1 nominal + </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sys_datasets</span><span class="p">)</span><span class="si">}</span><span class="s2"> systematics</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  Nominal values        : </span><span class="si">{</span><span class="n">nominal_dataset</span><span class="p">[</span><span class="s1">&#39;sys_params&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;Hypersurface fits are prepared on the following grid:</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">msg</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">interpolation_param_spec</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="c1"># because we require this to be an OrderedDict, there is no ambiguity in the</span>
+    <span class="c1"># construction of the mesh here</span>
+    <span class="n">param_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">interpolation_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">grid_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">interpolation_param_spec</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="c1"># We store all information needed to run a fit in metadata</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">(</span>
+        <span class="n">interpolation_param_spec</span><span class="o">=</span><span class="n">interpolation_param_spec</span><span class="p">,</span>
+        <span class="n">interpolation_param_names</span><span class="o">=</span><span class="n">param_names</span><span class="p">,</span>  <span class="c1"># convenience</span>
+        <span class="n">grid_shape</span><span class="o">=</span><span class="n">grid_shape</span><span class="p">,</span>  <span class="c1"># convenience</span>
+        <span class="n">nominal_dataset</span><span class="o">=</span><span class="n">nominal_dataset</span><span class="p">,</span>
+        <span class="n">sys_datasets</span><span class="o">=</span><span class="n">sys_datasets</span><span class="p">,</span>
+        <span class="n">hypersurface_params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+        <span class="n">combine_regex</span><span class="o">=</span><span class="n">combine_regex</span><span class="p">,</span>
+        <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">,</span>
+        <span class="n">minimum_mc</span><span class="o">=</span><span class="n">minimum_mc</span><span class="p">,</span>
+        <span class="n">hypersurface_fit_kw</span><span class="o">=</span><span class="n">hypersurface_fit_kw</span>
+    <span class="p">)</span>
+
+    <span class="n">to_json</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="s2">&quot;metadata.json&quot;</span><span class="p">))</span>
+
+    <span class="c1"># we write on JSON file for each grid point</span>
+    <span class="k">for</span> <span class="n">job_idx</span><span class="p">,</span> <span class="n">grid_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">grid_shape</span><span class="p">)):</span>
+        <span class="c1"># Although this is technically redundant, we store the parameter values</span>
+        <span class="c1"># explicitly for each grid point.</span>
+        <span class="n">param_values</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">param_names</span><span class="p">):</span>
+            <span class="n">param_values</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolation_param_spec</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">][</span><span class="n">grid_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+        <span class="n">gridpoint_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;param_values&quot;</span><span class="p">:</span> <span class="n">param_values</span><span class="p">,</span>
+            <span class="s2">&quot;hs_fit&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;job_idx&quot;</span><span class="p">:</span> <span class="n">job_idx</span><span class="p">,</span>
+            <span class="s2">&quot;grid_idx&quot;</span><span class="p">:</span> <span class="n">grid_idx</span><span class="p">,</span>
+            <span class="s2">&quot;fit_successful&quot;</span><span class="p">:</span> <span class="kc">False</span>
+        <span class="p">}</span>
+        <span class="n">to_json</span><span class="p">(</span><span class="n">gridpoint_data</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;gridpoint_</span><span class="si">{</span><span class="n">job_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">.json.bz2&quot;</span><span class="p">))</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grid fit preparation complete! Total number of jobs: </span><span class="si">{</span><span class="n">job_idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">job_idx</span><span class="o">+</span><span class="mi">1</span>  <span class="c1"># zero-indexing</span></div>
+
+
+<div class="viewcode-block" id="load_interpolated_hypersurfaces">
+<a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.load_interpolated_hypersurfaces">[docs]</a>
+<span class="k">def</span> <span class="nf">load_interpolated_hypersurfaces</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">expected_binning</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Load a set of interpolated hypersurfaces from a file.</span>
+
+<span class="sd">    Analogously to &quot;load_hypersurfaces&quot;, this function returns a</span>
+<span class="sd">    collection with a HypersurfaceInterpolator object for each Map.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_file : str</span>
+<span class="sd">        A JSON input file as produced by fit_hypersurfaces if interpolation params</span>
+<span class="sd">        were given. It has the form::</span>
+<span class="sd">            {</span>
+<span class="sd">                interpolation_param_spec = {</span>
+<span class="sd">                    &#39;param1&#39;: {&quot;values&quot;: [val1_1, val1_2, ...], &quot;scales_log&quot;: True/False}</span>
+<span class="sd">                    &#39;param2&#39;: {&quot;values&quot;: [val2_1, val2_2, ...], &quot;scales_log&quot;: True/False}</span>
+<span class="sd">                    ...</span>
+<span class="sd">                    &#39;paramN&#39;: {&quot;values&quot;: [valN_1, valN_2, ...], &quot;scales_log&quot;: True/False}</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;hs_fits&#39;: [</span>
+<span class="sd">                    &lt;list of dicts where keys are map names such as &#39;nue_cc&#39; and values</span>
+<span class="sd">                    are hypersurface states&gt;</span>
+<span class="sd">                ]</span>
+<span class="sd">            }</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    collections.OrderedDict</span>
+<span class="sd">        dictionary with a :obj:`HypersurfaceInterpolator` for each map</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">expected_binning</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">is_binning</span><span class="p">(</span><span class="n">expected_binning</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading interpolated hypersurfaces from file: </span><span class="si">{</span><span class="n">input_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Load the data from the file</span>
+    <span class="n">input_data</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+
+
+    <span class="c1">#</span>
+    <span class="c1"># Backwards compatibility handling</span>
+    <span class="c1">#</span>
+
+    <span class="c1"># For older file formats (for example those used in the oscNext verification sample), some handling is</span>
+    <span class="c1"># reequired to convert the input data format to match the expectation of this function</span>
+
+    <span class="c1"># Check for missing data</span>
+    <span class="k">if</span> <span class="s2">&quot;interpolation_param_spec&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_data</span> <span class="p">:</span>
+
+        <span class="c1"># Confirm the format of what we did find</span>
+        <span class="k">assert</span> <span class="s2">&quot;interp_params&quot;</span> <span class="ow">in</span> <span class="n">input_data</span>
+        <span class="k">assert</span> <span class="s2">&quot;hs_fits&quot;</span> <span class="ow">in</span> <span class="n">input_data</span>
+        <span class="k">assert</span> <span class="s2">&quot;kind&quot;</span> <span class="ow">in</span> <span class="n">input_data</span>
+
+        <span class="c1"># The current code only handles linear interpolation</span>
+        <span class="k">assert</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Only linear interpolation suppored (input file specifies </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;kind&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\&#39;</span><span class="s2">)&quot;</span>
+
+        <span class="c1"># Populate the interpolation param spec</span>
+        <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;interpolation_param_spec&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">param_def</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;interp_params&quot;</span><span class="p">]</span> <span class="p">:</span>
+            <span class="n">param_name</span> <span class="o">=</span> <span class="n">param_def</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+            <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;interpolation_param_spec&quot;</span><span class="p">][</span><span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;scales_log&quot;</span> <span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;values&quot;</span> <span class="p">:</span> <span class="p">[</span> <span class="n">hs_fit_dict</span><span class="p">[</span><span class="s2">&quot;param_values&quot;</span><span class="p">][</span><span class="n">param_name</span><span class="p">]</span> <span class="k">for</span> <span class="n">hs_fit_dict</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;hs_fits&quot;</span><span class="p">]</span> <span class="p">],</span>
+            <span class="p">}</span>
+
+        <span class="c1"># Load the individual HS files to get the HS states (as this code now expects for the contents of `hs_fits`)</span>
+        <span class="k">for</span> <span class="n">hs_fit_dict</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;hs_fits&quot;</span><span class="p">]</span> <span class="p">:</span>
+            <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">load_hypersurfaces</span><span class="p">(</span><span class="n">hs_fit_dict</span><span class="p">[</span><span class="s2">&quot;file&quot;</span><span class="p">],</span> <span class="n">expected_binning</span><span class="o">=</span><span class="n">expected_binning</span><span class="p">)</span>
+            <span class="n">hs_fit_dict</span><span class="p">[</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">hypersurface</span> <span class="ow">in</span> <span class="n">hypersurfaces</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">:</span>
+                <span class="n">hs_fit_dict</span><span class="p">[</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">hypersurface</span>
+
+
+    <span class="c1">#</span>
+    <span class="c1"># Load hypersurface interpolator(s)</span>
+    <span class="c1">#</span>
+
+    <span class="c1"># check the file contents</span>
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;interpolation_param_spec&#39;</span><span class="p">,</span> <span class="s1">&#39;hs_fits&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span>
+        <span class="nb">set</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())),</span> <span class="s1">&#39;missing keys&#39;</span>
+
+    <span class="c1"># input_data[&#39;hs_fits&#39;] is a list of dicts, each dict contains &quot;param_values&quot;</span>
+    <span class="c1"># and &quot;hs_fit&quot;</span>
+    <span class="n">map_names</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading file complete, generating hypersurfaces...&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">hs_fit_dict</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;hs_fits&#39;</span><span class="p">]:</span>
+
+        <span class="c1"># this might not be the actual Hypersurface, but a dict with the serialized Hypersurface state</span>
+        <span class="n">hs_state_maps</span> <span class="o">=</span> <span class="n">hs_fit_dict</span><span class="p">[</span><span class="s2">&quot;hs_fit&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">map_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">map_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hs_state_maps</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">map_names</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">hs_state_maps</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="s2">&quot;inconsistent maps&quot;</span>
+
+        <span class="c1"># When data is recovered from JSON, the object states are not automatically</span>
+        <span class="c1"># converted to the corresponding objects, so we need to do it manually here</span>
+        <span class="c1"># (unless what we loaded was already a hypersurface instance).</span>
+        <span class="k">for</span> <span class="n">map_name</span> <span class="ow">in</span> <span class="n">map_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hs_state_maps</span><span class="p">[</span><span class="n">map_name</span><span class="p">],</span> <span class="n">Hypersurface</span><span class="p">)</span> <span class="p">:</span>
+                <span class="n">hs_state_maps</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs_state_maps</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="n">hs_state_maps</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Hypersurface</span><span class="o">.</span><span class="n">from_state</span><span class="p">(</span><span class="n">hs_state_maps</span><span class="p">[</span><span class="n">map_name</span><span class="p">])</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Read hypersurface maps: </span><span class="si">{</span><span class="n">map_names</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Check binning</span>
+    <span class="k">if</span> <span class="n">expected_binning</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">map_name</span><span class="p">,</span> <span class="n">hypersurface</span> <span class="ow">in</span> <span class="n">hs_state_maps</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">assert</span> <span class="n">hypersurface</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">hash</span> <span class="o">==</span> <span class="n">expected_binning</span><span class="o">.</span><span class="n">hash</span><span class="p">,</span> <span class="s2">&quot;Binning of loaded hypersurfaces does not match the expected binning&quot;</span>
+
+    <span class="c1"># Now we have a list of dicts where the map names are on the lower level.</span>
+    <span class="c1"># We need to convert this into a dict of HypersurfaceInterpolator objects.</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">map_names</span><span class="p">:</span>
+        <span class="n">hs_fits</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;param_values&quot;</span><span class="p">:</span> <span class="n">fd</span><span class="p">[</span><span class="s2">&quot;param_values&quot;</span><span class="p">],</span> <span class="s2">&quot;hs_fit&quot;</span><span class="p">:</span> <span class="n">fd</span><span class="p">[</span><span class="s1">&#39;hs_fit&#39;</span><span class="p">][</span><span class="n">m</span><span class="p">]}</span> <span class="k">for</span> <span class="n">fd</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;hs_fits&#39;</span><span class="p">]]</span>
+        <span class="n">output</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">HypersurfaceInterpolator</span><span class="p">(</span><span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;interpolation_param_spec&#39;</span><span class="p">],</span> <span class="n">hs_fits</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

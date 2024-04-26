@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.core.events_pi &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.core.events_pi</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.core.events_pi</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;PISA data container&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;NU_FLAVORS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;NU_INTERACTIONS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;OUTPUT_NUFLAVINT_KEYS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LEGACY_FLAVKEY_XLATION&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;EventsPi&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;split_nu_events_by_flavor_and_interaction&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fix_oppo_flux&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;T. Stuttard&quot;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2018, The IceCube Collaboration</span>
+
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> you may not use this file except in compliance with the License.</span>
+<span class="s2"> You may obtain a copy of the License at</span>
+
+<span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s2"> See the License for the specific language governing permissions and</span>
+<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+
+
+<span class="c1"># Define the flavors and interactions for neutrino events</span>
+<span class="n">NU_FLAVORS</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+    <span class="n">nue</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">nuebar</span><span class="o">=-</span><span class="mi">12</span><span class="p">,</span> <span class="n">numu</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">numubar</span><span class="o">=-</span><span class="mi">14</span><span class="p">,</span> <span class="n">nutau</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">nutaubar</span><span class="o">=-</span><span class="mi">16</span>
+<span class="p">)</span>
+<span class="n">NU_INTERACTIONS</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">cc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">nc</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">OUTPUT_NUFLAVINT_KEYS</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+    <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fk</span><span class="p">,</span> <span class="n">ik</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fk</span><span class="p">,</span> <span class="n">fc</span> <span class="ow">in</span> <span class="n">NU_FLAVORS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">ik</span><span class="p">,</span> <span class="n">ic</span> <span class="ow">in</span> <span class="n">NU_INTERACTIONS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="p">)</span>
+<span class="n">LEGACY_FLAVKEY_XLATION</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">nue</span><span class="o">=</span><span class="s2">&quot;nue&quot;</span><span class="p">,</span>
+    <span class="n">nuebar</span><span class="o">=</span><span class="s2">&quot;nuebar&quot;</span><span class="p">,</span>
+    <span class="n">nue_bar</span><span class="o">=</span><span class="s2">&quot;nuebar&quot;</span><span class="p">,</span>
+    <span class="n">numu</span><span class="o">=</span><span class="s2">&quot;numu&quot;</span><span class="p">,</span>
+    <span class="n">numubar</span><span class="o">=</span><span class="s2">&quot;numubar&quot;</span><span class="p">,</span>
+    <span class="n">numu_bar</span><span class="o">=</span><span class="s2">&quot;numubar&quot;</span><span class="p">,</span>
+    <span class="n">nutau</span><span class="o">=</span><span class="s2">&quot;nutau&quot;</span><span class="p">,</span>
+    <span class="n">nutaubar</span><span class="o">=</span><span class="s2">&quot;nutaubar&quot;</span><span class="p">,</span>
+    <span class="n">nutau_bar</span><span class="o">=</span><span class="s2">&quot;nutaubar&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="c1"># Backwards cmpatiblity fixes</span>
+<span class="n">OPPO_FLUX_LEGACY_FIX_MAPPING_NU</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;nominal_nue_flux&quot;</span> <span class="p">:</span> <span class="s2">&quot;neutrino_nue_flux&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;nominal_numu_flux&quot;</span> <span class="p">:</span> <span class="s2">&quot;neutrino_numu_flux&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;nominal_nuebar_flux&quot;</span> <span class="p">:</span> <span class="s2">&quot;neutrino_oppo_nue_flux&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;nominal_numubar_flux&quot;</span> <span class="p">:</span> <span class="s2">&quot;neutrino_oppo_numu_flux&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">OPPO_FLUX_LEGACY_FIX_MAPPING_NUBAR</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;nominal_nue_flux&quot;</span> <span class="p">:</span> <span class="s2">&quot;neutrino_oppo_nue_flux&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;nominal_numu_flux&quot;</span> <span class="p">:</span> <span class="s2">&quot;neutrino_oppo_numu_flux&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;nominal_nuebar_flux&quot;</span> <span class="p">:</span> <span class="s2">&quot;neutrino_nue_flux&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;nominal_numubar_flux&quot;</span> <span class="p">:</span> <span class="s2">&quot;neutrino_numu_flux&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">append_arrays_dict</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">sdict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Helper function for appending multiple dicts of arrays (e.g. from </span>
+<span class="sd">    multiple input files) into a single dict of arrays </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="c1"># Handle sub-dict</span>
+        <span class="k">for</span> <span class="n">key2</span><span class="p">,</span> <span class="n">val2</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sdict</span> <span class="p">:</span>
+                <span class="n">sdict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+            <span class="n">append_arrays_dict</span><span class="p">(</span><span class="n">key2</span><span class="p">,</span> <span class="n">val2</span><span class="p">,</span> <span class="n">sdict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="c1"># Have now reached a variable</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">),</span> <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39; is not an array, is a </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">))</span> 
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">sdict</span> <span class="p">:</span>
+            <span class="n">sdict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sdict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">val</span><span class="p">)</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="n">sdict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+
+<div class="viewcode-block" id="EventsPi">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.EventsPi">[docs]</a>
+<span class="k">class</span> <span class="nc">EventsPi</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Container for events for use with PISA pi</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : string, optional</span>
+<span class="sd">        Name to identify events</span>
+
+<span class="sd">    neutrinos : bool, optional</span>
+<span class="sd">        Flag indicating if events represent neutrinos; toggles special</span>
+<span class="sd">        behavior such as splitting into nu/nubar and CC/NC. Default is True.</span>
+
+<span class="sd">    fraction_events_to_keep : float</span>
+<span class="sd">        Fraction of loaded events to use (use to downsample).</span>
+<span class="sd">        Must be in range [0.,1.], or disable by setting to `None`.</span>
+<span class="sd">        Default in None.</span>
+
+<span class="sd">    *args, **kwargs</span>
+<span class="sd">        Passed on to `__init__` method of OrderedDict</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">neutrinos</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">fraction_events_to_keep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">events_subsample_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span> <span class="o">=</span> <span class="n">neutrinos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="o">=</span> <span class="n">fraction_events_to_keep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span> <span class="o">=</span> <span class="n">events_subsample_index</span>
+
+        <span class="c1"># Checks for down-sampling inputs</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="c1"># Check `fraction_events_to_keep` value is required range</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="o">&gt;=</span> <span class="mf">0.</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="o">&lt;=</span> <span class="mf">1.</span><span class="p">),</span> <span class="s2">&quot;`fraction_events_to_keep` must be in range [0.,1.], or None to disable&quot;</span>
+
+            <span class="c1"># Check `fraction_events_to_keep` and `events_subsample_index` values are compatible</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;`events_subsample_index` must be an integer&quot;</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;`events_subsample_index` = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span><span class="si">}</span><span class="s2">, but must be &gt;= 0&quot;</span>
+            <span class="n">max_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span> <span class="mf">1.</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span> <span class="o">&lt;=</span> <span class="n">max_index</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;`events_subsample_index` = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span><span class="si">}</span><span class="s2"> is too large given `fraction_events_to_keep` = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span><span class="si">}</span><span class="s2"> (max is </span><span class="si">{</span><span class="n">max_index</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="c1"># Define some metadata</span>
+        <span class="c1">#TODO Is this out of date?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">(</span><span class="s2">&quot;detector&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;geom&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;runs&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="p">(</span><span class="s2">&quot;proc_ver&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;cuts&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="EventsPi.load_events_file">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.EventsPi.load_events_file">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_events_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events_file</span><span class="p">,</span> <span class="n">variable_mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">required_metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123456</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fill this events container from an input HDF5 file filled with event</span>
+<span class="sd">        data Optionally can provide a variable mapping so select a subset of</span>
+<span class="sd">        variables, rename them, etc.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        events_file : string or mapping</span>
+<span class="sd">            If string, interpret as a path and load file at that path; the</span>
+<span class="sd">            loaded object should be a mapping. If already a mapping, take and</span>
+<span class="sd">            interpret events from that.</span>
+
+<span class="sd">        variable_mapping : mapping, optional</span>
+<span class="sd">            If specified, should be a mapping where the keys are the</span>
+<span class="sd">            destination variable names and the items are either the source</span>
+<span class="sd">            variable names or an iterable of source variables names. In the</span>
+<span class="sd">            latter case, each of the specified source variables will become a</span>
+<span class="sd">            column vector in the destination array.</span>
+
+<span class="sd">        required_metadata : None, or list of str</span>
+<span class="sd">            Can optionally specify metadata keys to parse from the input file metdata.</span>
+<span class="sd">            ONLY metadata specified here will be parsed.</span>
+<span class="sd">            Anything specified here MUST exist in the files. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Validate `events_file`</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">events_file</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;`events_file` must be either string or mapping; got (</span><span class="si">%s</span><span class="s2">)&quot;</span>
+                <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">events_file</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Validate `variable_mapping`</span>
+        <span class="k">if</span> <span class="n">variable_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable_mapping</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;&#39;variable_mapping&#39; must be a mapping (e.g., dict)&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span> <span class="ow">in</span> <span class="n">variable_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;`variable_mapping` &#39;dst&#39; (key) must be a string&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">pass</span>  <span class="c1"># Nothing to do</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">src</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                                <span class="s2">&quot;`variable_mapping` &#39;src&#39; (value) has at least&quot;</span>
+                                <span class="s2">&quot; one element that is not a string&quot;</span>
+                            <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s2">&quot;`variable_mapping` &#39;src&#39; (value) must be a string or&quot;</span>
+                        <span class="s2">&quot; an iterable of strings&quot;</span>
+                    <span class="p">)</span>
+
+
+        <span class="c1"># Validate `required_metadata`</span>
+        <span class="k">if</span> <span class="n">required_metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">required_metadata</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">required_metadata</span> <span class="p">])</span>
+
+        <span class="c1"># Reporting</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Down-sampling events (keeping </span><span class="si">%0.2g%%</span><span class="s2"> of the total). Will take sub-sample </span><span class="si">%i</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mf">100.</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span><span class="p">))</span>
+
+
+        <span class="c1">#</span>
+        <span class="c1"># Loop over files</span>
+        <span class="c1">#</span>
+
+        <span class="n">input_data</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+        <span class="c1"># Handle list of files vs single file</span>
+        <span class="n">events_files_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">events_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">events_files_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">events_file</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">events_file</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">events_files_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">events_file</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">events_file</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="n">events_files_list</span> <span class="o">=</span> <span class="n">events_file</span>
+
+        <span class="c1"># Loop over files</span>
+        <span class="k">for</span> <span class="n">i_file</span><span class="p">,</span> <span class="n">infile</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">events_files_list</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="c1">#</span>
+            <span class="c1"># Parse variables from file</span>
+            <span class="c1">#</span>
+
+            <span class="c1"># Read the file</span>
+            <span class="c1"># If `variable_mapping` was specified, only load those variables (saves time/memory)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+
+                <span class="c1"># If user provided a variable mapping, only load the requested variables.</span>
+                <span class="c1"># Remember to andle cases where the variable is defined as a list of variables in</span>
+                <span class="c1"># the cfg file.</span>
+                <span class="k">if</span> <span class="n">variable_mapping</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
+                    <span class="n">choose</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="n">choose</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">variable_mapping</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="p">:</span>
+                            <span class="n">choose</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="p">:</span>
+                            <span class="k">for</span> <span class="n">sub_var_name</span> <span class="ow">in</span> <span class="n">var_name</span> <span class="p">:</span>
+                                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sub_var_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="s2">&quot;Unknown variable format, must be `str`&quot;</span>
+                                <span class="n">choose</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sub_var_name</span><span class="p">)</span>
+                        <span class="k">else</span> <span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Unknown variable name format, must be `str` or list of `str`&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Handle &quot;oppo&quot; flux backwards compatibility</span>
+                <span class="c1"># This means adding the old variable names into the chosen variable list</span>
+                <span class="c1"># The actual renaming is done later by `fix_oppo_flux`</span>
+                <span class="k">if</span> <span class="n">variable_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+                    <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">choose</span> <span class="p">:</span>
+                        <span class="k">if</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">OPPO_FLUX_LEGACY_FIX_MAPPING_NU</span> <span class="p">:</span>
+                            <span class="n">choose</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">OPPO_FLUX_LEGACY_FIX_MAPPING_NU</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span> <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">OPPO_FLUX_LEGACY_FIX_MAPPING_NUBAR</span> <span class="p">:</span>
+                            <span class="n">choose</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">OPPO_FLUX_LEGACY_FIX_MAPPING_NUBAR</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span> <span class="p">)</span>
+
+                <span class="c1"># Load the file</span>
+                <span class="n">file_input_data</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span> <span class="n">choose</span><span class="o">=</span><span class="n">choose</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_input_data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s1">&#39;Contents loaded from &quot;</span><span class="si">%s</span><span class="s1">&quot; must be a mapping; got: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                        <span class="o">%</span> <span class="p">(</span><span class="n">infile</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">file_input_data</span><span class="p">))</span>
+                    <span class="p">)</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_input_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;No input data found&quot;</span>
+
+
+            <span class="c1"># File already loaded</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="p">:</span>
+                <span class="n">file_input_data</span> <span class="o">=</span> <span class="n">infile</span>
+
+            <span class="c1"># Add to overall container</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">file_input_data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">:</span>
+                <span class="n">append_arrays_dict</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">input_data</span><span class="p">)</span>
+
+
+            <span class="c1">#</span>
+            <span class="c1"># Parse metadata from file</span>
+            <span class="c1">#</span>
+
+            <span class="k">if</span> <span class="n">required_metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+
+                <span class="c1"># Events and EventsPi objects have attr `metadata`</span>
+                <span class="n">file_metadata</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">file_input_data</span><span class="p">,</span> <span class="s1">&#39;metadata&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+                <span class="c1"># HDF files have attr `attrs` attached, if present (see pisa.utils.hdf)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">file_metadata</span><span class="p">:</span>
+                    <span class="n">file_metadata</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">file_input_data</span><span class="p">,</span> <span class="s1">&#39;attrs&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">file_metadata</span><span class="p">:</span>
+
+                    <span class="c1"># Check format</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_metadata</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                            <span class="s2">&quot;metadata or attrs expected to be a Mapping, but got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="nb">type</span><span class="p">(</span><span class="n">file_metadata</span><span class="p">)</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+
+                    <span class="c1"># Loop over expected metadata</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">required_metadata</span> <span class="p">:</span>
+
+                        <span class="k">assert</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">file_metadata</span><span class="p">,</span> <span class="s2">&quot;Expected metadata &#39;</span><span class="si">%s</span><span class="s2">&#39; not found&quot;</span> <span class="o">%</span> <span class="n">k</span>
+
+                        <span class="c1"># For the special case of livetime, append livetiem from each file</span>
+                        <span class="c1"># Otherwise, expect identical value in all cases</span>
+                        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="p">:</span>
+                            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;livetime&quot;</span> <span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">file_metadata</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                            <span class="k">else</span> <span class="p">:</span>
+                                <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">==</span> <span class="n">file_metadata</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                        <span class="k">else</span> <span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_metadata</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+
+
+        <span class="c1">#</span>
+        <span class="c1"># Re-format inputs</span>
+        <span class="c1">#</span>
+
+        <span class="c1"># The following is intended to re-format input data into the desired</span>
+        <span class="c1"># format. This is required to handle various inout cases and to ensure</span>
+        <span class="c1"># backwards compatibility with older input file formats.</span>
+
+        <span class="c1"># Convert to the required event keys, e.g. &quot;numu_cc&quot;, &quot;nutaubar_nc&quot;, etc.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">:</span>
+            <span class="n">input_data</span> <span class="o">=</span> <span class="n">split_nu_events_by_flavor_and_interaction</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+
+        <span class="c1"># The value for each category should itself be a dict of the event</span>
+        <span class="c1"># variables, where each entry is has a variable name as the key and an</span>
+        <span class="c1"># np.array filled once per event as the value.</span>
+        <span class="c1">#</span>
+        <span class="c1"># For backwards compatibility, convert to this format from known older</span>
+        <span class="c1"># formats first</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">cat_dict</span> <span class="ow">in</span> <span class="n">input_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cat_dict</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                        <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39; input data is not a mapping, unknown format (</span><span class="si">%s</span><span class="s2">)&quot;</span>
+                        <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">cat_dict</span><span class="p">))</span>
+                    <span class="p">)</span>
+                <span class="k">for</span> <span class="n">var_key</span><span class="p">,</span> <span class="n">var_data</span> <span class="ow">in</span> <span class="n">cat_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var_data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                            <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&#39; input data is not a numpy array, unknown&quot;</span>
+                            <span class="s2">&quot; format (</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">var_key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">var_data</span><span class="p">))</span>
+                        <span class="p">)</span>
+
+        <span class="c1"># Ensure backwards compatibility with the old style &quot;oppo&quot; flux</span>
+        <span class="c1"># variables</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">:</span>
+            <span class="n">fix_oppo_flux</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+
+
+        <span class="c1">#</span>
+        <span class="c1"># Load the event data</span>
+        <span class="c1">#</span>
+
+        <span class="c1"># Should be organised under a single layer of keys, each representing</span>
+        <span class="c1"># some category of input data</span>
+
+        <span class="c1"># Loop over the input types</span>
+        <span class="k">for</span> <span class="n">data_key</span> <span class="ow">in</span> <span class="n">input_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">data_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Key &#39;</span><span class="si">%s</span><span class="s2">&#39; has already been added to this data structure&quot;</span>
+                <span class="p">)</span>
+
+            <span class="bp">self</span><span class="p">[</span><span class="n">data_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+            <span class="c1"># Loop through variable mapping</span>
+            <span class="c1"># If none provided, just use all variables and keep the input names</span>
+            <span class="k">if</span> <span class="n">variable_mapping</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">variable_mapping_to_use</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                    <span class="nb">zip</span><span class="p">(</span><span class="n">input_data</span><span class="p">[</span><span class="n">data_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">input_data</span><span class="p">[</span><span class="n">data_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">variable_mapping_to_use</span> <span class="o">=</span> <span class="n">variable_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+
+            <span class="c1"># Init stuff for down-sampling later</span>
+            <span class="n">chosen_event_indices</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">rand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span> <span class="c1"># Enforce same sample each time</span>
+
+            <span class="c1"># Get the array data (stacking if multiple input variables defined)</span>
+            <span class="c1"># and check the variable exists in the input data</span>
+            <span class="k">for</span> <span class="n">var_dst</span><span class="p">,</span> <span class="n">var_src</span> <span class="ow">in</span> <span class="n">variable_mapping_to_use</span><span class="p">:</span>
+                <span class="c1"># TODO What about non-float data? Use dtype...</span>
+
+                <span class="c1"># Prepare for the stacking</span>
+                <span class="n">array_data</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var_src</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">var_src</span> <span class="o">=</span> <span class="p">[</span><span class="n">var_src</span><span class="p">]</span>
+
+                <span class="c1"># Perform the stacking</span>
+                <span class="n">array_data_to_stack</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">var_src</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">[</span><span class="n">data_key</span><span class="p">]:</span>
+                        <span class="n">array_data_to_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="n">input_data</span><span class="p">[</span><span class="n">data_key</span><span class="p">][</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                            <span class="s2">&quot;Variable &#39;</span><span class="si">%s</span><span class="s2">&#39; cannot be found for &#39;</span><span class="si">%s</span><span class="s2">&#39; events&quot;</span>
+                            <span class="o">%</span> <span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">data_key</span><span class="p">)</span>
+                        <span class="p">)</span>
+
+                <span class="c1"># Note `squeeze` removes the extraneous 2nd dim in case of a</span>
+                <span class="c1"># single `src`</span>
+                <span class="n">array_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">array_data_to_stack</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+                <span class="c1"># Check actually have some data</span>
+                <span class="k">if</span> <span class="n">array_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Cannot find source variable(s) &#39;</span><span class="si">%s</span><span class="s2">&#39; for &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
+                        <span class="o">%</span> <span class="p">(</span><span class="n">var_src</span><span class="p">,</span> <span class="n">data_key</span><span class="p">)</span>
+                    <span class="p">)</span>
+
+
+                <span class="c1">#</span>
+                <span class="c1"># Event down sampling</span>
+                <span class="c1">#</span>
+
+                <span class="c1"># Only if requested by user</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+                    <span class="c1"># Define events to keep only once for each species (e.g. same choice for all variables for a given species)</span>
+                    <span class="k">if</span> <span class="n">chosen_event_indices</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
+
+                        <span class="c1"># Get intitial conditions</span>
+                        <span class="n">initial_num_events</span> <span class="o">=</span> <span class="n">array_data</span><span class="o">.</span><span class="n">size</span>
+                        <span class="n">desired_num_events</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">initial_num_events</span><span class="p">)</span> <span class="p">)</span>
+
+                        <span class="c1"># Start with all events as input</span>
+                        <span class="n">current_event_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="nb">range</span><span class="p">(</span><span class="n">initial_num_events</span><span class="p">)</span> <span class="p">)</span>
+
+                        <span class="c1"># Loop over subsamples (will break out once reach desired subsample)</span>
+                        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="k">while</span> <span class="kc">True</span> <span class="p">:</span>
+
+                            <span class="c1"># Get indices for the events to keep for this current sub-sample</span>
+                            <span class="k">assert</span> <span class="n">current_event_indices</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">desired_num_events</span><span class="p">,</span> <span class="s2">&quot;Not enough events available&quot;</span> <span class="c1"># Earlier checks on `fraction_events_to_keep` and `events_subsample_index` should prevent this error ever happening</span>
+                            <span class="n">chosen_event_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span> <span class="n">rand</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">current_event_indices</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">desired_num_events</span><span class="p">)</span> <span class="p">)</span>
+
+                            <span class="c1"># If this is the requested sub-sample, done here</span>
+                            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span> <span class="p">:</span>
+                                <span class="k">break</span>
+
+                            <span class="c1"># Otherwise have not yet reached our subsample.</span>
+                            <span class="c1"># Choose the remaining events as the new input events in the algorithm,</span>
+                            <span class="c1"># and on the next iteration of this loop these remaining events will be </span>
+                            <span class="c1"># used for extracting the new sub-sample.</span>
+                            <span class="c1"># This will result in statistically independent sub-samples</span>
+                            <span class="n">remaining_event_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">setxor1d</span><span class="p">(</span><span class="n">current_event_indices</span><span class="p">,</span> <span class="n">chosen_event_indices</span><span class="p">)</span> <span class="p">)</span>
+                            <span class="n">current_event_indices</span> <span class="o">=</span> <span class="n">remaining_event_indices</span>
+
+                            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                        <span class="c1"># Report</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Down-sampled </span><span class="si">%s</span><span class="s2"> events : </span><span class="si">%i</span><span class="s2"> -&gt; </span><span class="si">%i</span><span class="s2"> (</span><span class="si">%0.2g%%</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">data_key</span><span class="p">,</span> <span class="n">array_data</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">chosen_event_indices</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mf">100.</span><span class="o">*</span><span class="p">(</span><span class="n">chosen_event_indices</span><span class="o">.</span><span class="n">size</span><span class="o">/</span><span class="n">array_data</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="p">))</span>
+
+                    <span class="c1"># Extract just the requested events</span>
+                    <span class="n">array_data</span> <span class="o">=</span> <span class="n">array_data</span><span class="p">[</span><span class="n">chosen_event_indices</span><span class="p">]</span>
+
+                <span class="c1"># Add to array</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">data_key</span><span class="p">][</span><span class="n">var_dst</span><span class="p">]</span> <span class="o">=</span> <span class="n">array_data</span></div>
+
+
+
+<div class="viewcode-block" id="EventsPi.apply_cut">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.EventsPi.apply_cut">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_cut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a cut by specifying criteria for keeping events. The cut must</span>
+<span class="sd">        be successfully applied to all flav/ints in the events object before</span>
+<span class="sd">        the changes are kept, otherwise the cuts are reverted.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keep_criteria : string</span>
+<span class="sd">            Any string interpretable as numpy boolean expression.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Keep events with true energies in [1, 80] GeV (note that units are not</span>
+<span class="sd">        recognized, so have to be handled outside this method)</span>
+
+<span class="sd">        &gt;&gt;&gt; events = events.apply_cut(&quot;(true_energy &gt;= 1) &amp; (true_energy &lt;= 80)&quot;)</span>
+
+<span class="sd">        Do the opposite with &quot;~&quot; inverting the criteria</span>
+
+<span class="sd">        &gt;&gt;&gt; events = events.apply_cut(&quot;~((true_energy &gt;= 1) &amp; (true_energy &lt;= 80))&quot;)</span>
+
+<span class="sd">        Numpy namespace is available for use via `np` prefix</span>
+
+<span class="sd">        &gt;&gt;&gt; events = events.apply_cut(&quot;np.log10(true_energy) &gt;= 0&quot;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keep_criteria</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+        <span class="c1"># Check if have already applied these cuts</span>
+        <span class="k">if</span> <span class="n">keep_criteria</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;cuts&quot;</span><span class="p">]:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Criteria &#39;</span><span class="si">%s</span><span class="s2">&#39; have already been applied. Returning&quot;</span>
+                <span class="s2">&quot; events unmodified.&quot;</span><span class="p">,</span>
+                <span class="n">keep_criteria</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="c1"># TODO Get everything from the GPU first ?</span>
+
+        <span class="c1"># Prepare the post-cut data container</span>
+        <span class="n">cut_data</span> <span class="o">=</span> <span class="n">EventsPi</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">cut_data</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+
+        <span class="c1"># Loop over the data containers</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">cut_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="c1"># TODO Need to think about how to handle array, scalar and binned data</span>
+            <span class="c1"># TODO Check for `events` data mode, or should this kind of logic</span>
+            <span class="c1"># already be in the Container class?</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+            <span class="c1"># Create the cut expression, and get the resulting mask</span>
+            <span class="n">crit_str</span> <span class="o">=</span> <span class="n">keep_criteria</span>
+            <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                <span class="n">crit_str</span> <span class="o">=</span> <span class="n">crit_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                    <span class="n">variable_name</span><span class="p">,</span> <span class="s1">&#39;self[&quot;</span><span class="si">%s</span><span class="s1">&quot;][&quot;</span><span class="si">%s</span><span class="s1">&quot;]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">variable_name</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">crit_str</span><span class="p">)</span>  <span class="c1"># pylint: disable=eval-used</span>
+
+            <span class="c1"># Fill a new container with the post-cut data</span>
+            <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                <span class="n">cut_data</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">variable_name</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span>
+                <span class="p">)</span>
+
+        <span class="c1"># TODO update to GPUs?</span>
+
+        <span class="c1"># Record the cuts</span>
+        <span class="n">cut_data</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;cuts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keep_criteria</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cut_data</span></div>
+
+
+<div class="viewcode-block" id="EventsPi.keep_inbounds">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.EventsPi.keep_inbounds">[docs]</a>
+    <span class="k">def</span> <span class="nf">keep_inbounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cut out any events that fall outside `binning`. Note that events</span>
+<span class="sd">        that fall exactly on an outer edge are kept.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        binning : OneDimBinning or MultiDimBinning</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cut_data : EventsPi</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get the binning instance</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>  <span class="c1"># pylint: disable=bare-except</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
+            <span class="n">binning</span> <span class="o">=</span> <span class="p">[</span><span class="n">binning</span><span class="p">]</span>
+        <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
+
+        <span class="c1"># Define a cut to remove events outside of the binned region</span>
+        <span class="n">bin_edge_cuts</span> <span class="o">=</span> <span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">inbounds_criteria</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">]</span>
+        <span class="n">bin_edge_cuts</span> <span class="o">=</span> <span class="s2">&quot; &amp; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bin_edge_cuts</span><span class="p">])</span>
+
+        <span class="c1"># Apply the cut</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_cut</span><span class="p">(</span><span class="n">bin_edge_cuts</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># TODO Handle non-array data cases</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;-----------------------------</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s2">&quot;EventsPi container </span><span class="si">%s</span><span class="s2"> :&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">string</span> <span class="o">+=</span> <span class="s2">&quot;  </span><span class="si">%s</span><span class="s2"> :</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">key</span>
+            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">array</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">array_data</span> <span class="o">=</span> <span class="n">array</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">array_data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="n">array_data_string</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">array_data</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">array_data_string</span> <span class="o">=</span> <span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, ..., </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="n">array_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="n">array_data</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">array_data</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span>
+                        <span class="n">array_data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="p">)</span>
+                <span class="n">string</span> <span class="o">+=</span> <span class="s2">&quot;    </span><span class="si">%s</span><span class="s2"> : </span><span class="si">%i</span><span class="s2"> elements : </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">var</span><span class="p">,</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">array_data</span><span class="p">),</span>
+                    <span class="n">array_data_string</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s2">&quot;-----------------------------&quot;</span>
+        <span class="k">return</span> <span class="n">string</span></div>
+
+
+
+<div class="viewcode-block" id="split_nu_events_by_flavor_and_interaction">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.split_nu_events_by_flavor_and_interaction">[docs]</a>
+<span class="k">def</span> <span class="nf">split_nu_events_by_flavor_and_interaction</span><span class="p">(</span><span class="n">input_data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split neutrino events by nu vs nubar, and CC vs NC.</span>
+
+<span class="sd">    Should be compatible with DRAGON and GRECO samples, but this depends on the</span>
+<span class="sd">    contents of the original I3 files and whatever conversion script was used</span>
+<span class="sd">    to produce the HDF5 files from these.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_data : mapping</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output_data : OrderedDict</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO Split into one function for nu/nubar and one for CC/NC?</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">input_data</span><span class="p">,</span> <span class="s2">&quot;`input_data` has no members&quot;</span>
+
+    <span class="n">output_data</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+    <span class="c1"># Loop through subcategories in the input data</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">input_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># If key already is one of the desired keys, nothing new to do</span>
+        <span class="c1"># Just move the data to the output container</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">OUTPUT_NUFLAVINT_KEYS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">output_data</span><span class="p">:</span>
+                <span class="n">output_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">output_data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Legacy PISA HDF5 files are structured as</span>
+        <span class="c1">#   {&quot;&lt;flavor&gt;&quot;: {&quot;&lt;int_type&gt;&quot;: data}};</span>
+        <span class="c1"># and `flavor` can have &quot;_&quot; separating &quot;bar&quot;. Remove such underscores</span>
+        <span class="c1"># and flatten the nested dicts into</span>
+        <span class="c1">#   {&quot;&lt;flavor&gt;_&lt;int_type&gt;&quot;: data}</span>
+        <span class="c1"># format</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">LEGACY_FLAVKEY_XLATION</span><span class="p">:</span>
+            <span class="n">new_flav_key</span> <span class="o">=</span> <span class="n">LEGACY_FLAVKEY_XLATION</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">sub_key</span><span class="p">,</span> <span class="n">sub_data</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">assert</span> <span class="n">sub_key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cc&quot;</span><span class="p">,</span> <span class="s2">&quot;nc&quot;</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">sub_key</span><span class="p">)</span>
+                <span class="n">output_key</span> <span class="o">=</span> <span class="n">new_flav_key</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">sub_key</span>
+                <span class="k">if</span> <span class="n">output_key</span> <span class="ow">in</span> <span class="n">output_data</span><span class="p">:</span>
+                    <span class="n">output_data</span><span class="p">[</span><span class="n">output_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="n">output_data</span><span class="p">[</span><span class="n">output_key</span><span class="p">],</span> <span class="n">sub_data</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">output_data</span><span class="p">[</span><span class="n">output_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_data</span>
+            <span class="k">continue</span>
+
+        <span class="k">assert</span> <span class="s2">&quot;pdg_code&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;No &#39;pdg_code&#39; variable found for </span><span class="si">%s</span><span class="s2"> data&quot;</span> <span class="o">%</span> <span class="n">key</span>
+        <span class="c1"># Check these are neutrino events</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;pdg_code&quot;</span><span class="p">],</span> <span class="n">NU_FLAVORS</span><span class="o">.</span><span class="n">values</span><span class="p">())),</span> <span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> data does not appear to be a neutrino data&quot;</span> <span class="o">%</span> <span class="n">key</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="s2">&quot;interaction&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;No &#39;interaction&#39; variable found for </span><span class="si">%s</span><span class="s2"> data&quot;</span> <span class="o">%</span> <span class="n">key</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Define a mask to select the events for each desired output key</span>
+        <span class="n">key_mask_pairs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fk</span><span class="p">,</span> <span class="n">ik</span><span class="p">),</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;pdg_code&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">fc</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;interaction&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ic</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">fk</span><span class="p">,</span> <span class="n">fc</span> <span class="ow">in</span> <span class="n">NU_FLAVORS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">ik</span><span class="p">,</span> <span class="n">ic</span> <span class="ow">in</span> <span class="n">NU_INTERACTIONS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Loop over the keys/masks and write the data for each class to the</span>
+        <span class="c1"># output container</span>
+        <span class="k">for</span> <span class="n">mkey</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="n">key_mask_pairs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>  <span class="c1"># Only if mask has some data</span>
+                <span class="k">if</span> <span class="n">mkey</span> <span class="ow">in</span> <span class="n">output_data</span><span class="p">:</span>
+                    <span class="n">output_data</span><span class="p">[</span><span class="n">mkey</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">output_data</span><span class="p">[</span><span class="n">mkey</span><span class="p">],</span> <span class="n">data</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">output_data</span><span class="p">[</span><span class="n">mkey</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed splitting neutrino events by flavor/interaction&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output_data</span></div>
+
+
+
+
+<div class="viewcode-block" id="fix_oppo_flux">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.fix_oppo_flux">[docs]</a>
+<span class="k">def</span> <span class="nf">fix_oppo_flux</span><span class="p">(</span><span class="n">input_data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fix this `oppo` flux insanity</span>
+<span class="sd">    someone added this in the nominal flux calculation that</span>
+<span class="sd">    oppo flux is nue flux if flavour is nuebar, and vice versa</span>
+<span class="sd">    here we revert that, incase these oppo keys are there</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">input_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s2">&quot;neutrino_oppo_nue_flux&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s1">&#39;renaming the outdated &quot;oppo&quot; flux keys in &quot;</span><span class="si">%s</span><span class="s1">&quot;, in the future do&#39;</span>
+            <span class="s2">&quot; not use those anymore&quot;</span><span class="p">,</span>
+            <span class="n">key</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;bar&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">new</span><span class="p">,</span> <span class="n">old</span> <span class="ow">in</span> <span class="n">OPPO_FLUX_LEGACY_FIX_MAPPING_NUBAR</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">:</span>
+                <span class="n">val</span><span class="p">[</span><span class="n">new</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">new</span><span class="p">,</span> <span class="n">old</span> <span class="ow">in</span> <span class="n">OPPO_FLUX_LEGACY_FIX_MAPPING_NU</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">:</span>
+                <span class="n">val</span><span class="p">[</span><span class="n">new</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load an events file and print the contents&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Events parsing&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--neutrinos&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Treat input file as if it contains neutrino MC&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="s2">&quot;--input-file&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input HDF5 events file&quot;</span>
+    <span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">events</span> <span class="o">=</span> <span class="n">EventsPi</span><span class="p">(</span><span class="n">neutrinos</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">)</span>
+    <span class="n">events</span><span class="o">.</span><span class="n">load_events_file</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input_file</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loaded events from : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">input_file</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Metadata:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">events</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">events</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/readmes/flavor_interaction_types.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p># Flavor and interaction types</p>
+<p><strong>*NuFlav*</strong>, <strong>*IntType*</strong>, <strong>*NuFlavInt*</strong>, and <strong>*NuFlavIntGroup*</strong> are objects designed to easily work with neutrino flavors, interaction types, and combinations thereof. Source code: <em>pisa/utils/flavInt.py</em></p>
+<p><strong>*FlavIntData*</strong> and <strong>*CombinedFlavIntData*</strong> are container objects for data particular to neutrino flavors+interaction types. The former stores one datum for each flavor/interaction type combination, whereas the latter allows one to store a single data set for each grouping of flavor/interaction types. Source code: <em>pisa/utils/flavInt.py</em></p>
+<p><strong>*Events*</strong> subclasses <em>FlavIntData</em> but also contains standard metatadata pertinent to events. Source code: <em>pisa/core/events.py</em></p>
+<p>## Examples using flavor/interaction type objects</p>
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+import numpy as np
+from pisa.utils import flavInt</p>
+<p># Create a flavor
+numu = flavInt.NuFlav(14) # from code
+numu = flavInt.NuFlav(‘nu_mu’) # from str
+numubar = -numu # flip parity</p>
+<p># Interaction type
+cc = flavInt.IntType(‘Cc’) # permissive
+nc = flavInt.IntType(2) # from code</p>
+<p># A NuflavInt combines flavor and interaction type
+numubarcc = flavInt.NuFlavInt(‘numu_bar_cc’)
+numucc = flavInt.NuFlavInt(numu, cc)
+numubarcc = -numucc</p>
+<p>numubarcc.flav # -&gt; ‘numubar’
+numubarcc.int_type # -&gt; ‘cc’
+numubar.particle # -&gt; False
+numubarcc.cc # -&gt; True</p>
+<p># TeX string (nice for plots!)
+numubarcc.tex # -&gt; r’{{barnu_mu} , {rm CC}}’</p>
+<p># NuFlavIntGroup
+nkg = flavInt.NuFlavIntGroup(‘numucc,numubarcc’)
+nkg = numucc + numubarcc # works!
+nkg.flavints # -&gt; (numu_cc, numubar_cc)
+nkg.particles # -&gt; (numu_cc,)
+nkg -= numucc # remove a flavInt
+nkg.flavints # -&gt; (numubar_cc,)</p>
+<p># No intType spec=BOTH intTypes
+nkg = flavInt.NuFlavIntGroup(‘numu’)
+nkg.flavints # -&gt; (numu_cc, numu_nc)
+nkg.cc_flavints # -&gt; (numu_cc,)</p>
+<p># Loop over all particle CC flavInts
+for fi in flavInt.NuFlavIntGroup(‘nuallcc’):</p>
+<blockquote>
+<div><p>print(fi)</p>
+</div></blockquote>
+<p># String, TeX
+nkg = flavInt.NuFlavIntGroup(‘nuallcc’)
+print(nkg) # -&gt; ‘nuall_cc’
+nkg.tex # -&gt; r’{nu_{rm all}} , {rm CC}’</p>
+<p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>## Examples of using FlavIntData container object</p>
+<p><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>python
+import numpy as np
+from pisa.utils.flavInt import *</p>
+<p># Old way to instantiate an empty flav/int-type nested dict
+import itertools
+oldfidat = {}
+flavs = [‘nue’, ‘numu’, ‘nutau’]
+int_types = [‘cc’, ‘nc’]
+for baseflav, int_type in itertools.product(flavs, int_types):</p>
+<blockquote>
+<div><dl>
+<dt>for mID in [‘’, ‘_bar’]:</dt><dd><p>flav = baseflav + mID
+if not flav in oldfidat:</p>
+<blockquote>
+<div><p>oldfidat[flav] = {}</p>
+</div></blockquote>
+<p>oldfidat[flav][int_type] = None</p>
+</dd>
+</dl>
+</div></blockquote>
+<p># New way to instantiate, using a FlavIntData object
+fidat = flavInt.FlavIntData()</p>
+<p># Old way to iterate over the old nested dicts
+for baseflav, int_type in itertools.product(flavs, int_types):</p>
+<blockquote>
+<div><dl class="simple">
+<dt>for mID in [‘’, ‘_bar’]:</dt><dd><p>flav = baseflav + mID
+oldfidat[flav][int_type] = {‘map’: np.arange(0,100)}
+m = oldfidat[flav][int_type][‘map’]</p>
+</dd>
+</dl>
+</div></blockquote>
+<p># New way to iterate through a FlavIntData object
+for flavint in ALL_NUFLAVINTS:</p>
+<blockquote>
+<div><p># Store data to flavint node
+fidat[flavint] = {‘map’: np.arange(0,100)}</p>
+<p># Retrieve flavint node, then get the ‘map’ data
+m1 = fidat[flavint][‘map’]</p>
+<p># Retrieve the ‘map’ data in one call (syntax works for all
+# nested dicts, where each subsequent arg is interpreted
+# as a key to a further-nested dict)
+m2 = fidat[flavint][‘map’]
+assert np.alltrue(m1 == m2)</p>
+</div></blockquote>
+<p># But if you really like nested dictionaries, you can still access a
+# FlavIntData object as if it where a nested dict of
+# <cite>[flavor][interaction type]</cite>:
+fidat[‘nue_bar’][‘cc’][‘map’]</p>
+<p># But you can access the element directly, and you can use the full string, and
+# you don’t have to use lower-case, ‘_’ infix between ‘numu’ and ‘bar’, or know
+# the exact structure of data container being used!
+fidat[’ numu bar  CC’][‘map’]</p>
+<p># Get the entire branch starting at ‘numu’
+# (i.e., includes both interaction types)
+fidat[‘numu’] # -&gt; {‘cc’: …, ‘nc’: …}</p>
+<p># Save data to a bzip2-compressed JSON file
+fidat.save(‘data.json.bz2’)</p>
+<p># Save it to a HDF5 file (recognizes ‘h5’, ‘hdf’, and ‘hdf5’ extensions)
+fidat.save(‘data.hdf5’)</p>
+<p># Load, instantiate new object
+fidat2 = flavInt.FlavIntData(‘data.json’)</p>
+<p># Comparisons: intelligently recurses through the
+# structure and any nested sub-structures
+# (lists, dicts) when “==” is used
+print(fidat == fidat2) # -&gt; True</p>
+<p># There is a function for doing this in <cite>pisa.utils.comparisons</cite> that works
+# with (almost) any nested object, including FlavIntData objects::
+from pisa.utils.comparisons import recursiveEquality
+print(recursiveEquality(fidat, fidat2)) # -&gt; True
+<a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+<p>## Examples of using Events container object</p>
+<p><a href="#id17"><span class="problematic" id="id18">``</span></a><a href="#id19"><span class="problematic" id="id20">`</span></a>python
+from pisa.core.events import Events</p>
+<p>ev = Events(‘events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e2evts_set0__unjoined__with_fluxes_honda-2015-spl-solmin-aa.hdf5’)</p>
+<p>print(ev.metadata)
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">Result:</span>
+<span class="pre">```python</span>
+<span class="pre">OrderedDict([('detector',</span> <span class="pre">''),</span> <span class="pre">('geom',</span> <span class="pre">''),</span> <span class="pre">('runs',</span> <span class="pre">[]),</span> <span class="pre">('proc_ver',</span> <span class="pre">''),</span> <span class="pre">('cuts',</span> <span class="pre">[]),</span> <span class="pre">('flavints_joined',</span> <span class="pre">[])])</span>
+<span class="pre">`</span></code></p>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

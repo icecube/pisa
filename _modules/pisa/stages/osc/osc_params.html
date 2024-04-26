@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.osc.osc_params &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.osc.osc_params</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.osc.osc_params</h1><div class="highlight"><pre>
+<span></span><span class="c1"># author: T. Ehrhardt</span>
+<span class="c1"># date:   2018</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">OscParams: Characterize neutrino oscillation parameters</span>
+<span class="sd">           (mixing angles, Dirac-type CP-violating phase, mass splittings)</span>
+
+<span class="sd">changed by Elisa Lohfink (ellohfin; elohfink@icecube.wisc.edu) </span>
+<span class="sd">to include NSI changes made by Thomas Ehrhardt on his branch:  </span>
+<span class="sd">original version can be found in thehrh/pisa nsi_reparameterisation branch </span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;OscParams&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="OscParams">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams">[docs]</a>
+<span class="k">class</span> <span class="nc">OscParams</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Holds neutrino oscillation parameters, i.e., mixing angles, squared-mass</span>
+<span class="sd">    differences, and a Dirac-type CPV phase. The neutrino mixing (PMNS) matrix</span>
+<span class="sd">    constructed from these parameters is given in the standard</span>
+<span class="sd">    3x3 parameterization. Also holds the generalised matter potential matrix</span>
+<span class="sd">    (divided by the matter potential a), i.e. diag(1, 0, 0) for the standard</span>
+<span class="sd">    case.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dm21, dm31, dm41 : float</span>
+<span class="sd">        Mass splittings (delta M^2_{21,31,41}) expected to be given in [eV^2]</span>
+
+<span class="sd">    sin12, sin13, sin23 : float</span>
+<span class="sd">        1-2, 1-3 and 2-3 mixing angles, interpreted as sin(theta_{ij})</span>
+
+<span class="sd">    deltacp : float</span>
+<span class="sd">        Value of CPV phase in [rad]</span>
+
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dm21, dm31, dm41 : float</span>
+<span class="sd">        Cf. parameters</span>
+
+<span class="sd">    sin12, sin13, sin23, sin14 : float</span>
+<span class="sd">        Cf. parameters</span>
+
+<span class="sd">    theta12, theta13, theta23, theta14 : float</span>
+<span class="sd">        Mixing angles (corresponding to sinXY)</span>
+
+<span class="sd">    deltacp : float</span>
+<span class="sd">        Cf. parameters</span>
+
+<span class="sd">    mix_matrix : 3d float array of shape (3, 3, 2)</span>
+<span class="sd">        Neutrino mixing (PMNS) matrix in standard parameterization. The third</span>
+<span class="sd">        dimension holds the real and imaginary parts of each matrix element.</span>
+
+<span class="sd">    mix_matrix_complex : 3d complex array</span>
+
+<span class="sd">    mix_matrix_reparam : 3d float array of shape (3, 3, 2)</span>
+<span class="sd">        Reparameterized neutrino mixing matrix, such that CPT invariance</span>
+<span class="sd">        of vacuum propagation implemented by 3 simultaneous osc. param.</span>
+<span class="sd">        transformations.</span>
+
+<span class="sd">    mix_matrix_reparam_complex : 3d complex array</span>
+
+<span class="sd">    dm_matrix : 2d float array of shape (3, 3)</span>
+<span class="sd">        Antisymmetric matrix of squared-mass differences in vacuum</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sin12</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sin13</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sin23</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sin14</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deltacp</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm21</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm31</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm41</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma21</span> <span class="o">=</span> <span class="mf">0.</span> <span class="c1"># TODO Add full 3x3 matrix option, TODO update docs, TODO getters/setters to enforce values ranges?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma31</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma32</span> <span class="o">=</span> <span class="mf">0.</span>
+
+    <span class="c1"># --- theta12 ---</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sin12</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 1-2 mixing angle&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin12</span>
+
+    <span class="nd">@sin12</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">sin12</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sin12</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">theta12</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sin12</span><span class="p">)</span>
+
+    <span class="nd">@theta12</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">theta12</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="c1"># --- theta13 ---</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sin13</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 1-3 mixing angle&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin13</span>
+
+    <span class="nd">@sin13</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">sin13</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sin13</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">theta13</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sin13</span><span class="p">)</span>
+
+    <span class="nd">@theta13</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">theta13</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="c1"># --- theta23 ---</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sin23</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 2-3 mixing angle&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin23</span>
+
+    <span class="nd">@sin23</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">sin23</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sin23</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">theta23</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sin23</span><span class="p">)</span>
+
+    <span class="nd">@theta23</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">theta23</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="c1"># --- theta14 ---</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sin14</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 1-4 mixing angle&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin14</span>
+
+    <span class="nd">@sin14</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">sin14</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sin14</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">theta14</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sin14</span><span class="p">)</span>
+
+    <span class="nd">@theta14</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">theta14</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sin14</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="c1"># --- deltaCP ---</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">deltacp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;CPV phase&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deltacp</span>
+
+    <span class="nd">@deltacp</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">deltacp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">value</span> <span class="o">&gt;=</span> <span class="mf">0.</span> <span class="ow">and</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deltacp</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mix_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Neutrino mixing matrix in its &#39;standard&#39; form&quot;&quot;&quot;</span>
+        <span class="n">mix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+        <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deltacp</span><span class="p">)</span>
+        <span class="n">cd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deltacp</span><span class="p">)</span>
+
+        <span class="n">c12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">c23</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">c13</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">c12</span> <span class="o">*</span> <span class="n">c13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">cd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">-</span> <span class="n">c12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">cd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">c12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">c12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">cd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="n">c13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">-</span> <span class="n">c12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">cd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">c12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">c12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">cd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">c23</span> <span class="o">*</span> <span class="n">c13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="k">return</span> <span class="n">mix</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mix_matrix_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mixing matrix as complex 2-d array&quot;&quot;&quot;</span>
+        <span class="n">mix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_matrix</span>
+        <span class="k">return</span> <span class="n">mix</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">mix</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.</span><span class="n">j</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mix_matrix_reparam</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Neutrino mixing matrix reparameterised in a way</span>
+<span class="sd">        such that the CPT trafo Hvac -&gt; -Hvac*  is exactly implemented by</span>
+<span class="sd">        the simultaneous transformations</span>
+<span class="sd">            * deltamsq31 -&gt; -deltamsq32</span>
+<span class="sd">            * theta12 -&gt; pi/2 - theta12</span>
+<span class="sd">            * deltacp -&gt; pi - deltacp</span>
+
+<span class="sd">        which hence leave vacuum propagation invariant.</span>
+
+<span class="sd">        This representation follows from the standard form U</span>
+<span class="sd">        as diag(exp(i*deltacp), 0, 0) * U * diag(exp(-i*deltacp), 0, 0).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+        <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deltacp</span><span class="p">)</span>
+        <span class="n">cd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deltacp</span><span class="p">)</span>
+
+        <span class="n">c12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">c23</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">c13</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">c12</span> <span class="o">*</span> <span class="n">c13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c13</span> <span class="o">*</span> <span class="n">cd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c13</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">*</span> <span class="n">cd</span> <span class="o">-</span> <span class="n">c12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">c12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">cd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="n">c13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="n">cd</span> <span class="o">-</span> <span class="n">c12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">c12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">cd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">*</span> <span class="n">c23</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">*</span> <span class="n">sd</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">c23</span> <span class="o">*</span> <span class="n">c13</span>
+        <span class="n">mix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="k">return</span> <span class="n">mix</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mix_matrix_reparam_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reparameterised mixing matrix as complex 2-d array&quot;&quot;&quot;</span>
+        <span class="n">mix_reparam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_matrix_reparam</span>
+        <span class="k">return</span> <span class="n">mix_reparam</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">mix_reparam</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.</span><span class="n">j</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dm_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Neutrino mass splitting matrix in vacuum&quot;&quot;&quot;</span>
+        <span class="n">dmVacVac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">mVac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="mf">5.e-9</span>
+
+        <span class="n">mVac</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">mVac</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm21</span>
+        <span class="n">mVac</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm31</span>
+
+        <span class="c1"># Break any degeneracies</span>
+        <span class="k">if</span> <span class="n">mVac</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">mVac</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-=</span> <span class="n">delta</span>
+        <span class="k">if</span> <span class="n">mVac</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">mVac</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">delta</span>
+
+        <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">mVac</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">mVac</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">mVac</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">mVac</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">mVac</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">mVac</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">dmVacVac</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">dmVacVac</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">test_osc_params</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    # TODO: implement me!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">TARGET</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
+    <span class="k">assert</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="s2">&quot;Cannot test functions on GPU, set PISA_TARGET to &#39;cpu&#39;&quot;</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_osc_params</span><span class="p">()</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
