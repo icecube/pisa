@@ -20,22 +20,6 @@ pisa.utils.llh\_defs.poisson\_gamma\_mixtures module
    :undoc-members:
    :show-inheritance:
 
-pisa.utils.llh\_defs.poisson\_gamma\_mixtures module
-----------------------------------------------------
-
-.. automodule:: pisa.utils.llh_defs.poisson_gamma_mixtures
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pisa.utils.llh\_defs.poisson\_gamma\_mixtures module
-----------------------------------------------------
-
-.. automodule:: pisa.utils.llh_defs.poisson_gamma_mixtures
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

@@ -6,7 +6,7 @@
 
 [Introduction](pisa/README.md) |
 [Installation](INSTALL.md) |
-[Documentation](http://icecube.wisc.edu/%7Epeller/pisa_docs/index.html) |
+[Documentation](https://icecube.github.io/pisa/) |
 [Terminology](pisa/glossary.md) |
 [License](LICENSE) |
 [Contributors](CONTRIBUTORS.md) |

@@ -44,6 +44,22 @@ pisa.stages.data.grid module
    :undoc-members:
    :show-inheritance:
 
+pisa.stages.data.licloader\_weighter module
+-------------------------------------------
+
+.. automodule:: pisa.stages.data.licloader_weighter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pisa.stages.data.meows\_loader module
+-------------------------------------
+
+.. automodule:: pisa.stages.data.meows_loader
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pisa.stages.data.simple\_data\_loader module
 --------------------------------------------
 
@@ -56,6 +72,14 @@ pisa.stages.data.simple\_signal module
 --------------------------------------
 
 .. automodule:: pisa.stages.data.simple_signal
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pisa.stages.data.sqlite\_loader module
+--------------------------------------
+
+.. automodule:: pisa.stages.data.sqlite_loader
    :members:
    :undoc-members:
    :show-inheritance:

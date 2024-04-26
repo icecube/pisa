@@ -12,6 +12,14 @@ Subpackages
 Submodules
 ----------
 
+pisa.stages.osc.decay\_params module
+------------------------------------
+
+.. automodule:: pisa.stages.osc.decay_params
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pisa.stages.osc.decoherence module
 ----------------------------------
 
@@ -32,6 +40,14 @@ pisa.stages.osc.layers module
 -----------------------------
 
 .. automodule:: pisa.stages.osc.layers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pisa.stages.osc.lri\_params module
+----------------------------------
+
+.. automodule:: pisa.stages.osc.lri_params
    :members:
    :undoc-members:
    :show-inheritance:
@@ -64,6 +80,14 @@ pisa.stages.osc.prob3 module
 ----------------------------
 
 .. automodule:: pisa.stages.osc.prob3
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pisa.stages.osc.scaling\_params module
+--------------------------------------
+
+.. automodule:: pisa.stages.osc.scaling_params
    :members:
    :undoc-members:
    :show-inheritance:
