@@ -4,10 +4,42 @@ pisa.stages.flux package
 Submodules
 ----------
 
+pisa.stages.flux.airs module
+----------------------------
+
+.. automodule:: pisa.stages.flux.airs
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pisa.stages.flux.astrophysical module
+-------------------------------------
+
+.. automodule:: pisa.stages.flux.astrophysical
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pisa.stages.flux.barr\_simple module
 ------------------------------------
 
 .. automodule:: pisa.stages.flux.barr_simple
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pisa.stages.flux.daemon\_flux module
+------------------------------------
+
+.. automodule:: pisa.stages.flux.daemon_flux
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pisa.stages.flux.hillasg module
+-------------------------------
+
+.. automodule:: pisa.stages.flux.hillasg
    :members:
    :undoc-members:
    :show-inheritance:

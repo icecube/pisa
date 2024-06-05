@@ -193,10 +193,10 @@ def llh(actual_values, expected_values):
         expected_values = unp.nominal_values(expected_values)
 
     with np.errstate(invalid='ignore'):
-        # Mask off any nan expected values (these are assumed to be ok)
+
+        # Mask off any nan expected values (these can result from bin masking)
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
-
 
         # TODO: How should we handle nan / masked values in the "data"
         # (actual_values) distribution? How about negative numbers?
@@ -254,10 +254,11 @@ def mcllh_mean(actual_values, expected_values):
     expected_values = unp.nominal_values(expected_values).ravel()
 
     with np.errstate(invalid='ignore'):
-        # Mask off any nan expected values (these are assumed to be ok)
+
+        # Mask off any NaN bin/sigma values (resulting from bin masking)
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
-
+        sigma = np.ma.masked_invalid(sigma)
 
         # TODO: How should we handle nan / masked values in the "data"
         # (actual_values) distribution? How about negative numbers?
@@ -313,10 +314,11 @@ def mcllh_eff(actual_values, expected_values):
     expected_values = unp.nominal_values(expected_values).ravel()
 
     with np.errstate(invalid='ignore'):
-        # Mask off any nan expected values (these are assumed to be ok)
+
+        # Mask off any NaN bin/sigma values (resulting from bin masking)
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
-
+        sigma = np.ma.masked_invalid(sigma)
 
         # TODO: How should we handle nan / masked values in the "data"
         # (actual_values) distribution? How about negative numbers?
@@ -566,15 +568,27 @@ def mod_chi2(actual_values, expected_values):
         the inputs
 
     """
-    # Replace 0's with small positive numbers to avoid inf in log
-    np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
-            out=expected_values)
+    in_array_shape = np.shape(actual_values)
     actual_values = unp.nominal_values(actual_values).ravel()
     sigma = unp.std_devs(expected_values).ravel()
     expected_values = unp.nominal_values(expected_values).ravel()
-    m_chi2 = (
-        (actual_values - expected_values)**2 / (sigma**2 + expected_values)
-    )
+
+    with np.errstate(invalid='ignore'):
+        
+        # Mask off any NaN bin/sigma values (resulting from bin masking)
+        actual_values = np.ma.masked_invalid(actual_values)
+        expected_values = np.ma.masked_invalid(expected_values)
+        sigma = np.ma.masked_invalid(sigma)
+
+        # Replace 0's with small positive numbers to avoid inf when denominator is zero
+        np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
+                out=expected_values)
+
+        m_chi2 = (
+            (actual_values - expected_values)**2 / (sigma**2 + expected_values)
+        )
+    
+    m_chi2 = m_chi2.reshape(in_array_shape)
     return m_chi2
 
 def correct_chi2(actual_values, expected_values):

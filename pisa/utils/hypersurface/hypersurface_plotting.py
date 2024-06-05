@@ -22,7 +22,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 import numpy as np
 
-def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None, show_nominal=False, show_offaxis=True, show_zero=False, show_uncertainty=True):
+def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None, hs_label=None, show_nominal=False, show_offaxis=True, show_onaxis=True, show_zero=False, show_uncertainty=True, xlim=None):
     '''
     Plot the hypersurface for a given bin, in 1D w.r.t. to a single specified parameter.
     Plots the following:
@@ -55,6 +55,19 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
 
     show_uncertainty : bool
         Indicate the hypersurface uncertainty on the plot
+
+    show_onaxis : bool
+        Plot the "on-axis" input datasets (meaning those whose only 
+        off-nominal parameter is the one being plotter).
+
+    show_offaxis : bool
+        Plot the "off-axis" input datasets (meaning those with multiple 
+        off-nominal parameter values).
+
+    xlim : tuple or None
+        Optionally, specify the xlim to span when plotting the hypersurface
+        If not specified, will span all input datasets
+
     '''
 
     import matplotlib.pyplot as plt
@@ -88,8 +101,9 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
     y = np.asarray(chosen_bin_values)[on_axis_mask & include_mask]
     yerr = np.asarray(chosen_bin_sigma)[on_axis_mask & include_mask]
 
-    ax.errorbar(x=x, y=y, yerr=yerr, marker="o", color=(
-        "black" if color is None else color), linestyle="None", label=label)
+    if show_onaxis :
+        ax.errorbar(x=x, y=y, yerr=yerr, marker="o", color=(
+            "black" if color is None else color), linestyle="None", label=label)
 
     # Plot off-axis points by projecting them along the fitted surface on the axis.
     if show_offaxis:
@@ -110,13 +124,15 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
                     y=y_projected[~on_axis_mask & include_mask],
                     yerr=yerr[~on_axis_mask & include_mask],
                     marker="o", color=("black" if color is None else color), linestyle="None",
-                    alpha=0.5,
+                    alpha=0.2,
                     )
+
     # Plot the hypersurface
     # Generate as bunch of values along the sys param axis to make the plot
     # Then calculate the hypersurface value at each point, using the nominal values for all other sys params
-    x_plot = np.linspace(np.nanmin(param.fit_param_values),
-                         np.nanmax(param.fit_param_values), num=100)
+    if xlim is None :
+        xlim = (np.nanmin(param.fit_param_values), np.nanmax(param.fit_param_values))
+    x_plot = np.linspace(xlim[0], xlim[1], num=100)
     params_for_plot = {param.name: x_plot, }
     for p in list(hypersurface.params.values()):
         if p.name != param.name:
@@ -124,8 +140,7 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
                 x_plot, hypersurface.nominal_values[p.name])
     y_plot, y_sigma = hypersurface.evaluate(
         params_for_plot, bin_idx=bin_idx, return_uncertainty=True)
-    ax.plot(x_plot, y_plot, color=("red" if color is None else color))
-    # y_sigma = hypersurface.uncertainty(params_for_plot, bin_idx=bin_idx)
+    ax.plot(x_plot, y_plot, color=("red" if color is None else color), label=hs_label)
     if show_uncertainty:
         ax.fill_between(x_plot, y_plot - y_sigma, y_plot + y_sigma,
                         color=("red" if color is None else color), alpha=0.2)
@@ -139,7 +154,13 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
     ax.set_xlabel(param.name)
     ax.grid(True)
     ax.legend()
-    ax.set_ylim((-0.1, 4))
+#    ax.set_ylim((-0.1, 4))
+
+    # Return the hypersurface
+    return_values = [x_plot, y_plot]
+    if show_uncertainty :
+        return_values.append(y_sigma)
+    return tuple(return_values)
 
 
 def plot_bin_fits_2d(ax, hypersurface, bin_idx, param_names):

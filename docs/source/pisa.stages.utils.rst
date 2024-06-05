@@ -20,6 +20,14 @@ pisa.stages.utils.adhoc\_sys module
    :undoc-members:
    :show-inheritance:
 
+pisa.stages.utils.bootstrap module
+----------------------------------
+
+.. automodule:: pisa.stages.utils.bootstrap
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pisa.stages.utils.fix\_error module
 -----------------------------------
 

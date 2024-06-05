@@ -39,7 +39,8 @@ from inspect import getmodule, signature
 from os.path import join
 
 import numpy as np
-
+import os
+# os.environ['PISA_FTYPE'] = 'single' # for checking unit test on single precision
 from pisa import FTYPE
 from pisa.utils.comparisons import ALLCLOSE_KW
 from pisa.utils.fileio import expand, from_file, to_file
@@ -56,14 +57,23 @@ from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import (
     get_transition_matrix_hostfunc,
     get_transition_matrix_massbasis_hostfunc,
     get_H_vac_hostfunc,
+    get_H_decay_hostfunc,
     get_H_mat_hostfunc,
     get_dms_hostfunc,
+    get_dms_numerical_hostfunc,
     get_product_hostfunc,
     convert_from_mass_eigenstate_hostfunc,
 )
 from pisa.stages.osc.nsi_params import (
     StdNSIParams,
     VacuumLikeNSIParams,
+)
+
+from pisa.stages.osc.lri_params import LRIParams
+from pisa.stages.osc.scaling_params import (
+    Mass_scaling,
+    Core_scaling_w_constrain,
+    Core_scaling_wo_constrain,
 )
 
 TEST_DATA_DIR = find_resource("osc/numba_osc_tests_data")
@@ -88,6 +98,12 @@ MAT_DOT_MAT_SUBSCR = "in,nj->ij"
 # NOTE: !!DO NOT CHANGE!! (unless a function is incorrect) tests rely on these
 # ---------------------------------------------------------------------------- #
 
+#lri param
+lri_params = LRIParams()
+lri_params.v_lri = 1e-14
+lri_std_mat_pot = lri_params.potential_matrix_emu
+# print(lri_std_mat_pot)
+
 DEFAULTS = dict(
     energy=1,  # GeV
     state=1,
@@ -104,6 +120,9 @@ DEFAULTS = dict(
     dcp=np.deg2rad(234),
     dm21=7.40e-5,
     dm31=2.494e-3,
+    decay_flag=-1,
+    mat_decay=np.diag([0, 0, -1.0e-4j ]).astype(np.complex128),
+    lri_pot=lri_std_mat_pot,
 )
 
 # define non-0 NSI parameters for non-vacuum NSI
@@ -121,6 +140,23 @@ mat_pot_std_nsi_no = np.diag([1, 0, 0]).astype(np.complex128) + nsi_params.eps_m
 nsi_params = VacuumLikeNSIParams()
 nsi_params.eps_prime = 0.1
 mat_pot_vac_nsi_no = np.diag([1, 0, 0]).astype(np.complex128) + nsi_params.eps_matrix
+
+#mass of earth
+tomography_params= Mass_scaling()
+tomography_params.density_scale =1.2
+scale = tomography_params.density_scale
+
+#mass of core with constraint
+tomography_params= Core_scaling_w_constrain()
+tomography_params.core_density_scale = 0.9
+scale_array_w_constrain = tomography_params.scaling_array
+
+#mass of core without constraint
+tomography_params= Core_scaling_wo_constrain()
+tomography_params.core_density_scale = 0.8
+tomography_params.middlemantle_density_scale= 0.8
+tomography_params.innermantle_density_scale= 0.8
+scale_array_wo_constrain = tomography_params.scaling_factor_array
 
 TEST_CASES = dict(
     nufit32_no=dict(),  # nufit 3.2 normal ordering (also overall) best-fit
@@ -148,6 +184,28 @@ TEST_CASES = dict(
     ),
     nufit32_vac_nsi_no=dict(  # nufit 3.2 normal ordering with non-0 vacuum NSI parameters
         mat_pot=mat_pot_vac_nsi_no,
+    ),
+    nufit32_std_decay_no=dict( # nufit 3.2 normal ordering with no neutrino decay
+        decay_flag=-1,
+        mat_decay=DEFAULTS["mat_decay"],
+    ),
+    nufit32_std_decay=dict( # nufit 3.2 normal ordering with neutrino decay
+        decay_flag=1,
+        mat_decay=DEFAULTS["mat_decay"],
+    ),
+    nufit32_lri_std_mat=dict( #nufit 3.2 lri potential with std matter potential
+        lri_pot = lri_std_mat_pot
+    ),
+    nufit32_mass_of_earth_no=dict(
+        layer_densities=scale*DEFAULTS['layer_densities'],
+    ),
+    nufit32_mass_of_core_w_constrain_no=dict(
+        layer_distances=np.array([1221.50, 2258.50, 2221.0, 450.0, 220.0, 0.0])[::-1],
+        layer_densities=scale_array_w_constrain*np.array([13.0, 13.0, 10.96, 5.03, 3.7, 2.5])[::-1],
+    ),
+    nufit32_mass_of_core_wo_constrain_no=dict(
+        layer_distances=np.array([1221.50, 2258.50, 2221.0, 450.0, 220.0, 0.0])[::-1],
+        layer_densities=scale_array_wo_constrain*np.array([13.0, 13.0, 10.96, 5.03, 3.7, 2.5])[::-1],
     ),
 )
 
@@ -234,6 +292,9 @@ def test_prob3numba(ignore_fails=False, define_as_ref=False):
         tc_["dm"].astype(FX),
         tc_["pmns"].astype(CX),
         tc_["mat_pot"].astype(CX),
+        tc_["decay_flag"],
+        tc_["mat_decay"].astype(CX),
+        tc_["lri_pot"].astype(FX),
         nubars,
         energies,
         tc_["layer_densities"].astype(FX),
@@ -299,7 +360,26 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     logging.debug("\nH_vac = %s", ary2str(test["H_vac"]))
     # keep for use by `get_transition_matrix_hostfunc`
     H_vac_ref = ref["H_vac"]
-
+    
+    tc_ = deepcopy(tc)
+    test, ref = stability_test(
+        func=get_H_decay_hostfunc,
+        func_kw=dict(
+            mix_nubar=tc_["pmns"] if tc_["nubar"] > 0 else tc_["pmns"].conj().T,
+            mix_nubar_conj_transp=(
+                tc_["pmns"].conj().T if tc_["nubar"] > 0 else tc_["pmns"]
+            ),
+            mat_decay=tc_["mat_decay"],
+            #output;
+            H_decay=np.ones(shape=(3, 3), dtype=CX),
+        ),
+        ref_path=join(TEST_DATA_DIR, f"get_H_decay_hostfunc{tf_sfx}"),
+        **st_test_kw,
+    )
+    logging.debug("\nH_decay = %s", ary2str(test["H_decay"]))
+    # keep for use by `get_transition_matrix_hostfunc`
+    H_decay_ref = ref["H_decay"]
+    
     tc_ = deepcopy(tc)
     test, ref = stability_test(
         func=get_H_mat_hostfunc,
@@ -360,6 +440,9 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             dm=tc_["dm"],
             mix=tc_["pmns"],
             mat_pot=tc_["mat_pot"],
+            decay_flag=tc_["decay_flag"],
+            mat_decay=tc_["mat_decay"],
+            lri_pot=tc_["lri_pot"],
             nubar=tc_["nubar"],
             energy=tc_["energy"],
             densities=tc_["layer_densities"],
@@ -371,19 +454,21 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
         **st_test_kw,
     )
     logging.debug("\nmat_prob = %s", ary2str(test["probability"]))
-    # check unitarity
-    check(
-        test=np.sum(test["probability"], axis=0),
-        ref=np.ones(3),
-        label=f"{tc_name} :: propagate_scalar:: sum(matter probability, axis=0)",
-        ignore_fails=ignore_fails,
-    )
-    check(
-        test=np.sum(test["probability"], axis=1),
-        ref=np.ones(3),
-        label=f"{tc_name} :: propagate_scalar :: sum(matter probability, axis=1)",
-        ignore_fails=ignore_fails,
-    )
+    
+    if (tc_["decay_flag"] != 1):
+        # check unitarity
+        check(
+            test=np.sum(test["probability"], axis=0),
+            ref=np.ones(3),
+            label=f"{tc_name} :: propagate_scalar:: sum(matter probability, axis=0)",
+            ignore_fails=ignore_fails,
+        )
+        check(
+            test=np.sum(test["probability"], axis=1),
+            ref=np.ones(3),
+            label=f"{tc_name} :: propagate_scalar :: sum(matter probability, axis=1)",
+            ignore_fails=ignore_fails,
+        )
 
     tc_ = deepcopy(tc)
     test, ref = stability_test(
@@ -399,6 +484,9 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             ),
             mat_pot=tc_["mat_pot"],
             H_vac=H_vac_ref,
+            decay_flag=tc_["decay_flag"],
+            H_decay=H_decay_ref,
+            lri_pot=tc_["lri_pot"],
             dm=tc_["dm"],
             # output:
             transition_matrix=np.ones(shape=(3, 3), dtype=CX),
@@ -431,37 +519,63 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
 
     tc_ = deepcopy(tc)
 
-    # Compute H_full as used in `numba_osc_kernels` to call `get_dms` from
-    # `get_transition_matrix`
-    H_full_ref = H_vac_ref / (2 * tc_["energy"]) + H_mat_ref
-    test, ref = stability_test(
-        func=get_dms_hostfunc,
-        func_kw=dict(
-            energy=tc_["energy"],
-            H_mat=H_full_ref,
-            dm_vac_vac=tc_["dm"],
-            # outputs:
-            dm_mat_mat=np.ones(shape=(3, 3), dtype=CX),
-            dm_mat_vac=np.ones(shape=(3, 3), dtype=CX),
-        ),
-        ref_path=join(TEST_DATA_DIR, f"get_dms_hostfunc{tf_sfx}"),
-        **st_test_kw,
-    )
-    logging.debug("\ndm_mat_mat = %s", ary2str(test["dm_mat_mat"]))
-    logging.debug("\ndm_mat_vac = %s", ary2str(test["dm_mat_vac"]))
-    # keep for use by `get_transition_matrix_massbasis_hostfunc`, `get_product_hostfunc`
-    dm_mat_mat_ref = ref["dm_mat_mat"]
-    dm_mat_vac_ref = ref["dm_mat_vac"]
+    # Compute H_full as used in `numba_osc_kernels` to call `get_dms` for SI case 
+    # and det_dms_numnerical for decay case from `get_transition_matrix`
+    
+    if (tc_["decay_flag"] == 1):
+        
+        H_full_ref = (H_vac_ref + H_decay_ref)/ (2 * tc_["energy"]) + H_mat_ref
+    
+        test, ref = stability_test(
+            func=get_dms_numerical_hostfunc,
+            func_kw=dict(
+                energy=tc_["energy"],
+                H_full=H_full_ref,
+                # outputs:
+                dm_mat_mat=np.ones(shape=(3, 3), dtype=CX),
+                dm_mat=np.ones(shape=(3, 3), dtype=CX),
+            ),
+            ref_path=join(TEST_DATA_DIR, f"get_dms_numerical_hostfunc{tf_sfx}"),
+            **st_test_kw,
+        )
+        logging.debug("\ndm_mat_mat = %s", ary2str(test["dm_mat_mat"]))
+        logging.debug("\ndm_mat = %s", ary2str(test["dm_mat"]))
+        # keep for use by `get_transition_matrix_massbasis_hostfunc`, `get_product_hostfunc`
+        dm_mat_mat_ref = ref["dm_mat_mat"]
+        dm_mat_ref = ref["dm_mat"]
+        
+    else:
+        H_full_ref = H_vac_ref / (2 * tc_["energy"]) + H_mat_ref
+    
+        test, ref = stability_test(
+            func=get_dms_hostfunc,
+            func_kw=dict(
+                energy=tc_["energy"],
+                H_full=H_full_ref,
+                dm_vac_vac=tc_["dm"],
+                # outputs:
+                dm_mat_mat=np.ones(shape=(3, 3), dtype=CX),
+                dm_mat=np.ones(shape=(3, 3), dtype=CX),
+            ),
+            ref_path=join(TEST_DATA_DIR, f"get_dms_hostfunc{tf_sfx}"),
+            **st_test_kw,
+        )
+        logging.debug("\ndm_mat_mat = %s", ary2str(test["dm_mat_mat"]))
+        logging.debug("\ndm_mat = %s", ary2str(test["dm_mat"]))
+        # keep for use by `get_transition_matrix_massbasis_hostfunc`, `get_product_hostfunc`
+        dm_mat_mat_ref = ref["dm_mat_mat"]
+        dm_mat_ref = ref["dm_mat"]
+        
 
     tc_ = deepcopy(tc)
 
-    # Compute same intermediate result `H_mat_mass_eigenstate_basis` as in
+    # Compute same intermediate result `H_full_mass_eigenstate_basis` as in
     # `numba_osc_kernels.get_transition_matrix` which calls
     # `get_transition_matrix_massbasis`
     mix_nubar = tc_["pmns"] if tc_["nubar"] > 0 else tc_["pmns"].conj().T
     mix_nubar_conj_transp = tc_["pmns"].conj().T if tc_["nubar"] > 0 else tc_["pmns"]
-    tmp = np.einsum(MAT_DOT_MAT_SUBSCR, H_mat_ref, mix_nubar)
-    H_mat_mass_eigenstate_basis = np.einsum(
+    tmp = np.einsum(MAT_DOT_MAT_SUBSCR, H_full_ref, mix_nubar)
+    H_full_mass_eigenstate_basis = np.einsum(
         MAT_DOT_MAT_SUBSCR, mix_nubar_conj_transp, tmp
     )
 
@@ -470,9 +584,9 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
         func_kw=dict(
             baseline=tc_["baseline"],
             energy=tc_["energy"],
-            dm_mat_vac=dm_mat_vac_ref,
+            dm_mat=dm_mat_ref,
             dm_mat_mat=dm_mat_mat_ref,
-            H_mat_mass_eigenstate_basis=H_mat_mass_eigenstate_basis,
+            H_full_mass_eigenstate_basis=H_full_mass_eigenstate_basis,
             # output:
             transition_matrix=np.ones(shape=(3, 3), dtype=CX),
         ),
@@ -508,9 +622,9 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
         func=get_product_hostfunc,
         func_kw=dict(
             energy=tc_["energy"],
-            dm_mat_vac=dm_mat_vac_ref,
+            dm_mat=dm_mat_ref,
             dm_mat_mat=dm_mat_mat_ref,
-            H_mat_mass_eigenstate_basis=H_mat_ref,
+            H_full_mass_eigenstate_basis=H_full_ref,
             # output:
             product=np.ones(shape=(3, 3, 3), dtype=CX),
         ),

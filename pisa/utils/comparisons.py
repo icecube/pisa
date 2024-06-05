@@ -143,7 +143,7 @@ def isbarenumeric(x):
         is_bare_numeric = False
     elif isinstance(x, np.ndarray):
         if x.dtype.type not in (
-            np.bool, np.bool_, np.bool8, np.object0, np.object, np.object_
+            np.bool_, np.bool8, np.object0, np.object_
         ):
             is_bare_numeric = True
     elif isinstance(x, Number) and not isinstance(x, bool):
@@ -792,7 +792,7 @@ def test_isunitless():
     assert isunitless(True)
     assert isunitless([0, 1, 2])
     assert isunitless(np.array([0, 1, 2]))
-    assert isunitless(np.array([0, 1, 0], dtype=np.bool))
+    assert isunitless(np.array([0, 1, 0], dtype=bool))
     assert isunitless(ufloat(1, 2))
     assert isunitless(unp.uarray([1, 2], [0.01, 0.002]))
 

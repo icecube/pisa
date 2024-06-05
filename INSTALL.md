@@ -1,6 +1,223 @@
 ## Installation Guide
 
-### Quickstart
+### **Instruction to install PISA on your local machine**
+
+1. Install the essential dependencies
+
+   1. Anaconda (https://www.anaconda.com/)
+      ```bash
+      wget -nc https://repo.anaconda.com/archive/Anaconda3-2023.07-2-Linux-x86_64.sh
+
+      bash Anaconda3-2023.07-2-Linux-x86_64.sh
+      ```
+   2. pip (Python package installer)
+      ```bash
+      conda install pip
+      ```
+   3. git
+      ```bash
+      sudo apt install git
+      ```
+
+   Other required libraries (listed below) will be installed automatically during the setup (listed in `setup.py`).
+
+   - fast-histogram >= 0.10
+   - h5py
+   - iminuit >= 2
+   - line_profiler
+   - llvmlite
+   - matplotlib >= 3.0
+   - nlopt
+   - numba >= 0.53
+   - numpy >=1.17, < 1.23
+   - pandas
+   - pint <=0.19
+   - py-cpuinfo
+   - pyarrow
+   - scikit-learn <= 1.1.2
+   - scipy >= 1.6
+   - simplejson == 3.18.4
+   - sympy
+   - tables
+   - tabulate
+   - tqdm
+   - uncertainties
+   - kiwisolver >= 1.3.1
+   - cycler >= 0.10
+   - packaging >= 20.0
+   - fonttools >= 4.22.0
+   - python-dateutil >= 2.7
+   - pillow >= 8
+   - contourpy >= 1.0.1
+   - pyparsing >= 2.3.1
+   - threadpoolctl >= 2.0.0
+   - joblib >= 1.0.0
+   - numexpr
+   - pytz >= 2020.1
+   - tzdata >= 2022.1
+   - mpmath >= 0.19
+   - blosc2 >= 2.3.0
+   - future
+   - ndindex >= 1.4
+   - msgpack
+   - six >= 1.5
+2. Create conda environment/ virtual environment for the installation of PISA. Assume that the name of the environment is `pisa_env` you can choose your preferred version of python >= 3.10
+
+```bash
+conda create -n pisa_env python=3.10
+```
+
+3. Activate the newly created environment (You can see the name of your environment in the bash shell after the activation)
+
+```bash
+conda activate pisa_env
+```
+
+4. Clone the PISA repository from github (https://github.com/icecube/pisa.git)
+
+```bash
+git clone https://github.com/icecube/pisa.git
+```
+
+5. Install PISA with the following command
+
+```bash
+pip install -e pisa
+```
+
+Arguments:
+
+* `pisa ` directory of source code
+* `-e`  (editable) Installs from source located at `$PISA` (Installed directory - pisa) and  allows for changes to the source code within to be immediately propagated to your Python installation.
+* `-vvv` Be maximally verbose during the install. You'll see lots of messages, including warnings that are irrelevant, but if your installation fails, it's easiest to debug if you use `-vvv`
+* `[develop]` Specify optional dependency groups. You can omit any or all of these if your system does not support them or if you do not need them.
+
+### **Test your installation by running a simple script:**
+
+- Activate your python environment (`pisa_env`)
+
+  ```bash
+  conda activate pisa_env
+  ```
+- Start python interpretator in terminal
+
+  ```bash
+  python
+  ```
+- Import `Pipline` modelue and `matplotlib.pyplot`
+
+  ```python
+  from pisa.core import Pipeline
+  import matplotlib.pyplot as plt
+  ```
+  ```
+  << PISA is running in single precision (FP32) mode; numba is running on CPU (single core) >>
+  ```
+- Load an example pipeline
+
+  ```python
+  template_maker = Pipeline("settings/pipeline/osc_example.cfg")
+  ```
+- Run the pipeline
+
+  ```python
+  template_maker.run()
+  ```
+- Get the oscillation probabilities as a map
+
+  ```python
+  outputs = template_maker.data.get_mapset('prob_mu')
+  ```
+- Plot the oscillogram
+
+  ```python
+  fig, axes = plt.subplots(figsize=(18, 5), ncols=3)
+  outputs['nue_cc'].plot(ax=axes[0], cmap='RdYlBu_r', vmin=0, vmax=1);
+  outputs['numu_cc'].plot(ax=axes[1], cmap='RdYlBu_r', vmin=0, vmax=1);
+  outputs['nutau_cc'].plot(ax=axes[2], cmap='RdYlBu_r', vmin=0, vmax=1);
+  ```
+
+### Instructions to install PISA on Madison working group servers cobalts (current guide from August 2023):
+
+Assuming you already are in the directory where you want to store fridge/pisa source files and the python virtualenv and build pisa. You also need access to github through your account.
+
+
+#### Clone into the fridge and pisa (ideally your own fork):
+
+```
+git clone git@github.com:icecube/wg-oscillations-fridge.git ./fridge
+
+git clone git@github.com:USERNAME/pisa.git ./pisa
+```
+
+
+#### Load cvmfs environment:
+
+```
+unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
+```
+
+`which python` should now point to `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`
+
+**Note:** It's not tested whether this works with a cvmfs version newer than `py3-v4.2.1`.
+
+
+#### Create virtual environment:
+
+```
+python -m venv ./YOUR_PISA_PY3_VENV
+```
+
+
+#### Start the virtual environment and install pisa from source:
+
+```
+source ./YOUR_PISA_PY3_VENV/bin/activate
+```
+
+(should now show that you are in the environment)
+
+```
+pip install -e pisa
+```
+
+
+#### Modify your environment by adding lines to `./YOUR_PISA_PY3_VENV/bin/activate`
+
+Every time you want to use pisa now, you need to activate your virtual environment by running `source ./YOUR_PISA_PY3_VENV/bin/activate`. In order to set some useful environment variables you might want to add the following lines (or more if needed) to the end of the `./YOUR_PISA_PY3_VENV/bin/activate` script:
+
+```
+# PISA source
+export PISA="/data/user/USERNAME/PATH_TO_PISA"
+
+# set some custom environment variables and load fridge
+export PISA_RESOURCES="/data/user/USERNAME/PATH_TO_FRIDGE/analysis/common"
+export PISA_RESOURCES=$PISA_RESOURCES:"/data/user/USERNAME/PATH_TO_FRIDGE/analysis"
+
+source "/data/user/USERNAME/PATH_TO_FRIDGE/setup_fridge.sh"
+
+# Add this project to the python path
+export PYTHONPATH=$FRIDGE_DIR:$PYTHONPATH
+
+# Madison
+export PISA_RESOURCES=/data/ana/LE:$PISA_RESOURCES
+export PISA_RESOURCES=/data/ana/BSM/HNL/:$PISA_RESOURCES
+
+export PISA_RESOURCES=$FRIDGE_DIR:$FRIDGE_DIR/analysis:$FRIDGE_DIR/analysis/YOUR_ANALYSIS/settings:$FRIDGE_DIR/analysis/YOUR_ANALYSIS/analysis:$FRIDGE_DIR/analysis/common:$PISA_RESOURCES
+
+export PISA_CACHE=~/cache/
+export PISA_FTYPE=fp64
+export HDF5_USE_FILE_LOCKING='FALSE'
+```
+
+
+#### Install any additional packages that you might want
+
+`pip install PACKAGE` (for example `jupyter`)
+
+
+
+### Quickstart (old guide)
 
 _Note that terminal commands below are intended for the bash shell. You'll have to translate if you use a different shell._
 
@@ -104,6 +321,7 @@ Optional dependencies. Some of these must be installed manually prior to install
 
 * [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for the `data.licloader_weighter` service. 
 * [MCEq](http://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
+* [daemonflux](https://github.com/mceq-project/daemonflux) Recuired for `flux.daemon_flux` service.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
 * [pandas](https://pandas.pydata.org/) Required for datarelease (csv) stages.
 * [OpenMP](http://www.openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.

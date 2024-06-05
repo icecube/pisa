@@ -1,29 +1,34 @@
-<img src="images/pisa4.png" width="250">
+<img src="images/pisa4_logo_transparent.png" width="250">
+
+[![Unit Tests](https://img.shields.io/github/actions/workflow/status/icecube/pisa/.github/workflows/pythonpackage.yml?label=unit%20tests)](https://github.com/icecube/pisa/actions/workflows/pythonpackage.yml)
+[![Pull Requests](https://img.shields.io/github/issues-pr/icecube/pisa)](https://github.com/icecube/pisa/pulls)
+[![Activity](https://img.shields.io/github/commit-activity/m/icecube/pisa)](https://github.com/icecube/pisa/pulse)
+[![Contributors](https://img.shields.io/github/contributors/icecube/pisa)](https://github.com/icecube/pisa/graphs/contributors)
+[![Repo Stars](https://img.shields.io/github/stars/icecube/pisa?style=social)](https://github.com/icecube/pisa/stargazers)
 
 [Introduction](pisa/README.md) |
 [Installation](INSTALL.md) |
-[Documentation](http://icecube.wisc.edu/%7Epeller/pisa_docs/index.html) |
+[Documentation](https://icecube.github.io/pisa/) |
 [Terminology](pisa/glossary.md) |
-[License](LICENSE) |
-[Contributors](CONTRIBUTORS.md) |
-[Others' work](EXTERNAL_ATTRIBUTION.md)
+[License](LICENSE)
 
 PISA is a software written to analyze the results (or expected results) of an experiment based on Monte Carlo simulation.
 
-In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](https://icecube.wisc.edu/), including the [DeepCore](https://arxiv.org/abs/1109.6096) and the proposed [PINGU](https://arxiv.org/abs/1401.2046) low-energy in-fill arrays.
-However, any such experiment—or any experiment at all—can make use of PISA for analyzing expected and actual results.
+In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](https://icecube.wisc.edu/), including the [DeepCore](https://arxiv.org/abs/1109.6096) and the planned [Upgrade]([https://arxiv.org/abs/2307.15295](https://arxiv.org/pdf/1908.09441.pdf)) low-energy in-fill arrays.
 
-PISA was originally developed to cope with low-statistics Monte Carlo (MC) for PINGU when iterating on multiple proposed geometries by using parameterizations of the MC and operate on histograms of the data rather than directly reweighting the MC (as is traditionally done in high-energy Physics experiments).
-However, PISA's methods apply equally well to high-MC situations, and PISA also performs traditional reweighted-MC analysis as well.
+> [!NOTE]
+> However, any experiment can make use of PISA for analyzing expected and actual results.
 
-If you use PISA, please cite our publication (e-Print available here: https://arxiv.org/abs/1803.05390):
+PISA was originally developed to cope with low-statistics Monte Carlo (MC) by using parameterizations of the MC and operate on histograms of the data rather than directly reweighting the MC. However, PISA's methods apply equally well to high-MC situations, and PISA also performs traditional reweighted-MC analysis as well.
+
+If you use PISA, please cite our publication ([e-Print available here](https://arxiv.org/abs/1803.05390)):
 ```
-"Computational Techniques for the Analysis of Small Signals
-in High-Statistics Neutrino Oscillation Experiments"
-IceCube Collaboration - M.G. Aartsen et al. (Mar 14, 2018)
+Computational Techniques for the Analysis of Small Signals
+in High-Statistics Neutrino Oscillation Experiments
+IceCube Collaboration - M.G. Aartsen et al.
+Mar 14, 2018
 Published in: Nucl.Instrum.Meth.A 977 (2020) 164332
 ```
-
 
 
 # Quick start
@@ -85,3 +90,7 @@ outputs['nutau_cc'].plot(ax=axes[2], cmap='RdYlBu_r', vmin=0, vmax=1);
 
 ![png](README_files/README_10_0.png)
 
+
+# Contributions
+
+Contributors are listed specifically [here](CONTRIBUTORS.md), while the used external software is summarized [here](EXTERNAL_ATTRIBUTION.md).

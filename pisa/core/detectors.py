@@ -30,7 +30,6 @@ from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging, Levels
 from pisa.utils.random_numbers import get_random_state
-from pisa.analysis.analysis import update_param_values_detector
 
 
 __all__ = ['Detectors', 'test_Detectors', 'parse_args', 'main']
@@ -92,6 +91,8 @@ class Detectors(object):
                     n += 1
             if n < 2:
                 raise NameError('Shared param %s only a free param in less than 2 detectors.' % sp)
+        
+        self.init_params()
                 
     def __repr__(self):
         return self.tabulate(tablefmt="presto")
@@ -148,23 +149,23 @@ class Detectors(object):
         return outputs
 
     def update_params(self, params):
-        for distribution_maker in self:
-            distribution_maker.update_params(params)
-
-        #if None in self.det_names: return # No detector names
-
-        if isinstance(params,Param): params = ParamSet(params) # just for the following
-
-        for p in params.names: # now update params with det_names inside
-            for i, det_name in enumerate(self.det_names):
-                if det_name in p:
-                    cp = deepcopy(params[p])
-                    cp.name = cp.name.replace('_'+det_name, "")
-                    self._distribution_makers[i].update_params(cp)
+        if isinstance(params,Param): params = ParamSet(params)
+            
+        for distribution_maker in self.distribution_makers:
+            ps = deepcopy(params)
+            for p in ps.names:
+                if distribution_maker.detector_name in p:
+                    p_name = p.replace('_'+distribution_maker.detector_name, "")
+                    if p_name in ps.names:
+                        ps.remove(p_name)
+                    ps[p].name = p_name
+            distribution_maker.update_params(ps)
+        self.init_params()
 
     def select_params(self, selections, error_on_missing=True):
         for distribution_maker in self:
             distribution_maker.select_params(selections=selections, error_on_missing=error_on_missing)
+        self.init_params()
             
     @property
     def distribution_makers(self):
@@ -172,6 +173,9 @@ class Detectors(object):
 
     @property
     def params(self):
+        return self._params
+    
+    def init_params(self):
         """Returns a ParamSet including all params of all detectors. First the shared params
         (if there are some), then all the "single detector" params. If two detectors use a
         parameter with the same name (but not shared), the name of the detector is added to the
@@ -197,7 +201,7 @@ class Detectors(object):
                     params.extend(changed_param)
                 else:
                     params.extend(param)
-        return params
+        self._params = params
 
     @property
     def shared_param_ind_list(self):
@@ -222,7 +226,7 @@ class Detectors(object):
         selections = None
         for distribution_maker in self:
             if selections != None and sorted(distribution_maker.param_selections) != selections:
-                raise ('Different param_selections for different detectors.')
+                raise AssertionError('Different param_selections for different detectors.')
             selections = sorted(distribution_maker.param_selections)
         return selections
 
@@ -340,6 +344,8 @@ class Detectors(object):
 
 
 def test_Detectors(verbosity=Levels.WARN):
+    from pisa.analysis.analysis import update_param_values_detector
+
     """Run a combination of two DeepCore detectors."""
     p1_nu = Pipeline("settings/pipeline/IceCube_3y_neutrinos.cfg")
     p1_mu = Pipeline("settings/pipeline/IceCube_3y_muons.cfg")
@@ -413,6 +419,7 @@ def test_Detectors(verbosity=Levels.WARN):
     model.reset_free()
     model.params.opt_eff_lateral.value = 20 # shared parameter
     model.params.aeff_scale.value = 2       # only changes value for detector1
+
     update_param_values_detector(model, model.params)
     
     o0 = model.distribution_makers[0].params.opt_eff_lateral.value.magnitude

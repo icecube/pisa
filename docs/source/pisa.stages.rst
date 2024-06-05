@@ -20,17 +20,6 @@ Subpackages
    pisa.stages.utils
    pisa.stages.xsec
 
-Submodules
-----------
-
-pisa.stages.empty\_stage module
--------------------------------
-
-.. automodule:: pisa.stages.empty_stage
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

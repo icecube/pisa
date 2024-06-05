@@ -457,7 +457,7 @@ def parse_param(config, section, selector, fullname, pname, value):
 
     """
     # Note: imports placed here to avoid circular imports
-    from pisa.core.param import Param
+    from pisa.core.param import Param, DerivedParam
     from pisa.core.prior import Prior
     kwargs = dict(name=pname, is_fixed=True, prior=None, range=None)
     try:
@@ -492,6 +492,17 @@ def parse_param(config, section, selector, fullname, pname, value):
         # Strip out uncertainties from value itself (as we will rely on the
         # prior from here on out)
         kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
+
+    if config.has_option(section, fullname+".function_file"):
+        kwargs["function_file"] = config.get(section, fullname+".function_file")
+
+    if config.has_option(section, fullname+".depends_names"):
+        # this means this is a derived parameter, so we throw away the default `fixed` and `prior` kwargs
+        del kwargs['is_fixed']
+        del kwargs['prior']
+
+        depends = config.get(section, fullname+".depends_names")
+        kwargs["depends_names"] = depends.split(" ")
 
     if config.has_option(section, fullname + '.prior'):
         prior = str(config.get(section, fullname + '.prior')).strip().lower()
@@ -534,7 +545,10 @@ def parse_param(config, section, selector, fullname, pname, value):
     if hasattr(value, 'std_dev'):
         value = value.nominal_value * value.units
     try:
-        param = Param(**kwargs)
+        if "depends_names" in kwargs:
+            param = DerivedParam(**kwargs)
+        else:
+            param = Param(**kwargs)
     except:
         logging.error('Failed to instantiate new Param object with kwargs %s',
                       kwargs)
@@ -561,7 +575,7 @@ def parse_pipeline_config(config):
     """
     # Note: imports placed here to avoid circular imports
     from pisa.core.binning import MultiDimBinning, OneDimBinning
-    from pisa.core.param import ParamSelector
+    from pisa.core.param import ParamSelector, DerivedParam
 
     if isinstance(config, str):
         config = from_file(config)
@@ -581,8 +595,10 @@ def parse_pipeline_config(config):
 
     # Create binning objects
     binning_dict = {}
+    # Loop over binning lines
     for name, value in config['binning'].items():
         if name.endswith('.order'):
+            # Found the first line in a new binning, get the individual bin dimension definitions...
             order = split(config.get('binning', name))
             binning, _ = split(name, sep='.')
             bins = []
@@ -621,7 +637,12 @@ def parse_pipeline_config(config):
                         "'%s'\n", bin_name, binning, kwargs
                     )
                     raise
-            binning_dict[binning] = MultiDimBinning(bins, name=binning)
+            # Get the bin mask, if there is ome
+            mask = config['binning'].get(binning + '.mask', None)
+            if mask is not None :
+                mask = eval(mask)
+            # Create the binning object
+            binning_dict[binning] = MultiDimBinning(bins, name=binning, mask=mask)
 
 
     stage_dicts = OrderedDict()
@@ -689,6 +710,7 @@ def parse_pipeline_config(config):
         service_kwargs['params'] = param_selector
 
         n_params = 0
+        n_derived_params = 0
         for fullname in config.options(section):
             try:
                 value = config.get(section, fullname)
@@ -754,6 +776,8 @@ def parse_pipeline_config(config):
                         pname=infodict['pname'],
                         value=value
                     )
+                    if isinstance(param, DerivedParam):
+                        n_derived_params += 1
 
                 param_selector.update(param, selector=infodict['selector'])
 
@@ -801,6 +825,14 @@ def parse_pipeline_config(config):
         # service's keyword args
         if n_params == 0:
             service_kwargs.pop('params')
+
+        # finish setting up the derived parameters 
+        if n_derived_params != 0:
+            for param in param_selector:
+                if isinstance(param, DerivedParam):
+                    # give the derived parameter references to the parameters it depends on 
+                    param.dependson = [param_selector.get(name) for name in param.depends_names]
+                    
 
         # Store the service's kwargs to the stage_dicts
         stage_dicts[(stage, service)] = service_kwargs

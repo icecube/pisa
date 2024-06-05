@@ -11,12 +11,15 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 from numba import guvectorize
 
-from pisa import FTYPE, TARGET, ureg
+from pisa import FTYPE, CTYPE, TARGET, ureg
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.nsi_params import StdNSIParams, VacuumLikeNSIParams
 from pisa.stages.osc.osc_params import OscParams
+from pisa.stages.osc.decay_params import DecayParams
+from pisa.stages.osc.lri_params import LRIParams
+from pisa.stages.osc.scaling_params import Mass_scaling, Core_scaling_w_constrain, Core_scaling_wo_constrain
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
 from pisa.utils.numba_tools import WHERE
@@ -38,6 +41,10 @@ class prob3(Stage):
             YeI : quantity (dimensionless)
             YeO : quantity (dimensionless)
             YeM : quantity (dimensionless)
+            density_scale : quantity (dimensionless)
+            core_density_scale : quantity (dimensionless)
+            innermantle_density_scale : quantity (dimensionless)
+            middlemantle_density_scale : quantity (dimensionless)
             theta12 : quantity (angle)
             theta13 : quantity (angle)
             theta23 : quantity (angle)
@@ -61,6 +68,9 @@ class prob3(Stage):
             eps_mutau_magn : quantity (dimensionless)
             eps_mutau_phase : quantity (angle)
             eps_tautau : quantity (dimensionless)
+            decay_alpha3 : quantity (energy^2)
+            v_lri : quantity (eV)
+
 
     **kwargs
         Other kwargs are handled by Stage
@@ -72,6 +82,9 @@ class prob3(Stage):
       self,
       nsi_type=None,
       reparam_mix_matrix=False,
+      neutrino_decay=False,
+      tomography_type=None,
+      lri_type=None,
       **std_kwargs,
     ):
 
@@ -89,7 +102,8 @@ class prob3(Stage):
           'deltam31',
           'deltacp'
         )
-      
+
+
         # Check whether and if so with which NSI parameters we are to work.
         if nsi_type is not None:
             choices = ['standard', 'vacuum-like']
@@ -101,12 +115,22 @@ class prob3(Stage):
                 )
         self.nsi_type = nsi_type
         """Type of NSI to assume."""
-
+        self.tomography_type = tomography_type
         self.reparam_mix_matrix = reparam_mix_matrix
         """Use a PMNS mixing matrix parameterisation that differs from
            the standard one by an overall phase matrix
            diag(e^(i*delta_CP), 1, 1). This has no impact on
            oscillation probabilities in the *absence* of NSI."""
+        
+        self.neutrino_decay = neutrino_decay
+                
+        if neutrino_decay:
+            self.decay_flag = 1
+        else :
+            self.decay_flag = -1
+            
+        """Invoke neutrino decay with neutrino oscillation."""
+
 
         if self.nsi_type is None:
             nsi_params = ()
@@ -131,7 +155,42 @@ class prob3(Stage):
                           'eps_mutau_phase',
                           'eps_tautau'
             )
-        expected_params = expected_params + nsi_params
+
+        if self.neutrino_decay :
+            decay_params = ('decay_alpha3',)
+        else: 
+            decay_params = ()
+
+        if lri_type is not None:
+            choices = ['emu-symmetry', 'etau-symmetry', 'mutau-symmetry']
+            lri_type = lri_type.strip().lower()
+            if not lri_type in choices:
+                raise ValueError(
+                    'Chosen LRI symmetry type "%s" not available! Choose one of %s.'
+                    % (lri_type, choices)
+                )
+        self.lri_type = lri_type
+        
+        if self.lri_type is None:
+            lri_params = ()
+        else:
+            lri_params = ('v_lri',)
+            
+
+        if self.tomography_type == None:
+            tomography_params = ()
+        elif self.tomography_type == 'mass_of_earth':
+            tomography_params = ('density_scale',)
+        elif self.tomography_type == 'mass_of_core_w_constrain':
+            tomography_params = ('core_density_scale',)
+        elif self.tomography_type == 'mass_of_core_wo_constrain':
+            tomography_params = ('core_density_scale',
+                                 'innermantle_density_scale',
+                                 'middlemantle_density_scale'
+            )
+
+          
+        expected_params = expected_params + nsi_params + decay_params + lri_params + tomography_params
 
         # init base class
         super().__init__(
@@ -143,6 +202,11 @@ class prob3(Stage):
         self.layers = None
         self.osc_params = None
         self.nsi_params = None
+        self.tomography_params = None
+        self.decay_params = None
+        self.decay_matrix = None      
+        self.lri_params = None
+        self.lri_pot = None
         # Note that the interaction potential (Hamiltonian) just scales with the
         # electron density N_e for propagation through the Earth,
         # even(to very good approx.) in the presence of generalised interactions
@@ -172,6 +236,30 @@ class prob3(Stage):
             logging.debug('Working in standard NSI parameterization.')
             self.nsi_params = StdNSIParams()
 
+
+        if self.neutrino_decay:
+            logging.debug('Working with neutrino decay')
+            self.decay_params = DecayParams()
+         
+        if self.lri_type is not None:
+            logging.debug('Working with LRI')
+            self.lri_params = LRIParams()
+
+
+        if self.tomography_type == "mass_of_earth":
+            logging.debug('Working with a single density scaling factor.')
+            self.tomography_params = Mass_scaling()
+        elif self.tomography_type == "mass_of_core_w_constrain":
+            logging.debug('Working with different scaling for different layers.')
+            self.tomography_params = Core_scaling_w_constrain()
+        elif self.tomography_type == "mass_of_core_wo_constrain":
+            logging.debug('Working without any external constraints')
+            self.tomography_params = Core_scaling_wo_constrain()
+            
+
+
+
+
         # setup the layers
         #if self.params.earth_model.value is not None:
         earth_model = find_resource(self.params.earth_model.value)
@@ -182,6 +270,7 @@ class prob3(Stage):
         detector_depth = self.params.detector_depth.value.m_as('km')
         self.layers = Layers(earth_model, detector_depth, prop_height)
         self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
+
 
         # --- calculate the layers ---
         if self.is_map:
@@ -221,9 +310,18 @@ class prob3(Stage):
             mix_matrix = self.osc_params.mix_matrix_reparam_complex
         else:
             mix_matrix = self.osc_params.mix_matrix_complex
+            
+        logging.debug('mat pot:\n%s'
+                          % self.gen_mat_pot_matrix_complex)
+        logging.debug('decay mat:\n%s'
+                          % self.decay_matix)
+            
         propagate_array(self.osc_params.dm_matrix, # pylint: disable = unexpected-keyword-arg, no-value-for-parameter
                         mix_matrix,
                         self.gen_mat_pot_matrix_complex,
+                        self.decay_flag,
+                        self.decay_matix,
+                        self.lri_pot,
                         nubar,
                         e_array,
                         rho_array,
@@ -244,6 +342,7 @@ class prob3(Stage):
         YeI = self.params.YeI.value.m_as('dimensionless')
         YeO = self.params.YeO.value.m_as('dimensionless')
         YeM = self.params.YeM.value.m_as('dimensionless')
+
         if YeI != self.YeI or YeO != self.YeO or YeM != self.YeM:
             self.YeI = YeI; self.YeO = YeO; self.YeM = YeM
             self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
@@ -251,6 +350,7 @@ class prob3(Stage):
                 self.layers.calcLayers(container['true_coszen'])
                 container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
                 container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
+                
 
         # some safety checks on units
         # trying to avoid issue of angles with no dimension being assumed to be radians
@@ -290,6 +390,28 @@ class prob3(Stage):
                 self.params.eps_mutau_phase.value.m_as('rad'))
             )
             self.nsi_params.eps_tautau = self.params.eps_tautau.value.m_as('dimensionless')
+        if self.neutrino_decay:
+            self.decay_params.decay_alpha3 = self.params.decay_alpha3.value.m_as('eV**2')
+            
+        if self.lri_type is not None:
+            self.lri_params.v_lri = self.params.v_lri.value.m_as('eV')
+        if self.tomography_type is not None:
+            if self.tomography_type == "mass_of_earth":
+                    self.tomography_params.density_scale = self.params.density_scale.value.m_as('dimensionless')
+                    self.layers.scaling(scaling_array=self.tomography_params.density_scale)
+            elif self.tomography_type == "mass_of_core_w_constrain":
+                    self.tomography_params.core_density_scale = self.params.core_density_scale.value.m_as('dimensionless')
+                    self.layers.scaling(scaling_array=self.tomography_params.scaling_array)
+            elif self.tomography_type == "mass_of_core_wo_constrain":
+                    self.tomography_params.core_density_scale = self.params.core_density_scale.value.m_as('dimensionless')
+                    self.tomography_params.innermantle_density_scale = self.params.innermantle_density_scale.value.m_as('dimensionless')
+                    self.tomography_params.middlemantle_density_scale = self.params.middlemantle_density_scale.value.m_as('dimensionless')
+                    self.layers.scaling(scaling_array=self.tomography_params.scaling_factor_array)
+            self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)        
+            for container in self.data:
+                self.layers.calcLayers(container['true_coszen'])
+                container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
+                        
 
         # now we can proceed to calculate the generalised matter potential matrix
         std_mat_pot_matrix = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3, 3), dtype=FTYPE)
@@ -307,6 +429,25 @@ class prob3(Stage):
             self.gen_mat_pot_matrix_complex = std_mat_pot_matrix
             logging.debug('Using standard matter potential:\n%s'
                           % self.gen_mat_pot_matrix_complex)
+            
+        if self.neutrino_decay:
+            self.decay_matix = self.decay_params.decay_matrix
+            logging.debug('Decay matrix:\n%s' % self.decay_params.decay_matrix)
+        else :
+            self.decay_matix = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3, 3), dtype=FTYPE)
+            
+        self.lri_pot = np.zeros((3, 3), dtype=FTYPE)
+        types_lri = ['emu-symmetry', 'etau-symmetry', 'etau-symmetry']
+        if self.lri_type is not None:               
+            if self.lri_type == 'emu-symmetry':
+                self.lri_pot = self.lri_params.potential_matrix_emu
+            elif self.lri_type == 'etau-symmetry':
+                self.lri_pot = self.lri_params.potential_matrix_etau
+            elif self.lri_type == 'mutau-symmetry':
+                self.lri_pot = self.lri_params.potential_matrix_mutau    
+            else:
+                raise Exception("Implemented symmetries are" % types_lri)
+            
 
         for container in self.data:
             self.calc_probs(container['nubar'],

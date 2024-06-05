@@ -25,3 +25,10 @@ For some more information on the second of these choices, and why it is a more a
 [NuFlux on the IceCube wiki](https://wiki.icecube.wisc.edu/index.php/NuFlux)
 
 Since this is a link on the IceCube wiki, you will need the access permissions for this page.
+
+### daemonflux
+
+Implementation of DAEMONFLUX based on [https://arxiv.org/abs/2303.00022]. 
+For the example use see jupyter notebook `pisa_examples/test_daemonflux_stage.ipynb`, as well as an example config file at `pisa_examples/resources/settings/pipeline/IceCube_3y_neutrinos_daemon.cfg`. 
+
+Important: [daemonflux](https://github.com/mceq-project/daemonflux) pyhon package is required dependency for this stage.

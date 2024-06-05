@@ -20,6 +20,14 @@ pisa.stages.aeff.weight module
    :undoc-members:
    :show-inheritance:
 
+pisa.stages.aeff.weight\_hnl module
+-----------------------------------
+
+.. automodule:: pisa.stages.aeff.weight_hnl
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

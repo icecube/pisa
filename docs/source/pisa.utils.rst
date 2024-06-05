@@ -29,6 +29,14 @@ pisa.utils.barr\_parameterization module
    :undoc-members:
    :show-inheritance:
 
+pisa.utils.callable module
+--------------------------
+
+.. automodule:: pisa.utils.callable
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pisa.utils.comparisons module
 -----------------------------
 

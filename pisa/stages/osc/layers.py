@@ -198,7 +198,6 @@ class Layers(object):
     prop_height : float
         the production height of the neutrinos in the atmosphere in km (?)
 
-
     Attributes
     ----------
     max_layers : int
@@ -230,17 +229,17 @@ class Layers(object):
         # Load earth model
         if prem_file is not None :
             self.using_earth_model = True
-            prem = from_file(prem_file, as_array=True)
+            self.prem = from_file(prem_file, as_array=True)
 
             # The following radii and densities are extracted in reverse order
             # w.r.t the file. The first elements of the arrays below corresponds
             # the Earth's surface, and the following numbers go deeper toward the 
             # planet's core
-            self.rhos_unweighted = prem[..., 1][::-1].astype(FTYPE)
-            self.rhos = prem[..., 1][::-1].astype(FTYPE)
-            self.rhos_neutron_weighted = prem[..., 1][::-1].astype(FTYPE)
-            self.radii = prem[..., 0][::-1].astype(FTYPE)
-            r_earth = prem[-1][0]
+            self.rhos_unweighted = self.prem[..., 1][::-1].astype(FTYPE)
+            self.rhos = self.prem[..., 1][::-1].astype(FTYPE)
+            self.rhos_neutron_weighted = self.prem[..., 1][::-1].astype(FTYPE)
+            self.radii = self.prem[..., 0][::-1].astype(FTYPE)
+            r_earth = self.prem[-1][0]
             self.default_elec_frac = 0.5
 
             # Add an external layer corresponding to the atmosphere / production boundary
@@ -300,6 +299,23 @@ class Layers(object):
         # re-weight the layer densities accordingly
         self.weight_density_to_YeFrac()
         self.weight_density_to_YnFrac()
+
+    def scaling(self, scaling_array):
+        """
+        Multplies scaling factor with densities from earth model
+
+        Parameters
+        ----------
+        scaling_array : numpy array containing scaling factors for different layers.        
+        """
+        
+        if self.using_earth_model and hasattr(self, 'prem'):
+            self.rhos = self.prem[..., 1][::-1].astype(FTYPE)
+            if scaling_array is not None:
+                self.rhos = self.rhos * scaling_array
+            self.rhos = np.concatenate((np.ones(1, dtype=FTYPE), self.rhos))      
+        else:
+            raise ValueError("Cannot scale densities when not using an Earth model")
 
     def computeMinLengthToLayers(self):
         '''

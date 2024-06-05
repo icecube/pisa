@@ -970,6 +970,7 @@ class OneDimBinning(object):
             self._edges_hash = hash_obj(bin_edges)
         return self._edges_hash
 
+
     @property
     def bin_widths(self):
         """Absolute widths of bins."""
@@ -1549,7 +1550,7 @@ class MultiDimBinning(object):
 
     """
     # pylint: enable=line-too-long
-    def __init__(self, dimensions, name=None):
+    def __init__(self, dimensions, name=None, mask=None):
         self.__map_class = None
 
         if isinstance(dimensions, OneDimBinning):
@@ -1582,8 +1583,62 @@ class MultiDimBinning(object):
         self._size = None
         self._shape = None
         self._hashable_state = None
+        self._mask_hash = None
         self._coord = None
         self._name = name
+
+        # Handle masking
+        self._init_mask(mask) 
+
+
+    def _init_mask(self, mask) :
+        '''
+        Initialize the bin mask. This can either be specified as:
+          (1) an array matching the bin dimensions with values True/False (e.g. a `mask`), where False means "masked off"
+          (2) A list of bin indices to mask off
+        '''
+
+        #TODO helper functions: get coords of masked bins, etc
+
+        # Bail out if no mask provided
+        if mask is None :
+            self._mask = None
+            return
+
+        # Check format of input `mask` arg
+        if isinstance(mask, np.ndarray) and (mask.dtype == bool) : # Is it a boolean array (e.g. a mask)?
+
+            #
+            # "Mask" case
+            #
+
+            # Just use the mask as provided
+            # Do some checks first
+            assert self.shape == mask.shape
+
+
+        else :
+
+            #
+            # "List of indices" case
+            #
+
+            # Get the indices
+            indices = mask
+
+            # Init a mask with all True
+            mask = np.full(self.shape, True, dtype=bool)
+
+            # Loop over indices and set those mask elements to False
+            for idx in indices :
+                try: # Handle index formatting and checks
+                    mask[idx] = False
+                except ValueError:
+                    raise ValueError(f"Bin mask index {idx} not valid for binning shape {self.shape}")
+
+        # Done, store the mask
+        self._mask = mask
+
 
     @property
     def name(self):
@@ -1736,6 +1791,11 @@ class MultiDimBinning(object):
         return self._num_dims
 
     @property
+    def mask(self):
+        """array : return the bin mask"""
+        return self._mask
+
+    @property
     def shape(self):
         """tuple : shape of binning, akin to `nump.ndarray.shape`"""
         if self._shape is None:
@@ -1774,6 +1834,14 @@ class MultiDimBinning(object):
             dim.normalize_values = b
 
     @property
+    def mask_hash(self):
+        """Hash value based *solely* upon the mask.
+        """
+        if self._mask_hash is None:
+            self._mask_hash = hash_obj(self.mask)
+        return self._mask_hash
+
+    @property
     def serializable_state(self):
         """Attributes of the object that are stored to disk. Note that
         attributes may be returned as references to other objects, so to
@@ -1787,8 +1855,10 @@ class MultiDimBinning(object):
             `MultiDimBinning(**state)`
 
         """
+
         d = OrderedDict({'dimensions': [d.serializable_state for d in self]})
         d['name'] = self.name
+        d['mask'] = self.mask
         return d
 
     @property
@@ -1805,13 +1875,20 @@ class MultiDimBinning(object):
 
         """
         if self._hashable_state is None:
+
             state = OrderedDict()
             # TODO: Shouldn't order matter?
             #state['dimensions'] = [self[name]._hashable_state
             #                       for name in sorted(self.names)]
             state['dimensions'] = [d.hashable_state for d in self]
             state['name'] = self.name
+
+            mask_hash = self.mask_hash
+            if mask_hash is not None :
+                state['mask_hash'] = mask_hash
+
             self._hashable_state = state
+
         return self._hashable_state
 
     @property
@@ -1825,6 +1902,7 @@ class MultiDimBinning(object):
         """
         state = OrderedDict()
         state['dimensions'] = [d.normalized_state for d in self]
+        state['mask'] = self.mask
         return state
 
     @property
@@ -1883,13 +1961,22 @@ class MultiDimBinning(object):
 
     @property
     def num_bins(self):
-        """Return a list of the contained dimensions' num_bins."""
+        """
+        Return a list of the contained dimensions' num_bins.
+        Note that this does not accpunt for any bin mask (since it is computed per dimension)
+        """
         return [d.num_bins for d in self]
 
     @property
     def tot_num_bins(self):
-        """Return total number of bins."""
-        return np.product(self.num_bins)
+        """
+        Return total number of bins.
+        If a bin mask is used, this will only count bins that are not masked off
+        """
+        if self.mask is None :
+            return np.product(self.shape)
+        else :
+            return np.sum(self.mask.astype(int))
 
     @property
     def units(self):
@@ -2413,6 +2500,9 @@ class MultiDimBinning(object):
         )
 
         """
+
+        assert self.mask is None, "`oversample` function does not currenty support bin masking"
+
         if args:
             assert len(args) in [1, len(self)]
         elif kwargs:
@@ -2462,6 +2552,9 @@ class MultiDimBinning(object):
             Same, but oversample (upsample) a OneDimBinning object
 
         """
+
+        assert self.mask is None, "`downsample` function does not currenty support bin masking"
+
         if args:
             assert len(args) in [1, len(self)]
         elif kwargs:
@@ -2531,6 +2624,9 @@ class MultiDimBinning(object):
         MultiDimBinning with only non-singleton dimensions
 
         """
+
+        assert self.mask is None, "`squeeze` function does not currenty support bin masking"
+
         return MultiDimBinning(d for d in self if len(d) > 1)
 
     def _args_kwargs_to_list(self, *args, **kwargs):
@@ -2876,10 +2972,22 @@ class MultiDimBinning(object):
         by `index`. Whether or not behavior is logarithmic is unchanged.
 
         """
+
+        # If ellipsis, return everything
         if index is Ellipsis:
             return self
 
+        # If arg is a string, it should specify a dimension
+        # Check if it doesn, and if so return that OneDimBinning for that dimension
         if isinstance(index, str):
+
+            # Check there is no mask defined (a mask does not make sense on a per dimension basis, 
+            # so cannot apply this operation when masking is involved)
+            #TODO Removed for now as causes issues, need to come back to think about this...
+            # if self.mask is not None :
+            #     raise ValueError("Cannot extract a single binning dimension when a mask is used") #TODO This gets called duign deepcopy with index==__deppcopy__??!?!? If I assert instead of using ValueError theneverything fails. Not sure what is going on here...
+
+            # Find the dimension
             for d in self.iterdims():
                 if d.name == index:
                     return d
@@ -2890,12 +2998,27 @@ class MultiDimBinning(object):
         #if self.num_dims == 1 and np.isscalar(index):
         #    return self._dimensions[0]
 
+        # If here, the index is a numerical, numpy-comaptible index
+        # Do some pre-processing on it to get it in the right format...
         if isinstance(index, Iterable) and not isinstance(index, Sequence):
             index = list(index)
 
         if not isinstance(index, Sequence):
             index = [index]
 
+        # Turn any inetger indices into an equivalent single element slice
+        # This ensures the array dimensionality is maintained
+
+        if isinstance(index, tuple):
+            index = list(index)
+
+        for i, idx in enumerate(index):
+            if isinstance(idx, int) and idx >= 0 : index[i] =  slice(idx, idx+1, None)
+            elif isinstance(idx, int) and idx < 0 : index[i] =  slice(idx+1, idx, None)
+            elif isinstance(idx, slice): index[i] = idx
+            else: raise ValueError('Binning idx is %s, int or slice is needed'%idx)
+
+        # Get the new binning, based on the index
         input_dim = len(index)
         if input_dim != self.num_dims:
             raise ValueError('Binning is %dD, but %dD indexing was passed'
@@ -2904,7 +3027,10 @@ class MultiDimBinning(object):
         new_binning = {'dimensions': [dim[idx] for dim, idx in
                                       zip(self.iterdims(), index)]}
 
-        return MultiDimBinning(**new_binning)
+        # Also update mask, if there is one
+        new_mask = None if self.mask is None else self.mask[index]
+
+        return MultiDimBinning(**new_binning, mask=new_mask)
 
     def __iter__(self):
         """Iterate over dimensions. Use `iterbins` to iterate over bins."""

@@ -109,7 +109,8 @@ class Stage():
         # Get the params from the ParamSelector, validate, and set as the
         # params object for this stage
         p = self._param_selector.params
-        self._check_params(p)
+
+        self._check_params(p, p.has_derived)
         self.validate_params(p)
         self._params = p
 
@@ -180,10 +181,12 @@ class Stage():
                 "`selections` = %s yielded `params` = %s" % (selections, self.params)
             )
 
-    def _check_params(self, params):
+    def _check_params(self, params, ignore_excess = False):
         """Make sure that `expected_params` is defined and that exactly the
         params specified in self.expected_params are present.
 
+        An exception is made for having excess parameters if `ignore_excess` is True
+        This is useful for stages with `DerivedParams` that are used, but not explicitly accessed by the stage 
         """
         assert self.expected_params is not None
         exp_p, got_p = set(self.expected_params), set(params.names)
@@ -192,14 +195,23 @@ class Stage():
         excess = got_p.difference(exp_p)
         missing = exp_p.difference(got_p)
         err_strs = []
-        if len(excess) > 0:
-            err_strs.append("Excess params provided: %s" % ", ".join(sorted(excess)))
         if len(missing) > 0:
             err_strs.append("Missing params: %s" % ", ".join(sorted(missing)))
+            
+        
+        if len(excess) > 0:
+            if ignore_excess: #excess isn't a problem 
+                if len(err_strs)==0: # return if there aren't any problems already 
+                    return 
+            else:
+                err_strs.append("Excess params provided: %s" % ", ".join(sorted(excess)))
+
         raise ValueError(
             "Expected parameters: %s;\n" % ", ".join(sorted(exp_p))
             + ";\n".join(err_strs)
         )
+        
+        
 
     @property
     def params(self):

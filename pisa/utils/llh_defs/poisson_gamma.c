@@ -364,11 +364,3 @@ void multi_pgg(int k, double *A, double *B, double *Q, double *kmc, double *gamm
     *res=log_sum_two_vecs_inverse(temp_conv_vec, intermediate_results[nsources-1], k+1);
 
 }
-
-
-
-
-
-
-
-
