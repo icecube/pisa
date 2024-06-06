@@ -388,6 +388,9 @@ class VacuumLikeNSIParams(NSIParams):
     def eps_matrix_analytical(self):
         """Effective NSI coupling matrix calculated analytically."""
         # Analytical relations. These are wrong right now! #FIXME
+
+        logging.warning("Warning: the analytical NSI matrix is not yet properly implemented. Instead, use the numerical NSI matrix.")
+        
         nsi_eps = np.zeros((3, 3, 2), dtype=FTYPE)
 
         sp12 = np.sin(self.phi12)
