@@ -2,15 +2,15 @@
 
 [![Unit Tests](https://img.shields.io/github/actions/workflow/status/icecube/pisa/.github/workflows/pythonpackage.yml?label=unit%20tests)](https://github.com/icecube/pisa/actions/workflows/pythonpackage.yml)
 [![Pull Requests](https://img.shields.io/github/issues-pr/icecube/pisa)](https://github.com/icecube/pisa/pulls)
-![Repo Stars](https://img.shields.io/github/stars/icecube/pisa?style=social)
+[![Activity](https://img.shields.io/github/commit-activity/m/icecube/pisa)](https://github.com/icecube/pisa/pulse)
+[![Contributors](https://img.shields.io/github/contributors/icecube/pisa)](https://github.com/icecube/pisa/graphs/contributors)
+[![Repo Stars](https://img.shields.io/github/stars/icecube/pisa?style=social)](https://github.com/icecube/pisa/stargazers)
 
 [Introduction](pisa/README.md) |
 [Installation](INSTALL.md) |
 [Documentation](https://icecube.github.io/pisa/) |
 [Terminology](pisa/glossary.md) |
-[License](LICENSE) |
-[Contributors](CONTRIBUTORS.md) |
-[Others' work](EXTERNAL_ATTRIBUTION.md)
+[License](LICENSE)
 
 PISA is a software written to analyze the results (or expected results) of an experiment based on Monte Carlo simulation.
 
@@ -90,3 +90,7 @@ outputs['nutau_cc'].plot(ax=axes[2], cmap='RdYlBu_r', vmin=0, vmax=1);
 
 ![png](README_files/README_10_0.png)
 
+
+# Contributions
+
+Contributors are listed specifically [here](CONTRIBUTORS.md), while the used external software is summarized [here](EXTERNAL_ATTRIBUTION.md).
