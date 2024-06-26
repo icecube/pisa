@@ -107,7 +107,7 @@ def test_covariance(verbosity=Levels.WARN):
 
 
     
-    llh_sum = pipe.params["opt_eff_headon_rotated"].prior_llh + pipe.params["opt_eff_lateral_rotated"].prior_llh
+    llh_sum = pipe.params["opt_eff_headon_rotated"].prior_penalty(metric='llh') + pipe.params["opt_eff_lateral_rotated"].prior_penalty(metric='llh')
     direct = eval_as_xs(xs)
     assert abs(llh_sum-direct)<eps, "Difference in llhs {} vs {}".format(llh_sum, direct)
 
