@@ -573,10 +573,12 @@ class Map(object):
     def plot(self, symm=False, logz=False, vmin=None, vmax=None, backend=None,
              ax=None, title=None, cmap=None, clabel=None, clabelsize=None,
              xlabelsize=None, ylabelsize=None, titlesize=None, fig_kw=None,
-             pcolormesh_kw=None, colorbar_kw=None, outdir=None, fname=None,
-             fmt=None, binlabel_format=None, binlabel_colors=["white", "black"],
-             binlabel_color_thresh=None, binlabel_stripzeros=True, dpi=300,
-             bad_color=None):
+             pcolormesh_kw=None, colorbar_kw=None, colorbar_label_kw=None,
+             outdir=None, fname=None, fmt=None, binlabel_format=None,
+             binlabel_colors=["white", "black"], binlabel_color_thresh=None,
+             binlabel_stripzeros=True, dpi=300, bad_color=None,
+             pure_bin_names=False
+             ):
         """Plot a 2D map.
 
         Parameters
@@ -624,6 +626,9 @@ class Map(object):
         colorbar_kw : mapping, optional
             Keyword arguments to pass to call to `matplotlib.colorbar`.
 
+        colorbar_label_kw : mapping, optional
+            Keyword arguments to pass to call to `matplotlib.colorbar.set_label`.
+
         fmt : string in ('pdf', 'png') or iterable thereof, optional
             File format(s) in which to save the file. If None, then the plot
             will not be saved.
@@ -661,7 +666,9 @@ class Map(object):
         dpi : int, optional
             Dots per inch for saved figure. Default: 300
         bad_color : string, optional
-            Can choose the color used for "bad" bins (e.g. NaN) 
+            Can choose the color used for "bad" bins (e.g. NaN)
+        pure_bin_names : bool, optional
+            If True, use the (third dimension) bin names as they are defined in binning config, without any formatting.
 
         Returns
         -------
@@ -695,6 +702,7 @@ class Map(object):
         fig_kw = {} if fig_kw is None else fig_kw
         pcolormesh_kw = {} if pcolormesh_kw is None else pcolormesh_kw
         colorbar_kw = {} if colorbar_kw is None else colorbar_kw
+        colorbar_label_kw = {} if colorbar_label_kw is None else colorbar_label_kw
         if fmt is not None:
             if isinstance(fmt, string_types):
                 fmt = [fmt]
@@ -705,8 +713,9 @@ class Map(object):
                 mkdir(outdir, warn=False)
 
         if ax is None:
-            fig = plt.figure(**fig_kw)
-            ax = fig.add_subplot(111)
+            # fig = plt.figure(**fig_kw)
+            # ax = fig.add_subplot(111)
+            fig, ax = plt.subplots(**fig_kw)
         else:
             fig = ax.figure
 
@@ -735,13 +744,13 @@ class Map(object):
                 small_axes.append(divider.append_axes("right", size="100%", pad=0.1, sharey=ax))
                 small_axes[-1].yaxis.set_visible(False)
 
-            for bin_idx, to_plot in enumerate(self.split(smallest_dim)):
+            for bin_idx, to_plot in enumerate(self.split(smallest_dim, pure_bin_names=pure_bin_names)):
                 _, _, pcmesh, colorbar = to_plot.plot(
                     symm=symm, logz=logz, vmin=vmin, vmax=vmax,
                     ax=small_axes[bin_idx], cmap=cmap, clabel=clabel,
                     clabelsize=clabelsize, xlabelsize=xlabelsize,
                     ylabelsize=ylabelsize, titlesize=titlesize,
-                    pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw,
+                    pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw, colorbar_label_kw=colorbar_label_kw,
                     binlabel_format=binlabel_format, binlabel_colors=["white", "black"],
                     binlabel_color_thresh=binlabel_color_thresh, binlabel_stripzeros=binlabel_stripzeros,
                     )
@@ -844,10 +853,10 @@ class Map(object):
                                 verticalalignment='center',
                                 color=txtcolor,
                                 fontsize=10)
-        colorbar = plt.colorbar(mappable=pcmesh, ax=ax, **colorbar_kw)
+        colorbar = fig.colorbar(mappable=pcmesh, ax=ax, **colorbar_kw)
         colorbar.ax.tick_params(labelsize='large')
         if clabel is not None:
-            colorbar.set_label(label=clabel, size=clabelsize)
+            colorbar.set_label(label=clabel, size=clabelsize, **colorbar_label_kw)
 
         xlabel = '$%s$' % to_plot.binning.dims[0].label
         ylabel = '$%s$' % to_plot.binning.dims[1].label
@@ -867,6 +876,7 @@ class Map(object):
 
         if fmt is not None:
             for fmt_ in fmt:
+                fig.tight_layout()
                 path = os.path.join(outdir, fname + '.' + fmt_)
                 fig.savefig(path, dpi=dpi)
                 logging.debug('>>>> Plot for inspection saved at %s', path)
@@ -1378,7 +1388,7 @@ class Map(object):
     # and return a MapSet with a map per bin; append '__%s__%s' %(dim_name,
     # bin_name) to this map's name to name each new map, and if no bin names
     # are given, use str(int(ind)) instead for bin_name.
-    def split(self, dim, bin=None, use_basenames=False):
+    def split(self, dim, bin=None, use_basenames=False, pure_bin_names=False):
         """Split this map into one or more maps by selecting the `dim`
         dimension and optionally the specific bin(s) within that dimension
         specified by `bin`.
@@ -1463,6 +1473,7 @@ class Map(object):
             if bin.bin_names is not None:
                 bin_name = bin.bin_names[0]
                 bin_tex = '=' + text2tex(bin_name)
+                pure_bin_tex = text2tex(bin_name)
             else:
                 bin_name = 'bin_%d' % bin_index
                 bin_tex = r'{\;}bin{\;}%d' % bin_index
@@ -1473,7 +1484,10 @@ class Map(object):
                     name_elements.append(s)
             new_name = '_'.join(name_elements)
 
-            new_tex = self.tex + ',' + r'{\;}' + spliton_dim.tex + bin_tex
+            if pure_bin_names:
+                new_tex = pure_bin_tex
+            else:
+                new_tex = self.tex + ',' + r'{\;}' + spliton_dim.tex + bin_tex
 
             maps.append(
                 Map(name=new_name, hist=new_hist, binning=new_binning,

@@ -783,7 +783,7 @@ class OneDimBinning(object):
         if self.units == ureg.dimensionless:
             units_tex = ''
         else:
-            units_tex = r' \; \left( {:~L} \right)'.format(self.units)
+            units_tex = r' \; \left[ {:~L} \right]'.format(self.units)
 
         return name_tex + units_tex
 
