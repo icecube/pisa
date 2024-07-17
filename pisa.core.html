@@ -4782,7 +4782,7 @@ and chi2 values.</p>
 <span class="gp">... </span>          <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">60</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">foot</span><span class="p">,</span> <span class="n">is_fixed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_discrete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
 <span class="go">&lt;Quantity(1.5, &#39;foot&#39;)&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">prior_llh</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">prior_penalty</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="s1">&#39;llh&#39;</span><span class="p">))</span>
 <span class="go">-45.532515919999994</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;m&#39;</span><span class="p">))</span>
 </pre></div>
@@ -4794,7 +4794,7 @@ and chi2 values.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">prior_llh</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">prior_penalty</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="s1">&#39;llh&#39;</span><span class="p">)</span>
 <span class="go">-1.5777218104420236e-30</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">nominal_value</span>
 </pre></div>
@@ -5095,11 +5095,11 @@ See ..</p>
 <span class="go">12 gigaelectron_volt</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">prior_llh</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">param_set</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">prior_penalty</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="s1">&#39;llh&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">param_set</span><span class="p">])</span>
 <span class="go">[-5.0, -2]</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">param_set</span><span class="o">.</span><span class="n">priors_llh</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">param_set</span><span class="o">.</span><span class="n">priors_penalty</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="s1">&#39;llh&#39;</span><span class="p">))</span>
 <span class="go">-7.0</span>
 </pre></div>
 </div>
