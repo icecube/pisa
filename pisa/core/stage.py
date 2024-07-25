@@ -28,7 +28,7 @@ __author__ = "Philipp Eller, J. Lanfranchi"
 
 class Stage():
     """
-    PISA stage base class. Should be used to implement PISA Pi stages
+    PISA stage base class.
 
     Specialization should be done via subclasses.
 
@@ -45,17 +45,24 @@ class Stage():
     debug_mode : None, bool, or string
         If None, False, or empty string, the stage runs normally.
 
-        Otherwise, the stage runs in debug mode. This disables caching (forcing
-        recomputation of any nominal transforms, transforms, and outputs).
+        Otherwise, the stage runs in debug mode. This disables caching
+        (TODO: where or how?).
         Services that subclass from the `Stage` class can then implement
         further custom behavior when this mode is set by reading the value of
         the `self.debug_mode` attribute.
 
+    error_method : None or string (not enforced)
+        An option to define one or more dedicated error calculation methods
+        for the stage transforms or outputs
+
     calc_mode : pisa.core.binning.MultiDimBinning, str, or None
-        Specify in what to do the calculation
+        Specify the default data representation for `setup()` and `compute()`
 
     apply_mode : pisa.core.binning.MultiDimBinning, str, or None
-        Specify in what to do the application
+        Specify the default data representation for `apply()`
+
+    profile : bool
+        If True, perform timings for the setup, compute, and apply functions.
 
     """
 
@@ -77,7 +84,7 @@ class Stage():
         module_path = self.__module__.split(".")
 
         self.stage_name = module_path[-2]
-        """Name of the stage (e.g. flux, osc, aeff, reco, pid, etc."""
+        """Name of the stage (flux, osc, aeff, reco, pid, etc.)"""
 
         self.service_name = module_path[-1]
         """Name of the specific service implementing the stage."""
@@ -87,8 +94,6 @@ class Stage():
         `params`"""
 
         self._source_code_hash = None
-
-        """Last-computed outputs; None if no outputs have been computed yet."""
 
         self._attrs_to_hash = set([])
         """Attributes of the stage that are to be included in its hash value"""
@@ -250,15 +255,14 @@ class Stage():
     def __hash__(self):
         return self.hash
 
+
     def include_attrs_for_hashes(self, attrs):
-        """Include a class attribute or attributes to be included when
-        computing hashes (for all that apply: nominal transforms, transforms,
-        and/or outputs).
+        """Include a class attribute or attributes in the hash
+        computation.
 
         This is a convenience that allows some customization of hashing (and
         hence caching) behavior without having to override the hash-computation
-        methods (`_derive_nominal_transforms_hash`, `_derive_transforms_hash`,
-        and `_derive_outputs_hash`).
+        method.
 
         Parameters
         ----------

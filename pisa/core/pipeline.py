@@ -684,7 +684,12 @@ def parse_args():
 
 
 def main(return_outputs=False):
-    """Run unit tests if `pipeline.py` is called as a script."""
+    """Main; call as script with `return_outputs=False` or interactively with
+    `return_outputs=True`
+
+    FIXME: This is broken in various ways (easiest fix:
+    pipeline.get_outputs() has no idx parameter anymore)
+    """
     from pisa.utils.plotter import Plotter
 
     args = parse_args()

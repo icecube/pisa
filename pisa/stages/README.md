@@ -40,7 +40,7 @@ class mystage(Stage):
     self.foo = something_else
 ```
 
-The constructor arguments are passed in via the satage config file, which in this case would need to look something like:
+The constructor arguments are passed in via the stage config file, which in this case would need to look something like:
 
  ```ini
  [stage_dir.mystage]
@@ -54,7 +54,7 @@ params.a = 13.
 params.b = 27.3 +/- 3.2
 ```
 
-The `std_kwargs` can only contain `data, params, debug_mode, error_mode, calc_mode, apply_mode, profile`, of which `data` and `params` will be autmoatically populated.
+The `std_kwargs` can only contain `data, params, expected_params, debug_mode, error_mode, calc_mode, apply_mode, profile`, of which `data` and `params` will be automatically populated.
 
 
 ### Methods
@@ -80,14 +80,17 @@ def apply_function(self):
 
 ## Directory Listing
 
+* `absorption/` - A stage for neutrino flux absorption in the Earth.
 * `aeff/` - All stages relating to effective area transforms.
-* `combine/` - A stage for combining maps together and applying appropriate scaling factors. 
+* `background/` - A stage for modifying some nominal (background) MC muon flux due to systematics.
 * `data/` - All stages relating to the handling of data.
 * `discr_sys/` - All stages relating to the handling of discrete systematics.
 * `flux/` - All stages relating to the atmospheric neutrino flux.
+* `likelihood/` - A stage that pre-computes some quantities needed for the "generalized likelihood"
 * `osc/` - All stages relating to neutrino oscillations. 
 * `pid/` - All stages relating to particle identification.
 * `reco/` - All stages relating to applying reconstruction kernels.
-* `unfold/` - All stages relating to the unfolding of parameters from data.
+* `utils/` - All "utility" stages (not representing physics effects).
 * `xsec/` - All stages relating to cross sections.
+* `GLOBALS.md` - File that describes globally available variables within PISA that needs a significant overhaul (TODO).
 * `__init__.py` - File that makes the `stages` directory behave as a Python module.
