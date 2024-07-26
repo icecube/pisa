@@ -5711,7 +5711,10 @@ in the pipeline’s stages will have no effect.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.core.pipeline.main">
 <span class="sig-prename descclassname"><span class="pre">pisa.core.pipeline.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">return_outputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/pipeline.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.pipeline.main" title="Link to this definition"></a></dt>
-<dd><p>Run unit tests if <cite>pipeline.py</cite> is called as a script.</p>
+<dd><p>Main; call as script with <cite>return_outputs=False</cite> or interactively with
+<cite>return_outputs=True</cite></p>
+<p>FIXME: This is broken in various ways (easiest fix:
+pipeline.get_outputs() has no idx parameter anymore)</p>
 </dd></dl>
 
 <dl class="py function">
@@ -5887,7 +5890,7 @@ functionality is built-in.</p>
 <dt class="sig sig-object py" id="pisa.core.stage.Stage">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.core.stage.</span></span><span class="sig-name descname"><span class="pre">Stage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calc_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/stage.html#Stage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.stage.Stage" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>PISA stage base class. Should be used to implement PISA Pi stages</p>
+<p>PISA stage base class.</p>
 <p>Specialization should be done via subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5896,14 +5899,17 @@ functionality is built-in.</p>
 <li><p><strong>params</strong> (<a class="reference internal" href="#pisa.core.param.ParamSelector" title="pisa.core.param.ParamSelector"><em>ParamSelector</em></a><em>, </em><em>dict</em><em> of </em><em>ParamSelector kwargs</em><em>, </em><a class="reference internal" href="#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a><em>, or </em><em>object instantiable to ParamSet</em>)</p></li>
 <li><p><strong>expected_params</strong> (<em>list</em><em> of </em><em>strings</em>) – List containing required <cite>params</cite> names.</p></li>
 <li><p><strong>debug_mode</strong> (<em>None</em><em>, </em><em>bool</em><em>, or </em><em>string</em>) – <p>If None, False, or empty string, the stage runs normally.</p>
-<p>Otherwise, the stage runs in debug mode. This disables caching (forcing
-recomputation of any nominal transforms, transforms, and outputs).
+<p>Otherwise, the stage runs in debug mode. This disables caching
+(TODO: where or how?).
 Services that subclass from the <cite>Stage</cite> class can then implement
 further custom behavior when this mode is set by reading the value of
 the <cite>self.debug_mode</cite> attribute.</p>
 </p></li>
-<li><p><strong>calc_mode</strong> (<a class="reference internal" href="#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning"><em>pisa.core.binning.MultiDimBinning</em></a><em>, </em><em>str</em><em>, or </em><em>None</em>) – Specify in what to do the calculation</p></li>
-<li><p><strong>apply_mode</strong> (<a class="reference internal" href="#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning"><em>pisa.core.binning.MultiDimBinning</em></a><em>, </em><em>str</em><em>, or </em><em>None</em>) – Specify in what to do the application</p></li>
+<li><p><strong>error_method</strong> (<em>None</em><em> or </em><em>string</em><em> (</em><em>not enforced</em><em>)</em>) – An option to define one or more dedicated error calculation methods
+for the stage transforms or outputs</p></li>
+<li><p><strong>calc_mode</strong> (<a class="reference internal" href="#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning"><em>pisa.core.binning.MultiDimBinning</em></a><em>, </em><em>str</em><em>, or </em><em>None</em>) – Specify the default data representation for <cite>setup()</cite> and <cite>compute()</cite></p></li>
+<li><p><strong>apply_mode</strong> (<a class="reference internal" href="#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning"><em>pisa.core.binning.MultiDimBinning</em></a><em>, </em><em>str</em><em>, or </em><em>None</em>) – Specify the default data representation for <cite>apply()</cite></p></li>
+<li><p><strong>profile</strong> (<em>bool</em>) – If True, perform timings for the setup, compute, and apply functions.</p></li>
 </ul>
 </dd>
 </dl>
@@ -5968,13 +5974,11 @@ provenance of persisted (on-disk) objects.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.stage.Stage.include_attrs_for_hashes">
 <span class="sig-name descname"><span class="pre">include_attrs_for_hashes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/stage.html#Stage.include_attrs_for_hashes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.stage.Stage.include_attrs_for_hashes" title="Link to this definition"></a></dt>
-<dd><p>Include a class attribute or attributes to be included when
-computing hashes (for all that apply: nominal transforms, transforms,
-and/or outputs).</p>
+<dd><p>Include a class attribute or attributes in the hash
+computation.</p>
 <p>This is a convenience that allows some customization of hashing (and
 hence caching) behavior without having to override the hash-computation
-methods (<cite>_derive_nominal_transforms_hash</cite>, <cite>_derive_transforms_hash</cite>,
-and <cite>_derive_outputs_hash</cite>).</p>
+method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>attrs</strong> (<em>string</em><em> or </em><em>sequence thereof</em>) – Name of the attribute(s) to include for hashes. Each must be an
@@ -6053,7 +6057,7 @@ an object stored to disk that were produced by a Stage.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pisa.core.stage.Stage.stage_name">
 <span class="sig-name descname"><span class="pre">stage_name</span></span><a class="headerlink" href="#pisa.core.stage.Stage.stage_name" title="Link to this definition"></a></dt>
-<dd><p>Name of the stage (e.g. flux, osc, aeff, reco, pid, etc.</p>
+<dd><p>Name of the stage (flux, osc, aeff, reco, pid, etc.)</p>
 </dd></dl>
 
 <dl class="py method">
