@@ -299,8 +299,7 @@ class Plotter(object):
             raise TypeError('Expecting to plot a MapSet but '
                             'got %s'%type(map_set))
         if n_rows is None and n_cols is None:
-            # TODO: auto row/cols
-            n_rows = np.floor(np.sqrt(n))
+            n_rows = int(np.floor(np.sqrt(n)))
             while n % n_rows != 0:
                 n_rows -= 1
             n_cols = n // n_rows
