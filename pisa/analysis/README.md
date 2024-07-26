@@ -2,4 +2,4 @@
 
 Primary tools for performing analyses in PISA.
 
-Documentation page for the PISA analysis can be found [https://icecube.github.io/pisa/pisa.analysis.html](here).
+The documentation page for the PISA analysis package can be found [here](https://icecube.github.io/pisa/pisa.analysis.html).
