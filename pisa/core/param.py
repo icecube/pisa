@@ -122,7 +122,7 @@ class Param:
     ...           range=[-10, 60]*ureg.foot, is_fixed=False, is_discrete=False)
     >>> x.value
     <Quantity(1.5, 'foot')>
-    >>> print(x.prior_llh)
+    >>> print(x.prior_penalty(metric='llh'))
     -45.532515919999994
     >>> print(x.to('m'))
 
@@ -132,7 +132,7 @@ class Param:
     >>> x.ito('m')
     >>> print(x.value)
 
-    >>> x.prior_llh
+    >>> x.prior_penalty(metric='llh')
     -1.5777218104420236e-30
     >>> p.nominal_value
 
@@ -547,11 +547,11 @@ class Param:
 
     @property
     def prior_llh(self):
-        return self.prior_penalty(metric='llh')
+        raise DeprecationWarning("prior_llh is deprecated, please use prior_penalty(metric='llh') directly")
 
     @property
     def prior_chi2(self):
-        return self.prior_penalty(metric='chi2')
+        raise DeprecationWarning("prior_chi2 is deprecated, please use prior_penalty(metric='chi2') directly")
 
     @property
     def hash(self):
@@ -808,10 +808,10 @@ class ParamSet(MutableSequence, Set):
     >>> print(param_set.reco_energy.value)
     12 gigaelectron_volt
 
-    >>> print([p.prior_llh for p in param_set])
+    >>> print([p.prior_penalty(metric='llh') for p in param_set])
     [-5.0, -2]
 
-    >>> print(param_set.priors_llh)
+    >>> print(param_set.priors_penalty(metric='llh'))
     -7.0
 
     >>> print(param_set.values_hash)
@@ -1533,11 +1533,11 @@ class ParamSet(MutableSequence, Set):
 
     @property
     def priors_llh(self):
-        return np.sum([obj.prior_llh for obj in self._params])
+        raise DeprecationWarning("priors_llh is deprecated, please use priors_penalty(metric='llh') instead")
 
     @property
     def priors_chi2(self):
-        return np.sum([obj.prior_chi2 for obj in self._params])
+        raise DeprecationWarning("priors_chi2 is deprecated, please use priors_penalty(metric='chi2') instead")
 
     @property
     def ranges(self):
@@ -1859,7 +1859,7 @@ def test_Param():
             p2 = Param(name='c', value=1.5, prior=linterp_m,
                        range=[1, 2], is_fixed=False, is_discrete=False,
                        tex=r'\int{\rm c}')
-            _ = p2.prior_llh
+            _ = p2.prior_penalty(metric='llh')
             logging.debug(str(p2))
             logging.debug(str(linterp_m))
             logging.debug('p2.units: %s', p2.units)
@@ -1873,7 +1873,7 @@ def test_Param():
         try:
             p2 = Param(name='c', value=1.5*ureg.meter, prior=spline, range=[1, 2],
                        is_fixed=False, is_discrete=False, tex=r'\int{\rm c}')
-            _ = p2.prior_llh
+            _ = p2.prior_penalty(metric='llh')
         except (ValueError, TypeError, AssertionError):
             pass
         else:
@@ -1882,7 +1882,7 @@ def test_Param():
             p2 = Param(name='c', value=1.5*ureg.meter, prior=linterp_nounits,
                        range=[1, 2], is_fixed=False, is_discrete=False,
                        tex=r'\int{\rm c}')
-            _ = p2.prior_llh
+            _ = p2.prior_penalty(metric='llh')
         except (ValueError, TypeError, AssertionError):
             pass
         else:
@@ -1892,14 +1892,14 @@ def test_Param():
         p2 = Param(name='c', value=1.5, prior=linterp_nounits,
                    range=[1, 2], is_fixed=False, is_discrete=False,
                    tex=r'\int{\rm c}')
-        _ = p2.prior_llh
+        _ = p2.prior_penalty(metric='llh')
 
         # Param, prior with no units, range with units
         try:
             p2 = Param(name='c', value=1.5, prior=linterp_nounits,
                        range=[1, 2]*ureg.m, is_fixed=False, is_discrete=False,
                        tex=r'\int{\rm c}')
-            _ = p2.prior_llh
+            _ = p2.prior_penalty(metric='llh')
             logging.debug(str(p2))
             logging.debug(str(linterp_nounits))
             logging.debug('p2.units: %s', p2.units)
@@ -2087,13 +2087,13 @@ def test_ParamSet():
     logging.debug(str(('continuous, free hash:',
                        param_set.continuous.free.values_hash)))
 
-    logging.debug(str((param_set['b'].prior_llh)))
-    logging.debug(str((param_set.priors_llh)))
-    logging.debug(str((param_set.free.priors_llh)))
-    logging.debug(str((param_set.fixed.priors_llh)))
+    logging.debug(str((param_set['b'].prior_penalty(metric='llh'))))
+    logging.debug(str((param_set.priors_penalty(metric='llh'))))
+    logging.debug(str((param_set.free.priors_penalty(metric='llh'))))
+    logging.debug(str((param_set.fixed.priors_penalty(metric='llh'))))
 
-    logging.debug(str((param_set[0].prior_chi2)))
-    logging.debug(str((param_set.priors_chi2)))
+    logging.debug(str((param_set[0].prior_penalty(metric='chi2'))))
+    logging.debug(str((param_set.priors_penalty(metric='chi2'))))
 
     # Test that setting attributes works
     e_prior = Prior(kind='gaussian', mean=10*ureg.GeV, stddev=1*ureg.GeV)

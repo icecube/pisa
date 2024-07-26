@@ -2,7 +2,7 @@
 Stage to take the initial errors of MC and keep them
 for all minimization.
 
-Needed to allow mod_chi2 to behave correctly
+Needed for the DRAGON nutau appearance analysis.
 """
 
 from __future__ import absolute_import, print_function, division

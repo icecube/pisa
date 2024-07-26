@@ -79,6 +79,7 @@ SETUP_REQUIRES = [
     'pip>=1.8,<21.3',
     'setuptools>18.5,<60.0', # versioneer requires >18.5
     'numpy>=1.17,<1.23',
+    'scipy>=1.6,<1.14',
     'cython~=0.29.0', # needed for the setup and for the install
     'scikit-learn<=1.1.2',
 ]
@@ -95,7 +96,7 @@ INSTALL_REQUIRES = [
     'numba>=0.53', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
     'numpy>=1.17,<1.23',
     'pint<=0.19', # property pint.quantity._Quantity no longer exists in 0.20
-    'scipy>=1.6',
+    'scipy>=1.6,<1.14',
     'pandas',
     'simplejson==3.18.4',
     'tables',
