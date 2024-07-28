@@ -280,6 +280,57 @@ If no units attached, must be [km]</p></li>
 </dd></dl>
 
 </section>
+<section id="module-pisa.stages.osc.external">
+<span id="pisa-stages-osc-external-module"></span><h2>pisa.stages.osc.external module<a class="headerlink" href="#module-pisa.stages.osc.external" title="Link to this heading"></a></h2>
+<p>PISA pi stage for the calculation of earth layers and osc. probabilities</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.stages.osc.external.external">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.external.</span></span><span class="sig-name descname"><span class="pre">external</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/external.html#external"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.external.external" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
+<p>Use an external function to calculate oscillation probabilities</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> – <dl class="simple">
+<dt>osc_prob<span class="classifier">callable</span></dt><dd><p>the external function</p>
+</dd>
+</dl>
+<p>Expected params ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">detector_depth</span> <span class="p">:</span> <span class="nb">float</span>
+<span class="n">earth_model</span> <span class="p">:</span> <span class="n">PREM</span> <span class="n">file</span> <span class="n">path</span>
+<span class="n">prop_height</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
+<span class="n">YeI</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
+<span class="n">YeO</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
+<span class="n">YeM</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
+</pre></div>
+</div>
+</p></li>
+<li><p><strong>**kwargs</strong> – Other kwargs are handled by Stage</p></li>
+<li><p><strong>-----</strong></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.osc.external.external.apply_function">
+<span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/external.html#external.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.external.external.apply_function" title="Link to this definition"></a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.osc.external.external.compute_function">
+<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/external.html#external.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.external.external.compute_function" title="Link to this definition"></a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.osc.external.external.setup_function">
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/external.html#external.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.external.external.setup_function" title="Link to this definition"></a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-pisa.stages.osc.globes">
 <span id="pisa-stages-osc-globes-module"></span><h2>pisa.stages.osc.globes module<a class="headerlink" href="#module-pisa.stages.osc.globes" title="Link to this heading"></a></h2>
 <p>PISA pi stage wrapping GLoBES for the calculation of neutrino oscillation probabilities.</p>
@@ -398,7 +449,18 @@ filled up with 0s</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pisa.stages.osc.layers.Layers.density">
 <span class="sig-name descname"><span class="pre">density</span></span><a class="headerlink" href="#pisa.stages.osc.layers.Layers.density" title="Link to this definition"></a></dt>
-<dd><p>containing density values and filled up with 0s otherwise</p>
+<dd><p>containing electron-weighted density values and filled up with 0s otherwise</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>1d float array of length (max_layers * len(cz))</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.stages.osc.layers.Layers.density_neutron_weighted">
+<span class="sig-name descname"><span class="pre">density_neutron_weighted</span></span><a class="headerlink" href="#pisa.stages.osc.layers.Layers.density_neutron_weighted" title="Link to this definition"></a></dt>
+<dd><p>containing neutron-weighted density values and filled up with 0s otherwise</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>1d float array of length (max_layers * len(cz))</p>
@@ -473,12 +535,17 @@ trigonometric identities</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="id3">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">distance</span></span><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">density_neutron_weighted</span></span><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="id4">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n_layers</span></span><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">distance</span></span><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="id5">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n_layers</span></span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -519,11 +586,19 @@ for the different electron fractions in the inner core,
 outer core and mantle.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.osc.layers.Layers.weight_density_to_YnFrac">
+<span class="sig-name descname"><span class="pre">weight_density_to_YnFrac</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/layers.html#Layers.weight_density_to_YnFrac"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.layers.Layers.weight_density_to_YnFrac" title="Link to this definition"></a></dt>
+<dd><p>Adjust the densities of the provided earth model layers
+for the different neutron fractions in the inner core,
+outer core and mantle.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.osc.layers.extCalcLayers">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.layers.</span></span><span class="sig-name descname"><span class="pre">extCalcLayers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_detector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop_height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coszen_limit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_layers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/layers.html#extCalcLayers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.layers.extCalcLayers" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.layers.</span></span><span class="sig-name descname"><span class="pre">extCalcLayers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_detector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop_height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhos_neutron_weighted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coszen_limit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radii</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_layers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/layers.html#extCalcLayers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.layers.extCalcLayers" title="Link to this definition"></a></dt>
 <dd><p>Layer density/distance calculator for each coszen specified.</p>
 <p>Accelerated with Numba if present.</p>
 <dl class="field-list simple">
@@ -534,6 +609,7 @@ outer core and mantle.</p>
 <li><p><strong>prop_height</strong> (<em>height at which neutrinos are assumed to be produced</em><em> (</em><em>float</em><em>)</em>)</p></li>
 <li><p><strong>detector_depth</strong> (<em>depth at which the detector is buried</em><em> (</em><em>float</em><em>)</em>)</p></li>
 <li><p><strong>rhos</strong> (<em>densities</em><em> (</em><em>already weighted by electron fractions</em><em>) </em><em>(</em><em>ndarray</em><em>)</em>)</p></li>
+<li><p><strong>rhos_neutron_weighted</strong> (<em>densities</em><em> (</em><em>already weighted by neutron fractions</em><em>) </em><em>(</em><em>ndarray</em><em>)</em>)</p></li>
 <li><p><strong>radii</strong> (<em>radii defining the Earth's layer</em><em> (</em><em>ndarray</em><em>)</em>)</p></li>
 <li><p><strong>coszen</strong> (<em>coszen values corresponding to the radii above</em><em> (</em><em>ndarray</em><em>)</em>)</p></li>
 <li><p><strong>max_layers</strong> (<em>maximum number</em><em> of </em><em>layers it is possible to cross</em><em> (</em><em>int</em><em>)</em>)</p></li>
@@ -542,7 +618,8 @@ outer core and mantle.</p>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p><strong>n_layers</strong> (<em>int number of layers</em>)</p></li>
-<li><p><strong>density</strong> (<em>array of densities, flattened from (cz, max_layers)</em>)</p></li>
+<li><p><strong>density</strong> (<em>array of electron-weighted densities, flattened from (cz, max_layers)</em>)</p></li>
+<li><p><strong>density_neutron_weighted</strong> (<em>array of neutron-weighted densities, flattened from (cz, max_layers)</em>)</p></li>
 <li><p><strong>distance</strong> (<em>array of distances per layer, flattened from (cz, max_layers)</em>)</p></li>
 </ul>
 </p>
@@ -689,8 +766,8 @@ in the Earth.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id5">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">eps_matrix</span></span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id6">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">eps_matrix</span></span><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -953,32 +1030,32 @@ transformations.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id6">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deltacp</span></span><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id7">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deltacp</span></span><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd><p>CPV phase</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id7">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dm_matrix</span></span><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id8">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dm_matrix</span></span><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
 <dd><p>Neutrino mass splitting matrix in vacuum</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id8">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mix_matrix</span></span><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id9">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mix_matrix</span></span><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd><p>Neutrino mixing matrix in its ‘standard’ form</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id9">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mix_matrix_complex</span></span><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id10">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mix_matrix_complex</span></span><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
 <dd><p>Mixing matrix as complex 2-d array</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id10">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mix_matrix_reparam</span></span><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id11">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mix_matrix_reparam</span></span><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
 <dd><p>Neutrino mixing matrix reparameterised in a way
 such that the CPT trafo Hvac -&gt; -Hvac*  is exactly implemented by
 the simultaneous transformations</p>
@@ -995,8 +1072,8 @@ as diag(exp(i*deltacp), 0, 0) * U * diag(exp(-i*deltacp), 0, 0).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id11">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mix_matrix_reparam_complex</span></span><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id12">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mix_matrix_reparam_complex</span></span><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
 <dd><p>Reparameterised mixing matrix as complex 2-d array</p>
 </dd></dl>
 
@@ -1101,7 +1178,7 @@ and an osc. stage….todo</p>
 </dd>
 </dl>
 <dl class="simple">
-<dt><a href="#id12"><span class="problematic" id="id13">**</span></a>kwargs</dt><dd><p>Other kwargs are handled by Stage</p>
+<dt><a href="#id13"><span class="problematic" id="id14">**</span></a>kwargs</dt><dd><p>Other kwargs are handled by Stage</p>
 </dd>
 </dl>
 <hr class="docutils" />

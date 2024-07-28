@@ -28,6 +28,14 @@ pisa.stages.osc.decoherence module
    :undoc-members:
    :show-inheritance:
 
+pisa.stages.osc.external module
+-------------------------------
+
+.. automodule:: pisa.stages.osc.external
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pisa.stages.osc.globes module
 -----------------------------
 

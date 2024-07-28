@@ -130,6 +130,7 @@
         <span class="n">prop_height</span><span class="p">,</span>
         <span class="n">detector_depth</span><span class="p">,</span>
         <span class="n">rhos</span><span class="p">,</span>
+        <span class="n">rhos_neutron_weighted</span><span class="p">,</span>
         <span class="n">coszen_limit</span><span class="p">,</span>
         <span class="n">radii</span><span class="p">,</span>
         <span class="n">max_layers</span><span class="p">):</span>
@@ -144,6 +145,7 @@
 <span class="sd">    prop_height    : height at which neutrinos are assumed to be produced (float)</span>
 <span class="sd">    detector_depth : depth at which the detector is buried (float)</span>
 <span class="sd">    rhos           : densities (already weighted by electron fractions) (ndarray)</span>
+<span class="sd">    rhos_neutron_weighted  : densities (already weighted by neutron fractions) (ndarray)</span>
 <span class="sd">    radii          : radii defining the Earth&#39;s layer (ndarray)</span>
 <span class="sd">    coszen         : coszen values corresponding to the radii above (ndarray)</span>
 <span class="sd">    max_layers     : maximum number of layers it is possible to cross (int)</span>
@@ -151,7 +153,8 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    n_layers : int number of layers</span>
-<span class="sd">    density : array of densities, flattened from (cz, max_layers)</span>
+<span class="sd">    density : array of electron-weighted densities, flattened from (cz, max_layers)</span>
+<span class="sd">    density_neutron_weighted : array of neutron-weighted densities, flattened from (cz, max_layers)</span>
 <span class="sd">    distance : array of distances per layer, flattened from (cz, max_layers)</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -161,6 +164,7 @@
     <span class="c1"># in the pi_prob3 module</span>
 
     <span class="n">densities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">cz</span><span class="p">),</span> <span class="n">max_layers</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">densities_neutron_weighted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">cz</span><span class="p">),</span> <span class="n">max_layers</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
     <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">cz</span><span class="p">),</span> <span class="n">max_layers</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
     <span class="n">number_of_layers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cz</span><span class="p">))</span>
 
@@ -185,6 +189,7 @@
             <span class="n">segments_lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">segments_lengths</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">radii</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">idx</span><span class="p">)))</span>
 
             <span class="n">density</span> <span class="o">=</span> <span class="n">rhos</span><span class="o">*</span><span class="p">(</span><span class="n">segments_lengths</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">)</span>
+            <span class="n">density_neutron_weighted</span> <span class="o">=</span> <span class="n">rhos_neutron_weighted</span> <span class="o">*</span> <span class="p">(</span><span class="n">segments_lengths</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="c1">#</span>
@@ -231,18 +236,26 @@
             <span class="c1"># start by removing the layers not crossed from rhos</span>
             <span class="n">inner_layer_mask</span> <span class="o">=</span> <span class="n">coszen_limit</span><span class="o">&gt;</span><span class="n">coszen</span>
             <span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">rhos</span><span class="p">[</span><span class="n">inner_layer_mask</span><span class="p">],</span><span class="n">rhos</span><span class="p">[</span><span class="n">inner_layer_mask</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">density_neutron_weighted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">rhos_neutron_weighted</span><span class="p">[</span><span class="n">inner_layer_mask</span><span class="p">],</span>
+                    <span class="n">rhos_neutron_weighted</span><span class="p">[</span><span class="n">inner_layer_mask</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
 
             <span class="c1"># As an extra precaution, set all densities that are not crossed to zero</span>
             <span class="n">density</span><span class="o">*=</span><span class="p">(</span><span class="n">segments_lengths</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">density_neutron_weighted</span> <span class="o">*=</span> <span class="n">segments_lengths</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
         <span class="n">number_of_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">segments_lengths</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">)</span>
         <span class="c1"># append to the large list</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">density</span><span class="p">)):</span>
             <span class="c1"># index j may not run all the way to max_layers, unreached indices stay zero</span>
             <span class="n">densities</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">density</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">densities_neutron_weighted</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">density_neutron_weighted</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
             <span class="n">distances</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">segments_lengths</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">number_of_layers</span><span class="p">,</span> <span class="n">densities</span><span class="p">,</span> <span class="n">distances</span></div>
+    <span class="k">return</span> <span class="n">number_of_layers</span><span class="p">,</span> <span class="n">densities</span><span class="p">,</span> <span class="n">densities_neutron_weighted</span><span class="p">,</span> <span class="n">distances</span></div>
 
 
 
@@ -276,7 +289,10 @@
 <span class="sd">            number of layers crossed for every CZ value</span>
 
 <span class="sd">    density : 1d float array of length (max_layers * len(cz))</span>
-<span class="sd">            containing density values and filled up with 0s otherwise</span>
+<span class="sd">            containing electron-weighted density values and filled up with 0s otherwise</span>
+
+<span class="sd">    density_neutron_weighted : 1d float array of length (max_layers * len(cz))</span>
+<span class="sd">            containing neutron-weighted density values and filled up with 0s otherwise</span>
 
 <span class="sd">    distance : 1d float array of length (max_layers * len(cz))</span>
 <span class="sd">            containing distance values and filled up with 0s otherwise</span>
@@ -299,16 +315,24 @@
             <span class="c1"># w.r.t the file. The first elements of the arrays below corresponds</span>
             <span class="c1"># the Earth&#39;s surface, and the following numbers go deeper toward the </span>
             <span class="c1"># planet&#39;s core</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prem</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prem</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rhos_neutron_weighted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prem</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prem</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
             <span class="n">r_earth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prem</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">default_elec_frac</span> <span class="o">=</span> <span class="mf">0.5</span>
-            
-                            
-            
+
             <span class="c1"># Add an external layer corresponding to the atmosphere / production boundary</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r_earth</span><span class="o">+</span><span class="n">prop_height</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">radii</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rhos_neutron_weighted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos_neutron_weighted</span><span class="p">)</span>
+            <span class="p">)</span>
+
+
             <span class="bp">self</span><span class="o">.</span><span class="n">max_layers</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span><span class="p">))</span>
 
 
@@ -352,9 +376,11 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot set electron fraction when not using an Earth model&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">YeI</span><span class="p">,</span> <span class="n">YeO</span><span class="p">,</span> <span class="n">YeM</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">-</span> <span class="n">YeI</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">YeO</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">YeM</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
         <span class="c1"># re-weight the layer densities accordingly</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weight_density_to_YeFrac</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_density_to_YeFrac</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_density_to_YnFrac</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Layers.scaling">
@@ -427,12 +453,13 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot calculate layers when not using an Earth model&quot;</span><span class="p">)</span>
 
         <span class="c1"># run external function</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_n_layers</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distance</span> <span class="o">=</span> <span class="n">extCalcLayers</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_layers</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density_neutron_weighted</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distance</span> <span class="o">=</span> <span class="n">extCalcLayers</span><span class="p">(</span>
             <span class="n">cz</span><span class="o">=</span><span class="n">cz</span><span class="p">,</span>
             <span class="n">r_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r_detector</span><span class="p">,</span>
             <span class="n">prop_height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prop_height</span><span class="p">,</span>
             <span class="n">detector_depth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">detector_depth</span><span class="p">,</span>
             <span class="n">rhos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rhos</span><span class="p">,</span>
+            <span class="n">rhos_neutron_weighted</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rhos_neutron_weighted</span><span class="p">,</span>
             <span class="n">coszen_limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen_limit</span><span class="p">,</span>
             <span class="n">radii</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span><span class="p">,</span>
             <span class="n">max_layers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_layers</span><span class="p">,</span>
@@ -450,6 +477,12 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot get density when not using an Earth model&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">density_neutron_weighted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot get density when not using an Earth model&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density_neutron_weighted</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -511,6 +544,49 @@
         <span class="n">weighted_densities</span> <span class="o">=</span> <span class="n">density_inner</span> <span class="o">+</span> <span class="n">density_outer</span> <span class="o">+</span> <span class="n">density_mantle</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">=</span> <span class="n">weighted_densities</span></div>
+
+
+<div class="viewcode-block" id="Layers.weight_density_to_YnFrac">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.weight_density_to_YnFrac">[docs]</a>
+    <span class="k">def</span> <span class="nf">weight_density_to_YnFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adjust the densities of the provided earth model layers</span>
+<span class="sd">        for the different neutron fractions in the inner core,</span>
+<span class="sd">        outer core and mantle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># TODO make this generic</span>
+        <span class="n">R_INNER</span> <span class="o">=</span> <span class="mf">1221.5</span>
+        <span class="n">R_OUTER</span> <span class="o">=</span> <span class="mf">3480.0</span>
+        <span class="n">R_MANTLE</span> <span class="o">=</span> <span class="mf">6371.0</span>  <span class="c1"># the crust is assumed to have the same electron fraction as the mantle</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+        <span class="p">),</span> <span class="s2">&quot;ERROR: YnFrac must be an array of size 3&quot;</span>
+        <span class="c1">#</span>
+        <span class="c1"># TODO: insert extra radii is the electron density boundaries</span>
+        <span class="c1">#       don&#39;t match the current layer boundaries</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Weight the density properly</span>
+        <span class="c1">#</span>
+        <span class="n">density_inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_INNER</span><span class="p">)</span>
+        <span class="n">density_outer</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span>
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_OUTER</span><span class="p">)</span>
+            <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&gt;</span> <span class="n">R_INNER</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">density_mantle</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span>
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_MANTLE</span><span class="p">)</span>
+            <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&gt;</span> <span class="n">R_OUTER</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">weighted_densities</span> <span class="o">=</span> <span class="n">density_inner</span> <span class="o">+</span> <span class="n">density_outer</span> <span class="o">+</span> <span class="n">density_mantle</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rhos_neutron_weighted</span> <span class="o">=</span> <span class="n">weighted_densities</span></div>
 </div>
 
 
