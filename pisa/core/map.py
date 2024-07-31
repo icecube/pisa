@@ -577,7 +577,7 @@ class Map(object):
              outdir=None, fname=None, fmt=None, binlabel_format=None,
              binlabel_colors=["white", "black"], binlabel_color_thresh=None,
              binlabel_stripzeros=True, dpi=300, bad_color=None,
-             pure_bin_names=False
+             pure_bin_names=False, bin_id=None, full_ax=None,
              ):
         """Plot a 2D map.
 
@@ -615,7 +615,7 @@ class Map(object):
             Size of the colorbar, x-axis label, y-axis label, and title text
 
         fig_kw : mapping, optional
-            Keyword arguments passed to call to `matplotlib.pyplot.figure`;
+            Keyword arguments passed to call `matplotlib.pyplot..subplots`;
             this is only done, however, if `ax` is None and so a new figure
             needs to be created.
 
@@ -669,6 +669,11 @@ class Map(object):
             Can choose the color used for "bad" bins (e.g. NaN)
         pure_bin_names : bool, optional
             If True, use the (third dimension) bin names as they are defined in binning config, without any formatting.
+        bin_id : int, optional
+            If the map is a slice of a multi-dim map, this is the index of the slice.
+        full_ax : :class:`matplotlib.axes.Axes`, optional
+            If the map is a slice of a multi-dim map, this is the full axis object of the multi-dim map.
+
 
         Returns
         -------
@@ -713,11 +718,10 @@ class Map(object):
                 mkdir(outdir, warn=False)
 
         if ax is None:
-            # fig = plt.figure(**fig_kw)
-            # ax = fig.add_subplot(111)
             fig, ax = plt.subplots(**fig_kw)
+            full_ax = ax
         else:
-            fig = ax.figure
+            fig = full_ax.figure
 
         # 2D by arraying them as 1D slices in the smallest dimension(s)
         if len(self.binning) == 3:
@@ -753,6 +757,7 @@ class Map(object):
                     pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw, colorbar_label_kw=colorbar_label_kw,
                     binlabel_format=binlabel_format, binlabel_colors=["white", "black"],
                     binlabel_color_thresh=binlabel_color_thresh, binlabel_stripzeros=binlabel_stripzeros,
+                    bin_id = bin_idx, full_ax = full_ax
                     )
 
             if fmt is not None:
@@ -761,7 +766,7 @@ class Map(object):
                     fig.savefig(path, dpi=dpi)
                     logging.debug('>>>> Plot for inspection saved at %s', path)
 
-            return fig, ax, pcmesh, colorbar
+            return fig, full_ax, pcmesh, colorbar
 
 
         if len(self.binning) == 2:
@@ -829,6 +834,7 @@ class Map(object):
 
         X, Y = np.meshgrid(x, y)
         pcmesh = ax.pcolormesh(X, Y, hist.T, **pcolormesh_kw)
+
         if binlabel_format is not None:
             X_mid = np.true_divide(X[1:, 1:] + X[1:, :-1], 2)
             Y_mid = np.true_divide(Y[1:, 1:] + Y[:-1, 1:], 2)
@@ -853,10 +859,18 @@ class Map(object):
                                 verticalalignment='center',
                                 color=txtcolor,
                                 fontsize=10)
-        colorbar = fig.colorbar(mappable=pcmesh, ax=ax, **colorbar_kw)
-        colorbar.ax.tick_params(labelsize='large')
-        if clabel is not None:
-            colorbar.set_label(label=clabel, size=clabelsize, **colorbar_label_kw)
+
+
+        # only plot colorbar once
+        if bin_id == 0 or bin_id is None:
+            colorbar = fig.colorbar(mappable=pcmesh, ax=full_ax, **colorbar_kw)
+            colorbar.ax.tick_params(labelsize='large')
+
+            if clabel is not None:
+                colorbar.set_label(label=clabel, size=clabelsize, **colorbar_label_kw)
+
+        else:
+            colorbar = None
 
         xlabel = '$%s$' % to_plot.binning.dims[0].label
         ylabel = '$%s$' % to_plot.binning.dims[1].label
@@ -881,7 +895,7 @@ class Map(object):
                 fig.savefig(path, dpi=dpi)
                 logging.debug('>>>> Plot for inspection saved at %s', path)
 
-        return fig, ax, pcmesh, colorbar
+        return fig, full_ax, pcmesh, colorbar
 
     @_new_obj
     def __deepcopy__(self, memo):
