@@ -615,7 +615,7 @@ class Map(object):
             Size of the colorbar, x-axis label, y-axis label, and title text
 
         fig_kw : mapping, optional
-            Keyword arguments passed to call `matplotlib.pyplot..subplots`;
+            Keyword arguments passed to call to matplotlib.pyplot.subplots;
             this is only done, however, if `ax` is None and so a new figure
             needs to be created.
 
@@ -668,11 +668,15 @@ class Map(object):
         bad_color : string, optional
             Can choose the color used for "bad" bins (e.g. NaN)
         pure_bin_names : bool, optional
-            If True, use the (third dimension) bin names as they are defined in binning config, without any formatting.
+            If True, use the (third dimension) bin names as they are defined in binning config, without any formatting. Default: `False`
         bin_id : int, optional
-            If the map is a slice of a multi-dim map, this is the index of the slice.
+            If the map is a slice of a multi-dimensional map, this is the index of the slice.
+            Used for the internal recursive function call, to keep track of current third dimension slice.
+            Default setting produces the correct behaviour for 3-dimensional histograms. Default: `None`
         full_ax : :class:`matplotlib.axes.Axes`, optional
-            If the map is a slice of a multi-dim map, this is the full axis object of the multi-dim map.
+            If the map is a slice of a multi-dimensional map, this is the full axis object of the overall map.
+            Used for the internal recursive function call, to keep track of the main axis.
+            Default setting produces the correct behaviour for 3-dimensional histograms. Default: `None`
 
 
         Returns
@@ -757,7 +761,7 @@ class Map(object):
                     pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw, colorbar_label_kw=colorbar_label_kw,
                     binlabel_format=binlabel_format, binlabel_colors=["white", "black"],
                     binlabel_color_thresh=binlabel_color_thresh, binlabel_stripzeros=binlabel_stripzeros,
-                    bin_id = bin_idx, full_ax = full_ax
+                    bin_id=bin_idx, full_ax=full_ax
                     )
 
             if fmt is not None:
