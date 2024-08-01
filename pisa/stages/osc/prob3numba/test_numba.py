@@ -11,7 +11,6 @@ from numba import guvectorize
 
 from pisa import TARGET
 from pisa.utils.numba_tools import (
-    WHERE,
     cuda,
     myjit,
     ftype,
