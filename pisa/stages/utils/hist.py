@@ -5,12 +5,10 @@ that represent event counts
 
 import numpy as np
 
-from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.core.translation import histogram
 from pisa.core.binning import MultiDimBinning, OneDimBinning
-from pisa.utils.profiler import profile, line_profile
-from pisa.utils import vectorizer
+from pisa.utils.profiler import profile
 from pisa.utils.log import logging
 
 
@@ -162,7 +160,9 @@ class hist(Stage):  # pylint: disable=invalid-name
 
                 if self.unweighted:
                     if "astro_weights" in container.keys:
-                        weights = np.ones_like(container["weights"] + container["astro_weights"])
+                        weights = np.ones_like(
+                            container["weights"] + container["astro_weights"]
+                        )
                     else:
                         weights = np.ones_like(container["weights"])
                 else:
@@ -174,7 +174,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                     unc_weights = container["unc_weights"]
                 else:
                     unc_weights = np.ones(weights.shape)
-                
+
                 # The hist is now computed using a binning that is completely linear
                 # and regular
                 hist = histogram(
@@ -185,8 +185,10 @@ class hist(Stage):  # pylint: disable=invalid-name
                 )
 
                 if self.error_method == "sumw2":
-                    sumw2 = histogram(sample, np.square(unc_weights*weights), self.regularized_apply_mode, averaged=False)
-                    bin_unc2 = histogram(sample, np.square(unc_weights)*weights, self.regularized_apply_mode, averaged=False)
+                    sumw2 = histogram(sample, np.square(unc_weights*weights),
+                        self.regularized_apply_mode, averaged=False)
+                    bin_unc2 = histogram(sample, np.square(unc_weights)*weights,
+                        self.regularized_apply_mode, averaged=False)
 
                 container.representation = self.apply_mode
                 container["weights"] = hist

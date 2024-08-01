@@ -185,8 +185,7 @@ cpu_targets = ['cpu', 'numba'] # pylint: disable=invalid-name
 parallel_targets = ['parallel', 'multicore'] # pylint: disable=invalid-name
 gpu_targets = ['cuda', 'gpu', 'numba-cuda'] # pylint: disable=invalid-name
 
-# ignore PISA_TARGET env var if no numba support at all available
-if TARGET is not None and 'PISA_TARGET' in os.environ:
+if 'PISA_TARGET' in os.environ:
     PISA_TARGET = os.environ['PISA_TARGET']
     ini_msgs.append('PISA_TARGET env var is defined as: "%s"' % PISA_TARGET)
     try_target = PISA_TARGET.strip().lower() # pylint: disable=invalid-name

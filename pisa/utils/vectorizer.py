@@ -15,7 +15,7 @@ from numba import guvectorize
 
 from pisa import FTYPE, TARGET
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.numba_tools import WHERE, cuda_copy
+from pisa.utils.numba_tools import cuda_copy
 
 
 __all__ = [

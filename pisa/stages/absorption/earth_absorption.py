@@ -11,7 +11,6 @@ with protons and neutrons.
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
-import math
 
 from numba import guvectorize
 
@@ -52,7 +51,7 @@ the string for this neutrino in the ROOT file.
 """
 
 
-class earth_absorption(Stage):
+class earth_absorption(Stage):  # pylint: disable=invalid-name
     """
     earth absorption PISA Pi class
 
@@ -121,7 +120,7 @@ class earth_absorption(Stage):
             container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
             container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
             container['rho_int'] = np.empty((container.size), dtype=FTYPE)
-            
+
             container.mark_changed('densities')
             container.mark_changed('distances')
             container.mark_changed('rho_int')

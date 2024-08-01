@@ -8,9 +8,9 @@ the `apply` method.
 """
 
 from __future__ import absolute_import, print_function, division
+from enum import Enum, auto
 
 import numpy as np
-from enum import Enum, auto
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
@@ -18,7 +18,6 @@ from pisa.utils.profiler import profile
 from pisa.utils import vectorizer
 from pisa.core import translation
 from pisa.core.binning import MultiDimBinning
-
 from pisa.utils.log import logging, set_verbosity
 
 class ResampleMode(Enum):
@@ -31,13 +30,13 @@ class ResampleMode(Enum):
 class resample(Stage):  # pylint: disable=invalid-name
     """
     Stage to resample weighted MC histograms from one binning to another.
-    
-    The origin binning is given as `calc_mode` and the output binning is given in 
+
+    The origin binning is given as `calc_mode` and the output binning is given in
     `apply_mode`.
-    
+
     Parameters
     ----------
-    
+
     scale_errors : bool, optional
         If `True` (default), apply scaling to errors.
     """
@@ -57,11 +56,11 @@ class resample(Stage):  # pylint: disable=invalid-name
         # This stage only makes sense when going binned to binned.
         assert isinstance(self.apply_mode, MultiDimBinning), "stage only produces binned output"
         assert isinstance(self.calc_mode, MultiDimBinning), "stage only produces binned output"
-        
+
         self.scale_errors = scale_errors
-        
+
         # The following tests whether `apply_mode` is a strict up-sample
-        
+
         # TODO: Test for ability to resample in two steps
         # TODO: Update to new test nomenclature
 
@@ -101,9 +100,9 @@ class resample(Stage):  # pylint: disable=invalid-name
         # We are overwriting the `apply` method rather than the `apply_function` method
         # because we are manipulating the data binning in a delicate way that doesn't
         # work with automatic rebinning.
-        
+
         self.data.representation = self.calc_mode
-        
+
         if self.scale_errors:
             for container in self.data:
                 vectorizer.pow(
@@ -156,7 +155,7 @@ class resample(Stage):  # pylint: disable=invalid-name
                     container["weights_resampled"] * output_binvols / origin_binvols
                 )
                 if self.scale_errors:
-                        container["vars_resampled"] = (
+                    container["vars_resampled"] = (
                         container["vars_resampled"] * output_binvols / origin_binvols
                     )
             elif self.rs_mode == ResampleMode.DOWN:
@@ -164,25 +163,24 @@ class resample(Stage):  # pylint: disable=invalid-name
 
             if self.scale_errors:
                 container["errors_resampled"] = np.sqrt(container["vars_resampled"])
-    
+
 def test_resample():
     """Unit test for the resampling stage."""
     from pisa.core.distribution_maker import DistributionMaker
     from pisa.core.map import Map
     from pisa.utils.config_parser import parse_pipeline_config
-    from pisa.utils.log import set_verbosity, logging
     from pisa.utils.comparisons import ALLCLOSE_KW
     from collections import OrderedDict
     from copy import deepcopy
     from numpy.testing import assert_allclose
-    
+
     example_cfg = parse_pipeline_config('settings/pipeline/example.cfg')
     reco_binning = example_cfg[('utils', 'hist')]['apply_mode']
     coarse_binning = reco_binning.downsample(reco_energy=2, reco_coszen=2)
     assert coarse_binning.is_compat(reco_binning)
     # replace binning of output with coarse binning
     example_cfg[('utils', 'hist')]['apply_mode'] = coarse_binning
-    # New in PISA4: We explicitly tell the pipeline which keys and binning to use for 
+    # New in PISA4: We explicitly tell the pipeline which keys and binning to use for
     # the output. We must manually set this to the same binning as the output from the
     # hist stage because otherwise it would attempt to automatically rebin everything.
     example_cfg['pipeline']['output_key'] = ('weights', 'errors')
@@ -200,7 +198,7 @@ def test_resample():
 
     example_maker = DistributionMaker([example_cfg])
     upsampled_maker = DistributionMaker([upsample_cfg])
-    
+
     example_map = example_maker.get_outputs(return_sum=True)[0]
     example_map_upsampled = upsampled_maker.get_outputs(return_sum=True)[0]
 
@@ -209,7 +207,7 @@ def test_resample():
         np.sum(example_map.nominal_values),
         np.sum(example_map_upsampled.nominal_values),
     )
-    
+
     # Check consistency of modified chi-square
     # ----------------------------------------
     # When the assumption holds that events are uniformly distributed over the coarse
@@ -218,12 +216,12 @@ def test_resample():
     # the assumption by bin volumes. We should find that the modified chi-square between
     # the coarse map and the coarse fluctuated map is the same as the upsampled map and
     # the upsampled fluctuated map.
-    
+
     # It doesn't matter precisely how we fluctuate it here, we just want any different
     # map...
     random_map_coarse = example_map.fluctuate(method='scaled_poisson', random_state=42)
     random_map_coarse.set_errors(None)
-    
+
     # This bit is an entirely independent implementation of the upsampling. The count
     # in every bin is scaled according to the reatio of weighted bin volumes.
     upsampled_hist = np.zeros_like(example_map_upsampled.nominal_values)
@@ -249,11 +247,11 @@ def test_resample():
         coarse_bin_volume = coarse_binning.weighted_bin_volumes(
             attach_units=False,
         )[coarse_index].squeeze().item()
-    
+
         upsampled_hist[bin_idx] = coarse_hist[coarse_index]
         upsampled_hist[bin_idx] *= fine_bin_volume
         upsampled_hist[bin_idx] /= coarse_bin_volume
-    
+
     # done, at last!
     random_map_upsampled = Map(
         name="random_upsampled",
@@ -261,7 +259,7 @@ def test_resample():
         binning=up_binning
     )
     random_map_upsampled.set_errors(None)
-    
+
     # After ALL THIS, we get the same modified chi-square from the coarse and the
     # upsampled pair of maps. Neat, huh?
     assert_allclose(random_map_coarse.mod_chi2(example_map),

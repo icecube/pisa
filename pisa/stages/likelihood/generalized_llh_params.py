@@ -15,11 +15,11 @@ The code does the following, in order:
   that quantity is equal to zero
 
 - Populate ANY empty mc bin with a pseudo-weight with a
-  value equal to the maximal weight value of a given 
-  dataset. This correspond to the empty bin strategy #2 
+  value equal to the maximal weight value of a given
+  dataset. This correspond to the empty bin strategy #2
   described in (1902.08831). Note that empty bin strategy #1
   can still be applied later on, if one provides the bin
-  indices where no datasets have any MC events. This step 
+  indices where no datasets have any MC events. This step
   runs in the apply function because the value of the pseudo
   weight will change during minimization.
 
@@ -39,37 +39,31 @@ The stage appends / modifies the following:
         n_mc_events: Map (number of MC events in each bin
 
         new_sum: Map (Sum of the weights in each bin (ie MC expectation),
-                         corrected for the empty bin filling and the mean 
+                         corrected for the empty bin filling and the mean
                          adjustment
 '''
 from __future__ import absolute_import, print_function, division
 
 __author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 
+
 import numpy as np
-import copy
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
-
-
-# uncomment this to debug stuff
 from pisa.utils.log import logging
-from pisa.utils.profiler import profile, line_profile
-from pisa.utils.log import set_verbosity, Levels
-#set_verbosity(Levels.DEBUG)
 
 PSEUDO_WEIGHT = 0.001
 
 
-class generalized_llh_params(Stage):
+class generalized_llh_params(Stage):  # pylint: disable=invalid-name
     """
     Pisa stage that applies mean adjustment and
     empty bin filling. Also computes alphas and betas
     that are needed by the generalized poisson likelihood
- 
+
     """
- 
+
     # this is the constructor with default arguments
     def __init__(self,
                  **std_kwargs,
@@ -79,20 +73,20 @@ class generalized_llh_params(Stage):
         super(generalized_llh_params, self).__init__(expected_params=(),
                                                      **std_kwargs,
                                                      )
- 
+
     def setup_function(self):
         """
         Declare empty containers, determine the number
         of MC events in each bin of each dataset and
         compute mean adjustment
         """
- 
+
         N_bins = self.apply_mode.tot_num_bins
- 
+
         self.data.representation = self.apply_mode
- 
+
         for container in self.data:
- 
+
             #
             # Generate a new container called bin_indices
             #
@@ -100,25 +94,25 @@ class generalized_llh_params(Stage):
             container['llh_betas'] = np.empty((container.size), dtype=FTYPE)
             container['n_mc_events'] = np.empty((container.size), dtype=FTYPE)
             container['old_sum'] = np.empty((container.size), dtype=FTYPE)
- 
+
             #
             # Step 1: assert the number of MC events in each bin,
             #         for each container
             self.data.representation = 'events'
             nevents_sim = np.zeros(N_bins)
- 
+
             for index in range(N_bins):
                 index_mask = container['bin_{}_mask'.format(index)]
                 if 'kfold_mask' in container:
                     index_mask*=container['kfold_mask']
                 # Number of MC events in each bin
                 nevents_sim[index] = np.sum(index_mask)
- 
+
             self.data.representation = self.apply_mode
             np.copyto(src=nevents_sim,
                       dst=container["n_mc_events"])
             container.mark_changed('n_mc_events')
- 
+
             #
             # Step 2: Calculate the mean adjustment for each container
             #
@@ -128,8 +122,8 @@ class generalized_llh_params(Stage):
             else:
                 mean_adjustment = 0.0
             container.set_aux_data(key='mean_adjustment', data=mean_adjustment)
- 
- 
+
+
             #
             # Add hypersurface containers if they don't exist
             # (to avoid errors in get_outputs, if we want )
@@ -138,11 +132,11 @@ class generalized_llh_params(Stage):
             if 'hs_scales' not in container.keys():
                 container['hs_scales'] =  np.empty((container.size), dtype=FTYPE)
                 container['errors'] = np.empty((container.size), dtype=FTYPE)
- 
- 
+
+
     def apply_function(self):
         '''
-        Computes the main inputs to the generalized likelihood 
+        Computes the main inputs to the generalized likelihood
         function on every iteration of the minimizer
 
         '''
@@ -216,10 +210,10 @@ class generalized_llh_params(Stage):
                     logging.warn(container.name, var_z)
                     raise Exception
 
-                # if the weights presents have a mean of zero, 
+                # if the weights presents have a mean of zero,
                 # default to alphas values of PSEUDO_WEIGHT and
                 # of beta = 1.0, which mimicks a narrow PDF
-                # close to 0.0 
+                # close to 0.0
                 beta = np.divide(mean_w, var_z, out=np.ones(1), where=var_z!=0)
                 trad_alpha = np.divide(mean_w**2, var_z, out=np.ones(1)*PSEUDO_WEIGHT, where=var_z!=0)
                 alpha = (n_weights + mean_adjustment)*trad_alpha
@@ -237,6 +231,3 @@ class generalized_llh_params(Stage):
             container.mark_changed('llh_betas')
             container.mark_changed('old_sum')
             container.mark_changed('weights')
-
-
-

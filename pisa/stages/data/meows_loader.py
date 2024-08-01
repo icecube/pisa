@@ -1,24 +1,19 @@
 """
-A class to load in the MEOWS hdf5 files 
+A class to load in the MEOWS hdf5 files
 """
 
-from curses import raw
+from time import time
 
 import numpy as np
 import h5py as h5
-import pandas as pd
-from time import time
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils import vectorizer
-from pisa.utils.profiler import profile
 from pisa.core.container import Container
-from pisa.core.events_pi import EventsPi
 from pisa.utils.resources import find_resource
 
 
-class meows_loader(Stage):
+class meows_loader(Stage):  # pylint: disable=invalid-name
     """
     Docstring incoming...
     """

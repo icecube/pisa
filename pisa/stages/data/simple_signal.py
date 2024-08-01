@@ -1,5 +1,5 @@
 """
-Stage to generate simple 1D data consisting 
+Stage to generate simple 1D data consisting
 of a flat background + gaussian peak with a mean and a width
 
 """
@@ -16,7 +16,7 @@ from pisa.core.stage import Stage
 from pisa.core.bin_indexing import lookup_indices
 
 
-class simple_signal(Stage):
+class simple_signal(Stage):  # pylint: disable=invalid-name
     """
     random toy event generator PISA class
 

@@ -28,7 +28,7 @@ FREEDOM_PARNAMES = [
 ]
 
 
-class freedom_hdf5_loader(Stage):
+class freedom_hdf5_loader(Stage):  # pylint: disable=invalid-name
     """
     FreeDOM hdf5 file loader
 

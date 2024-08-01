@@ -2,7 +2,7 @@
 A Stage to load data from a PISA style hdf5 file into a PISA pi ContainerSet
 """
 
-#TODO This class is become dcereasingly "simple"! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task
+#TODO This class has become decreasingly "simple"! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task
 
 from __future__ import absolute_import, print_function, division
 
@@ -10,14 +10,12 @@ import numpy as np
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils import vectorizer
-from pisa.utils.profiler import profile
 from pisa.core.container import Container
 from pisa.core.events_pi import EventsPi
-from pisa.utils.format import arg_str_seq_none, split
+from pisa.utils.format import split
 
 
-class simple_data_loader(Stage):
+class simple_data_loader(Stage):  # pylint: disable=invalid-name
     """
     HDF5 file loader PISA Pi class
 

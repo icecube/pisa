@@ -11,16 +11,13 @@ from __future__ import absolute_import, print_function, division
 
 import ast
 
-from numba import guvectorize
 import numpy as np
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.core.binning import MultiDimBinning
 from pisa.utils.log import logging
 import pisa.utils.hypersurface as hs
-from pisa.utils.log import set_verbosity, Levels
-#set_verbosity(Levels.DEBUG)
 
 __all__ = ["hypersurfaces",]
 
@@ -213,7 +210,7 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
                 # hs error propagation will be skipped
                 if self.data.representation=='events':
                     logging.trace('WARNING: running stage in events mode. Hypersurface error propagation will be IGNORED.')
-                
+
                 elif self.propagate_uncertainty:
                     container["errors"] = container["weights"] * container["hs_scales_uncertainty"]
 
