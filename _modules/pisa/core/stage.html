@@ -81,17 +81,13 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
 <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
 <span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">ContainerSet</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">arg_to_tuple</span>
 <span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">ParamSelector</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">arg_str_seq_none</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
@@ -219,10 +215,6 @@
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;Stage &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
-            <span class="n">stage</span><span class="o">.</span><span class="n">report_profile</span><span class="p">(</span><span class="n">detailed</span><span class="o">=</span><span class="n">detailed</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Stage.report_profile">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.report_profile">[docs]</a>
     <span class="k">def</span> <span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -274,7 +266,7 @@
 <span class="sd">        params specified in self.expected_params are present.</span>
 
 <span class="sd">        An exception is made for having excess parameters if `ignore_excess` is True</span>
-<span class="sd">        This is useful for stages with `DerivedParams` that are used, but not explicitly accessed by the stage </span>
+<span class="sd">        This is useful for stages with `DerivedParams` that are used, but not explicitly accessed by the stage</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="n">exp_p</span><span class="p">,</span> <span class="n">got_p</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_params</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
@@ -285,12 +277,12 @@
         <span class="n">err_strs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">err_strs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Missing params: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">missing</span><span class="p">)))</span>
-            
-        
+
+
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">excess</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">ignore_excess</span><span class="p">:</span> <span class="c1">#excess isn&#39;t a problem </span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">err_strs</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span> <span class="c1"># return if there aren&#39;t any problems already </span>
-                    <span class="k">return</span> 
+            <span class="k">if</span> <span class="n">ignore_excess</span><span class="p">:</span> <span class="c1">#excess isn&#39;t a problem</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">err_strs</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span> <span class="c1"># return if there aren&#39;t any problems already</span>
+                    <span class="k">return</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">err_strs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Excess params provided: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">excess</span><span class="p">)))</span>
 
@@ -298,8 +290,8 @@
             <span class="s2">&quot;Expected parameters: </span><span class="si">%s</span><span class="s2">;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">exp_p</span><span class="p">))</span>
             <span class="o">+</span> <span class="s2">&quot;;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">err_strs</span><span class="p">)</span>
         <span class="p">)</span>
-        
-        
+
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -421,8 +413,8 @@
             <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">setup_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">setup_function</span><span class="p">()</span> 
-            
+            <span class="bp">self</span><span class="o">.</span><span class="n">setup_function</span><span class="p">()</span>
+
         <span class="c1"># invalidate param hash:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">param_hash</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span></div>
 
