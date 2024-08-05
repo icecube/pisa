@@ -188,7 +188,7 @@
  
             <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_bins</span><span class="p">):</span>
                 <span class="n">index_mask</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span>
-                <span class="k">if</span> <span class="s1">&#39;kfold_mask&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;kfold_mask&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
                     <span class="n">index_mask</span><span class="o">*=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;kfold_mask&#39;</span><span class="p">]</span>
                 <span class="c1"># Number of MC events in each bin</span>
                 <span class="n">nevents_sim</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">index_mask</span><span class="p">)</span>
@@ -206,7 +206,7 @@
                 <span class="n">mean_adjustment</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">mean_number_of_mc_events</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.e-3</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">mean_adjustment</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;mean_adjustment&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">mean_adjustment</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;mean_adjustment&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">mean_adjustment</span><span class="p">)</span>
  
  
             <span class="c1">#</span>
@@ -214,7 +214,7 @@
             <span class="c1"># (to avoid errors in get_outputs, if we want )</span>
             <span class="c1"># these to be returned when you call get_output</span>
             <span class="c1">#</span>
-            <span class="k">if</span> <span class="s1">&#39;hs_scales&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;hs_scales&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
                 <span class="n">container</span><span class="p">[</span><span class="s1">&#39;hs_scales&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
                 <span class="n">container</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
 
@@ -248,7 +248,7 @@
             <span class="c1"># for this part we are in events mode</span>
             <span class="c1"># Find the minimum weight of an entire MC set</span>
             <span class="n">pseudo_weight</span> <span class="o">=</span> <span class="mf">0.001</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;pseudo_weight&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">pseudo_weight</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;pseudo_weight&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">pseudo_weight</span><span class="p">)</span>
 
             <span class="n">old_weight_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_bins</span><span class="p">)</span>
             <span class="n">new_weight_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_bins</span><span class="p">)</span>
@@ -258,13 +258,13 @@
             <span class="c1">#</span>
             <span class="c1"># Load the pseudo_weight and mean displacement values</span>
             <span class="c1">#</span>
-            <span class="n">mean_adjustment</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">scalar_data</span><span class="p">[</span><span class="s1">&#39;mean_adjustment&#39;</span><span class="p">]</span>
-            <span class="n">pseudo_weight</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">scalar_data</span><span class="p">[</span><span class="s1">&#39;pseudo_weight&#39;</span><span class="p">]</span>
+            <span class="n">mean_adjustment</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;mean_adjustment&#39;</span><span class="p">]</span>
+            <span class="n">pseudo_weight</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pseudo_weight&#39;</span><span class="p">]</span>
 
             <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_bins</span><span class="p">):</span>
 
                 <span class="n">index_mask</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span>
-                <span class="k">if</span> <span class="s1">&#39;kfold_mask&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;kfold_mask&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
                     <span class="n">index_mask</span><span class="o">*=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;kfold_mask&#39;</span><span class="p">]</span>
                 <span class="n">current_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">][</span><span class="n">index_mask</span><span class="p">]</span>
 

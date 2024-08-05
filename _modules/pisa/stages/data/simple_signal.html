@@ -74,7 +74,7 @@
              
   <h1>Source code for pisa.stages.data.simple_signal</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Stage to generate simple 1D data consisting </span>
+<span class="sd">Stage to generate simple 1D data consisting</span>
 <span class="sd">of a flat background + gaussian peak with a mean and a width</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
@@ -93,7 +93,7 @@
 
 <div class="viewcode-block" id="simple_signal">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_signal.simple_signal">[docs]</a>
-<span class="k">class</span> <span class="nc">simple_signal</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">simple_signal</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    random toy event generator PISA class</span>
 
@@ -171,24 +171,24 @@
                                                <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span><span class="p">)</span>
 
         <span class="c1"># guys, seriouslsy....?! &quot;stuff&quot;??</span>
-        <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;stuff&#39;</span><span class="p">,</span> <span class="n">signal_initial</span><span class="p">)</span>
+        <span class="n">signal_container</span><span class="p">[</span><span class="s1">&#39;stuff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">signal_initial</span>
         <span class="c1"># Populate its MC weight by equal constant factors</span>
-        <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span>
+        <span class="n">signal_container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span>
         <span class="c1"># Populate the error on those weights</span>
-        <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span> <span class="p">)</span>
+        <span class="n">signal_container</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsig</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span>
 
         <span class="c1">#</span>
         <span class="c1"># Compute the bin indices associated with each event</span>
         <span class="c1">#</span>
         <span class="n">sig_indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">[</span><span class="n">signal_container</span><span class="p">[</span><span class="s1">&#39;stuff&#39;</span><span class="p">]],</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">)</span>
-        <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">,</span> <span class="n">sig_indices</span><span class="p">)</span>
+        <span class="n">signal_container</span><span class="p">[</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sig_indices</span>
 
         <span class="c1">#</span>
         <span class="c1"># Compute an associated bin mask for each output bin</span>
         <span class="c1">#</span>
         <span class="k">for</span> <span class="n">bin_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">tot_num_bins</span><span class="p">):</span>
             <span class="n">sig_bin_mask</span> <span class="o">=</span> <span class="n">sig_indices</span> <span class="o">==</span> <span class="n">bin_i</span>
-            <span class="n">signal_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bin_i</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">sig_bin_mask</span><span class="p">)</span>
+            <span class="n">signal_container</span><span class="p">[</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bin_i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">sig_bin_mask</span>
 
         <span class="c1">#</span>
         <span class="c1"># Add container to the data</span>
@@ -204,17 +204,17 @@
             <span class="n">bkg_container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
             <span class="c1"># Create a set of background events</span>
             <span class="n">initial_bkg_events</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">bkg_min</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">bkg_max</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span><span class="p">)</span>
-            <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;stuff&#39;</span><span class="p">,</span> <span class="n">initial_bkg_events</span><span class="p">)</span>
+            <span class="n">bkg_container</span><span class="p">[</span><span class="s1">&#39;stuff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">initial_bkg_events</span>
             <span class="c1"># create their associated weights</span>
-            <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span>
-            <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span> <span class="p">)</span>
+            <span class="n">bkg_container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span>
+            <span class="n">bkg_container</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbkg</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_factor</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span>
             <span class="c1"># compute their bin indices</span>
             <span class="n">bkg_indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">[</span><span class="n">bkg_container</span><span class="p">[</span><span class="s1">&#39;stuff&#39;</span><span class="p">]],</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">)</span>
-            <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">,</span> <span class="n">bkg_indices</span><span class="p">)</span>
+            <span class="n">bkg_container</span><span class="p">[</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bkg_indices</span>
             <span class="c1"># Add bin indices mask (used in generalized poisson llh)</span>
             <span class="k">for</span> <span class="n">bin_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">tot_num_bins</span><span class="p">):</span>
                 <span class="n">bkg_bin_mask</span> <span class="o">=</span> <span class="n">bkg_indices</span><span class="o">==</span><span class="n">bin_i</span>
-                <span class="n">bkg_container</span><span class="o">.</span><span class="n">add_array_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bin_i</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">bkg_bin_mask</span><span class="p">)</span>
+                <span class="n">bkg_container</span><span class="p">[</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bin_i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">bkg_bin_mask</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">bkg_container</span><span class="p">)</span>
 
@@ -223,8 +223,12 @@
         <span class="c1"># Add the binned counterpart of each events container</span>
         <span class="c1">#</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span></div>
 
 
 
@@ -238,7 +242,7 @@
 
 <span class="sd">        The background is left untouched in this step.</span>
 
-<span class="sd">        A possible upgrade to this function would be to make a </span>
+<span class="sd">        A possible upgrade to this function would be to make a</span>
 <span class="sd">        small background re-weighting</span>
 
 <span class="sd">        This function will be called at every iteration of the minimizer</span>
@@ -272,12 +276,16 @@
                 <span class="c1">#</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">reweighting</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">new_errors</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">])</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">()</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">()</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">)</span>
 
                 <span class="c1"># Re-bin the events weight into new histograms</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+                <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span></div>
 </div>
 
 </pre></div>
