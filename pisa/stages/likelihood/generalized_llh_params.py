@@ -103,7 +103,7 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
 
             for index in range(N_bins):
                 index_mask = container['bin_{}_mask'.format(index)]
-                if 'kfold_mask' in container:
+                if 'kfold_mask' in container.keys:
                     index_mask*=container['kfold_mask']
                 # Number of MC events in each bin
                 nevents_sim[index] = np.sum(index_mask)
@@ -121,7 +121,7 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
                 mean_adjustment = -(1.0-mean_number_of_mc_events) + 1.e-3
             else:
                 mean_adjustment = 0.0
-            container.set_aux_data(key='mean_adjustment', data=mean_adjustment)
+            container.set_aux_data(key='mean_adjustment', val=mean_adjustment)
 
 
             #
@@ -129,7 +129,7 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
             # (to avoid errors in get_outputs, if we want )
             # these to be returned when you call get_output
             #
-            if 'hs_scales' not in container.keys():
+            if 'hs_scales' not in container.keys:
                 container['hs_scales'] =  np.empty((container.size), dtype=FTYPE)
                 container['errors'] = np.empty((container.size), dtype=FTYPE)
 
@@ -160,7 +160,7 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
             # for this part we are in events mode
             # Find the minimum weight of an entire MC set
             pseudo_weight = 0.001
-            container.set_aux_data(key='pseudo_weight', data=pseudo_weight)
+            container.set_aux_data(key='pseudo_weight', val=pseudo_weight)
 
             old_weight_sum = np.zeros(N_bins)
             new_weight_sum = np.zeros(N_bins)
@@ -170,13 +170,13 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
             #
             # Load the pseudo_weight and mean displacement values
             #
-            mean_adjustment = container.scalar_data['mean_adjustment']
-            pseudo_weight = container.scalar_data['pseudo_weight']
+            mean_adjustment = container['mean_adjustment']
+            pseudo_weight = container['pseudo_weight']
 
             for index in range(N_bins):
 
                 index_mask = container['bin_{}_mask'.format(index)]
-                if 'kfold_mask' in container:
+                if 'kfold_mask' in container.keys:
                     index_mask*=container['kfold_mask']
                 current_weights = container['weights'][index_mask]
 

@@ -6,17 +6,13 @@ functionality is built-in.
 from __future__ import absolute_import, division
 
 from copy import deepcopy
-from collections import OrderedDict
 from collections.abc import Mapping
 import inspect
-import numpy as np
-from tabulate import tabulate
 from time import time
+import numpy as np
 
-from pisa.core.binning import MultiDimBinning
 from pisa.core.container import ContainerSet
 from pisa.utils.log import logging
-from pisa.utils.format import arg_to_tuple
 from pisa.core.param import ParamSelector
 from pisa.utils.format import arg_str_seq_none
 from pisa.utils.hash import hash_obj
@@ -143,10 +139,6 @@ class Stage():
         return 'Stage "%s"'%(self.__class__.__name__)
 
     def report_profile(self, detailed=False):
-        for stage in self.stages:
-            stage.report_profile(detailed=detailed)
-
-    def report_profile(self, detailed=False):
         def format(times):
             tot = np.sum(times)
             n = len(times)
@@ -191,7 +183,7 @@ class Stage():
         params specified in self.expected_params are present.
 
         An exception is made for having excess parameters if `ignore_excess` is True
-        This is useful for stages with `DerivedParams` that are used, but not explicitly accessed by the stage 
+        This is useful for stages with `DerivedParams` that are used, but not explicitly accessed by the stage
         """
         assert self.expected_params is not None
         exp_p, got_p = set(self.expected_params), set(params.names)
@@ -202,12 +194,12 @@ class Stage():
         err_strs = []
         if len(missing) > 0:
             err_strs.append("Missing params: %s" % ", ".join(sorted(missing)))
-            
-        
+
+
         if len(excess) > 0:
-            if ignore_excess: #excess isn't a problem 
-                if len(err_strs)==0: # return if there aren't any problems already 
-                    return 
+            if ignore_excess: #excess isn't a problem
+                if len(err_strs)==0: # return if there aren't any problems already
+                    return
             else:
                 err_strs.append("Excess params provided: %s" % ", ".join(sorted(excess)))
 
@@ -215,8 +207,8 @@ class Stage():
             "Expected parameters: %s;\n" % ", ".join(sorted(exp_p))
             + ";\n".join(err_strs)
         )
-        
-        
+
+
 
     @property
     def params(self):
@@ -330,8 +322,8 @@ class Stage():
             end_t = time()
             self.setup_times.append(end_t - start_t)
         else:
-            self.setup_function() 
-            
+            self.setup_function()
+
         # invalidate param hash:
         self.param_hash = -1
 

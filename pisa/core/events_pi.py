@@ -6,6 +6,7 @@ import argparse
 from collections.abc import Mapping, Iterable, Sequence
 from collections import OrderedDict
 import copy
+import re
 
 import numpy as np
 
@@ -551,8 +552,11 @@ class EventsPi(OrderedDict):
             # Create the cut expression, and get the resulting mask
             crit_str = keep_criteria
             for variable_name in variables:
-                crit_str = crit_str.replace(
-                    variable_name, 'self["%s"]["%s"]' % (key, variable_name)
+                # using word boundary \b to replace whole words only
+                crit_str = re.sub(
+                    r'\b{}\b'.format(variable_name),
+                    'self["%s"]["%s"]' % (key, variable_name),
+                    crit_str
                 )
             mask = eval(crit_str)  # pylint: disable=eval-used
 
