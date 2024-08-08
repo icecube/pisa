@@ -74,16 +74,16 @@
              
   <h1>Source code for pisa.utils.config_parser</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Parse a ConfigFile object into a dict containing an item for every analysis</span>
+<span class="sd">Parse a config file into a dict containing an item for every analysis</span>
 <span class="sd">stage, that itself contains all necessary instantiation arguments/objects for</span>
-<span class="sd">that stage. for en example config file, please consider</span>
+<span class="sd">that stage. For an example config file, please consider</span>
 <span class="sd">:file:`$PISA/pisa_examples/resources/settings/pipeline/example.cfg`</span>
 
 <span class="sd">Config File Structure</span>
 <span class="sd">=====================</span>
 
 <span class="sd">A pipeline config file is expected to contain something like the following,</span>
-<span class="sd">with the sections ``[pipeline]`` and corresponding ``[stage:service]``</span>
+<span class="sd">with the sections ``[pipeline]`` and corresponding ``[stage.service]``</span>
 <span class="sd">required, in addition to a ``[binning]`` section:</span>
 
 <span class="sd">.. code-block:: cfg</span>
@@ -95,8 +95,8 @@
 
 <span class="sd">    order = stageA.serviceA, stageB.serviceB</span>
 
-<span class="sd">    output_binning = bining1</span>
-<span class="sd">    output_key = (&#39;weights&#39;, &#39;errors&#39;)</span>
+<span class="sd">    output_binning = binning1</span>
+<span class="sd">    output_key = weights, errors</span>
 
 
 <span class="sd">    [binning]</span>
@@ -114,8 +114,8 @@
 
 <span class="sd">    [stageA.serviceA]</span>
 
-<span class="sd">    input_binning = bining1</span>
-<span class="sd">    output_binning = binning1</span>
+<span class="sd">    calc_mode = binning1</span>
+<span class="sd">    apply_mode = binning1</span>
 <span class="sd">    error_method = None</span>
 <span class="sd">    debug_mode = False</span>
 
@@ -134,8 +134,8 @@
 
 <span class="sd">    [stageB.serviceB]</span>
 
-<span class="sd">    input_binning = bining1</span>
-<span class="sd">    output_binning = binning1</span>
+<span class="sd">    calc_mode = binning1</span>
+<span class="sd">    apply_mode = binning1</span>
 <span class="sd">    error_method = None</span>
 <span class="sd">    debug_mode = False</span>
 
@@ -148,23 +148,28 @@
 <span class="sd">  #include statement must be the first non-whitespace on a line, and these</span>
 <span class="sd">  statements can be used anywhere within a config file.</span>
 <span class="sd">* ``#include resource as xyz`` statements behave similarly, but prepend the</span>
-<span class="sd">  included file&#39;s text with a setion header containing ``xyz`` in this case.</span>
-<span class="sd">* ``pipeline`` is the top-most section that defines the hierarchy of stages and</span>
-<span class="sd">  what services to be instantiated.</span>
+<span class="sd">  included file&#39;s text with a section header containing ``xyz`` in this case.</span>
+<span class="sd">* ``pipeline`` is the top-most section that defines the hierarchy of stages</span>
+<span class="sd">  and services to be instantiated. An ``output_binning`` is required to be able</span>
+<span class="sd">  to get a :class:`pisa.core.map.MapSet` (set of histograms) output for</span>
+<span class="sd">  the pipeline; ``output_key`` then specifies the keys of the data passed</span>
+<span class="sd">  through the pipeline which contain histogram weights and (if desired) errors</span>
+<span class="sd">  (note: the presence of these keys is in general not obvious from a given</span>
+<span class="sd">  pipeline config file itself)</span>
 <span class="sd">* ``binning`` can contain different binning definitions, that are then later</span>
 <span class="sd">  referred to from within the ``stage.service`` sections.</span>
-<span class="sd">* ``stage.service`` one such section per stage.service is necessary. It</span>
-<span class="sd">  contains some options that are common for all stages (`binning`,</span>
-<span class="sd">  `error_method` and `debug_mode`) as well as all the necessary arguments and</span>
-<span class="sd">  parameters for a given stage.</span>
+<span class="sd">* ``stage.service``: one such section per stage.service is necessary. It may</span>
+<span class="sd">  contain the options ``debug_mode``, ``error_method`, ``calc_mode``,</span>
+<span class="sd">  ``apply_mode``, which are common to all stages, and must contain all the</span>
+<span class="sd">  necessary arguments and parameters for a given stage.service.</span>
 <span class="sd">* Duplicate section headers and duplicate keys within a section are illegal.</span>
 
 
 <span class="sd">Param definitions</span>
 <span class="sd">-----------------</span>
 
-<span class="sd">Every key in a stage section that starts with `param.&lt;name&gt;` is interpreted and</span>
-<span class="sd">parsed into a PISA :class:`pisa.core.param.Param` object. These can be strings</span>
+<span class="sd">Every key in a stage section that starts with ``param.&lt;name&gt;`` is interpreted and</span>
+<span class="sd">parsed into a :class:`pisa.core.param.Param` object. These can be strings</span>
 <span class="sd">(e.g. a filename--but don&#39;t use any quotation marks) or quantities (numbers</span>
 <span class="sd">with units).</span>
 
@@ -187,8 +192,8 @@
 <span class="sd">If no units are explicitly set for a quantity, it is taken to be a quantity</span>
 <span class="sd">with special units ``dimensionless``. Units can be set by multiplying (using</span>
 <span class="sd">``*``) by ``units.&lt;unit&gt;`` where ``&lt;unit&gt;`` is the short or long name</span>
-<span class="sd">(optionally including metric prefix) of a unit. E.g. the following set</span>
-<span class="sd">equivalent values for params `p1` and `p2`:</span>
+<span class="sd">(optionally including metric prefix) of a unit. For example, the following</span>
+<span class="sd">lines set equivalent values for params ``p1`` and ``p2``:</span>
 
 <span class="sd">.. code-block:: cfg</span>
 
@@ -205,7 +210,8 @@
 <span class="sd">example ``param.p1.fixed = False``, which makes p1 a free parameter in the</span>
 <span class="sd">fit (by default a parameter is fixed unless specified like this).</span>
 
-<span class="sd">Uniform and spline priors can also be set using the ``.prior`` attribute:</span>
+<span class="sd">A uniform, spline, or Jeffreys :class:`pisa.core.prior.Prior` can also be set</span>
+<span class="sd">using the ``.prior`` attribute:</span>
 
 <span class="sd">.. code-block:: cfg</span>
 
@@ -216,18 +222,18 @@
 <span class="sd">    param.p2.prior = spline</span>
 <span class="sd">    param.p2.prior.data = resource_loc</span>
 
+<span class="sd">    param.p3 = 12.5</span>
+<span class="sd">    param.p3.prior = jeffreys</span>
+
+<span class="sd">In the second case, a ``.prior.data`` option will be expected, pointing to the</span>
+<span class="sd">spline data file.</span>
 <span class="sd">If no prior is specified, it is taken to have no prior (or, equivalently, a</span>
-<span class="sd">uniform prior with no penalty). A uniform prior can be explicitly set or</span>
-<span class="sd">arbitrary (Priors (including a Gaussian prior, as an alternative to the above</span>
-<span class="sd">notation) can be explicitly set using the ``.prior`` attribute of a ``param``:</span>
+<span class="sd">uniform prior with no penalty).</span>
 
-<span class="sd">A range must be given for a free parameter. Either as absolute range `[x,y]` or</span>
-<span class="sd">in conjunction with the keywords `nominal` (= nominal parameter value) and</span>
-<span class="sd">`sigma` if the param was specified with the `+/-` notation.</span>
+<span class="sd">A range must be given for a free parameter. Either as absolute range ``[x,y]``</span>
+<span class="sd">or in conjunction with the keywords ``nominal`` (= nominal parameter value) and</span>
+<span class="sd">``sigma`` if the param was specified with the ``+/-`` notation.</span>
 
-<span class="sd">`.prior` is another argument, that can take the values `uniform` or `spline`,</span>
-<span class="sd">for the latter case a `.prior.data` will be expected, pointing to the spline</span>
-<span class="sd">data file.</span>
 
 <span class="sd">N.B.</span>
 <span class="sd">++++</span>
@@ -237,40 +243,48 @@
 
 <span class="sd">Note that this mechanism of synchronizing parameters holds only within the</span>
 <span class="sd">scope of a single pipeline; synchronization of parameters across pipelines is</span>
-<span class="sd">done by adding the pipelines to a single DistributionMaker object and updating</span>
-<span class="sd">params through the DistributionMaker&#39;s update_params method.</span>
+<span class="sd">done by adding the pipelines to a single</span>
+<span class="sd">:class:`pisa.core.distribution_maker.DistributionMaker` object and updating</span>
+<span class="sd">params through the DistributionMaker&#39;s</span>
+<span class="sd">:func:`pisa.core.distribution_maker.DistributionMaker.update_params` method.</span>
 
-<span class="sd">If you DO NOT want parameters to be synchronized, provide a unique_id for them.</span>
-<span class="sd">This is imply done by setting `.unique_id`</span>
+<span class="sd">If you DO NOT want parameters to be synchronized, provide a ``unique_id`` for them.</span>
+<span class="sd">This is simply done by setting ``.unique_id``</span>
 
 
 <span class="sd">Param selector</span>
 <span class="sd">--------------</span>
 
-<span class="sd">A special mechanism allows the user to specify multiple, different values for</span>
-<span class="sd">the same param via the param selector method. This can be used for example for</span>
-<span class="sd">hypothesis testing, there for hypothesis A a param takes a certain value, while</span>
-<span class="sd">for hypothesis B a different value.</span>
+<span class="sd">A special mechanism allows the user to specify different values for</span>
+<span class="sd">the same param via the :class:`pisa.core.param.ParamSelector` mechanism.</span>
+<span class="sd">This can be used for example for hypothesis testing, where for hypothesis A a</span>
+<span class="sd">param takes one value and for hypothesis B another.</span>
 
-<span class="sd">A given param, say `foo`, then needs two definitions like the following,</span>
-<span class="sd">assuming we name our selections `A` and `B`:</span>
+<span class="sd">A given param, say ``foo``, then needs two definitions like the following,</span>
+<span class="sd">assuming we name our selections ``A`` and ``B``:</span>
 
 <span class="sd">.. code-block:: cfg</span>
 
 <span class="sd">    param.A.foo = 1</span>
 <span class="sd">    param.B.foo = 2</span>
 
-<span class="sd">The default param selector needs to be spcified under section `pipeline` as e.g.</span>
+<span class="sd">The default param selector needs to be specified in the ``pipeline`` section as</span>
+<span class="sd">e.g.</span>
 
 <span class="sd">.. code-block:: cfg</span>
 
 <span class="sd">    param_selections = A</span>
 
-<span class="sd">Which will default the value of 1 for param `foo`. An instatiated pipeline can</span>
-<span class="sd">dynamically switch to another selection after instantiation.</span>
+<span class="sd">, which will default to the value of 1 for param ``foo``. An instantiated</span>
+<span class="sd">pipeline can dynamically switch to another selection after instantiation.</span>
 
-<span class="sd">Multiple different param selectors are allowed in a single config. In the</span>
+<span class="sd">Multiple different param selections are allowed in a single config. In the</span>
 <span class="sd">default selection they must be separated by commas.</span>
+
+<span class="sd">N.B.</span>
+<span class="sd">+++</span>
+<span class="sd">Currently, for better or worse, the param selector mechanism requires at least</span>
+<span class="sd">one stage which contains all of the specified selections.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -297,8 +311,7 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span> <span class="n">ArgumentParser</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">abspath</span><span class="p">,</span> <span class="n">expanduser</span><span class="p">,</span> <span class="n">expandvars</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">join</span>
 <span class="kn">import</span> <span class="nn">re</span>
@@ -517,14 +530,14 @@
 <span class="k">def</span> <span class="nf">parse_param</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">selector</span><span class="p">,</span> <span class="n">fullname</span><span class="p">,</span> <span class="n">pname</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a param specification from a PISA config file.</span>
 
-<span class="sd">    Note that if the param sepcification does not include ``fixed``,</span>
+<span class="sd">    Note that if the param specification does not include ``fixed``,</span>
 <span class="sd">    ``prior``, and/or ``range``, the defaults for these are:</span>
 <span class="sd">    ``fixed = True``, ``prior = None``, and ``range = None``.</span>
 
 <span class="sd">    If a prior is specified explicitly via ``.prior``, this takes precendence,</span>
 <span class="sd">    but if no ``.prior`` is specified and the param&#39;s value is parsed to be a</span>
-<span class="sd">    :class:`uncertainties.AffineScalarFunc` (i.e. have `std_dev` attribute), a</span>
-<span class="sd">    Gaussian prior is constructed from that and then the AffineScalarFunc is</span>
+<span class="sd">    :class:`uncertainties.AffineScalarFunc` (i.e. have ``std_dev`` attribute),</span>
+<span class="sd">    a Gaussian prior is constructed from that and then the AffineScalarFunc is</span>
 <span class="sd">    stripped out of the param&#39;s value (such that it is just a</span>
 <span class="sd">    :class:`~pint.quantity.Quantity`).</span>
 
@@ -579,16 +592,17 @@
         <span class="c1"># prior from here on out)</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">range_</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">units</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
 
-    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span><span class="o">+</span><span class="s2">&quot;.function_file&quot;</span><span class="p">):</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;function_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span><span class="o">+</span><span class="s2">&quot;.function_file&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.function_file&#39;</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;function_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.function_file&#39;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span><span class="o">+</span><span class="s2">&quot;.depends_names&quot;</span><span class="p">):</span>
-        <span class="c1"># this means this is a derived parameter, so we throw away the default `fixed` and `prior` kwargs</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.depends_names&#39;</span><span class="p">):</span>
+        <span class="c1"># This means this is a derived parameter, so we throw away the default</span>
+        <span class="c1"># `fixed` and `prior` kwargs</span>
         <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;is_fixed&#39;</span><span class="p">]</span>
         <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;prior&#39;</span><span class="p">]</span>
 
-        <span class="n">depends</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span><span class="o">+</span><span class="s2">&quot;.depends_names&quot;</span><span class="p">)</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;depends_names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">depends</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+        <span class="n">depends</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.depends_names&#39;</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;depends_names&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">depends</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.prior&#39;</span><span class="p">):</span>
         <span class="n">prior</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.prior&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
@@ -651,13 +665,13 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    config : string or ConfigParser</span>
+<span class="sd">    config : string or pisa.utils.config_parser.PISAConfigParser</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    stage_dicts : OrderedDict</span>
 <span class="sd">        Keys are (stage_name, service_name) tuples and values are OrderedDicts</span>
-<span class="sd">        with keys the argnames and values the arguments&#39; values. Some known arg</span>
+<span class="sd">        with arguments&#39; names as keys and values as values. Some known arg</span>
 <span class="sd">        values are parsed out fully into Python objects, while the rest remain</span>
 <span class="sd">        as strings that must be used or parsed elsewhere.</span>
 
@@ -687,7 +701,8 @@
     <span class="c1"># Loop over binning lines</span>
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.order&#39;</span><span class="p">):</span>
-            <span class="c1"># Found the first line in a new binning, get the individual bin dimension definitions...</span>
+            <span class="c1"># Found the first line in a new binning, get the individual bin</span>
+            <span class="c1"># dimension definitions...</span>
             <span class="n">order</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;binning&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
             <span class="n">binning</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
             <span class="n">bins</span> <span class="o">=</span> <span class="p">[]</span>
@@ -751,14 +766,19 @@
         <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
 
     <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;output_binning&#39;</span><span class="p">):</span>
-        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_binning&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">binning_dict</span><span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;output_binning&#39;</span><span class="p">)]</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_binning&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">binning_dict</span><span class="p">[</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;output_binning&#39;</span><span class="p">)</span>
+        <span class="p">]</span>
         <span class="n">output_key</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;output_key&#39;</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Output key should be exactly one key, or a tuple (key, error_key), but is </span><span class="si">{</span><span class="n">output_key</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;&#39;&#39;Output key should be exactly one key, or a tuple</span>
+<span class="s1">                (key, error_key), but is </span><span class="si">{</span><span class="n">output_key</span><span class="si">}</span><span class="s1">&#39;&#39;&#39;</span>
+            <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_binning&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;output_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -769,7 +789,9 @@
         <span class="n">param_selections</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;param_selections&#39;</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;detector_name&#39;</span><span class="p">):</span>
-        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;detector_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;detector_name&#39;</span><span class="p">)</span>
+        <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;detector_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="n">section</span><span class="p">,</span> <span class="s1">&#39;detector_name&#39;</span>
+        <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">stage_dicts</span><span class="p">[</span><span class="n">section</span><span class="p">][</span><span class="s1">&#39;detector_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -870,7 +892,8 @@
 
                 <span class="n">param_selector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="n">infodict</span><span class="p">[</span><span class="s1">&#39;selector&#39;</span><span class="p">])</span>
 
-            <span class="c1"># If it is a binning defined in the &quot;binning&quot; section, use the parsed value</span>
+            <span class="c1"># If it is a binning defined in the &quot;binning&quot; section, use the</span>
+            <span class="c1"># parsed value</span>
             <span class="k">elif</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">binning_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">service_kwargs</span><span class="p">[</span><span class="n">fullname</span><span class="p">]</span> <span class="o">=</span> <span class="n">binning_dict</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
 
@@ -915,13 +938,17 @@
         <span class="k">if</span> <span class="n">n_params</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">service_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;params&#39;</span><span class="p">)</span>
 
-        <span class="c1"># finish setting up the derived parameters </span>
+        <span class="c1"># finish setting up the derived parameters</span>
         <span class="k">if</span> <span class="n">n_derived_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">param_selector</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">DerivedParam</span><span class="p">):</span>
-                    <span class="c1"># give the derived parameter references to the parameters it depends on </span>
-                    <span class="n">param</span><span class="o">.</span><span class="n">dependson</span> <span class="o">=</span> <span class="p">[</span><span class="n">param_selector</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">depends_names</span><span class="p">]</span>
-                    
+                    <span class="c1"># Give the derived parameter references to the parameters</span>
+                    <span class="c1"># it depends on</span>
+                    <span class="n">param</span><span class="o">.</span><span class="n">dependson</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">param_selector</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">depends_names</span>
+                    <span class="p">]</span>
+
 
         <span class="c1"># Store the service&#39;s kwargs to the stage_dicts</span>
         <span class="n">stage_dicts</span><span class="p">[(</span><span class="n">stage</span><span class="p">,</span> <span class="n">service</span><span class="p">)]</span> <span class="o">=</span> <span class="n">service_kwargs</span>
@@ -1151,7 +1178,7 @@
 
 <span class="sd">    where the files or resources located at &quot;/path/to/file.cfg&quot;,</span>
 <span class="sd">    &quot;path/to/resource.cfg&quot;, and &quot;path/to/resource2.cfg&quot; are effectively inlined</span>
-<span class="sd">    wherever the #include statements occur.</span>
+<span class="sd">    wherever the ``#include`` statements occur.</span>
 
 <span class="sd">    The ``#include path/to/resource2.cfg as section_name`` syntax</span>
 <span class="sd">    prefixes the contents of ``resource2.cfg`` by a section header named</span>
@@ -1166,10 +1193,10 @@
 
 <span class="sd">    Special parsing rules we have added to make ``#include`` behavior sensible:</span>
 
-<span class="sd">    1. Using an ``#include file`` that contains a sction header</span>
+<span class="sd">    1. Using an ``#include file`` that contains a section header</span>
 <span class="sd">       (``[section_name]``) *or* using ``#include file as section_name``</span>
-<span class="sd">       requires that the next non-blank / non-comment / non-#include line be a</span>
-<span class="sd">       new section header (``[section_name2]``).</span>
+<span class="sd">       requires that the next non-blank / non-comment / non-``#include`` line</span>
+<span class="sd">       be a new section header (``[section_name2]``).</span>
 <span class="sd">    2. Empty sections after fully parsing a config will raise a ``ValueError``.</span>
 <span class="sd">       This is likely never a desired behavior, and should alert the user to</span>
 <span class="sd">       inadvertent use of ``#include``.</span>
@@ -1209,8 +1236,7 @@
     <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set an option.  Extends RawConfigParser.set by validating type and</span>
 <span class="sd">        interpolation syntax on the value.&quot;&quot;&quot;</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_value_types</span><span class="p">(</span><span class="n">option</span><span class="o">=</span><span class="n">option</span><span class="p">,</span>
-                                                      <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_value_types</span><span class="p">(</span><span class="n">option</span><span class="o">=</span><span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 
 
@@ -1220,7 +1246,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new section in the configuration.  Extends</span>
 <span class="sd">        RawConfigParser.add_section by validating if the section name is</span>
 <span class="sd">        a string.&quot;&quot;&quot;</span>
-        <span class="n">section</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_value_types</span><span class="p">(</span><span class="n">section</span><span class="o">=</span><span class="n">section</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_value_types</span><span class="p">(</span><span class="n">section</span><span class="o">=</span><span class="n">section</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">section</span><span class="p">)</span></div>
 
 
@@ -1484,6 +1510,22 @@
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">vals</span> <span class="o">==</span> <span class="n">config0</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
+    <span class="c1"># set some option after parsing and compare</span>
+    <span class="n">config2</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="p">()</span>
+    <span class="n">config2</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">suffix</span> <span class="o">=</span> <span class="s1">&#39;_edit&#39;</span>
+    <span class="n">config2</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+        <span class="n">section</span><span class="o">=</span><span class="s1">&#39;pipeline&#39;</span><span class="p">,</span>
+        <span class="n">option</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span>
+        <span class="n">value</span><span class="o">=</span><span class="n">config1</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">suffix</span>
+    <span class="p">)</span>
+    <span class="n">config2</span> <span class="o">=</span> <span class="n">parse_pipeline_config</span><span class="p">(</span><span class="n">config2</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">config2</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">vals</span> <span class="o">!=</span> <span class="n">config1</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+            <span class="k">assert</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;pipeline&#39;</span>
+            <span class="k">assert</span> <span class="n">vals</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">config1</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">suffix</span>
+
+
 <span class="k">def</span> <span class="nf">test_MutableMultiFileIterator</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for class `MutableMultiFileIterator`&quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">shutil</span>
@@ -1548,7 +1590,7 @@
         <span class="n">formatter_class</span><span class="o">=</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;pipeline&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;CONFIGFILE&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;CONFIGFILE&#39;</span><span class="p">,</span>
         <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Pipeline config file to parse&#39;</span><span class="p">,</span>

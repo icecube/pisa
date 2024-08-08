@@ -859,14 +859,14 @@ magnitude prefixes (micro, milli, …, giga, etc.).</p>
 </section>
 <section id="module-pisa.utils.config_parser">
 <span id="pisa-utils-config-parser-module"></span><h2>pisa.utils.config_parser module<a class="headerlink" href="#module-pisa.utils.config_parser" title="Link to this heading"></a></h2>
-<p>Parse a ConfigFile object into a dict containing an item for every analysis
+<p>Parse a config file into a dict containing an item for every analysis
 stage, that itself contains all necessary instantiation arguments/objects for
-that stage. for en example config file, please consider
+that stage. For an example config file, please consider
 <code class="file docutils literal notranslate"><span class="pre">$PISA/pisa_examples/resources/settings/pipeline/example.cfg</span></code></p>
 <section id="config-file-structure">
 <h3>Config File Structure<a class="headerlink" href="#config-file-structure" title="Link to this heading"></a></h3>
 <p>A pipeline config file is expected to contain something like the following,
-with the sections <code class="docutils literal notranslate"><span class="pre">[pipeline]</span></code> and corresponding <code class="docutils literal notranslate"><span class="pre">[stage:service]</span></code>
+with the sections <code class="docutils literal notranslate"><span class="pre">[pipeline]</span></code> and corresponding <code class="docutils literal notranslate"><span class="pre">[stage.service]</span></code>
 required, in addition to a <code class="docutils literal notranslate"><span class="pre">[binning]</span></code> section:</p>
 <div class="highlight-cfg notranslate"><div class="highlight"><pre><span></span><span class="c1">#include file_x.cfg as x</span>
 <span class="c1">#include file_y.cfg as y</span>
@@ -875,8 +875,8 @@ required, in addition to a <code class="docutils literal notranslate"><span clas
 
 <span class="na">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">stageA.serviceA, stageB.serviceB</span>
 
-<span class="na">output_binning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">bining1</span>
-<span class="na">output_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">(&#39;weights&#39;, &#39;errors&#39;)</span>
+<span class="na">output_binning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">binning1</span>
+<span class="na">output_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">weights, errors</span>
 
 
 <span class="k">[binning]</span>
@@ -894,8 +894,8 @@ required, in addition to a <code class="docutils literal notranslate"><span clas
 
 <span class="k">[stageA.serviceA]</span>
 
-<span class="na">input_binning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">bining1</span>
-<span class="na">output_binning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">binning1</span>
+<span class="na">calc_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">binning1</span>
+<span class="na">apply_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">binning1</span>
 <span class="na">error_method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">None</span>
 <span class="na">debug_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">False</span>
 
@@ -914,8 +914,8 @@ required, in addition to a <code class="docutils literal notranslate"><span clas
 
 <span class="k">[stageB.serviceB]</span>
 
-<span class="na">input_binning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">bining1</span>
-<span class="na">output_binning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">binning1</span>
+<span class="na">calc_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">binning1</span>
+<span class="na">apply_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">binning1</span>
 <span class="na">error_method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">None</span>
 <span class="na">debug_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">False</span>
 
@@ -930,21 +930,26 @@ required, in addition to a <code class="docutils literal notranslate"><span clas
 #include statement must be the first non-whitespace on a line, and these
 statements can be used anywhere within a config file.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">resource</span> <span class="pre">as</span> <span class="pre">xyz</span></code> statements behave similarly, but prepend the
-included file’s text with a setion header containing <code class="docutils literal notranslate"><span class="pre">xyz</span></code> in this case.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pipeline</span></code> is the top-most section that defines the hierarchy of stages and
-what services to be instantiated.</p></li>
+included file’s text with a section header containing <code class="docutils literal notranslate"><span class="pre">xyz</span></code> in this case.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pipeline</span></code> is the top-most section that defines the hierarchy of stages
+and services to be instantiated. An <code class="docutils literal notranslate"><span class="pre">output_binning</span></code> is required to be able
+to get a <a class="reference internal" href="pisa.core.html#pisa.core.map.MapSet" title="pisa.core.map.MapSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">pisa.core.map.MapSet</span></code></a> (set of histograms) output for
+the pipeline; <code class="docutils literal notranslate"><span class="pre">output_key</span></code> then specifies the keys of the data passed
+through the pipeline which contain histogram weights and (if desired) errors
+(note: the presence of these keys is in general not obvious from a given
+pipeline config file itself)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">binning</span></code> can contain different binning definitions, that are then later
 referred to from within the <code class="docutils literal notranslate"><span class="pre">stage.service</span></code> sections.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">stage.service</span></code> one such section per stage.service is necessary. It
-contains some options that are common for all stages (<cite>binning</cite>,
-<cite>error_method</cite> and <cite>debug_mode</cite>) as well as all the necessary arguments and
-parameters for a given stage.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stage.service</span></code>: one such section per stage.service is necessary. It may
+contain the options <code class="docutils literal notranslate"><span class="pre">debug_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">error_method`,</span> <span class="pre">``calc_mode</span></code>,
+<code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>, which are common to all stages, and must contain all the
+necessary arguments and parameters for a given stage.service.</p></li>
 <li><p>Duplicate section headers and duplicate keys within a section are illegal.</p></li>
 </ul>
 <section id="param-definitions">
 <h4>Param definitions<a class="headerlink" href="#param-definitions" title="Link to this heading"></a></h4>
-<p>Every key in a stage section that starts with <cite>param.&lt;name&gt;</cite> is interpreted and
-parsed into a PISA <a class="reference internal" href="pisa.core.html#pisa.core.param.Param" title="pisa.core.param.Param"><code class="xref py py-class docutils literal notranslate"><span class="pre">pisa.core.param.Param</span></code></a> object. These can be strings
+<p>Every key in a stage section that starts with <code class="docutils literal notranslate"><span class="pre">param.&lt;name&gt;</span></code> is interpreted and
+parsed into a <a class="reference internal" href="pisa.core.html#pisa.core.param.Param" title="pisa.core.param.Param"><code class="xref py py-class docutils literal notranslate"><span class="pre">pisa.core.param.Param</span></code></a> object. These can be strings
 (e.g. a filename–but don’t use any quotation marks) or quantities (numbers
 with units).</p>
 <p>Quantities expect an expression that can be converted by the
@@ -962,8 +967,8 @@ the number that follows <code class="docutils literal notranslate"><span class="
 <p>If no units are explicitly set for a quantity, it is taken to be a quantity
 with special units <code class="docutils literal notranslate"><span class="pre">dimensionless</span></code>. Units can be set by multiplying (using
 <code class="docutils literal notranslate"><span class="pre">*</span></code>) by <code class="docutils literal notranslate"><span class="pre">units.&lt;unit&gt;</span></code> where <code class="docutils literal notranslate"><span class="pre">&lt;unit&gt;</span></code> is the short or long name
-(optionally including metric prefix) of a unit. E.g. the following set
-equivalent values for params <cite>p1</cite> and <cite>p2</cite>:</p>
+(optionally including metric prefix) of a unit. For example, the following
+lines set equivalent values for params <code class="docutils literal notranslate"><span class="pre">p1</span></code> and <code class="docutils literal notranslate"><span class="pre">p2</span></code>:</p>
 <div class="highlight-cfg notranslate"><div class="highlight"><pre><span></span><span class="na">param.p1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">12.5 * units.GeV</span>
 <span class="na">param.p2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">12.5 * units.gigaelectronvolt</span>
 </pre></div>
@@ -975,25 +980,26 @@ equivalent values for params <cite>p1</cite> and <cite>p2</cite>:</p>
 <p>Additional arguments to a parameter are passed in with the <code class="docutils literal notranslate"><span class="pre">.</span></code> notation, for
 example <code class="docutils literal notranslate"><span class="pre">param.p1.fixed</span> <span class="pre">=</span> <span class="pre">False</span></code>, which makes p1 a free parameter in the
 fit (by default a parameter is fixed unless specified like this).</p>
-<p>Uniform and spline priors can also be set using the <code class="docutils literal notranslate"><span class="pre">.prior</span></code> attribute:</p>
+<p>A uniform, spline, or Jeffreys <a class="reference internal" href="pisa.core.html#pisa.core.prior.Prior" title="pisa.core.prior.Prior"><code class="xref py py-class docutils literal notranslate"><span class="pre">pisa.core.prior.Prior</span></code></a> can also be set
+using the <code class="docutils literal notranslate"><span class="pre">.prior</span></code> attribute:</p>
 <div class="highlight-cfg notranslate"><div class="highlight"><pre><span></span><span class="na">param.p1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">12.5</span>
 <span class="na">param.p1.prior</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
 
 <span class="na">param.p2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">12.5</span>
 <span class="na">param.p2.prior</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spline</span>
 <span class="na">param.p2.prior.data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">resource_loc</span>
+
+<span class="na">param.p3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">12.5</span>
+<span class="na">param.p3.prior</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">jeffreys</span>
 </pre></div>
 </div>
-<p>If no prior is specified, it is taken to have no prior (or, equivalently, a
-uniform prior with no penalty). A uniform prior can be explicitly set or
-arbitrary (Priors (including a Gaussian prior, as an alternative to the above
-notation) can be explicitly set using the <code class="docutils literal notranslate"><span class="pre">.prior</span></code> attribute of a <code class="docutils literal notranslate"><span class="pre">param</span></code>:</p>
-<p>A range must be given for a free parameter. Either as absolute range <cite>[x,y]</cite> or
-in conjunction with the keywords <cite>nominal</cite> (= nominal parameter value) and
-<cite>sigma</cite> if the param was specified with the <cite>+/-</cite> notation.</p>
-<p><cite>.prior</cite> is another argument, that can take the values <cite>uniform</cite> or <cite>spline</cite>,
-for the latter case a <cite>.prior.data</cite> will be expected, pointing to the spline
-data file.</p>
+<p>In the second case, a <code class="docutils literal notranslate"><span class="pre">.prior.data</span></code> option will be expected, pointing to the
+spline data file.
+If no prior is specified, it is taken to have no prior (or, equivalently, a
+uniform prior with no penalty).</p>
+<p>A range must be given for a free parameter. Either as absolute range <code class="docutils literal notranslate"><span class="pre">[x,y]</span></code>
+or in conjunction with the keywords <code class="docutils literal notranslate"><span class="pre">nominal</span></code> (= nominal parameter value) and
+<code class="docutils literal notranslate"><span class="pre">sigma</span></code> if the param was specified with the <code class="docutils literal notranslate"><span class="pre">+/-</span></code> notation.</p>
 <section id="n-b">
 <h5>N.B.<a class="headerlink" href="#n-b" title="Link to this heading"></a></h5>
 <p>Params that have the same name in multiple stages of the pipeline are
@@ -1001,32 +1007,39 @@ instantiated as references to a single param in memory, so updating one updates
 all of them.</p>
 <p>Note that this mechanism of synchronizing parameters holds only within the
 scope of a single pipeline; synchronization of parameters across pipelines is
-done by adding the pipelines to a single DistributionMaker object and updating
-params through the DistributionMaker’s update_params method.</p>
-<p>If you DO NOT want parameters to be synchronized, provide a unique_id for them.
-This is imply done by setting <cite>.unique_id</cite></p>
+done by adding the pipelines to a single
+<a class="reference internal" href="pisa.core.html#pisa.core.distribution_maker.DistributionMaker" title="pisa.core.distribution_maker.DistributionMaker"><code class="xref py py-class docutils literal notranslate"><span class="pre">pisa.core.distribution_maker.DistributionMaker</span></code></a> object and updating
+params through the DistributionMaker’s
+<a class="reference internal" href="pisa.core.html#pisa.core.distribution_maker.DistributionMaker.update_params" title="pisa.core.distribution_maker.DistributionMaker.update_params"><code class="xref py py-func docutils literal notranslate"><span class="pre">pisa.core.distribution_maker.DistributionMaker.update_params()</span></code></a> method.</p>
+<p>If you DO NOT want parameters to be synchronized, provide a <code class="docutils literal notranslate"><span class="pre">unique_id</span></code> for them.
+This is simply done by setting <code class="docutils literal notranslate"><span class="pre">.unique_id</span></code></p>
 </section>
 </section>
 <section id="param-selector">
 <h4>Param selector<a class="headerlink" href="#param-selector" title="Link to this heading"></a></h4>
-<p>A special mechanism allows the user to specify multiple, different values for
-the same param via the param selector method. This can be used for example for
-hypothesis testing, there for hypothesis A a param takes a certain value, while
-for hypothesis B a different value.</p>
-<p>A given param, say <cite>foo</cite>, then needs two definitions like the following,
-assuming we name our selections <cite>A</cite> and <cite>B</cite>:</p>
+<p>A special mechanism allows the user to specify different values for
+the same param via the <a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSelector" title="pisa.core.param.ParamSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">pisa.core.param.ParamSelector</span></code></a> mechanism.
+This can be used for example for hypothesis testing, where for hypothesis A a
+param takes one value and for hypothesis B another.</p>
+<p>A given param, say <code class="docutils literal notranslate"><span class="pre">foo</span></code>, then needs two definitions like the following,
+assuming we name our selections <code class="docutils literal notranslate"><span class="pre">A</span></code> and <code class="docutils literal notranslate"><span class="pre">B</span></code>:</p>
 <div class="highlight-cfg notranslate"><div class="highlight"><pre><span></span><span class="na">param.A.foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1</span>
 <span class="na">param.B.foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2</span>
 </pre></div>
 </div>
-<p>The default param selector needs to be spcified under section <cite>pipeline</cite> as e.g.</p>
+<p>The default param selector needs to be specified in the <code class="docutils literal notranslate"><span class="pre">pipeline</span></code> section as
+e.g.</p>
 <div class="highlight-cfg notranslate"><div class="highlight"><pre><span></span><span class="na">param_selections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">A</span>
 </pre></div>
 </div>
-<p>Which will default the value of 1 for param <cite>foo</cite>. An instatiated pipeline can
-dynamically switch to another selection after instantiation.</p>
-<p>Multiple different param selectors are allowed in a single config. In the
+<p>, which will default to the value of 1 for param <code class="docutils literal notranslate"><span class="pre">foo</span></code>. An instantiated
+pipeline can dynamically switch to another selection after instantiation.</p>
+<p>Multiple different param selections are allowed in a single config. In the
 default selection they must be separated by commas.</p>
+<p>N.B.
++++
+Currently, for better or worse, the param selector mechanism requires at least
+one stage which contains all of the specified selections.</p>
 </section>
 </section>
 <dl class="py class">
@@ -1100,7 +1113,7 @@ include external files inline via, for example:</p>
 </div>
 <p>where the files or resources located at “/path/to/file.cfg”,
 “path/to/resource.cfg”, and “path/to/resource2.cfg” are effectively inlined
-wherever the #include statements occur.</p>
+wherever the <code class="docutils literal notranslate"><span class="pre">#include</span></code> statements occur.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">path/to/resource2.cfg</span> <span class="pre">as</span> <span class="pre">section_name</span></code> syntax
 prefixes the contents of <code class="docutils literal notranslate"><span class="pre">resource2.cfg</span></code> by a section header named
 “section2”, expanding <code class="docutils literal notranslate"><span class="pre">resource2.cfg</span></code> as:</p>
@@ -1112,10 +1125,10 @@ prefixes the contents of <code class="docutils literal notranslate"><span class=
 </div>
 <p>Special parsing rules we have added to make <code class="docutils literal notranslate"><span class="pre">#include</span></code> behavior sensible:</p>
 <ol class="arabic simple">
-<li><p>Using an <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">file</span></code> that contains a sction header
+<li><p>Using an <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">file</span></code> that contains a section header
 (<code class="docutils literal notranslate"><span class="pre">[section_name]</span></code>) <em>or</em> using <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">file</span> <span class="pre">as</span> <span class="pre">section_name</span></code>
-requires that the next non-blank / non-comment / non-#include line be a
-new section header (<code class="docutils literal notranslate"><span class="pre">[section_name2]</span></code>).</p></li>
+requires that the next non-blank / non-comment / non-<code class="docutils literal notranslate"><span class="pre">#include</span></code> line
+be a new section header (<code class="docutils literal notranslate"><span class="pre">[section_name2]</span></code>).</p></li>
 <li><p>Empty sections after fully parsing a config will raise a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.
 This is likely never a desired behavior, and should alert the user to
 inadvertent use of <code class="docutils literal notranslate"><span class="pre">#include</span></code>.</p></li>
@@ -1221,13 +1234,13 @@ interpolation syntax on the value.</p>
 <dt class="sig sig-object py" id="pisa.utils.config_parser.parse_param">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.config_parser.</span></span><span class="sig-name descname"><span class="pre">parse_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fullname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/config_parser.html#parse_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.config_parser.parse_param" title="Link to this definition"></a></dt>
 <dd><p>Parse a param specification from a PISA config file.</p>
-<p>Note that if the param sepcification does not include <code class="docutils literal notranslate"><span class="pre">fixed</span></code>,
+<p>Note that if the param specification does not include <code class="docutils literal notranslate"><span class="pre">fixed</span></code>,
 <code class="docutils literal notranslate"><span class="pre">prior</span></code>, and/or <code class="docutils literal notranslate"><span class="pre">range</span></code>, the defaults for these are:
 <code class="docutils literal notranslate"><span class="pre">fixed</span> <span class="pre">=</span> <span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">prior</span> <span class="pre">=</span> <span class="pre">None</span></code>, and <code class="docutils literal notranslate"><span class="pre">range</span> <span class="pre">=</span> <span class="pre">None</span></code>.</p>
 <p>If a prior is specified explicitly via <code class="docutils literal notranslate"><span class="pre">.prior</span></code>, this takes precendence,
 but if no <code class="docutils literal notranslate"><span class="pre">.prior</span></code> is specified and the param’s value is parsed to be a
-<code class="xref py py-class docutils literal notranslate"><span class="pre">uncertainties.AffineScalarFunc</span></code> (i.e. have <cite>std_dev</cite> attribute), a
-Gaussian prior is constructed from that and then the AffineScalarFunc is
+<code class="xref py py-class docutils literal notranslate"><span class="pre">uncertainties.AffineScalarFunc</span></code> (i.e. have <code class="docutils literal notranslate"><span class="pre">std_dev</span></code> attribute),
+a Gaussian prior is constructed from that and then the AffineScalarFunc is
 stripped out of the param’s value (such that it is just a
 <code class="xref py py-class docutils literal notranslate"><span class="pre">Quantity</span></code>).</p>
 <dl class="field-list simple">
@@ -1256,11 +1269,11 @@ stripped out of the param’s value (such that it is just a
 <dd><p>Parse pipeline config.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>string</em><em> or </em><em>ConfigParser</em>)</p>
+<dd class="field-odd"><p><strong>config</strong> (<em>string</em><em> or </em><a class="reference internal" href="#pisa.utils.config_parser.PISAConfigParser" title="pisa.utils.config_parser.PISAConfigParser"><em>pisa.utils.config_parser.PISAConfigParser</em></a>)</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>stage_dicts</strong> – Keys are (stage_name, service_name) tuples and values are OrderedDicts
-with keys the argnames and values the arguments’ values. Some known arg
+with arguments’ names as keys and values as values. Some known arg
 values are parsed out fully into Python objects, while the rest remain
 as strings that must be used or parsed elsewhere.</p>
 </dd>
