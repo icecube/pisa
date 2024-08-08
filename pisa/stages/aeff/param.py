@@ -10,7 +10,8 @@ benchmark scenarios.
 
 from __future__ import absolute_import, division
 
-from collections import Mapping, OrderedDict
+from collections import OrderedDict
+from collections.abc import Mapping
 
 import numpy as np
 from scipy.interpolate import interp1d
