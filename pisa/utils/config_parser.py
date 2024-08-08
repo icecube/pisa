@@ -84,7 +84,7 @@ required, in addition to a ``[binning]`` section:
 * ``binning`` can contain different binning definitions, that are then later
   referred to from within the ``stage.service`` sections.
 * ``stage.service``: one such section per stage.service is necessary. It may
-  contain the options ``debug_mode``, ``error_method`, ``calc_mode``,
+  contain the options ``debug_mode``, ``error_method``, ``calc_mode``,
   ``apply_mode``, which are common to all stages, and must contain all the
   necessary arguments and parameters for a given stage.service.
 * Duplicate section headers and duplicate keys within a section are illegal.
@@ -206,10 +206,12 @@ pipeline can dynamically switch to another selection after instantiation.
 Multiple different param selections are allowed in a single config. In the
 default selection they must be separated by commas.
 
+
 N.B.
-+++
+++++
 Currently, for better or worse, the param selector mechanism requires at least
-one stage which contains all of the specified selections.
+one stage which contains `all` of the specified selections.
+
 
 """
 
