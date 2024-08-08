@@ -7,15 +7,12 @@ replacement, which is implemented in this stage by an equivalent re-weighting of
 events.
 """
 
-import numpy as np
 from copy import deepcopy
 from collections import OrderedDict
 
-from pisa import FTYPE, TARGET
-from pisa.core.stage import Stage
-from pisa.utils.numba_tools import WHERE
-from pisa.utils import vectorizer
+import numpy as np
 
+from pisa.core.stage import Stage
 from pisa.utils.log import logging, set_verbosity
 
 __author__ = "A. Trettin"
@@ -35,7 +32,7 @@ __license__ = """Copyright (c) 2022, The IceCube Collaboration
  limitations under the License."""
 
 
-class bootstrap(Stage):
+class bootstrap(Stage):  # pylint: disable=invalid-name
     """
     Stage to make bootstrap samples from input data.
 
@@ -64,7 +61,7 @@ class bootstrap(Stage):
             self.seed = int(seed)
 
     def setup_function(self):
-        
+
         logging.debug(f"Setting up bootstrap with seed: {self.seed}")
 
         from numpy.random import default_rng
@@ -128,11 +125,7 @@ def test_bootstrap():
     """Unit test for the bootstrap stage."""
 
     from pisa.core.distribution_maker import DistributionMaker
-    from pisa.core.map import Map
     from pisa.utils.config_parser import parse_pipeline_config
-    from pisa.utils.comparisons import ALLCLOSE_KW
-
-    from numpy.testing import assert_allclose
 
     example_cfg = parse_pipeline_config("settings/pipeline/example.cfg")
 

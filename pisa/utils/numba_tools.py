@@ -13,7 +13,6 @@ __all__ = [
     "cuda",
     "ctype",
     "ftype",
-    "WHERE",
     "myjit",
     "conjugate_transpose",
     "conjugate_transpose_guf",
@@ -73,7 +72,6 @@ if TARGET == "parallel":
 if TARGET is None:
     raise NotImplementedError("Numba not supported.")
 
-# the `WHERE` variable is for usage with smart arrays
 if TARGET == "cuda":
     from numba import cuda
 
@@ -83,7 +81,6 @@ if TARGET == "cuda":
     elif FTYPE == np.float32:
         ctype = complex64
         ftype = float32
-    WHERE = "gpu"
 else:
     if FTYPE == np.float64:
         ctype = np.complex128
@@ -93,7 +90,6 @@ else:
         ftype = np.float32
     cuda = lambda: None
     cuda.jit = lambda x: x
-    WHERE = "host"
 
 
 if FTYPE == np.float32:

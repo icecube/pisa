@@ -1,17 +1,19 @@
+"""
+A Stage to load data from an sqlite database
+"""
+
 from __future__ import absolute_import, print_function, division
+import sqlite3
 
 import numpy as np
 import pandas as pd
-import sqlite3
+
 from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils import vectorizer
-from pisa.utils.resources import find_resource
-from pisa.utils.profiler import profile
 from pisa.core.container import Container
 
-
-class sqlite_loader(Stage):
+# TODO: docstrings
+class sqlite_loader(Stage):  # pylint: disable=invalid-name
     """
     SQLite loader PISA Pi class
     Parameters
@@ -97,7 +99,7 @@ class sqlite_loader(Stage):
         else:
             container['pid'] = reco['track' + self.post_fix].values.astype(FTYPE)
         return container
-    
+
     def add_aeff_weight(self, container, truth, n_files):
         CM2_TO_M2 = 1e-4
         weighted_aeff = (

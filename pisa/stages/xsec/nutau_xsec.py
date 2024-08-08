@@ -1,32 +1,31 @@
 """
 A stage to apply nutau cross-section uncertainties as implemented in
 https://github.com/marialiubarska/nutau_xsec
-It interpolates between different nutau CC cross section models as compared in this 
+It interpolates between different nutau CC cross section models as compared in this
 paper:
 https://arxiv.org/pdf/1008.2984.pdf?fname=cm&font=TypeI
 """
 
-import numpy as np
 import pickle
+
+import numpy as np
 from numba import guvectorize
 
+from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 from pisa.utils.resources import open_resource
-from pisa.utils import vectorizer
-from pisa import FTYPE, TARGET
-from pisa.utils.numba_tools import WHERE
 
 
-class nutau_xsec(Stage):
+class nutau_xsec(Stage):  # pylint: disable=invalid-name
     """
     Nu_tau cross-section correction to interpolate between different nutau CC
-    cross-section models. This requires the interpolated file produced by 
+    cross-section models. This requires the interpolated file produced by
     Maria Liubarska: https://github.com/marialiubarska/nutau_xsec
 
     Parameters
     ----------
     xsec_file : (string)
-        Path to pickled interpolated function. Default is included in PISA in 
+        Path to pickled interpolated function. Default is included in PISA in
         `pisa_examples/resources/cross_sections/interp_nutau_xsec_protocol2.pckl`
 
     params : ParamSet or sequence with which to instantiate a ParamSet.
@@ -52,19 +51,19 @@ class nutau_xsec(Stage):
         )
 
         self.xsec_file = xsec_file
-    
+
     def setup_function(self):
         with open_resource(self.xsec_file, mode="rb") as fl:
             interp_dict = pickle.load(fl, encoding='latin1')
         interp_nutau = interp_dict["NuTau"]
         interp_nutaubar = interp_dict["NuTauBar"]
-        
+
         self.data.representation = self.calc_mode
         for container in self.data:
             if container.name == "nutau_cc":
                 energy = container["true_energy"]
                 func = interp_nutau(energy)
-                # Invalid values of the function occur below the tau production 
+                # Invalid values of the function occur below the tau production
                 # threshold. For those values, we put in negative infinity, which will
                 # cause them to be clamped to zero when the weights are calculated.
                 func[~np.isfinite(func)] = -np.inf
@@ -89,7 +88,7 @@ class nutau_xsec(Stage):
                     FTYPE(scale),
                     out=container["nutau_xsec_scale"]
                 )
-    
+
     def apply_function(self):
         for container in self.data:
             if container.name in ["nutau_cc", "nutaubar_cc"]:
@@ -111,5 +110,3 @@ def calc_scale_vectorized(func, scale, out):
         out[0] = 1. + func[0] * scale
     else:
         out[0] = 0.
-
-                

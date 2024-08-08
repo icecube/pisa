@@ -9,14 +9,11 @@ from numba import guvectorize
 
 from pisa import FTYPE, ITYPE, TARGET
 from pisa.core.stage import Stage
-from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-
-from pisa.utils.numba_tools import WHERE, myjit
-from pisa.utils.resources import find_resource
+from pisa.utils.numba_tools import myjit
 
 
-class two_nu_osc(Stage):
+class two_nu_osc(Stage):  # pylint: disable=invalid-name
     """
     two neutrino osc PISA Pi class
 
@@ -55,7 +52,7 @@ class two_nu_osc(Stage):
 
         for container in self.data:
             if 'numu' in container.name:
-              apply_probs_vectorized(container['nu_flux'],
+                apply_probs_vectorized(container['nu_flux'],
                                     FTYPE(theta),
                                     FTYPE(deltam31),
                                     container['true_energy'],
@@ -65,7 +62,7 @@ class two_nu_osc(Stage):
                                    )
 
             if 'nutau' in container.name:
-              apply_probs_vectorized(container['nu_flux'],
+                apply_probs_vectorized(container['nu_flux'],
                                     FTYPE(theta),
                                     FTYPE(deltam31),
                                     container['true_energy'],
@@ -74,20 +71,20 @@ class two_nu_osc(Stage):
                                     out=container['weights'],
                                    )
             if 'nue' in container.name:
-              apply_probs_vectorized(container['nu_flux'],
+                apply_probs_vectorized(container['nu_flux'],
                                     FTYPE(theta),
                                     FTYPE(deltam31),
                                     container['true_energy'],
                                     container['true_coszen'],
                                     ITYPE(0),
                                     out=container['weights'],
-                                   )            
-            container.mark_changed('weights') 
+                                   )
+            container.mark_changed('weights')
 
 @myjit
 def calc_probs(t23, dm31, true_energy, true_coszen): #
     ''' calculate osc prob of numu to nutau '''
-    L1 = 19. # atmospheric production height 
+    L1 = 19. # atmospheric production height
     R = 6378.2 + L1 # mean radius of the Earth + L1
     phi = np.arcsin((1-L1/R)*np.sin(np.arccos(true_coszen)))
     psi = np.arccos(true_coszen) - phi

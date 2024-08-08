@@ -23,12 +23,11 @@ from pisa import FTYPE, TARGET, ureg
 from pisa.core.stage import Stage
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.osc_params import OscParams
-from pisa.utils.numba_tools import WHERE
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 
 
-class globes(Stage):
+class globes(Stage):  # pylint: disable=invalid-name
     """
     GLoBES PISA Pi class
 

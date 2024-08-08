@@ -1,5 +1,5 @@
 """
-Implementation of DAEMON flux (https://arxiv.org/abs/2303.00022) 
+Implementation of DAEMON flux (https://arxiv.org/abs/2303.00022)
 by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.
 
 Maria Liubarska, J.P. Yanez 2023
@@ -9,7 +9,7 @@ import numpy as np
 from daemonflux import Flux
 from daemonflux import __version__ as daemon_version
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.core.param import Param
 from pisa.utils.log import logging
@@ -19,10 +19,10 @@ from scipy import interpolate
 from packaging.version import Version
 
 
-class daemon_flux(Stage):
+class daemon_flux(Stage):  # pylint: disable=invalid-name
     """
     DAEMON flux stage
-    
+
     Parameters
     ----------
 
@@ -97,14 +97,14 @@ class daemon_flux(Stage):
         self.daemon_names = self.flux_obj.params.known_parameters
 
         # make parameter names pisa config compatible and add prefix
-        self.daemon_params = ['daemon_'+p.replace('pi+','pi').replace('pi-','antipi').replace('K+','K').replace('K-','antiK') 
+        self.daemon_params = ['daemon_'+p.replace('pi+','pi').replace('pi-','antipi').replace('K+','K').replace('K-','antiK')
                               for p in self.daemon_names]
 
         # add daemon_chi2 internal parameter to carry on chi2 penalty from daemonflux (using covar. matrix)
-        daemon_chi2 = Param(name='daemon_chi2', nominal_value=0., 
+        daemon_chi2 = Param(name='daemon_chi2', nominal_value=0.,
                             value=0., prior=None, range=None, is_fixed=True)
 
-        # saving number of parameters into a internal param in order to check that we don't have 
+        # saving number of parameters into a internal param in order to check that we don't have
         # non-daemonflux params with 'daemon_' in their name, which will make prior penalty calculation incorrect
         daemon_params_len = Param(name='daemon_params_len', nominal_value=len(self.daemon_names)+2,
                                   value=len(self.daemon_names)+2, prior=None, range=None, is_fixed=True)
@@ -150,17 +150,17 @@ class daemon_flux(Stage):
         flux_map_nuebar  = make_2d_flux_map(self.flux_obj,
                                             particle = 'antinue',
                                             params = modif_param_dict)
-        
+
 
         # calc modified flux using provided parameters
         for container in self.data:
             nubar = container['nubar']
 
-            nue_flux   = evaluate_flux_map(flux_map_nuebar if nubar>0 else flux_map_nue, 
+            nue_flux   = evaluate_flux_map(flux_map_nuebar if nubar>0 else flux_map_nue,
                                            container['true_energy'],
                                            container['true_coszen'])
 
-            numu_flux  = evaluate_flux_map(flux_map_numubar if nubar>0 else flux_map_numu, 
+            numu_flux  = evaluate_flux_map(flux_map_numubar if nubar>0 else flux_map_numu,
                                            container['true_energy'],
                                            container['true_coszen'])
 
@@ -199,4 +199,4 @@ def evaluate_flux_map(flux_map, true_energy, true_coszen):
 
     uconv = true_energy**-3 * 1e4
     return flux_map.ev(true_energy, true_coszen) * uconv
-            
+

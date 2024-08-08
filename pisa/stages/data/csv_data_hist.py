@@ -4,18 +4,15 @@ A Stage to load data from a CSV datarelease format file into a PISA pi Container
 
 from __future__ import absolute_import, print_function, division
 
-import numpy as np
 import pandas as pd
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 from pisa.core.container import Container
-from pisa.core.events_pi import EventsPi
 
 
-class csv_data_hist(Stage):
+class csv_data_hist(Stage):  # pylint: disable=invalid-name
     """
     CSV file loader PISA Pi class
 
@@ -52,7 +49,7 @@ class csv_data_hist(Stage):
         container['weights'] = events['count'].values.astype(FTYPE)
         container['reco_energy'] = events['reco_energy'].values.astype(FTYPE)
         container['reco_coszen'] = events['reco_coszen'].values.astype(FTYPE)
-        container['pid'] = events['pid'].values.astype(FTYPE) 
+        container['pid'] = events['pid'].values.astype(FTYPE)
 
         self.data.add_container(container)
 

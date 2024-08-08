@@ -1,6 +1,6 @@
 '''
 Implementing an environmentally-induced decoherence model for neutrino oscillations
-Based on reference [1], which uses an energy-indepedence deocherence matrix in vacuum
+Based on reference [1], which uses an energy-indepedence decoherence matrix in vacuum
 
 References:
   [1] arxiv:1702.04738
@@ -20,7 +20,6 @@ from pisa.utils.profiler import profile
 from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import fill_probs
-from pisa.utils.numba_tools import WHERE
 from pisa.utils.resources import find_resource
 from pisa import ureg
 
@@ -58,7 +57,7 @@ class DecoherenceParams(OscParams): #TODO Start using osc_params instead...
         self.dm32 = self.dm31 - self.dm21
 
 
-def calc_decoherence_probs(decoh_params, flav, energy, baseline, prob_e, prob_mu, prob_tau, two_flavor=False):
+def calc_decoherence_probs(decoh_params, flav, energy, baseline, prob_e, prob_mu, prob_tau, two_flavor=False):  # pylint: disable=invalid-name
     '''
     Oscillation probability calculator function, with decoherence included
 

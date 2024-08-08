@@ -7,7 +7,6 @@ from numba import guvectorize
 
 from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
-from pisa.utils.profiler import profile
 from pisa.utils.log import logging
 from pisa.utils import vectorizer
 from pisa.core.binning import MultiDimBinning
@@ -32,20 +31,20 @@ class set_variance(Stage):  # pylint: disable=invalid-name
             expected_params=(),
             **std_kwargs,
         )
-        
+
         assert isinstance(self.calc_mode, MultiDimBinning)
         assert isinstance(self.apply_mode, MultiDimBinning)
 
         self.variance_scale = variance_scale
         self.variance_floor = variance_floor
         assert self.variance_scale is not None
-        
+
         self.expected_total_mc = int(expected_total_mc)
         self.divide_n = divide_total_mc
         if self.divide_n:
             assert self.expected_total_mc is not None
         self.total_mc = {}
-        
+
     def setup_function(self):
         if self.divide_n:
             self.data.representation = "events"

@@ -1,4 +1,3 @@
-# pylint: disable=not-callable
 """
 Stage to evaluate the Honda flux tables using IP splines
 
@@ -15,7 +14,7 @@ from pisa.utils.profiler import profile
 from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
 
 
-class honda_ip(Stage):
+class honda_ip(Stage):  # pylint: disable=invalid-name
     """
     stage to generate nominal flux
 

@@ -10,10 +10,9 @@ from pisa import FTYPE
 from pisa.core.container import Container
 from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
-from pisa.utils import vectorizer
 
 
-class toy_event_generator(Stage):
+class toy_event_generator(Stage):  # pylint: disable=invalid-name
     """
     random toy event generator PISA Pi class
 

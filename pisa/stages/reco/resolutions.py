@@ -1,5 +1,3 @@
-# pylint: disable=not-callable
-
 """
 Stage for resolution improvement studies
 
@@ -11,7 +9,7 @@ from pisa.core.stage import Stage
 from pisa.utils.log import logging
 
 
-class resolutions(Stage):
+class resolutions(Stage):  # pylint: disable=invalid-name
     """
     stage to change the reconstructed information by a given amount
     This can be used to esimate the impact of improved recosntruction
@@ -58,7 +56,7 @@ class resolutions(Stage):
             logging.info('Changing coszen resolutions')
             container['reco_coszen'] += (container['true_coszen'] - container['reco_coszen']) * self.params.coszen_improvement.m_as('dimensionless')
             container.mark_changed('reco_coszen')
-            # make sure coszen is within -1/1 ?
+            # TODO: make sure coszen is within -1/1 ?
 
             logging.info('Changing PID resolutions')
             if container.name in ['numu_cc', 'numubar_cc']:

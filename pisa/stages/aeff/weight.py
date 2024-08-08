@@ -5,7 +5,6 @@ PISA pi stage to apply weights
 from __future__ import absolute_import, print_function, division
 
 from pisa.core.stage import Stage
-from pisa.utils import vectorizer
 from pisa.utils.profiler import profile
 
 

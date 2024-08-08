@@ -1,26 +1,20 @@
 # Stage: Flux
 
-The purpose of this stage is to get the expected flux produced in the atmosphere for different particles at different energies and angles.
+The sole purpose of this stage used to be to get the expected flux produced in the atmosphere for different particles at different energies and angles.
 It is therefore possible to reweight a dataset using the effective area to investigate uncertainties from using different flux models.
 The neutrino files come from several different measurements made at different positions on the earth and currently can only use azimuth-averaged data.
 The ability to load azimuth-dependent data has been implemented, but it is not immediately obvious how one should treat these at the energy range relevant for IceCube studies.
 
-## Services
+Now, an extended set of services implement different types of flux expectations and systematic modifications thereof.
 
-Only one service is currently supported in PISA for dealing with atmospheric neutrino flux tables: `honda`.
+## Services (incomplete)
 
-### honda
+### honda_ip
 
-This service implements the atmospheric neutrino tables produced by the Honda group.
-Details of the supported files can be found in the Notes section of the docstrings in the file.
-Both 2D and 3D files can currently be loaded, but interpolation is only supported with the 2D files.
-Currently there are two interpolation choices:
+This service implements an integral-preserving interpolation of the atmospheric neutrino tables produced by the Honda group.
+Only 2D files (azimuth averaged) can currently be loaded.
 
-* 'bisplrep' - A simple b-spline representation. This is quick.
-* 'integral-preserving' - A slower, but more accurate choice.
-
-The details of these interpolation methods can be found in the Notes section of the docstrings in the file.
-For some more information on the second of these choices, and why it is a more accurate choice than the first, please see the following link:
+For some more information on the integral-preserving interpolation, and why it is an accurate choice, please see the following link:
 
 [NuFlux on the IceCube wiki](https://wiki.icecube.wisc.edu/index.php/NuFlux)
 

@@ -4,9 +4,9 @@
 OscParams: Characterize neutrino oscillation parameters
            (mixing angles, Dirac-type CP-violating phase, mass splittings)
 
-changed by Elisa Lohfink (ellohfin; elohfink@icecube.wisc.edu) 
-to include NSI changes made by Thomas Ehrhardt on his branch:  
-original version can be found in thehrh/pisa nsi_reparameterisation branch 
+changed by Elisa Lohfink (ellohfin; elohfink@icecube.wisc.edu)
+to include NSI changes made by Thomas Ehrhardt on his branch:
+original version can be found in thehrh/pisa nsi_reparameterisation branch
 """
 
 from __future__ import division

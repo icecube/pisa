@@ -9,13 +9,11 @@ import pandas as pd
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils import vectorizer
-from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 from pisa.core.container import Container
 
 
-class csv_icc_hist(Stage):
+class csv_icc_hist(Stage):  # pylint: disable=invalid-name
     """
     CSV file loader PISA class
 

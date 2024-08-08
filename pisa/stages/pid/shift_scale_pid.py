@@ -10,14 +10,13 @@ import numpy as np
 from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 from pisa.utils import vectorizer
-from pisa.utils.numba_tools import WHERE
 
 __all__ = ['shift_scale_pid']
 
 __author__ = 'L. Fischer'
 
 
-class shift_scale_pid(Stage):
+class shift_scale_pid(Stage):  # pylint: disable=invalid-name
     """
     Shift/scale pid.
 

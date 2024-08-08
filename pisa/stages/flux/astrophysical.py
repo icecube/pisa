@@ -3,16 +3,15 @@ stage to implement getting the contribution to fluxes from astrophysical neutrin
 """
 import numpy as np
 
+from pisa import FTYPE
 from pisa.utils.profiler import profile
-from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 
-from pisa.utils.numba_tools import WHERE, myjit
 
 PIVOT = FTYPE(100.0e3)
 
 
-class astrophysical(Stage):
+class astrophysical(Stage):  # pylint: disable=invalid-name
     """
     Stage to apply power law astrophysical fluxes
 

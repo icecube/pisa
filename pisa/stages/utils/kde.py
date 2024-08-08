@@ -2,20 +2,18 @@
 Stage to transform arrays with weights into KDE maps
 that represent event counts
 """
+from copy import deepcopy
+
 import numpy as np
 
-
-from copy import deepcopy
-from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 from pisa.core.binning import MultiDimBinning, OneDimBinning
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils import vectorizer
 from pisa.utils import kde_hist
 
 
-class kde(Stage):
+class kde(Stage):  # pylint: disable=invalid-name
     """stage to KDE-map events
 
     Parameters

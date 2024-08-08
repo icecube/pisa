@@ -14,14 +14,13 @@ recommended:
   nuSQuIDS : https://github.com/ts4051/nuSQuIDS/tree/pisa
 """
 
-import math
 import numpy as np
 from scipy.interpolate import RectBivariateSpline
 
 from pisa import FTYPE, TARGET, PISA_NUM_THREADS
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
-from pisa.utils.profiler import profile, line_profile
+from pisa.utils.profiler import profile
 from pisa.stages.osc.layers import Layers
 from pisa.core.binning import MultiDimBinning
 from pisa.utils.resources import find_resource
@@ -34,7 +33,7 @@ __all__ = ["nusquids"]
 __author__ = "T. Stuttard, T. Ehrhardt, A. Trettin"
 
 
-class nusquids(Stage):
+class nusquids(Stage):  # pylint: disable=invalid-name
     """
     PISA Pi stage for weighting events due to the effect of neutrino oscillations, using
     nuSQuIDS as the oscillation probability calculator. One specialty here is that we

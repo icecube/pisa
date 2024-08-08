@@ -11,9 +11,7 @@ import numpy as np
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils.profiler import profile
-from pisa.utils import vectorizer
-from pisa.utils.numba_tools import WHERE
+
 
 class fix_error(Stage):  # pylint: disable=invalid-name
     """
@@ -23,7 +21,7 @@ class fix_error(Stage):  # pylint: disable=invalid-name
         self,
         **std_kwargs,
     ):
-        
+
         # init base class
         super().__init__(
             expected_params=(),
@@ -43,4 +41,3 @@ class fix_error(Stage):  # pylint: disable=invalid-name
         for container in self.data:
             container['errors'][:] = container['frozen_errors']
             container.mark_changed('errors')
- 
