@@ -10,23 +10,18 @@ benchmark scenarios.
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict
 from collections.abc import Mapping
 
 import numpy as np
-from scipy.interpolate import interp1d
 
 from pisa.core.stage import Stage
 from pisa.utils.fileio import from_file
-from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging
-from pisa.utils import vectorizer
 from pisa.utils.profiler import profile
 
 
 __all__ = ['load_aeff_param', 'param']
 
-__author__ = 'T.C. Arlen, T. Ehrhardt, S. Wren'
+__author__ = 'T.C. Arlen, T. Ehrhardt, S. Wren, J. Weldert'
 
 __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,8 +64,8 @@ def load_aeff_param(source):
         - Callable with one argument
         - String such that `eval(val)` yields a callable with one argument
     """
-    if not (source is None or isinstance(source, (str, Mapping))):
-        raise TypeError('`source` must be string, mapping, or None')
+    if not isinstance(source, (str, Mapping)):
+        raise TypeError('`source` must be string or mapping')
 
     if isinstance(source, str):
         orig_dict = from_file(source)
@@ -83,13 +78,13 @@ def load_aeff_param(source):
     return orig_dict
 
 
-class param(Stage):
+class param(Stage): # pylint: disable=invalid-name
     """Effective area service based on parameterisation functions stored in a
     .json file.
-    Transforms an input map of a flux of a given flavour into maps of
-    event rates for the two types of weak current (charged or neutral),
-    according to energy and cosine zenith dependent effective areas specified
-    by parameterisation functions.
+    Transforms an input map of a flux of a given flavour (and interaction)
+    into maps of event rates, according to energy and cosine zenith dependent 
+    effective areas specified by parameterisation functions.
+    Requires true_energy, true_coszen, and weights to be present in the container.
     Parameters
     ----------
     params : ParamSet
@@ -106,27 +101,23 @@ class param(Stage):
         expected_params = (
             'aeff_energy_paramfile',
             'aeff_coszen_paramfile',
-            'livetime', 
+            'livetime',
             'aeff_scale'
         )
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             expected_params=expected_params,
             **std_kwargs,
         )
-        
-        energy_param_source = self.params.aeff_energy_paramfile.value
-        coszen_param_source = self.params.aeff_coszen_paramfile.value
-        
-        self.energy_param = load_aeff_param(energy_param_source)
-        self.coszen_param = load_aeff_param(coszen_param_source)
+
+        self.energy_param = load_aeff_param(self.params.aeff_energy_paramfile.value)
+        self.coszen_param = load_aeff_param(self.params.aeff_coszen_paramfile.value)
 
     @profile
     def apply_function(self):
-        # read out
         aeff_scale = self.params.aeff_scale.m_as('dimensionless')
         livetime_s = self.params.livetime.m_as('sec')
-        
+
         for container in self.data:
             scale = aeff_scale * livetime_s * np.ones(container.size)
             if container.name in self.energy_param.keys():
