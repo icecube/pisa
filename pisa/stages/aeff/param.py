@@ -17,7 +17,6 @@ from scipy.interpolate import interp1d
 
 from pisa.core.stage import Stage
 from pisa.utils.fileio import from_file
-from pisa.utils.profiler import profile
 
 
 __all__ = ['load_aeff_param', 'param']
@@ -110,10 +109,10 @@ def load_aeff_param(source):
 
         else:
             raise TypeError(
-                'Expected parameteriation spec to be either a string that'
+                'Expected parameteriation to be either a string that'
                 ' can be interpreted by eval or as a mapping of values'
                 ' from which to construct a spline. Got "%s".'
-                % type(param_spec)
+                % type(func)
             )
 
         aeff_dict[k] = param_func
