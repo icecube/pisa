@@ -13,6 +13,7 @@ from __future__ import absolute_import, division
 from collections.abc import Mapping
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 from pisa.core.stage import Stage
 from pisa.utils.fileio import from_file
@@ -63,19 +64,61 @@ def load_aeff_param(source):
     `val`s can be one of the following:
         - Callable with one argument
         - String such that `eval(val)` yields a callable with one argument
+        - Mapping with the format:
+            {
+                <"energy" or "coszen">: [sequence of values],
+                "aeff": [sequence of values]
+            }
+          the two sequences are used to form a linear interpolant callable that
+          maps energy or coszen values to aeff values.
     """
     if not isinstance(source, (str, Mapping)):
         raise TypeError('`source` must be string or mapping')
 
     if isinstance(source, str):
-        orig_dict = from_file(source)
+        aeff_dict = from_file(source)
     elif isinstance(source, Mapping):
-        orig_dict = source
+        aeff_dict = source
     else:
         raise TypeError('Cannot load aeff parameterizations from a %s'
                         % type(source))
 
-    return orig_dict
+    for k in aeff_dict:
+        func = aeff_dict[k]
+
+        if isinstance(func, str):
+            param_func = eval(func)
+
+        elif callable(func):
+            param_func = func
+
+        elif isinstance(func, Mapping):
+            is_energy = 'energy' in func
+            is_coszen = 'coszen' in func
+
+            if 'aeff' not in func:
+                raise ValueError('No effective area values are provided for %s'%(k))
+            if not (is_energy or is_coszen):
+                raise ValueError('No energy or coszen values are provided for %s'%(k))
+
+            var = 'energy' if is_energy else 'coszen'
+            x_vals = func[var]
+            aeff_vals = func['aeff']
+
+            param_func = interp1d(x_vals, aeff_vals, kind='linear',
+                                  bounds_error=False, fill_value=0)
+
+        else:
+            raise TypeError(
+                'Expected parameteriation spec to be either a string that'
+                ' can be interpreted by eval or as a mapping of values'
+                ' from which to construct a spline. Got "%s".'
+                % type(param_spec)
+            )
+
+        aeff_dict[k] = param_func
+
+    return aeff_dict
 
 
 class param(Stage): # pylint: disable=invalid-name
@@ -113,7 +156,6 @@ class param(Stage): # pylint: disable=invalid-name
         self.energy_param = load_aeff_param(self.params.aeff_energy_paramfile.value)
         self.coszen_param = load_aeff_param(self.params.aeff_coszen_paramfile.value)
 
-    @profile
     def apply_function(self):
         aeff_scale = self.params.aeff_scale.m_as('dimensionless')
         livetime_s = self.params.livetime.m_as('sec')
@@ -121,10 +163,10 @@ class param(Stage): # pylint: disable=invalid-name
         for container in self.data:
             scale = aeff_scale * livetime_s * np.ones(container.size)
             if container.name in self.energy_param.keys():
-                func = eval(self.energy_param[container.name])
+                func = self.energy_param[container.name]
                 scale *= func(container['true_energy'])
             if container.name in self.coszen_param.keys():
-                func = eval(self.coszen_param[container.name])
+                func = self.coszen_param[container.name]
                 scale *= func(container['true_coszen'])
 
             container['weights'] *= scale
