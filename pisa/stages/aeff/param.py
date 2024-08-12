@@ -69,7 +69,9 @@ def load_aeff_param(source):
                 "aeff": [sequence of values]
             }
           the two sequences are used to form a linear interpolant callable that
-          maps energy or coszen values to aeff values.
+          maps energy or coszen values to aeff values. The effective area for any 
+          energy or coszen outside the bounds of the corresponding sequence is 
+          assumed to be 0.
     """
     if not isinstance(source, (str, Mapping)):
         raise TypeError('`source` must be string or mapping')
