@@ -12,6 +12,14 @@ pisa.stages.aeff.aeff module
    :undoc-members:
    :show-inheritance:
 
+pisa.stages.aeff.param module
+-----------------------------
+
+.. automodule:: pisa.stages.aeff.param
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pisa.stages.aeff.weight module
 ------------------------------
 

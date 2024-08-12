@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pisa.stages.aeff.param &mdash; PISA 4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=9f5556dd"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            PISA
+          </a>
+              <div class="version">
+                4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PISA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pisa.stages.aeff.param</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pisa.stages.aeff.param</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This is an effective area stage designed for quick studies of how effective</span>
+<span class="sd">areas affect experimental observables and sensitivities. In addition, it is</span>
+<span class="sd">supposed to be easily reproducible as it may rely on (phenomenological)</span>
+<span class="sd">functions or interpolated discrete data points, dependent on energy</span>
+<span class="sd">(and optionally cosine zenith), and which can thus be used as reference or</span>
+<span class="sd">benchmark scenarios.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
+
+<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;load_aeff_param&#39;</span><span class="p">,</span> <span class="s1">&#39;param&#39;</span><span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;T.C. Arlen, T. Ehrhardt, S. Wren, J. Weldert&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<div class="viewcode-block" id="load_aeff_param">
+<a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.param.load_aeff_param">[docs]</a>
+<span class="k">def</span> <span class="nf">load_aeff_param</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load aeff parameterisation (energy- or coszen-dependent) from file</span>
+<span class="sd">    or dictionary.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source : string or mapping</span>
+<span class="sd">        Source of the parameterization. If string, treat as file path or</span>
+<span class="sd">        resource location and load from the file; this must yield a mapping. If</span>
+<span class="sd">        `source` is a mapping, it is used directly. See notes below on format.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    aeff_params : OrderedDict</span>
+<span class="sd">        Keys are stringified flavintgroups and values are the callables that</span>
+<span class="sd">        produce aeff when called with energy or coszen values.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The mapping passed via `source` or loaded therefrom must have the format:</span>
+<span class="sd">        {</span>
+<span class="sd">            &lt;flavintgroup_string&gt;: val,</span>
+<span class="sd">            &lt;flavintgroup_string&gt;: val,</span>
+<span class="sd">            ...</span>
+<span class="sd">        }</span>
+<span class="sd">    Note that the `transform_groups` (container.name) defined</span>
+<span class="sd">    in a pipeline config file using this must match the groupings defined</span>
+<span class="sd">    above.</span>
+<span class="sd">    `val`s can be one of the following:</span>
+<span class="sd">        - Callable with one argument</span>
+<span class="sd">        - String such that `eval(val)` yields a callable with one argument</span>
+<span class="sd">        - Mapping with the format:</span>
+<span class="sd">            {</span>
+<span class="sd">                &lt;&quot;energy&quot; or &quot;coszen&quot;&gt;: [sequence of values],</span>
+<span class="sd">                &quot;aeff&quot;: [sequence of values]</span>
+<span class="sd">            }</span>
+<span class="sd">          the two sequences are used to form a linear interpolant callable that</span>
+<span class="sd">          maps energy or coszen values to aeff values. The effective area for any </span>
+<span class="sd">          energy or coszen outside the bounds of the corresponding sequence is </span>
+<span class="sd">          assumed to be 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;`source` must be string or mapping&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">aeff_dict</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="n">aeff_dict</span> <span class="o">=</span> <span class="n">source</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Cannot load aeff parameterizations from a </span><span class="si">%s</span><span class="s1">&#39;</span>
+                        <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">aeff_dict</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">aeff_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">param_func</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+            <span class="n">param_func</span> <span class="o">=</span> <span class="n">func</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">is_energy</span> <span class="o">=</span> <span class="s1">&#39;energy&#39;</span> <span class="ow">in</span> <span class="n">func</span>
+            <span class="n">is_coszen</span> <span class="o">=</span> <span class="s1">&#39;coszen&#39;</span> <span class="ow">in</span> <span class="n">func</span>
+
+            <span class="k">if</span> <span class="s1">&#39;aeff&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">func</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No effective area values are provided for </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">is_energy</span> <span class="ow">or</span> <span class="n">is_coszen</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No energy or coszen values are provided for </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+            <span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;energy&#39;</span> <span class="k">if</span> <span class="n">is_energy</span> <span class="k">else</span> <span class="s1">&#39;coszen&#39;</span>
+            <span class="n">x_vals</span> <span class="o">=</span> <span class="n">func</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+            <span class="n">aeff_vals</span> <span class="o">=</span> <span class="n">func</span><span class="p">[</span><span class="s1">&#39;aeff&#39;</span><span class="p">]</span>
+
+            <span class="n">param_func</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">x_vals</span><span class="p">,</span> <span class="n">aeff_vals</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+                                  <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s1">&#39;Expected parameteriation to be either a string that&#39;</span>
+                <span class="s1">&#39; can be interpreted by eval or as a mapping of values&#39;</span>
+                <span class="s1">&#39; from which to construct a spline. Got &quot;</span><span class="si">%s</span><span class="s1">&quot;.&#39;</span>
+                <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">aeff_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_func</span>
+
+    <span class="k">return</span> <span class="n">aeff_dict</span></div>
+
+
+
+<div class="viewcode-block" id="param">
+<a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.param.param">[docs]</a>
+<span class="k">class</span> <span class="nc">param</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Effective area service based on parameterisation functions stored in a</span>
+<span class="sd">    .json file.</span>
+<span class="sd">    Transforms an input map of a flux of a given flavour (and interaction)</span>
+<span class="sd">    into maps of event rates, according to energy and cosine zenith dependent </span>
+<span class="sd">    effective areas specified by parameterisation functions.</span>
+<span class="sd">    Requires true_energy, true_coszen, and weights to be present in the container.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params : ParamSet</span>
+<span class="sd">        Must exclusively have parameters:</span>
+<span class="sd">        aeff_energy_paramfile</span>
+<span class="sd">        aeff_coszen_paramfile</span>
+<span class="sd">        livetime</span>
+<span class="sd">        aeff_scale</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;aeff_energy_paramfile&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;aeff_coszen_paramfile&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;livetime&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;aeff_scale&#39;</span>
+        <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy_param</span> <span class="o">=</span> <span class="n">load_aeff_param</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">aeff_energy_paramfile</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coszen_param</span> <span class="o">=</span> <span class="n">load_aeff_param</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">aeff_coszen_paramfile</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="param.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.param.param.apply_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">aeff_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">aeff_scale</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+        <span class="n">livetime_s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">livetime</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;sec&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="n">aeff_scale</span> <span class="o">*</span> <span class="n">livetime_s</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_param</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_param</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+                <span class="n">scale</span> <span class="o">*=</span> <span class="n">func</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen_param</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen_param</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+                <span class="n">scale</span> <span class="o">*=</span> <span class="n">func</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
+
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

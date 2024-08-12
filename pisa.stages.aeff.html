@@ -131,6 +131,98 @@ then multiplied by the livetime to get an event count.</p>
 </dd></dl>
 
 </section>
+<section id="module-pisa.stages.aeff.param">
+<span id="pisa-stages-aeff-param-module"></span><h2>pisa.stages.aeff.param module<a class="headerlink" href="#module-pisa.stages.aeff.param" title="Link to this heading"></a></h2>
+<p>This is an effective area stage designed for quick studies of how effective
+areas affect experimental observables and sensitivities. In addition, it is
+supposed to be easily reproducible as it may rely on (phenomenological)
+functions or interpolated discrete data points, dependent on energy
+(and optionally cosine zenith), and which can thus be used as reference or
+benchmark scenarios.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.aeff.param.load_aeff_param">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.aeff.param.</span></span><span class="sig-name descname"><span class="pre">load_aeff_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/param.html#load_aeff_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.param.load_aeff_param" title="Link to this definition"></a></dt>
+<dd><p>Load aeff parameterisation (energy- or coszen-dependent) from file
+or dictionary.
+:param source: Source of the parameterization. If string, treat as file path or</p>
+<blockquote>
+<div><p>resource location and load from the file; this must yield a mapping. If
+<cite>source</cite> is a mapping, it is used directly. See notes below on format.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>aeff_params</strong> – Keys are stringified flavintgroups and values are the callables that
+produce aeff when called with energy or coszen values.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="pisa.html#pisa.OrderedDict" title="pisa.OrderedDict">OrderedDict</a></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<dl>
+<dt>The mapping passed via <cite>source</cite> or loaded therefrom must have the format:</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>&lt;flavintgroup_string&gt;: val,
+&lt;flavintgroup_string&gt;: val,
+…</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>Note that the <cite>transform_groups</cite> (container.name) defined
+in a pipeline config file using this must match the groupings defined
+above.
+<a href="#id1"><span class="problematic" id="id2">`</span></a>val`s can be one of the following:</p>
+<blockquote>
+<div><ul>
+<li><p>Callable with one argument</p></li>
+<li><p>String such that <cite>eval(val)</cite> yields a callable with one argument</p></li>
+<li><dl>
+<dt>Mapping with the format:</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>&lt;”energy” or “coszen”&gt;: [sequence of values],
+“aeff”: [sequence of values]</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>the two sequences are used to form a linear interpolant callable that
+maps energy or coszen values to aeff values. The effective area for any
+energy or coszen outside the bounds of the corresponding sequence is
+assumed to be 0.</p>
+</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.stages.aeff.param.param">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.aeff.param.</span></span><span class="sig-name descname"><span class="pre">param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/param.html#param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.param.param" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
+<p>Effective area service based on parameterisation functions stored in a
+.json file.
+Transforms an input map of a flux of a given flavour (and interaction)
+into maps of event rates, according to energy and cosine zenith dependent
+effective areas specified by parameterisation functions.
+Requires true_energy, true_coszen, and weights to be present in the container.
+:param params: Must exclusively have parameters:</p>
+<blockquote>
+<div><p>aeff_energy_paramfile
+aeff_coszen_paramfile
+livetime
+aeff_scale</p>
+</div></blockquote>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.aeff.param.param.apply_function">
+<span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/param.html#param.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.param.param.apply_function" title="Link to this definition"></a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-pisa.stages.aeff.weight">
 <span id="pisa-stages-aeff-weight-module"></span><h2>pisa.stages.aeff.weight module<a class="headerlink" href="#module-pisa.stages.aeff.weight" title="Link to this heading"></a></h2>
 <p>PISA pi stage to apply weights</p>
