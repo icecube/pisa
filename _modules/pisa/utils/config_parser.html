@@ -159,7 +159,7 @@
 <span class="sd">* ``binning`` can contain different binning definitions, that are then later</span>
 <span class="sd">  referred to from within the ``stage.service`` sections.</span>
 <span class="sd">* ``stage.service``: one such section per stage.service is necessary. It may</span>
-<span class="sd">  contain the options ``debug_mode``, ``error_method`, ``calc_mode``,</span>
+<span class="sd">  contain the options ``debug_mode``, ``error_method``, ``calc_mode``,</span>
 <span class="sd">  ``apply_mode``, which are common to all stages, and must contain all the</span>
 <span class="sd">  necessary arguments and parameters for a given stage.service.</span>
 <span class="sd">* Duplicate section headers and duplicate keys within a section are illegal.</span>
@@ -281,10 +281,12 @@
 <span class="sd">Multiple different param selections are allowed in a single config. In the</span>
 <span class="sd">default selection they must be separated by commas.</span>
 
+
 <span class="sd">N.B.</span>
-<span class="sd">+++</span>
+<span class="sd">++++</span>
 <span class="sd">Currently, for better or worse, the param selector mechanism requires at least</span>
-<span class="sd">one stage which contains all of the specified selections.</span>
+<span class="sd">one stage which contains `all` of the specified selections.</span>
+
 
 <span class="sd">&quot;&quot;&quot;</span>
 

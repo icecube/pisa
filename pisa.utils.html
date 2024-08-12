@@ -941,7 +941,7 @@ pipeline config file itself)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">binning</span></code> can contain different binning definitions, that are then later
 referred to from within the <code class="docutils literal notranslate"><span class="pre">stage.service</span></code> sections.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">stage.service</span></code>: one such section per stage.service is necessary. It may
-contain the options <code class="docutils literal notranslate"><span class="pre">debug_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">error_method`,</span> <span class="pre">``calc_mode</span></code>,
+contain the options <code class="docutils literal notranslate"><span class="pre">debug_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">error_method</span></code>, <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code>,
 <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>, which are common to all stages, and must contain all the
 necessary arguments and parameters for a given stage.service.</p></li>
 <li><p>Duplicate section headers and duplicate keys within a section are illegal.</p></li>
@@ -1036,10 +1036,11 @@ e.g.</p>
 pipeline can dynamically switch to another selection after instantiation.</p>
 <p>Multiple different param selections are allowed in a single config. In the
 default selection they must be separated by commas.</p>
-<p>N.B.
-+++
-Currently, for better or worse, the param selector mechanism requires at least
-one stage which contains all of the specified selections.</p>
+<section id="id1">
+<h5>N.B.<a class="headerlink" href="#id1" title="Link to this heading"></a></h5>
+<p>Currently, for better or worse, the param selector mechanism requires at least
+one stage which contains <cite>all</cite> of the specified selections.</p>
+</section>
 </section>
 </section>
 <dl class="py class">
@@ -1191,7 +1192,7 @@ be ASCII strings.</p>
 locations, then call overridden <cite>read</cite> method. Also, IOError fails
 here, whereas it is ignored in RawConfigParser.</p>
 <p>For further help on this method and its arguments, see
-<a href="#id1"><span class="problematic" id="id2">:method:`~backports.configparser.configparser.read`</span></a></p>
+<a href="#id2"><span class="problematic" id="id3">:method:`~backports.configparser.configparser.read`</span></a></p>
 </dd></dl>
 
 <dl class="py method">
@@ -1528,7 +1529,7 @@ matplotlib and optionally uses seaborn to set “pretty” defaults.</p>
 <dl class="simple">
 <dt>save<span class="classifier">None, str, or dict</span></dt><dd><p>If None, figure is not saved (default)
 If a string, saves figure as that name
-If a dict, calls pyplot.savefig(<a href="#id3"><span class="problematic" id="id4">**</span></a>save) (i.e., save contains
+If a dict, calls pyplot.savefig(<a href="#id4"><span class="problematic" id="id5">**</span></a>save) (i.e., save contains
 keyword args to savefig)</p>
 </dd>
 </dl>
@@ -3085,8 +3086,8 @@ the groups are mutually exclusive.</p>
 <dt class="sig sig-object py" id="pisa.utils.flavInt.get_bar_ssep">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.flavInt.</span></span><span class="sig-name descname"><span class="pre">get_bar_ssep</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/flavInt.html#get_bar_ssep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.flavInt.get_bar_ssep" title="Link to this definition"></a></dt>
 <dd><p>Get the separator that is set to be used between “base” flavor (“nue”,
-“numu”, or “nutau”) and “bar” when converting antineutrino <a href="#id5"><span class="problematic" id="id6">`</span></a>NuFlav`s or
-<a href="#id7"><span class="problematic" id="id8">`</span></a>NuFlavInt`s to strings.</p>
+“numu”, or “nutau”) and “bar” when converting antineutrino <a href="#id6"><span class="problematic" id="id7">`</span></a>NuFlav`s or
+<a href="#id8"><span class="problematic" id="id9">`</span></a>NuFlavInt`s to strings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>sep</strong> – Separator</p>
@@ -3101,7 +3102,7 @@ the groups are mutually exclusive.</p>
 <dt class="sig sig-object py" id="pisa.utils.flavInt.set_bar_ssep">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.flavInt.</span></span><span class="sig-name descname"><span class="pre">set_bar_ssep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/flavInt.html#set_bar_ssep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.flavInt.set_bar_ssep" title="Link to this definition"></a></dt>
 <dd><p>Set the separator between “base” flavor (“nue”, “numu”, or “nutau”) and
-“bar” when converting antineutrino <a href="#id9"><span class="problematic" id="id10">`</span></a>NuFlav`s or <a href="#id11"><span class="problematic" id="id12">`</span></a>NuFlavInt`s to strings.</p>
+“bar” when converting antineutrino <a href="#id10"><span class="problematic" id="id11">`</span></a>NuFlav`s or <a href="#id12"><span class="problematic" id="id13">`</span></a>NuFlavInt`s to strings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>val</strong> (<em>string</em>) – Separator</p>
@@ -3112,7 +3113,7 @@ the groups are mutually exclusive.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.flavInt.xlateGroupsStr">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.flavInt.</span></span><span class="sig-name descname"><span class="pre">xlateGroupsStr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/flavInt.html#xlateGroupsStr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.flavInt.xlateGroupsStr" title="Link to this definition"></a></dt>
-<dd><p>Translate a “,”-separated string into separate <a href="#id13"><span class="problematic" id="id14">`</span></a>NuFlavIntGroup`s.</p>
+<dd><p>Translate a “,”-separated string into separate <a href="#id14"><span class="problematic" id="id15">`</span></a>NuFlavIntGroup`s.</p>
 <dl>
 <dt>val</dt><dd><dl class="simple">
 <dt>“,”-delimited list of valid NuFlavIntGroup strings, e.g.:</dt><dd><p>“nuall_nc,nue,numu_cc+numubar_cc”</p>
@@ -4645,13 +4646,13 @@ integer with the levels defined by <cite>pisa.utils.log.Levels</cite> enum.</p>
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.matrix.</span></span><span class="sig-name descname"><span class="pre">fronebius_nearest_psd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_distance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/matrix.html#fronebius_nearest_psd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.matrix.fronebius_nearest_psd" title="Link to this definition"></a></dt>
 <dd><p>Find the positive semi-definite matrix closest to <cite>A</cite>.</p>
 <p>The closeness to <cite>A</cite> is measured by the Fronebius norm. The matrix closest to <cite>A</cite>
-by that measure is uniquely defined in <a class="footnote-reference brackets" href="#id22" id="id15" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>.</p>
+by that measure is uniquely defined in <a class="footnote-reference brackets" href="#id23" id="id16" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>A</strong> (<em>numpy.ndarray</em>) – Symmetric matrix</p></li>
 <li><p><strong>return_distance</strong> (<em>bool</em><em>, </em><em>optional</em>) – Return distance of the input matrix to the approximation as given in
-theorem 2.1 in <a class="footnote-reference brackets" href="#id22" id="id16" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>.
+theorem 2.1 in <a class="footnote-reference brackets" href="#id23" id="id17" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>.
 This can be compared to the actual Frobenius norm between the
 input and output to verify the calculation.</p></li>
 </ul>
@@ -4664,21 +4665,21 @@ input and output to verify the calculation.</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>This function is a modification of <a href="#id31"><span class="problematic" id="id17">[1]_</span></a>, which is a Python adaption of <a class="footnote-reference brackets" href="#id21" id="id18" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>, which
-credits <a class="footnote-reference brackets" href="#id22" id="id19" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>.</p>
+<p>This function is a modification of <a href="#id32"><span class="problematic" id="id18">[1]_</span></a>, which is a Python adaption of <a class="footnote-reference brackets" href="#id22" id="id19" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>, which
+credits <a class="footnote-reference brackets" href="#id23" id="id20" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>.</p>
 <p class="rubric">References</p>
 <aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id20" role="doc-footnote">
+<aside class="footnote brackets" id="id21" role="doc-footnote">
 <span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
 <p><a class="reference external" href="https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd">https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd</a></p>
 </aside>
-<aside class="footnote brackets" id="id21" role="doc-footnote">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id18">2</a><span class="fn-bracket">]</span></span>
+<aside class="footnote brackets" id="id22" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id19">2</a><span class="fn-bracket">]</span></span>
 <p><a class="reference external" href="https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd">https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd</a></p>
 </aside>
-<aside class="footnote brackets" id="id22" role="doc-footnote">
+<aside class="footnote brackets" id="id23" role="doc-footnote">
 <span class="label"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></span>
-<span class="backrefs">(<a role="doc-backlink" href="#id15">1</a>,<a role="doc-backlink" href="#id16">2</a>,<a role="doc-backlink" href="#id19">3</a>)</span>
+<span class="backrefs">(<a role="doc-backlink" href="#id16">1</a>,<a role="doc-backlink" href="#id17">2</a>,<a role="doc-backlink" href="#id20">3</a>)</span>
 <p>N.J. Higham, “Computing a nearest symmetric positive semidefinite
 matrix” (1988): <a class="reference external" href="https://doi.org/10.1016/0024-3795(88)90223-6">https://doi.org/10.1016/0024-3795(88)90223-6</a></p>
 </aside>
@@ -4689,7 +4690,7 @@ matrix” (1988): <a class="reference external" href="https://doi.org/10.1016/00
 <dt class="sig sig-object py" id="pisa.utils.matrix.is_psd">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.matrix.</span></span><span class="sig-name descname"><span class="pre">is_psd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/matrix.html#is_psd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.matrix.is_psd" title="Link to this definition"></a></dt>
 <dd><p>Test whether a matrix is positive semi-definite.</p>
-<p>Test is done via attempted Cholesky decomposition as suggested in <a href="#id32"><span class="problematic" id="id23">[1]_</span></a>.</p>
+<p>Test is done via attempted Cholesky decomposition as suggested in <a href="#id33"><span class="problematic" id="id24">[1]_</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>A</strong> (<em>numpy.ndarray</em>) – Symmetric matrix</p>
@@ -4703,7 +4704,7 @@ matrix” (1988): <a class="reference external" href="https://doi.org/10.1016/00
 </dl>
 <p class="rubric">References</p>
 <aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id24" role="doc-footnote">
+<aside class="footnote brackets" id="id25" role="doc-footnote">
 <span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
 <p>N.J. Higham, “Computing a nearest symmetric positive semidefinite
 matrix” (1988): <a class="reference external" href="https://doi.org/10.1016/0024-3795(88)90223-6">https://doi.org/10.1016/0024-3795(88)90223-6</a></p>
@@ -5112,7 +5113,7 @@ function will be callable within numba code for that target.</p>
 <dt class="sig sig-object py" id="pisa.utils.plotter.Plotter">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.utils.plotter.</span></span><span class="sig-name descname"><span class="pre">Plotter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(8,</span> <span class="pre">8)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pdf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#</span> <span class="pre">events'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symmetric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'outside'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/plotter.html#Plotter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.plotter.Plotter" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Plotting library for PISA <a href="#id25"><span class="problematic" id="id26">`</span></a>Map`s and <a href="#id27"><span class="problematic" id="id28">`</span></a>MapSet`s</p>
+<p>Plotting library for PISA <a href="#id26"><span class="problematic" id="id27">`</span></a>Map`s and <a href="#id28"><span class="problematic" id="id29">`</span></a>MapSet`s</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -5353,7 +5354,7 @@ this method.</p></li>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>random_state</strong> – Object callable like <cite>numpy.random</cite> (e.g. <cite>random_state.rand((10,10))</cite>),
-but with __exclusively <a href="#id29"><span class="problematic" id="id30">local__</span></a> state (whereas <cite>numpy.random</cite> has global
+but with __exclusively <a href="#id30"><span class="problematic" id="id31">local__</span></a> state (whereas <cite>numpy.random</cite> has global
 state).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>

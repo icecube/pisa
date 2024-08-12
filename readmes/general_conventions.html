@@ -86,7 +86,7 @@
 </ul>
 </div></blockquote>
 <p># Naming conventions
-* Stage/service naming: see [creating a service](creating_a_service). (Note that the all-lower-case class naming scheme for services is one of the few exceptions we make to the general Python conventions above.)
+* Stage/service naming: in the absence of a tutorial for creating a service, note that an all-lower-case class naming scheme for services is one of the few exceptions we make to the general Python conventions above.
 * Use the following syntax to refer to neutrino signatures <cite>*flavour*_*interaction*_*pid*</cite> where:</p>
 <blockquote>
 <div><ul class="simple">
@@ -120,10 +120,9 @@
 <li><p><strong>attribute</strong>: beneath the definition of a variable (in any scope in the file)
 * What purpose it serves. Note that if you add an attribute docstring, the attribute is included in the documentation, while if you do not add such a docstring, the attribute does not appear in the documentation.</p></li>
 </ul>
-<p>Examples of the above can be seen and are discussed further in the [tutorial for creating a service](creating_a_service).</p>
 <p>Docstrings should be formatted according to the NumPy/SciPy convention.
 * [PEP257: General Python docstring conventions](<a class="reference external" href="https://www.python.org/dev/peps/pep-0257/">https://www.python.org/dev/peps/pep-0257/</a>)
-* [NumPy/SciPy documentation style guide](<a class="reference external" href="https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt">https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt</a>)
+* [NumPy/SciPy documentation style guide](<a class="reference external" href="https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard">https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard</a>)
 * [Example NumPy docstrings in code](<a class="reference external" href="http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html">http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html</a>)
 * [Recommonmark translates markdown into reST](<a class="reference external" href="http://recommonmark.readthedocs.io/en/latest/auto_structify.html">http://recommonmark.readthedocs.io/en/latest/auto_structify.html</a>)
 * Since all documentation will be run through Sphinx using the Napoleon and Recommonmark extensions, the final arbiter on whether a docstring is formatted correctly is the output generated using these. Good information for making nice docstrings can be found in both [Napoleon](<a class="reference external" href="http://sphinxcontrib-napoleon.readthedocs.io/">http://sphinxcontrib-napoleon.readthedocs.io/</a>)</p>
@@ -144,19 +143,19 @@
 <li><p>Try to avoid saying anything here that’s already (or should be) said in the docstrings within each individual service. Anything like this is only going to get out of sync with the actual implementations, since it’s repeating what’s already in the docstrings for the individual services. This violates probably the most important [principle of software development](<a class="reference external" href="https://en.wikipedia.org/wiki/Don't_repeat_yourself">https://en.wikipedia.org/wiki/Don’t_repeat_yourself</a>).</p></li>
 <li><p>So just make that as high-level as possible. For example, for <cite>$PISA/pisa/stages/pid/README.md</cite>, guidance would be:
 * What is particle ID? I.e., what is the physics it represents, what is the process we generally use to do PID, and what systematics are pertinent to PID?
-* What general categories to the contained service(s) fall into?
+* What general categories do the contained service(s) fall into?
 * What are the major difference between services that would lead a user to pick one vs. another?
 * A table of what systematics are implemented by each service would be useful at this level</p></li>
 </ul>
 <p># Testing
 If you add a feature: <strong>*add a test that proves it works*</strong>. If you find a bug: <strong>*add a test that it’s fixed*</strong>. Not only does a test ensure that the functionality continues to work / bug continues to be squashed, through future iterations of the code, but it also is another way of communicating the assumptions that went into the code that might not be obvious from the code itself.</p>
 <p>## Low-level testing: Unit tests
-Write simple functions named <cite>test_&lt;FUNCNAME&gt;</cite> or <cite>test_&lt;CLASSNAME&gt;</cite> within your modules. These get called automatically from [pytest](<a class="reference external" href="http://pytest.org/">http://pytest.org/</a>). Pytest picks up exceptions that occur, so sprinkle <cite>assert</cite> statements liberally in your <cite>test_*</cite> functions, and you should test both things you expect to succeed <em>and</em> test things that you expect to fail (wrap the latter in <cite>try:/except:/else:</cite> blocks, where the <cite>assert</cite> occurs in the <cite>else:</cite> clause).</p>
-<p>We chose [pytest](<a class="reference external" href="http://pytest.org/">http://pytest.org/</a>): We’d rather have more unit tests written because they’re dead-easy to write than to use the full-featured (and built-in) framework that comes with Python.</p>
-<p>Expect pytest to eventually be configured to run with [doctest](<a class="reference external" href="https://pytest.org/latest/doctest.html">https://pytest.org/latest/doctest.html</a>) functionality enabled, so it’s also acceptable to put simple tests in docstrings, Markdown documentation files, or reST documentation files. (Just these won’t be exercised until we get pytest fully configured to do look for these tests.)</p>
+Write simple functions named <cite>test_&lt;FUNCNAME&gt;</cite> or <cite>test_&lt;CLASSNAME&gt;</cite> within your modules. These get called automatically from [pytest](<a class="reference external" href="https://docs.pytest.org/">https://docs.pytest.org/</a>). Pytest picks up exceptions that occur, so sprinkle <cite>assert</cite> statements liberally in your <cite>test_*</cite> functions, and you should test both things you expect to succeed <em>and</em> test things that you expect to fail (wrap the latter in <cite>try:/except:/else:</cite> blocks, where the <cite>assert</cite> occurs in the <cite>else:</cite> clause).</p>
+<p>We chose [pytest](<a class="reference external" href="https://docs.pytest.org/">https://docs.pytest.org/</a>): We’d rather have more unit tests written because they’re dead-easy to write than to use the full-featured (and built-in) framework that comes with Python.</p>
+<p>Expect pytest to eventually be configured to run with [doctest](<a class="reference external" href="https://docs.python.org/3/library/doctest.html#module-doctest">https://docs.python.org/3/library/doctest.html#module-doctest</a>) [functionality](<a class="reference external" href="https://docs.pytest.org/en/latest/how-to/doctest.html">https://docs.pytest.org/en/latest/how-to/doctest.html</a>) enabled, so it’s also acceptable to put simple tests in docstrings, Markdown documentation files, or reST documentation files. (Just these won’t be exercised until we get pytest fully configured to do look for these tests.)</p>
 <p>Finally, until we get pytest configured, the <cite>test_*</cite> functions are called in the <cite>__main__</cite> section of many of the <cite>pisa/core</cite> modules (e.g., <cite>map.py</cite>, <cite>binning.py</cite>, <cite>transform.py</cite>, <cite>param.py</cite>). For now, these must be invoked by calling <cite>python &lt;filename&gt;</cite>.</p>
 <p>### How to test a service
-Look at the <cite>pisa.core.pipeline.stage_test()</cite> function to implement tests for your service. It can run a stage in isolation (either with maps you supply or with dummy <cite>numpy.ones()</cite> maps) or will run a pipeline from beginning up until the stage you’re testing. To keep tests synchronized with the code they are testing, it is recommended that configurations be generated within the test code rather than read from an external file. This is not a hard-and-fast rule, but usually results in better long-term outcomes.</p>
+There are no general conventions on how to test a service currently in place. However, to keep tests synchronized with the code they are testing, it is recommended that configurations be generated within the test code rather than read from an external file. This is not a hard-and-fast rule, but usually results in better long-term outcomes.</p>
 <p>## High-level testing
 Here we will supply whatever basic configuration files and example data is necessary to fully test all high-level functionality. Outputs should be able to be compared against known-outputs, either exactly (for deterministic processes or pseudo-random processes) or as a ratio with a know result (in the case of a “new” physics implementation).</p>
 <p>There should be both quick tests that just show an analysis can make it through from beginning to end (and produce a known output), as well as more thorough tests that check the correctness of a result.</p>
@@ -168,7 +167,7 @@ Here we will supply whatever basic configuration files and example data is neces
 <p>## Uncertainties</p>
 <p>Likewise, measured quantities with uncertainties should have these specified as well. Since there is a performance penalty for computing with uncertainties, this is a feature that can be enabled or disabled according to the task the user is working on. Certain parts of PISA (e.g., the convolutional likelihood metric) will only work if errors are propagated through the analysis.</p>
 <p>## Further documentation
-For more information on using units and uncertainties, see the [Units and uncertainties](units_and_uncertainties) page.</p>
+For more information on using units and uncertainties, see the [Units and uncertainties](units_and_uncertainties.md) page.</p>
 
 
            </div>
