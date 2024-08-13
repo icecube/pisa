@@ -91,7 +91,6 @@
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">WHERE</span>
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
 
 
@@ -205,7 +204,7 @@
 
             <span class="c1"># make centered arround 0, and set to 0 for all non-DIS events</span>
             <span class="n">w_tot</span> <span class="o">=</span> <span class="p">(</span><span class="n">w_tot</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dis</span>
-          
+
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;dis_correction_total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w_tot</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;dis_correction_total&#39;</span><span class="p">)</span>
 
@@ -229,11 +228,11 @@
 
             <span class="c1"># make centered arround 0, and set to 0 for all non-DIS events</span>
             <span class="n">w_diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">w_diff</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dis</span>
-            
+
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;dis_correction_diff&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w_diff</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;dis_correction_diff&#39;</span><span class="p">)</span></div>
 
-         
+
 <div class="viewcode-block" id="dis_sys.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.dis_sys.dis_sys.apply_function">[docs]</a>
     <span class="nd">@profile</span>

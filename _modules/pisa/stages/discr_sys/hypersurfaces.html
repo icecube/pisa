@@ -86,16 +86,13 @@
 
 <span class="kn">import</span> <span class="nn">ast</span>
 
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
 <span class="kn">import</span> <span class="nn">pisa.utils.hypersurface</span> <span class="k">as</span> <span class="nn">hs</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">Levels</span>
-<span class="c1">#set_verbosity(Levels.DEBUG)</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;hypersurfaces&quot;</span><span class="p">,]</span>
 
@@ -298,7 +295,7 @@
                 <span class="c1"># hs error propagation will be skipped</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span><span class="o">==</span><span class="s1">&#39;events&#39;</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;WARNING: running stage in events mode. Hypersurface error propagation will be IGNORED.&#39;</span><span class="p">)</span>
-                
+
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span><span class="p">:</span>
                     <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales_uncertainty&quot;</span><span class="p">]</span>
 

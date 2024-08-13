@@ -84,12 +84,10 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">CTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.nsi_params</span> <span class="kn">import</span> <span class="n">StdNSIParams</span><span class="p">,</span> <span class="n">VacuumLikeNSIParams</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.osc_params</span> <span class="kn">import</span> <span class="n">OscParams</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.decay_params</span> <span class="kn">import</span> <span class="n">DecayParams</span>
@@ -97,13 +95,12 @@
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.scaling_params</span> <span class="kn">import</span> <span class="n">Mass_scaling</span><span class="p">,</span> <span class="n">Core_scaling_w_constrain</span><span class="p">,</span> <span class="n">Core_scaling_wo_constrain</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.layers</span> <span class="kn">import</span> <span class="n">Layers</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span> <span class="kn">import</span> <span class="n">propagate_array</span><span class="p">,</span> <span class="n">fill_probs</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">WHERE</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
 
 
 <div class="viewcode-block" id="prob3">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.prob3.prob3">[docs]</a>
-<span class="k">class</span> <span class="nc">prob3</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">prob3</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Prob3-like oscillation PISA Pi class</span>
 
@@ -154,7 +151,7 @@
 <span class="sd">    -----</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-  
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span>
       <span class="n">nsi_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -198,14 +195,13 @@
 <span class="sd">           the standard one by an overall phase matrix</span>
 <span class="sd">           diag(e^(i*delta_CP), 1, 1). This has no impact on</span>
 <span class="sd">           oscillation probabilities in the *absence* of NSI.&quot;&quot;&quot;</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">neutrino_decay</span> <span class="o">=</span> <span class="n">neutrino_decay</span>
-                
+
         <span class="k">if</span> <span class="n">neutrino_decay</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">decay_flag</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">else</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">decay_flag</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-<span class="w">            </span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoke neutrino decay with neutrino oscillation.&quot;&quot;&quot;</span>
 
 
@@ -235,7 +231,7 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrino_decay</span> <span class="p">:</span>
             <span class="n">decay_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;decay_alpha3&#39;</span><span class="p">,)</span>
-        <span class="k">else</span><span class="p">:</span> 
+        <span class="k">else</span><span class="p">:</span>
             <span class="n">decay_params</span> <span class="o">=</span> <span class="p">()</span>
 
         <span class="k">if</span> <span class="n">lri_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -247,14 +243,14 @@
                     <span class="o">%</span> <span class="p">(</span><span class="n">lri_type</span><span class="p">,</span> <span class="n">choices</span><span class="p">)</span>
                 <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lri_type</span> <span class="o">=</span> <span class="n">lri_type</span>
-        
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">lri_params</span> <span class="o">=</span> <span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">lri_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;v_lri&#39;</span><span class="p">,)</span>
-            
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tomography_type</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tomography_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tomography_params</span> <span class="o">=</span> <span class="p">()</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tomography_type</span> <span class="o">==</span> <span class="s1">&#39;mass_of_earth&#39;</span><span class="p">:</span>
             <span class="n">tomography_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;density_scale&#39;</span><span class="p">,)</span>
@@ -266,8 +262,9 @@
                                  <span class="s1">&#39;middlemantle_density_scale&#39;</span>
             <span class="p">)</span>
 
-          
-        <span class="n">expected_params</span> <span class="o">=</span> <span class="n">expected_params</span> <span class="o">+</span> <span class="n">nsi_params</span> <span class="o">+</span> <span class="n">decay_params</span> <span class="o">+</span> <span class="n">lri_params</span> <span class="o">+</span> <span class="n">tomography_params</span>
+
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="n">expected_params</span> <span class="o">+</span> <span class="n">nsi_params</span> <span class="o">+</span> <span class="n">decay_params</span>
+                           <span class="o">+</span> <span class="n">lri_params</span> <span class="o">+</span> <span class="n">tomography_params</span><span class="p">)</span>
 
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -281,10 +278,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nsi_params</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">decay_params</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">decay_matrix</span> <span class="o">=</span> <span class="kc">None</span>      
+        <span class="bp">self</span><span class="o">.</span><span class="n">decay_matrix</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lri_params</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lri_pot</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="c1"># Note that the interaction potential (Hamiltonian) just scales with the</span>
+        <span class="c1"># The interaction potential (Hamiltonian) just scales with the</span>
         <span class="c1"># electron density N_e for propagation through the Earth,</span>
         <span class="c1"># even(to very good approx.) in the presence of generalised interactions</span>
         <span class="c1"># (NSI), which is why we can simply treat it as a constant here.</span>
@@ -319,7 +316,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrino_decay</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Working with neutrino decay&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">decay_params</span> <span class="o">=</span> <span class="n">DecayParams</span><span class="p">()</span>
-         
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Working with LRI&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lri_params</span> <span class="o">=</span> <span class="n">LRIParams</span><span class="p">()</span>
@@ -334,9 +331,6 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tomography_type</span> <span class="o">==</span> <span class="s2">&quot;mass_of_core_wo_constrain&quot;</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Working without any external constraints&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span> <span class="o">=</span> <span class="n">Core_scaling_wo_constrain</span><span class="p">()</span>
-            
-
-
 
 
         <span class="c1"># setup the layers</span>
@@ -392,12 +386,12 @@
             <span class="n">mix_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">osc_params</span><span class="o">.</span><span class="n">mix_matrix_reparam_complex</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mix_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">osc_params</span><span class="o">.</span><span class="n">mix_matrix_complex</span>
-            
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;mat pot:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;matter potential:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span>
                           <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_mat_pot_matrix_complex</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;decay mat:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;decay matrix:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span>
                           <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">decay_matix</span><span class="p">)</span>
-            
+
         <span class="n">propagate_array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">osc_params</span><span class="o">.</span><span class="n">dm_matrix</span><span class="p">,</span> <span class="c1"># pylint: disable = unexpected-keyword-arg, no-value-for-parameter</span>
                         <span class="n">mix_matrix</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">gen_mat_pot_matrix_complex</span><span class="p">,</span>
@@ -435,7 +429,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
                 <span class="n">container</span><span class="p">[</span><span class="s1">&#39;densities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">max_layers</span><span class="p">))</span>
                 <span class="n">container</span><span class="p">[</span><span class="s1">&#39;distances&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">max_layers</span><span class="p">))</span>
-                
+
 
         <span class="c1"># some safety checks on units</span>
         <span class="c1"># trying to avoid issue of angles with no dimension being assumed to be radians</span>
@@ -477,26 +471,26 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">nsi_params</span><span class="o">.</span><span class="n">eps_tautau</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">eps_tautau</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrino_decay</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">decay_params</span><span class="o">.</span><span class="n">decay_alpha3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">decay_alpha3</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;eV**2&#39;</span><span class="p">)</span>
-            
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lri_params</span><span class="o">.</span><span class="n">v_lri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_lri</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;eV&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tomography_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tomography_type</span> <span class="o">==</span> <span class="s2">&quot;mass_of_earth&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">scaling</span><span class="p">(</span><span class="n">scaling_array</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">density_scale</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">scaling</span><span class="p">(</span><span class="n">scaling_array</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">density_scale</span><span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tomography_type</span> <span class="o">==</span> <span class="s2">&quot;mass_of_core_w_constrain&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">core_density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">core_density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">scaling</span><span class="p">(</span><span class="n">scaling_array</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">scaling_array</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">core_density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">core_density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">scaling</span><span class="p">(</span><span class="n">scaling_array</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">scaling_array</span><span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tomography_type</span> <span class="o">==</span> <span class="s2">&quot;mass_of_core_wo_constrain&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">core_density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">core_density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">innermantle_density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">innermantle_density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">middlemantle_density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">middlemantle_density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">scaling</span><span class="p">(</span><span class="n">scaling_array</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">scaling_factor_array</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YeI</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeO</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeM</span><span class="p">)</span>        
+                <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">core_density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">core_density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">innermantle_density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">innermantle_density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">middlemantle_density_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">middlemantle_density_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">scaling</span><span class="p">(</span><span class="n">scaling_array</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tomography_params</span><span class="o">.</span><span class="n">scaling_factor_array</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YeI</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeO</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeM</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
                 <span class="n">container</span><span class="p">[</span><span class="s1">&#39;densities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">max_layers</span><span class="p">))</span>
-                        
+
 
         <span class="c1"># now we can proceed to calculate the generalised matter potential matrix</span>
         <span class="n">std_mat_pot_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
@@ -514,25 +508,26 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">gen_mat_pot_matrix_complex</span> <span class="o">=</span> <span class="n">std_mat_pot_matrix</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Using standard matter potential:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span>
                           <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_mat_pot_matrix_complex</span><span class="p">)</span>
-            
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrino_decay</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">decay_matix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decay_params</span><span class="o">.</span><span class="n">decay_matrix</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Decay matrix:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">decay_params</span><span class="o">.</span><span class="n">decay_matrix</span><span class="p">)</span>
         <span class="k">else</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">decay_matix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            
+
         <span class="bp">self</span><span class="o">.</span><span class="n">lri_pot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="n">types_lri</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;emu-symmetry&#39;</span><span class="p">,</span> <span class="s1">&#39;etau-symmetry&#39;</span><span class="p">,</span> <span class="s1">&#39;etau-symmetry&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>               
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_type</span> <span class="o">==</span> <span class="s1">&#39;emu-symmetry&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">lri_pot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_params</span><span class="o">.</span><span class="n">potential_matrix_emu</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_type</span> <span class="o">==</span> <span class="s1">&#39;etau-symmetry&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">lri_pot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_params</span><span class="o">.</span><span class="n">potential_matrix_etau</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_type</span> <span class="o">==</span> <span class="s1">&#39;mutau-symmetry&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">lri_pot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_params</span><span class="o">.</span><span class="n">potential_matrix_mutau</span>    
+                <span class="bp">self</span><span class="o">.</span><span class="n">lri_pot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lri_params</span><span class="o">.</span><span class="n">potential_matrix_mutau</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Implemented symmetries are&quot;</span> <span class="o">%</span> <span class="n">types_lri</span><span class="p">)</span>
-            
+                <span class="c1"># TODO: this just repeats the logic from init with slightly different code!</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Implemented symmetries are </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">types_lri</span><span class="p">)</span>
+
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">calc_probs</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">],</span>
@@ -580,7 +575,6 @@
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;nu_flux&#39;</span><span class="p">][:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;prob_e&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;nu_flux&#39;</span><span class="p">][:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;prob_mu&#39;</span><span class="p">])</span></div>
 </div>
-
 
 </pre></div>
 

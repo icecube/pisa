@@ -76,9 +76,9 @@
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Make K-folds of data.</span>
 
-<span class="sd">This stage can be used to split MC into chunks of equal size and to select only one </span>
+<span class="sd">This stage can be used to split MC into chunks of equal size and to select only one</span>
 <span class="sd">chunk to make histograms from. It uses the KFold class from scikit-learn to make</span>
-<span class="sd">&quot;test&quot; and &quot;train&quot; indeces for the dataset and sets all weights in the &quot;train&quot; </span>
+<span class="sd">&quot;test&quot; and &quot;train&quot; indeces for the dataset and sets all weights in the &quot;train&quot;</span>
 <span class="sd">indeces to zero. Optionally, weights can be re-scaled by the number of splits to</span>
 <span class="sd">renormalize the total rates.</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -87,10 +87,9 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">WHERE</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
+
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;A. Trettin&quot;</span>
 
@@ -111,12 +110,12 @@
 
 <div class="viewcode-block" id="kfold">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kfold.kfold">[docs]</a>
-<span class="k">class</span> <span class="nc">kfold</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">kfold</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage to make splits of the MC set and select one split to make histograms.</span>
-<span class="sd">    The weight of all indeces not belonging to the selected split are set to </span>
+<span class="sd">    The weight of all indeces not belonging to the selected split are set to</span>
 <span class="sd">    zero.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    n_splits (int): number of splits</span>
@@ -125,7 +124,7 @@
 <span class="sd">    renormalize (bool, optional): renormalize weights by multiplying</span>
 <span class="sd">        by the number of splits</span>
 <span class="sd">    shuffle (bool, optional): shuffle indeces before splitting</span>
-<span class="sd">    </span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>

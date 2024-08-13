@@ -77,7 +77,7 @@
 <span class="sd">A Stage to load data from a PISA style hdf5 file into a PISA pi ContainerSet</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="c1">#TODO This class is become dcereasingly &quot;simple&quot;! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task</span>
+<span class="c1">#TODO This class has become decreasingly &quot;simple&quot;! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -85,16 +85,14 @@
 
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
 <span class="kn">from</span> <span class="nn">pisa.core.events_pi</span> <span class="kn">import</span> <span class="n">EventsPi</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">arg_str_seq_none</span><span class="p">,</span> <span class="n">split</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">split</span>
 
 
 <div class="viewcode-block" id="simple_data_loader">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader">[docs]</a>
-<span class="k">class</span> <span class="nc">simple_data_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">simple_data_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    HDF5 file loader PISA Pi class</span>
 

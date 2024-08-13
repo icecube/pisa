@@ -73,22 +73,24 @@
            <div itemprop="articleBody">
              
   <h1>Source code for pisa.stages.data.sqlite_loader</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A Stage to load data from an sqlite database</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">sqlite3</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">sqlite3</span>
+
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
 
-
+<span class="c1"># TODO: docstrings</span>
 <div class="viewcode-block" id="sqlite_loader">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader">[docs]</a>
-<span class="k">class</span> <span class="nc">sqlite_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">sqlite_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    SQLite loader PISA Pi class</span>
 <span class="sd">    Parameters</span>
@@ -186,7 +188,7 @@
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">&#39;track&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">container</span></div>
 
-    
+
 <div class="viewcode-block" id="sqlite_loader.add_aeff_weight">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_aeff_weight">[docs]</a>
     <span class="k">def</span> <span class="nf">add_aeff_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">n_files</span><span class="p">):</span>

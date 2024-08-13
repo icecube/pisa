@@ -73,9 +73,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for pisa.stages.reco.resolutions</h1><div class="highlight"><pre>
-<span></span><span class="c1"># pylint: disable=not-callable</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Stage for resolution improvement studies</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
@@ -88,7 +86,7 @@
 
 <div class="viewcode-block" id="resolutions">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.resolutions.resolutions">[docs]</a>
-<span class="k">class</span> <span class="nc">resolutions</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">resolutions</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    stage to change the reconstructed information by a given amount</span>
 <span class="sd">    This can be used to esimate the impact of improved recosntruction</span>
@@ -137,7 +135,7 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Changing coszen resolutions&#39;</span><span class="p">)</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">coszen_improvement</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">)</span>
-            <span class="c1"># make sure coszen is within -1/1 ?</span>
+            <span class="c1"># TODO: make sure coszen is within -1/1 ?</span>
 
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Changing PID resolutions&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">]:</span>

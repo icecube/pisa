@@ -75,7 +75,7 @@
   <h1>Source code for pisa.stages.osc.decoherence</h1><div class="highlight"><pre>
 <span></span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">Implementing an environmentally-induced decoherence model for neutrino oscillations</span>
-<span class="sd">Based on reference [1], which uses an energy-indepedence deocherence matrix in vacuum</span>
+<span class="sd">Based on reference [1], which uses an energy-indepedence decoherence matrix in vacuum</span>
 
 <span class="sd">References:</span>
 <span class="sd">  [1] arxiv:1702.04738</span>
@@ -95,7 +95,6 @@
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.osc_params</span> <span class="kn">import</span> <span class="n">OscParams</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.layers</span> <span class="kn">import</span> <span class="n">Layers</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span> <span class="kn">import</span> <span class="n">fill_probs</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">WHERE</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
 
@@ -138,7 +137,7 @@
 
 <div class="viewcode-block" id="calc_decoherence_probs">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.calc_decoherence_probs">[docs]</a>
-<span class="k">def</span> <span class="nf">calc_decoherence_probs</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">prob_tau</span><span class="p">,</span> <span class="n">two_flavor</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">calc_decoherence_probs</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">prob_tau</span><span class="p">,</span> <span class="n">two_flavor</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Oscillation probability calculator function, with decoherence included</span>
 

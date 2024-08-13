@@ -73,10 +73,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for pisa.stages.reco.simple_param</h1><div class="highlight"><pre>
-<span></span><span class="c1"># pylint: disable=not-callable</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Create reconstructed and PID variables based on truth information </span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Create reconstructed and PID variables based on truth information</span>
 <span class="sd">for MC events using simple parameterisations.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -85,18 +83,20 @@
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">math</span><span class="o">,</span> <span class="nn">fnmatch</span><span class="o">,</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">WHERE</span><span class="p">,</span> <span class="n">myjit</span><span class="p">,</span> <span class="n">ftype</span>
 
 
-
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;simple_param&quot;</span><span class="p">,</span><span class="s2">&quot;simple_reco_energy_parameterization&quot;</span><span class="p">,</span><span class="s2">&quot;simple_reco_coszen_parameterization&quot;</span><span class="p">,</span><span class="s2">&quot;simple_pid_parameterization&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;simple_param&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;simple_reco_energy_parameterization&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;simple_reco_coszen_parameterization&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;simple_pid_parameterization&quot;</span>
+<span class="p">]</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;T. Stuttard&#39;</span>
 
@@ -122,7 +122,7 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    dict_obj : dict</span>
-<span class="sd">        The dict (or dict-like) object to search </span>
+<span class="sd">        The dict (or dict-like) object to search</span>
 <span class="sd">    key : str</span>
 <span class="sd">        The key to search for in the dict (may include wildcards)</span>
 
@@ -153,10 +153,10 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    a : float</span>
-<span class="sd">        Normalisation (e.g. plateau height) </span>
+<span class="sd">        Normalisation (e.g. plateau height)</span>
 <span class="sd">    b : float</span>
 <span class="sd">        Steepness of rise (larger value means steeper rise)</span>
-<span class="sd">    c : float </span>
+<span class="sd">    c : float</span>
 <span class="sd">        x value at half-height of curve</span>
 <span class="sd">    x : array</span>
 <span class="sd">        The continuous parameter</span>
@@ -196,13 +196,13 @@
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Simple way to estimate the amount of visible energy in the event.</span>
 
-<span class="sd">    Right now considering cases with final state neutrinos, such as NC events, </span>
+<span class="sd">    Right now considering cases with final state neutrinos, such as NC events,</span>
 <span class="sd">    and nutau CC events (where the tau decays to a tau neutrino).</span>
 
 <span class="sd">    Neglecting the much lower losses due to muon decay for numu CC.</span>
 <span class="sd">    Also neglecting fact that different particle types produce differing photon yields.</span>
 
-<span class="sd">    I&#39;ve tuned these by eye due to the biases seen in GRECO pegleg, which to first </span>
+<span class="sd">    I&#39;ve tuned these by eye due to the biases seen in GRECO pegleg, which to first</span>
 <span class="sd">    order I&#39;m assuming are due to this missing energy.</span>
 <span class="sd">    There is also a bias in numu CC in GRECO, but suspect this is due to containment</span>
 <span class="sd">    or stochastics, but either way not reproducing this here.</span>
@@ -243,15 +243,15 @@
 <span class="sd">    Returns an energy dependent sigma (standard deviation) value(s),</span>
 <span class="sd">    with energy dependence defined as follows:</span>
 
-<span class="sd">        sigma(E) = sigma(E=E0) * (E/E0)^n </span>
+<span class="sd">        sigma(E) = sigma(E=E0) * (E/E0)^n</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    energy : array or float</span>
-<span class="sd">        Energy value to evaluate sigma at </span>
+<span class="sd">        Energy value to evaluate sigma at</span>
 <span class="sd">    energy_0 : float</span>
 <span class="sd">        Energy at which sigma_0 is defined</span>
-<span class="sd">    sigma_0 : float </span>
+<span class="sd">    sigma_0 : float</span>
 <span class="sd">        The value of sigma at energy_0</span>
 <span class="sd">    energy_power : float</span>
 <span class="sd">        Power/index fo the energy dependence</span>
@@ -286,7 +286,7 @@
 <span class="sd">        (example: params = {&#39;nue*_cc&#39;:[10.,0.2,0.2],})</span>
 
 <span class="sd">    random_state : np.random.RandomState</span>
-<span class="sd">        User must provide the random state, meaning that reproducible results </span>
+<span class="sd">        User must provide the random state, meaning that reproducible results</span>
 <span class="sd">        can be obtained when calling multiple times.</span>
 
 <span class="sd">    Returns</span>
@@ -351,7 +351,7 @@
 <span class="sd">        (example: params = {&#39;nue*_cc&#39;:[10.,0.2,0.5],})</span>
 
 <span class="sd">    random_state : np.random.RandomState</span>
-<span class="sd">        User must provide the random state, meaning that reproducible results </span>
+<span class="sd">        User must provide the random state, meaning that reproducible results</span>
 <span class="sd">        can be obtained when calling multiple times.</span>
 
 <span class="sd">    Returns</span>
@@ -382,7 +382,7 @@
 
     <span class="c1"># Compute the corresponding reco coszen</span>
     <span class="c1"># Use visible energy since that is what really matters</span>
-    <span class="n">reco_coszen</span> <span class="o">=</span> <span class="n">true_coszen</span> <span class="o">+</span> <span class="n">reco_error</span> 
+    <span class="n">reco_coszen</span> <span class="o">=</span> <span class="n">true_coszen</span> <span class="o">+</span> <span class="n">reco_error</span>
 
     <span class="c1"># Enforce rotational bounds</span>
     <span class="n">out_of_bounds_mask</span> <span class="o">=</span> <span class="n">reco_coszen</span> <span class="o">&gt;</span> <span class="mf">1.</span>
@@ -424,7 +424,7 @@
 <span class="sd">        A PID value to assign to cascade-like events</span>
 
 <span class="sd">    random_state : np.random.RandomState</span>
-<span class="sd">        User must provide the random state, meaning that reproducible results </span>
+<span class="sd">        User must provide the random state, meaning that reproducible results</span>
 <span class="sd">        can be obtained when calling multiple times.</span>
 
 <span class="sd">    Returns</span>
@@ -455,10 +455,10 @@
 
 <div class="viewcode-block" id="simple_param">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_param">[docs]</a>
-<span class="k">class</span> <span class="nc">simple_param</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">simple_param</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage to generate reconstructed parameters (energy, coszen, pid) using simple parameterizations.</span>
-<span class="sd">    These are not fit to any input data, but are simple and easily understandable and require no </span>
+<span class="sd">    These are not fit to any input data, but are simple and easily understandable and require no</span>
 <span class="sd">    input reconstructed events.</span>
 
 <span class="sd">    Can easily be tuned to any desired physics case, rught now repesent a DeepCore/ICU-like detector.</span>
@@ -496,7 +496,7 @@
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                 <span class="p">):</span>
 
-        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span> 
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="s2">&quot;perfect_reco&quot;</span><span class="p">,</span> <span class="c1">#TODO move these to constructor args?</span>
                         <span class="s2">&quot;reco_energy_params&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;reco_coszen_params&quot;</span><span class="p">,</span>
@@ -526,7 +526,7 @@
         <span class="n">track_pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">track_pid</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">)</span>
         <span class="n">cascade_pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">cascade_pid</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">)</span>
 
-        <span class="c1"># If using random numbers, use a random state with a fixed seed to make the </span>
+        <span class="c1"># If using random numbers, use a random state with a fixed seed to make the</span>
         <span class="c1"># same smearing for e.g. template and pseudodata (this achieves the same</span>
         <span class="c1"># as we would normally use if we had reco variales in the file).</span>
         <span class="c1"># Note that this doesn&#39;t affect other random numbers generated by other</span>
@@ -611,9 +611,6 @@
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;pid&quot;</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">pid</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;pid&quot;</span><span class="p">)</span></div>
 </div>
-
-
-
 
 </pre></div>
 

@@ -90,19 +90,18 @@
 <span class="kn">import</span> <span class="nn">pickle</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span><span class="p">,</span> <span class="n">line_profile</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">WHERE</span><span class="p">,</span> <span class="n">myjit</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">myjit</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
 
 
 <div class="viewcode-block" id="mceq_barr">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.mceq_barr.mceq_barr">[docs]</a>
-<span class="k">class</span> <span class="nc">mceq_barr</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">mceq_barr</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage that uses gradients calculated with MCEq to handle flux uncertainties.</span>
 <span class="sd">    This stage calculates flux variations relative to a nominal flux that must</span>
@@ -279,7 +278,7 @@
             <span class="c1"># Flux container shape : [ N events, N flavors in primary flux ]</span>
             <span class="n">num_events</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">size</span>
             <span class="n">num_flux_flavs</span> <span class="o">=</span> <span class="mi">3</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_nutau_flux</span> <span class="k">else</span> <span class="mi">2</span>
-            <span class="n">flux_container_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_events</span><span class="p">,</span> <span class="n">num_flux_flavs</span><span class="p">)</span> 
+            <span class="n">flux_container_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_events</span><span class="p">,</span> <span class="n">num_flux_flavs</span><span class="p">)</span>
 
             <span class="c1"># Gradients container shape</span>
             <span class="n">gradients_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
@@ -354,7 +353,7 @@
             <span class="c1">#</span>
             <span class="c1"># Nominal flux</span>
             <span class="c1">#</span>
-            
+
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_honda_nominal_flux</span> <span class="p">:</span>
 
                 <span class="c1"># Evaluate splines to get nominal flux</span>
@@ -522,7 +521,7 @@
             <span class="c1">#</span>
             <span class="c1"># Apply the systematics to the flux</span>
             <span class="c1">#</span>
-            
+
             <span class="c1"># Figure out which key to use for the nominal flux</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_honda_nominal_flux</span> <span class="p">:</span>
                 <span class="k">if</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">nominal_flux_key</span> <span class="o">=</span> <span class="s2">&quot;nu_flux_nominal&quot;</span>

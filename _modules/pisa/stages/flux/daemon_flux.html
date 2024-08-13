@@ -74,7 +74,7 @@
              
   <h1>Source code for pisa.stages.flux.daemon_flux</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Implementation of DAEMON flux (https://arxiv.org/abs/2303.00022) </span>
+<span class="sd">Implementation of DAEMON flux (https://arxiv.org/abs/2303.00022)</span>
 <span class="sd">by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</span>
 
 <span class="sd">Maria Liubarska, J.P. Yanez 2023</span>
@@ -84,7 +84,7 @@
 <span class="kn">from</span> <span class="nn">daemonflux</span> <span class="kn">import</span> <span class="n">Flux</span>
 <span class="kn">from</span> <span class="nn">daemonflux</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">daemon_version</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
@@ -96,10 +96,10 @@
 
 <div class="viewcode-block" id="daemon_flux">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.daemon_flux.daemon_flux">[docs]</a>
-<span class="k">class</span> <span class="nc">daemon_flux</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">daemon_flux</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    DAEMON flux stage</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 
@@ -174,14 +174,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">daemon_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flux_obj</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">known_parameters</span>
 
         <span class="c1"># make parameter names pisa config compatible and add prefix</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">daemon_params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;daemon_&#39;</span><span class="o">+</span><span class="n">p</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pi+&#39;</span><span class="p">,</span><span class="s1">&#39;pi&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pi-&#39;</span><span class="p">,</span><span class="s1">&#39;antipi&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;K+&#39;</span><span class="p">,</span><span class="s1">&#39;K&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;K-&#39;</span><span class="p">,</span><span class="s1">&#39;antiK&#39;</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">daemon_params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;daemon_&#39;</span><span class="o">+</span><span class="n">p</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pi+&#39;</span><span class="p">,</span><span class="s1">&#39;pi&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pi-&#39;</span><span class="p">,</span><span class="s1">&#39;antipi&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;K+&#39;</span><span class="p">,</span><span class="s1">&#39;K&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;K-&#39;</span><span class="p">,</span><span class="s1">&#39;antiK&#39;</span><span class="p">)</span>
                               <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">daemon_names</span><span class="p">]</span>
 
         <span class="c1"># add daemon_chi2 internal parameter to carry on chi2 penalty from daemonflux (using covar. matrix)</span>
-        <span class="n">daemon_chi2</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;daemon_chi2&#39;</span><span class="p">,</span> <span class="n">nominal_value</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> 
+        <span class="n">daemon_chi2</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;daemon_chi2&#39;</span><span class="p">,</span> <span class="n">nominal_value</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
                             <span class="n">value</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_fixed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        <span class="c1"># saving number of parameters into a internal param in order to check that we don&#39;t have </span>
+        <span class="c1"># saving number of parameters into a internal param in order to check that we don&#39;t have</span>
         <span class="c1"># non-daemonflux params with &#39;daemon_&#39; in their name, which will make prior penalty calculation incorrect</span>
         <span class="n">daemon_params_len</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;daemon_params_len&#39;</span><span class="p">,</span> <span class="n">nominal_value</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">daemon_names</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span>
                                   <span class="n">value</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">daemon_names</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_fixed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -232,17 +232,17 @@
         <span class="n">flux_map_nuebar</span>  <span class="o">=</span> <span class="n">make_2d_flux_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flux_obj</span><span class="p">,</span>
                                             <span class="n">particle</span> <span class="o">=</span> <span class="s1">&#39;antinue&#39;</span><span class="p">,</span>
                                             <span class="n">params</span> <span class="o">=</span> <span class="n">modif_param_dict</span><span class="p">)</span>
-        
+
 
         <span class="c1"># calc modified flux using provided parameters</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">nubar</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">]</span>
 
-            <span class="n">nue_flux</span>   <span class="o">=</span> <span class="n">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map_nuebar</span> <span class="k">if</span> <span class="n">nubar</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="n">flux_map_nue</span><span class="p">,</span> 
+            <span class="n">nue_flux</span>   <span class="o">=</span> <span class="n">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map_nuebar</span> <span class="k">if</span> <span class="n">nubar</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="n">flux_map_nue</span><span class="p">,</span>
                                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">],</span>
                                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
 
-            <span class="n">numu_flux</span>  <span class="o">=</span> <span class="n">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map_numubar</span> <span class="k">if</span> <span class="n">nubar</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="n">flux_map_numu</span><span class="p">,</span> 
+            <span class="n">numu_flux</span>  <span class="o">=</span> <span class="n">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map_numubar</span> <span class="k">if</span> <span class="n">nubar</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="n">flux_map_numu</span><span class="p">,</span>
                                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">],</span>
                                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
 
@@ -289,7 +289,7 @@
     <span class="n">uconv</span> <span class="o">=</span> <span class="n">true_energy</span><span class="o">**-</span><span class="mi">3</span> <span class="o">*</span> <span class="mf">1e4</span>
     <span class="k">return</span> <span class="n">flux_map</span><span class="o">.</span><span class="n">ev</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">)</span> <span class="o">*</span> <span class="n">uconv</span></div>
 
-            
+
 </pre></div>
 
            </div>

@@ -83,9 +83,9 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
 
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
@@ -93,7 +93,6 @@
 <span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
 <span class="kn">from</span> <span class="nn">pisa.core</span> <span class="kn">import</span> <span class="n">translation</span>
 <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
-
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 <div class="viewcode-block" id="ResampleMode">
@@ -111,13 +110,13 @@
 <span class="k">class</span> <span class="nc">resample</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage to resample weighted MC histograms from one binning to another.</span>
-<span class="sd">    </span>
-<span class="sd">    The origin binning is given as `calc_mode` and the output binning is given in </span>
+
+<span class="sd">    The origin binning is given as `calc_mode` and the output binning is given in</span>
 <span class="sd">    `apply_mode`.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    </span>
+
 <span class="sd">    scale_errors : bool, optional</span>
 <span class="sd">        If `True` (default), apply scaling to errors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -137,11 +136,11 @@
         <span class="c1"># This stage only makes sense when going binned to binned.</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">),</span> <span class="s2">&quot;stage only produces binned output&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">),</span> <span class="s2">&quot;stage only produces binned output&quot;</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span> <span class="o">=</span> <span class="n">scale_errors</span>
-        
+
         <span class="c1"># The following tests whether `apply_mode` is a strict up-sample</span>
-        
+
         <span class="c1"># TODO: Test for ability to resample in two steps</span>
         <span class="c1"># TODO: Update to new test nomenclature</span>
 
@@ -186,9 +185,9 @@
         <span class="c1"># We are overwriting the `apply` method rather than the `apply_function` method</span>
         <span class="c1"># because we are manipulating the data binning in a delicate way that doesn&#39;t</span>
         <span class="c1"># work with automatic rebinning.</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
-        
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
                 <span class="n">vectorizer</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span>
@@ -241,7 +240,7 @@
                     <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights_resampled&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">output_binvols</span> <span class="o">/</span> <span class="n">origin_binvols</span>
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span><span class="p">:</span>
-                        <span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">output_binvols</span> <span class="o">/</span> <span class="n">origin_binvols</span>
                     <span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">rs_mode</span> <span class="o">==</span> <span class="n">ResampleMode</span><span class="o">.</span><span class="n">DOWN</span><span class="p">:</span>
@@ -251,7 +250,7 @@
                 <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">])</span></div>
 </div>
 
-    
+
 <div class="viewcode-block" id="test_resample">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.test_resample">[docs]</a>
 <span class="k">def</span> <span class="nf">test_resample</span><span class="p">():</span>
@@ -259,19 +258,18 @@
     <span class="kn">from</span> <span class="nn">pisa.core.distribution_maker</span> <span class="kn">import</span> <span class="n">DistributionMaker</span>
     <span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span>
     <span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">parse_pipeline_config</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
     <span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
     <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
     <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
     <span class="kn">from</span> <span class="nn">numpy.testing</span> <span class="kn">import</span> <span class="n">assert_allclose</span>
-    
+
     <span class="n">example_cfg</span> <span class="o">=</span> <span class="n">parse_pipeline_config</span><span class="p">(</span><span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">)</span>
     <span class="n">reco_binning</span> <span class="o">=</span> <span class="n">example_cfg</span><span class="p">[(</span><span class="s1">&#39;utils&#39;</span><span class="p">,</span> <span class="s1">&#39;hist&#39;</span><span class="p">)][</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span>
     <span class="n">coarse_binning</span> <span class="o">=</span> <span class="n">reco_binning</span><span class="o">.</span><span class="n">downsample</span><span class="p">(</span><span class="n">reco_energy</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">reco_coszen</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">coarse_binning</span><span class="o">.</span><span class="n">is_compat</span><span class="p">(</span><span class="n">reco_binning</span><span class="p">)</span>
     <span class="c1"># replace binning of output with coarse binning</span>
     <span class="n">example_cfg</span><span class="p">[(</span><span class="s1">&#39;utils&#39;</span><span class="p">,</span> <span class="s1">&#39;hist&#39;</span><span class="p">)][</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coarse_binning</span>
-    <span class="c1"># New in PISA4: We explicitly tell the pipeline which keys and binning to use for </span>
+    <span class="c1"># New in PISA4: We explicitly tell the pipeline which keys and binning to use for</span>
     <span class="c1"># the output. We must manually set this to the same binning as the output from the</span>
     <span class="c1"># hist stage because otherwise it would attempt to automatically rebin everything.</span>
     <span class="n">example_cfg</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="s1">&#39;errors&#39;</span><span class="p">)</span>
@@ -289,7 +287,7 @@
 
     <span class="n">example_maker</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">([</span><span class="n">example_cfg</span><span class="p">])</span>
     <span class="n">upsampled_maker</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">([</span><span class="n">upsample_cfg</span><span class="p">])</span>
-    
+
     <span class="n">example_map</span> <span class="o">=</span> <span class="n">example_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">example_map_upsampled</span> <span class="o">=</span> <span class="n">upsampled_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -298,7 +296,7 @@
         <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">example_map</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">),</span>
         <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">example_map_upsampled</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">),</span>
     <span class="p">)</span>
-    
+
     <span class="c1"># Check consistency of modified chi-square</span>
     <span class="c1"># ----------------------------------------</span>
     <span class="c1"># When the assumption holds that events are uniformly distributed over the coarse</span>
@@ -307,12 +305,12 @@
     <span class="c1"># the assumption by bin volumes. We should find that the modified chi-square between</span>
     <span class="c1"># the coarse map and the coarse fluctuated map is the same as the upsampled map and</span>
     <span class="c1"># the upsampled fluctuated map.</span>
-    
+
     <span class="c1"># It doesn&#39;t matter precisely how we fluctuate it here, we just want any different</span>
     <span class="c1"># map...</span>
     <span class="n">random_map_coarse</span> <span class="o">=</span> <span class="n">example_map</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;scaled_poisson&#39;</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
     <span class="n">random_map_coarse</span><span class="o">.</span><span class="n">set_errors</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-    
+
     <span class="c1"># This bit is an entirely independent implementation of the upsampling. The count</span>
     <span class="c1"># in every bin is scaled according to the reatio of weighted bin volumes.</span>
     <span class="n">upsampled_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">example_map_upsampled</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">)</span>
@@ -338,11 +336,11 @@
         <span class="n">coarse_bin_volume</span> <span class="o">=</span> <span class="n">coarse_binning</span><span class="o">.</span><span class="n">weighted_bin_volumes</span><span class="p">(</span>
             <span class="n">attach_units</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)[</span><span class="n">coarse_index</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-    
+
         <span class="n">upsampled_hist</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">coarse_hist</span><span class="p">[</span><span class="n">coarse_index</span><span class="p">]</span>
         <span class="n">upsampled_hist</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">]</span> <span class="o">*=</span> <span class="n">fine_bin_volume</span>
         <span class="n">upsampled_hist</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">]</span> <span class="o">/=</span> <span class="n">coarse_bin_volume</span>
-    
+
     <span class="c1"># done, at last!</span>
     <span class="n">random_map_upsampled</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s2">&quot;random_upsampled&quot;</span><span class="p">,</span>
@@ -350,7 +348,7 @@
         <span class="n">binning</span><span class="o">=</span><span class="n">up_binning</span>
     <span class="p">)</span>
     <span class="n">random_map_upsampled</span><span class="o">.</span><span class="n">set_errors</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-    
+
     <span class="c1"># After ALL THIS, we get the same modified chi-square from the coarse and the</span>
     <span class="c1"># upsampled pair of maps. Neat, huh?</span>
     <span class="n">assert_allclose</span><span class="p">(</span><span class="n">random_map_coarse</span><span class="o">.</span><span class="n">mod_chi2</span><span class="p">(</span><span class="n">example_map</span><span class="p">),</span>
