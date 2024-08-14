@@ -10,6 +10,7 @@
 [Installation](INSTALL.md) |
 [Documentation](https://icecube.github.io/pisa/) |
 [Terminology](pisa/glossary.md) |
+[Conventions](pisa/general_conventions.md) |
 [License](LICENSE)
 
 PISA is a software written to analyze the results (or expected results) of an experiment based on Monte Carlo simulation.

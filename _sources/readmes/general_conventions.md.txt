@@ -42,7 +42,6 @@ Docstrings should be formatted according to the NumPy/SciPy convention.
 * [NumPy/SciPy documentation style guide](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard)
 * [Example NumPy docstrings in code](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html)
 * [Recommonmark translates markdown into reST](http://recommonmark.readthedocs.io/en/latest/auto_structify.html)
-* Since all documentation will be run through Sphinx using the Napoleon and Recommonmark extensions, the final arbiter on whether a docstring is formatted correctly is the output generated using these. Good information for making nice docstrings can be found in both [Napoleon](http://sphinxcontrib-napoleon.readthedocs.io/)
 
 ## Standalone files
 
