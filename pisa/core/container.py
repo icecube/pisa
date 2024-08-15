@@ -33,10 +33,10 @@ class ContainerSet(object):
 
     containers : list or None
 
-    data_specs : MultiDimBinning, "events" or None
+    representation : MultiDimBinning, "events" or None
 
     """
-    def __init__(self, name, containers=None, data_specs=None):
+    def __init__(self, name, containers=None, representation=None):
         self.name = name
         self.linked_containers = []
         self.containers = []
@@ -44,6 +44,7 @@ class ContainerSet(object):
             containers = []
         for container in containers:
             self.add_container(container)
+        self.representation = representation
 
     def __repr__(self):
         return f'ContainerSet containing {[c.name for c in self]}'
@@ -368,7 +369,7 @@ class Container():
 
     @property
     def keys_incl_aux_data(self):
-        return self.keys + list(self._aux_data.keys())
+        return list(self.keys) + list(self._aux_data.keys())
     
     @property
     def all_keys(self):
@@ -780,18 +781,49 @@ def test_container_set():
     else:
         raise Exception('identical containers added to a containerset, this should not be possible')
 
-
     nevts1 = 10
-    nevts2 = 20
     container1['true_energy'] = np.linspace(1, 80, nevts1, dtype=FTYPE)
-    container2['reco_coszen'] = np.linspace(-1, 1, nevts2, dtype=FTYPE)
-    data = ContainerSet('data', [container1, container2])
-    assert len(data.get_shared_keys(rep_indep=True)) == 0
+    container2['reco_coszen'] = np.linspace(-1, 1, 2*nevts1, dtype=FTYPE)
+
+    # we have not set a representation, should make no difference
+    # whether we require repr. independence or not
+    for rep_indep in (True, False):
+        assert len(data.get_shared_keys(rep_indep=rep_indep)) == 0
 
     container1['reco_coszen'] = container2['reco_coszen'][:nevts1]
-    shared_keys = data.get_shared_keys(rep_indep=True)
-    assert len(shared_keys) == 1
-    assert shared_keys[0] == 'reco_coszen'
+    # do the following without and with events rep. for fun
+    for rep in (None, 'events'):
+        data.representation = rep
+        for rep_indep in (True, False):
+            shared_keys = data.get_shared_keys(rep_indep=rep_indep)
+            if rep_indep or rep is None:
+                assert len(shared_keys) == 1
+                assert shared_keys[0] == 'reco_coszen'
+            else:
+                # Here, we have set events rep., which
+                # I believe should have no keys, and don't request
+                # rep. independence -> 0
+                for c in data.containers:
+                    assert len(c.keys) == 0
+                assert len(shared_keys) == 0
+
+    # still in events rep.
+    shared_aux_key = 'AmIEvil'
+    # add auxilliary data to both containers
+    container1.set_aux_data(key=shared_aux_key, val=False)
+    container2.set_aux_data(key=shared_aux_key, val=True)
+    # get shared keys across all reps. and for the current one
+    shared_keys_rep_indep = data.get_shared_keys(rep_indep=True)
+    shared_keys_rep_dep = data.get_shared_keys(rep_indep=False)
+
+    assert (shared_aux_key in shared_keys_rep_indep
+            and shared_aux_key in shared_keys_rep_dep)
+
+    # But should have "reco_coszen" next to shared_aux_key
+    # in shared keys for representation-dependent request
+    assert len(shared_keys_rep_indep) == 2
+    assert len(shared_keys_rep_dep) == 1
+
 
 if __name__ == '__main__':
     test_container()

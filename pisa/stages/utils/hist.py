@@ -13,22 +13,31 @@ from pisa.utils.log import logging
 
 
 class hist(Stage):  # pylint: disable=invalid-name
-
-    """stage to histogram events
+    """Stage to histogram events
 
     Parameters
     ----------
-    unweighted : bool, optional
-        Return un-weighted event counts in each bin.
+    unweighted : bool, default False
+        Return un-weighted event counts in each bin
+    apply_unc_weights : bool, default False
+
+        Expected container keys are .. ::
+
+            "weights"
+            "unc_weights" (if `apply_unc_weights`)
     """
+
     def __init__(
         self,
         apply_unc_weights=False,
         unweighted=False,
         **std_kwargs,
     ):
-        # not obvious how to set these here
-        expected_container_keys = ()
+        expected_container_keys = [
+            'weights'
+        ]
+        if apply_unc_weights:
+            expected_container_keys.append('unc_weights')
 
         # init base class
         super().__init__(

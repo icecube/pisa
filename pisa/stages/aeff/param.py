@@ -38,17 +38,20 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 def load_aeff_param(source):
     """Load aeff parameterisation (energy- or coszen-dependent) from file
     or dictionary.
+
     Parameters
     ----------
     source : string or mapping
         Source of the parameterization. If string, treat as file path or
         resource location and load from the file; this must yield a mapping. If
         `source` is a mapping, it is used directly. See notes below on format.
+
     Returns
     -------
     aeff_params : OrderedDict
         Keys are stringified flavintgroups and values are the callables that
         produce aeff when called with energy or coszen values.
+
     Notes
     -----
     The mapping passed via `source` or loaded therefrom must have the format:
@@ -69,8 +72,8 @@ def load_aeff_param(source):
                 "aeff": [sequence of values]
             }
           the two sequences are used to form a linear interpolant callable that
-          maps energy or coszen values to aeff values. The effective area for any 
-          energy or coszen outside the bounds of the corresponding sequence is 
+          maps energy or coszen values to aeff values. The effective area for any
+          energy or coszen outside the bounds of the corresponding sequence is
           assumed to be 0.
     """
     if not isinstance(source, (str, Mapping)):
@@ -126,18 +129,27 @@ class param(Stage): # pylint: disable=invalid-name
     """Effective area service based on parameterisation functions stored in a
     .json file.
     Transforms an input map of a flux of a given flavour (and interaction)
-    into maps of event rates, according to energy and cosine zenith dependent 
+    into maps of event rates, according to energy and cosine zenith dependent
     effective areas specified by parameterisation functions.
-    Requires true_energy, true_coszen, and weights to be present in the container.
+
     Parameters
     ----------
-    params : ParamSet
-        Must exclusively have parameters:
-        aeff_energy_paramfile
-        aeff_coszen_paramfile
-        livetime
-        aeff_scale
+    params : ParamSet or sequence with which to instantiate a ParamSet.
+        Expected params are .. ::
+
+            aeff_energy_paramfile : string
+            aeff_coszen_paramfile : string
+            livetime : Quantity [time]
+            aeff_scale : Quantity [dimensionless]
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "weights"
+
     """
+
     def __init__(
         self,
         **std_kwargs,
