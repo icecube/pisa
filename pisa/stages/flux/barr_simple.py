@@ -32,6 +32,14 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
             Barr_uphor_ratio : quantity (dimensionless)
             Barr_nu_nubar_ratio : quantity (dimensionless)
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nu_flux_nominal"
+            "nubar_flux_nominal"
+            "nubar"
+
     """
     def __init__(
         self,
@@ -45,9 +53,18 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
             "Barr_nu_nubar_ratio",
         )
 
+        expected_container_keys = (
+            "true_energy",
+            "true_coszen",
+            "nu_flux_nominal",
+            "nubar_flux_nominal",
+            "nubar"
+        )
+
         # init base class
         super(barr_simple, self).__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

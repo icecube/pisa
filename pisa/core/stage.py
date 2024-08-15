@@ -67,6 +67,7 @@ class Stage():
         data=None,
         params=None,
         expected_params=None,
+        expected_container_keys=None,
         debug_mode=None,
         error_method=None,
         calc_mode=None,
@@ -75,7 +76,14 @@ class Stage():
     ):
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
-        expected_params = arg_str_seq_none(expected_params, "expected_params")
+        expected_params = arg_str_seq_none(
+            inputs=expected_params, name="expected_params"
+        )
+
+        # dito
+        expected_container_keys = arg_str_seq_none(
+            inputs=expected_container_keys, name="expected_container_keys"
+        )
 
         module_path = self.__module__.split(".")
 
@@ -88,6 +96,10 @@ class Stage():
         self.expected_params = expected_params
         """The full set of parameters (by name) that must be present in
         `params`"""
+
+        self.expected_container_keys = expected_container_keys
+        """The full set of keys that is expected to be present in each
+        container within `data`"""
 
         self._source_code_hash = None
 
@@ -178,7 +190,7 @@ class Stage():
                 "`selections` = %s yielded `params` = %s" % (selections, self.params)
             )
 
-    def _check_params(self, params, ignore_excess = False):
+    def _check_params(self, params, ignore_excess=False):
         """Make sure that `expected_params` is defined and that exactly the
         params specified in self.expected_params are present.
 
@@ -208,8 +220,6 @@ class Stage():
             + ";\n".join(err_strs)
         )
 
-
-
     @property
     def params(self):
         """Params"""
@@ -219,6 +229,45 @@ class Stage():
     def param_selections(self):
         """Param selections"""
         return sorted(deepcopy(self._param_selector.param_selections))
+
+    def _check_exp_keys_in_data(self, error_on_missing=False):
+        """Make sure that `expected_container_keys` is defined and that
+        they are present in all containers among `self.data`, independent of
+        representation.
+
+        Parameters
+        ----------
+        error_on_missing : bool
+            Whether to raise error upon missing keys (default: False)
+
+        Returns
+        -------
+        bool
+
+        """
+        if self.data is None:
+            # nothing to do, we were probably directly instantiated with data
+            # set to None
+            return
+        if self.expected_container_keys is None:
+            logging.warn(
+                'Service %s.%s: not specifying expected container keys is deprecated.'
+                % (self.stage_name, self.service_name)
+            )
+            return
+        exp_k = set(self.expected_container_keys)
+        got_k = set(self.data.get_shared_keys(rep_indep=True))
+        missing = exp_k.difference(got_k)
+        if len(missing) > 0:
+            err_str = "Service %s.%s," % (self.stage_name, self.service_name)
+            err_str += " expected container keys: %s," % ", ".join(sorted(exp_k))
+            err_str += " but containers are missing keys: %s" % ", ".join(sorted(missing))
+            if error_on_missing:
+                raise ValueError(err_str)
+            # Could be confusing until we have made setup-time check foolproof
+            logging.warn(err_str)
+
+        return
 
     @property
     def source_code_hash(self):
@@ -311,6 +360,8 @@ class Stage():
         if self.data is not None:
             if not isinstance(self.data, ContainerSet):
                 raise TypeError("`data` must be a `pisa.core.container.ContainerSet`")
+
+            self._check_exp_keys_in_data(error_on_missing=False)
 
         if self.calc_mode is not None:
             self.data.representation = self.calc_mode

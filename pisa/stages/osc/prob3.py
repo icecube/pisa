@@ -68,6 +68,13 @@ class prob3(Stage):  # pylint: disable=invalid-name
             decay_alpha3 : quantity (energy^2)
             v_lri : quantity (eV)
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nubar"
+            "nu_flux"
+            "weights"
 
     **kwargs
         Other kwargs are handled by Stage
@@ -98,6 +105,14 @@ class prob3(Stage):  # pylint: disable=invalid-name
           'deltam21',
           'deltam31',
           'deltacp'
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'nubar',
+            'nu_flux',
+            'weights'
         )
 
 
@@ -192,6 +207,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

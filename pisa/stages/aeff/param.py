@@ -149,8 +149,15 @@ class param(Stage): # pylint: disable=invalid-name
             'aeff_scale'
         )
 
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'weights'
+        )
+
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

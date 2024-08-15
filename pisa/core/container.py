@@ -81,6 +81,25 @@ class ContainerSet(object):
     def names(self):
         return [c.name for c in self.containers]
 
+    def get_shared_keys(self, rep_indep=True):
+        """
+        Get a tuple of all keys shared among contained containers.
+
+        Parameters
+        ----------
+        rep_indep : bool
+            Whether all keys should be considered, not just those in
+            the current representation (default: `True`)
+
+        """
+        if len(self.containers) == 0:
+            return ()
+
+        return tuple(
+            set.intersection(*[set(c.all_keys_incl_aux_data if rep_indep else c.keys_incl_aux_data)
+                               for c in self.containers])
+        )
+
     def link_containers(self, key, names):
         """Link containers together. When containers are linked, they are
         treated as a single (virtual) container for binned data
@@ -346,11 +365,20 @@ class Container():
         if self.is_map:
             keys += tuple(self.representation.names)
         return keys
+
+    @property
+    def keys_incl_aux_data(self):
+        return self.keys + list(self._aux_data.keys())
     
     @property
     def all_keys(self):
         '''return all available keys, regardless of representation'''
         return list(self.validity.keys())
+
+    @property
+    def all_keys_incl_aux_data(self):
+        '''same as `all_keys`, but including auxilliary data'''
+        return self.all_keys + list(self._aux_data.keys())
         
     @property
     def is_map(self):
@@ -498,7 +526,7 @@ class Container():
     
     def __iter__(self):
         """iterate over all keys in container"""
-        return self.keys()
+        return self.keys
     
     def translate(self, key, src_representation):
         '''translate variable from source representation
@@ -752,6 +780,18 @@ def test_container_set():
     else:
         raise Exception('identical containers added to a containerset, this should not be possible')
 
+
+    nevts1 = 10
+    nevts2 = 20
+    container1['true_energy'] = np.linspace(1, 80, nevts1, dtype=FTYPE)
+    container2['reco_coszen'] = np.linspace(-1, 1, nevts2, dtype=FTYPE)
+    data = ContainerSet('data', [container1, container2])
+    assert len(data.get_shared_keys(rep_indep=True)) == 0
+
+    container1['reco_coszen'] = container2['reco_coszen'][:nevts1]
+    shared_keys = data.get_shared_keys(rep_indep=True)
+    assert len(shared_keys) == 1
+    assert shared_keys[0] == 'reco_coszen'
 
 if __name__ == '__main__':
     test_container()

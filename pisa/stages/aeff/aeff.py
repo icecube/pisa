@@ -29,6 +29,11 @@ class aeff(Stage):  # pylint: disable=invalid-name
             nutau_norm : dimensionless Quantity
             nu_nc_norm : dimensionless Quantity
 
+        Expected container keys are .. ::
+
+            "weights"
+
+
     """
     def __init__(
         self,
@@ -42,9 +47,14 @@ class aeff(Stage):  # pylint: disable=invalid-name
             'nu_nc_norm',
         )
 
+        expected_container_keys = (
+            'weights'
+        )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

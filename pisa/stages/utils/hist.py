@@ -27,10 +27,13 @@ class hist(Stage):  # pylint: disable=invalid-name
         unweighted=False,
         **std_kwargs,
     ):
+        # not obvious how to set these here
+        expected_container_keys = ()
 
         # init base class
         super().__init__(
             expected_params=(),
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

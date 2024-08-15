@@ -88,6 +88,7 @@ class simple_data_loader(Stage):  # pylint: disable=invalid-name
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=(),
             **std_kwargs,
         )
 
