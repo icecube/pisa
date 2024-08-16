@@ -27,6 +27,14 @@ class resolutions(Stage):  # pylint: disable=invalid-name
             pid_improvement : quantity (dimensionless)
                 applies a shift to the classification parameter
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "reco_energy"
+            "reco_coszen"
+            "pid"
+
     """
     def __init__(
         self,
@@ -37,9 +45,18 @@ class resolutions(Stage):  # pylint: disable=invalid-name
             'coszen_improvement',
             'pid_improvement',
         )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'reco_energy',
+            'reco_coszen',
+        )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

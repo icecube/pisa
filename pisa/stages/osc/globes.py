@@ -50,6 +50,15 @@ class globes(Stage):  # pylint: disable=invalid-name
             theta34 : quantity (angle)
             deltacp : quantity (angle)
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nubar"
+            "flav"
+            "nu_flux"
+            "weights"
+
     """
     def __init__(
         self,
@@ -72,9 +81,19 @@ class globes(Stage):  # pylint: disable=invalid-name
             'deltacp',
         )
 
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'nubar',
+            'flav',
+            'nu_flux',
+            'weights'
+        )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

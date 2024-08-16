@@ -404,6 +404,11 @@ class simple_param(Stage):  # pylint: disable=invalid-name
         cascade_pid : float
             The numerical 'pid' variable value to assign for cascades
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+
     """
 
     def __init__(self,
@@ -411,17 +416,23 @@ class simple_param(Stage):  # pylint: disable=invalid-name
                 ):
 
         expected_params = (
-                        "perfect_reco", #TODO move these to constructor args?
-                        "reco_energy_params",
-                        "reco_coszen_params",
-                        "pid_track_params",
-                        "track_pid",
-                        "cascade_pid",
-                        )
+            "perfect_reco", #TODO move these to constructor args?
+            "reco_energy_params",
+            "reco_coszen_params",
+            "pid_track_params",
+            "track_pid",
+            "cascade_pid",
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+        )
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

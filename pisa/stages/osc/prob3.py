@@ -73,6 +73,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
             "true_energy"
             "true_coszen"
             "nubar"
+            "flav"
             "nu_flux"
             "weights"
 
@@ -111,6 +112,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
             'true_energy',
             'true_coszen',
             'nubar',
+            'flav',
             'nu_flux',
             'weights'
         )

@@ -19,8 +19,17 @@ class two_nu_osc(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    theta : quantity (angle)
-    deltam31 : quantity (mass^2)
+        Expected params .. ::
+        
+            theta : quantity (angle)
+            deltam31 : quantity (mass^2)
+    
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nu_flux"
+            "weights"
 
     Notes
     -----
@@ -33,13 +42,21 @@ class two_nu_osc(Stage):  # pylint: disable=invalid-name
                 ):
 
         expected_params = (
-                           'theta',
-                           'deltam31',
-                          )
+            'theta',
+            'deltam31',
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'nu_flux',
+            'weights'
+        )
 
         # init base class
-        super(two_nu_osc, self).__init__(
+        super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

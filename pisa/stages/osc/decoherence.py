@@ -270,6 +270,15 @@ class decoherence(Stage):
             gamma13 : quantity (energy)
             gamma23 : quantity (energy)
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "weights"
+            "nubar"
+            "flav"
+            "sys_flux"
+
     """
     def __init__(self,
                  **std_kwargs,
@@ -292,11 +301,22 @@ class decoherence(Stage):
                            'gamma32',
                           )
 
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'weights',
+            'nubar',
+            'flav',
+            'sys_flux',
+            
+        )
+
         # init base class
-        super(decoherence, self).__init__(
-                                       expected_params=expected_params,
-                                       **std_kwargs,
-                                      )
+        super().__init__(
+            expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
+            **std_kwargs,
+        )
 
         #Have not yet implemented matter effects
         if self.params.earth_model.value is not None:
