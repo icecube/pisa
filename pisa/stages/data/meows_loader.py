@@ -22,7 +22,12 @@ class meows_loader(Stage):  # pylint: disable=invalid-name
         self.events_file = events_file
         self._n_files = int(n_files)
         self.output_names = output_names
-        super().__init__(expected_params=(), **std_kwargs)
+
+        super().__init__(
+            expected_params=(),
+            expected_container_keys=(),
+            **std_kwargs,
+        )
 
     def setup_function(self):
         """

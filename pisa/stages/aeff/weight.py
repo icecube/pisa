@@ -24,17 +24,29 @@ class weight(Stage):  # pylint: disable=invalid-name
                 Detector livetime for scaling template
             weight_scale : Quantity [dimensionless]
                 Overall scaling/normalisation of template
+                
+        Expected container keys are .. ::
+
+            "weights"
 
     """
     def __init__(
         self,
         **std_kwargs,
     ):
-        expected_params = ('livetime', 'weight_scale')
+        expected_params = (
+            'livetime', 
+            'weight_scale',
+        )
+        
+        expected_container_keys = (
+            'weights',
+        )
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

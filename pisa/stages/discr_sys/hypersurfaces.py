@@ -95,9 +95,16 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
             self.hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, expected_binning=std_kwargs['calc_mode'])
         self.hypersurface_param_names = list(self.hypersurfaces.values())[0].param_names
 
+        expected_container_keys = [
+            'weights',
+        ]
+        if not self.error_method == None:
+            expected_container_keys.append('errors')
+        
         # -- Initialize base class -- #
         super().__init__(
             expected_params=self.hypersurface_param_names + self.inter_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

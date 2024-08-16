@@ -26,6 +26,12 @@ class airs(Stage):  # pylint: disable=invalid-name
 
             scale : quantity (dimensionless)
                 the scale by which the weights are perturbed via the airs 1-sigma shift
+                
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "weights"
     """
 
     def __init__(self, airs_spline, **std_kwargs):
@@ -35,9 +41,16 @@ class airs(Stage):  # pylint: disable=invalid-name
         expected_params = [
             "airs_scale",
         ]
+        
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'weights',
+        )
 
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

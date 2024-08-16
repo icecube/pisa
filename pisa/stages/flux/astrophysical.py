@@ -19,8 +19,15 @@ class astrophysical(Stage):  # pylint: disable=invalid-name
     ----------
     params
         Expected params are .. ::
+
             astro_delta : quantity (dimensionless)
             astro_norm : quantity (dimensionless)
+            
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "initial_weights"
 
     TODO: flavor ratio as a parameter? Save for later.
     """
@@ -33,10 +40,20 @@ class astrophysical(Stage):  # pylint: disable=invalid-name
         self._mu_ratio = FTYPE(1.0)
         self._tau_ratio = FTYPE(1.0)
 
-        expected_params = ("astro_delta", "astro_norm")
+        expected_params = (
+            "astro_delta", 
+            "astro_norm",
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'initial_weights',
+        )
 
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

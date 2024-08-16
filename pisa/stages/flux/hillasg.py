@@ -20,17 +20,31 @@ class hillasg(Stage):  # pylint: disable=invalid-name
     ----------
     params
         Expected params .. ::
+
             flux_table : str
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
 
     """
 
     def __init__(self, **std_kwargs):
 
-        expected_params = ("flux_table",)
+        expected_params = (
+            "flux_table",
+        )
+        
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+        )
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

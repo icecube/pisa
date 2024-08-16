@@ -164,7 +164,7 @@ class param(Stage): # pylint: disable=invalid-name
         expected_container_keys = (
             'true_energy',
             'true_coszen',
-            'weights'
+            'weights',
         )
 
         super().__init__(

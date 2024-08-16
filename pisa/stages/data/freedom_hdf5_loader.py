@@ -68,7 +68,9 @@ class freedom_hdf5_loader(Stage):  # pylint: disable=invalid-name
 
         # init base class
         super().__init__(
-            expected_params=(), **std_kwargs,
+            expected_params=(),
+            expected_container_keys=(),
+            **std_kwargs,
         )
 
         self.output_names = output_names

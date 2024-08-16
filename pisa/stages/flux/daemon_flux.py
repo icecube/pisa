@@ -30,52 +30,35 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         Must have parameters: .. ::
 
             daemon_K_158G : quantity (dimensionless)
-
             daemon_K_2P : quantity (dimensionless)
-
             daemon_K_31G : quantity (dimensionless)
-
             daemon_antiK_158G : quantity (dimensionless)
-
             daemon_antiK_2P : quantity (dimensionless)
-
             daemon_antiK_31G : quantity (dimensionless)
-
             daemon_n_158G : quantity (dimensionless)
-
             daemon_n_2P : quantity (dimensionless)
-
             daemon_p_158G : quantity (dimensionless)
-
             daemon_p_2P : quantity (dimensionless)
-
             daemon_pi_158G : quantity (dimensionless)
-
             daemon_pi_20T : quantity (dimensionless)
-
             daemon_pi_2P : quantity (dimensionless)
-
             daemon_pi_31G : quantity (dimensionless)
-
             daemon_antipi_158G : quantity (dimensionless)
-
             daemon_antipi_20T : quantity (dimensionless)
-
             daemon_antipi_2P : quantity (dimensionless)
-
             daemon_antipi_31G : quantity (dimensionless)
-
             daemon_GSF_1 : quantity (dimensionless)
-
             daemon_GSF_2 : quantity (dimensionless)
-
             daemon_GSF_3 : quantity (dimensionless)
-
             daemon_GSF_4 : quantity (dimensionless)
-
             daemon_GSF_5 : quantity (dimensionless)
-
             daemon_GSF_6 : quantity (dimensionless)
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nubar"
 
     """
 
@@ -110,10 +93,17 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
                                   value=len(self.daemon_names)+2, prior=None, range=None, is_fixed=True)
 
         std_kwargs['params'].update([daemon_chi2,daemon_params_len])
+        
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'nubar',
+        )
 
         # init base class
         super(daemon_flux, self).__init__(
             expected_params=tuple(self.daemon_params+['daemon_chi2','daemon_params_len']),
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

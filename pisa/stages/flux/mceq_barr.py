@@ -64,6 +64,13 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
                 Uncertainty on K- and K+ production is assumed to be
                 uncorrelated as the ratio is badly determined.
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nubar_flux_nominal"
+            "nubar"
+
     Notes
     -----
     The nominal flux is calculated ahead of time using MCEq,
@@ -158,6 +165,14 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             "energy_pivot",
         )
 
+        expected_container_keys = [
+            'true_energy',
+            'true_coszen',
+            'nubar',
+        ]
+        if use_honda_nominal_flux:
+            expected_container_keys.append('nubar_flux_nominal')
+
         # store args
         self.table_file = table_file
         self.include_nutau_flux = include_nutau_flux
@@ -166,6 +181,7 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
         # init base class
         super(mceq_barr, self).__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

@@ -41,6 +41,7 @@ class grid(Stage):  # pylint: disable=invalid-name
         # init base class
         super(grid, self).__init__(
             expected_params=expected_params,
+            expected_container_keys=(),
             **std_kwargs,
         )
 

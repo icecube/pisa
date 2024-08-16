@@ -40,6 +40,10 @@ class atm_muons(Stage):  # pylint: disable=invalid-name
                 Currently only supported variable is 'coszen'
             delta_gamma_mu : quantity (dimensionless)
                 Parameter controlling variation in spectral index
+                
+        Expected container keys are .. ::
+
+            "weights"
 
     """
 
@@ -53,12 +57,17 @@ class atm_muons(Stage):  # pylint: disable=invalid-name
             'delta_gamma_mu_file',
             'delta_gamma_mu_spline_kind',
             'delta_gamma_mu_variable',
-            'delta_gamma_mu'
+            'delta_gamma_mu',
+        )
+        
+         expected_container_keys = (
+            'weights',
         )
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

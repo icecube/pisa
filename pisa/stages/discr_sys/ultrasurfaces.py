@@ -114,6 +114,7 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         # -- Initialize base class -- #
         super().__init__(
             expected_params=param_names,
+            expected_container_keys=varnames+["weights"],
             **std_kwargs,
         )
 
