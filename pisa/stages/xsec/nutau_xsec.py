@@ -34,6 +34,11 @@ class nutau_xsec(Stage):  # pylint: disable=invalid-name
             scale : quantity (dimensionless)
                 Scaling between different cross-section models. The range [-1, 1]
                 covers all models tested in the paper.
+                
+        Expected container keys are .. ::
+
+            "true_energy"
+            "weights"
 
     """
     def __init__(
@@ -42,11 +47,19 @@ class nutau_xsec(Stage):  # pylint: disable=invalid-name
         **std_kwargs,
     ):
 
-        expected_params = ("nutau_xsec_scale")
+        expected_params = (
+            "nutau_xsec_scale",
+        )
+        
+        expected_container_keys = (
+            'true_energy',
+            'weights',
+        )
 
         # init base class
         super(nutau_xsec, self).__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

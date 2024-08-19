@@ -47,9 +47,15 @@ class bootstrap(Stage):  # pylint: disable=invalid-name
         seed=None,
         **std_kwargs,
     ):
+
+        expected_container_keys = (
+            'weights',
+        )
+
         # init base class
         super().__init__(
             expected_params=(),
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

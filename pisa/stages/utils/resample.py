@@ -47,9 +47,16 @@ class resample(Stage):  # pylint: disable=invalid-name
         **std_kwargs,
     ):
 
+        expected_container_keys = [
+            'weights',
+        ]
+        if scale_errors:
+            expected_container_keys.append('errors')
+
         # init base class
         super().__init__(
             expected_params=(),
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

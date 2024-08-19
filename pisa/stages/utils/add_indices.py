@@ -51,10 +51,11 @@ class add_indices(Stage):  # pylint: disable=invalid-name
 
 
         # init base class
-        super(add_indices, self).__init__(
-                                       expected_params=(),
-                                       **std_kwargs,
-                                       )
+        super().__init__(
+            expected_params=(),
+            expected_container_keys=(),
+            **std_kwargs,
+        )
 
 
     def setup_function(self):

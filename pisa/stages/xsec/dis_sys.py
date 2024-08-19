@@ -30,6 +30,14 @@ class dis_sys(Stage): # pylint: disable=invalid-name
         Must contain ::
             dis_csms : quantity (dimensionless)
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "bjorken_y"
+            "dis"
+            "nubar"
+            "weights"
+
     extrapolation_type : string
         choice of ['constant', 'linear', 'higher']
 
@@ -58,9 +66,18 @@ class dis_sys(Stage): # pylint: disable=invalid-name
             'dis_csms',
         )
 
+        expected_container_keys = (
+            'true_energy',
+            'bjorken_y',
+            'dis',
+            'nubar',
+            'weights',
+        )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
