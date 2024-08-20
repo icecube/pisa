@@ -69,10 +69,16 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
                  **std_kwargs,
                  ):
 
+        expected_container_keys = (
+            'weights',
+        )
+
         # init base class
-        super(generalized_llh_params, self).__init__(expected_params=(),
-                                                     **std_kwargs,
-                                                     )
+        super().__init__(
+            expected_params=(),
+            expected_container_keys=expected_container_keys,
+            **std_kwargs,
+        )
 
     def setup_function(self):
         """

@@ -32,6 +32,7 @@ class aeff(Stage):  # pylint: disable=invalid-name
         Expected container keys are .. ::
 
             "weights"
+            "weighted_aeff"
 
 
     """
@@ -48,7 +49,8 @@ class aeff(Stage):  # pylint: disable=invalid-name
         )
 
         expected_container_keys = (
-            'weights'
+            'weights',
+            'weighted_aeff',
         )
 
         # init base class
@@ -80,3 +82,50 @@ class aeff(Stage):  # pylint: disable=invalid-name
 
             container['weights'] *= container['weighted_aeff'] * scale
             container.mark_changed('weights')
+
+
+def init_test():
+    from pisa.core.param import Param, ParamSet
+    from pisa import ureg
+
+    param_set = ParamSet(
+        [
+            Param(
+                name="livetime",
+                value=10*ureg.s,
+                prior=None,
+                range=(0, 100)*ureg.s,
+                is_fixed=True,
+            ),
+            Param(
+                name="aeff_scale",
+                value=1.0*ureg.dimensionless,
+                prior=None,
+                range=(-1, 10)*ureg.dimensionless,
+                is_fixed=False,
+            ),
+            Param(
+                name="nutau_cc_norm",
+                value=1.0*ureg.dimensionless,
+                prior=None,
+                range=(-1, 10)*ureg.dimensionless,
+                is_fixed=False,
+            ),
+            Param(
+                name="nutau_norm",
+                value=1.0*ureg.dimensionless,
+                prior=None,
+                range=(-1, 10)*ureg.dimensionless,
+                is_fixed=False,
+            ),
+            Param(
+                name="nu_nc_norm",
+                value=1.0*ureg.dimensionless,
+                prior=None,
+                range=(-1, 10)*ureg.dimensionless,
+                is_fixed=False,
+            ),
+        ]
+    )
+
+    return aeff(params=param_set)

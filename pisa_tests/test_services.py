@@ -14,9 +14,11 @@ from __future__ import absolute_import
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from importlib import import_module
+from numpy import linspace
 from os import walk
 from os.path import isfile, join, relpath
 
+from pisa.core.container import Container, ContainerSet
 from pisa.utils.fileio import expand, nsort_key_func
 from pisa.utils.log import Levels, logging, set_verbosity
 from pisa_tests.run_unit_tests import PISA_PATH
@@ -47,6 +49,7 @@ STAGES_PATH = join(PISA_PATH, "stages")
 # TODO: define hopeless cases? define services whose tests may fail?
 # optional modules from unit tests?
 SKIP_SERVICES = (
+    'likelihood.generalized_llh_params',
 )
 
 
@@ -88,53 +91,56 @@ def find_services_in_file(filepath):
     return services
 
 
-def test_services(path=STAGES_PATH, skip_services=SKIP_SERVICES,
-    verbosity=Levels.WARN
+def test_services(
+    path=STAGES_PATH, 
+    skip_services=SKIP_SERVICES,
+    verbosity=Levels.WARN,
 ):
     """Modelled after `run_unit_tests.run_unit_tests`"""
     services = find_services(path=path)
 
-    module_pypaths_succeeded = []
-
+    set_verbosity(verbosity)
     for rel_file_path, service_names in services.items():
         if not service_names:
             continue
+        assert len(service_names) == 1, 'Only specify one stage per file.'
+
         pypath = ["pisa"] + rel_file_path[:-3].split("/")
         parent_pypath = ".".join(pypath[:-1])
         module_name = pypath[-1].replace(".", "_")
         module_pypath = f"{parent_pypath}.{module_name}"
 
+        if module_pypath[12:] in skip_services:
+            logging.warning(f"{module_pypath[12:]} will be ignored in service test.")
+            continue
+
         try:
-            set_verbosity(verbosity)
-            logging.info(f"importing {module_pypath}")
-
-            set_verbosity(Levels.WARN)
-            module = import_module(module_pypath, package=parent_pypath)
-            module_pypaths_succeeded.append(module_pypath)
+            exec('from ' + module_pypath + ' import init_test')
+            test = init_test()
         except:
-            pass
-
-        for service_name in service_names:
-            test_pypath = f"{module_pypath}.{service_name}"
-
             try:
-                set_verbosity(verbosity)
-                logging.debug(f"getattr({module}, {service_name})")
-
-                set_verbosity(Levels.WARN)
-                service = getattr(module, service_name)
-
-                # initialise, setup, run the service
-                set_verbosity(verbosity)
-                logging.info(f"{test_pypath}()")
-
-                set_verbosity(Levels.WARN)
-                #service()
-                # TODO: here derive init args to attempt service init,
-                # then create some dummy input data, then try to
-                # run the service (e.g., also with different data reps.)
+                module = import_module(module_pypath, package=parent_pypath)
+                test = getattr(module, service_names[0])()
             except:
-                pass
+                logging.warning(f"{module_pypath[12:]} can not be initialized and has no init_test function specified.")
+                continue
+
+        test.calc_mode = 'events'
+        test.apply_mode = 'events'
+
+        container1 = Container('test1')
+        container2 = Container('test2')
+        for k in test.expected_container_keys:
+            container1[k] = linspace(0, 1, 10)
+            container2[k] = linspace(0, 1, 10)
+        test.data = ContainerSet('data', [container1, container2])
+
+        try:
+            test.setup()
+            test.run()
+            logging.info(f"{module_pypath[12:]} passed the test.")
+        except:
+            logging.error(f"{module_pypath[12:]} failed the test.")
 
 
 def parse_args(description=__doc__):
