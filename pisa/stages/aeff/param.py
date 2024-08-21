@@ -193,7 +193,7 @@ class param(Stage): # pylint: disable=invalid-name
             container.mark_changed('weights')
 
 
-def init_test():
+def init_test(**param_kwargs):
     from pisa.core.param import Param, ParamSet
     from pisa import ureg
 
@@ -202,30 +202,22 @@ def init_test():
             Param(
                 name="aeff_energy_paramfile",
                 value='aeff/vlvnt_aeff_energy_param.json',
-                prior=None,
-                range=None,
-                is_fixed=True,
+                **param_kwargs
             ),
             Param(
                 name="aeff_coszen_paramfile",
                 value='aeff/vlvnt_aeff_coszen_param.json',
-                prior=None,
-                range=None,
-                is_fixed=True,
+                **param_kwargs
             ),
             Param(
                 name="livetime",
                 value=10*ureg.s,
-                prior=None,
-                range=(0, 100)*ureg.s,
-                is_fixed=True,
+                **param_kwargs
             ),
             Param(
                 name="aeff_scale",
                 value=1.0*ureg.dimensionless,
-                prior=None,
-                range=(-1, 10)*ureg.dimensionless,
-                is_fixed=False,
+                **param_kwargs
             ),
         ]
     )

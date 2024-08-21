@@ -84,7 +84,7 @@ class aeff(Stage):  # pylint: disable=invalid-name
             container.mark_changed('weights')
 
 
-def init_test():
+def init_test(**param_kwargs):
     from pisa.core.param import Param, ParamSet
     from pisa import ureg
 
@@ -93,37 +93,27 @@ def init_test():
             Param(
                 name="livetime",
                 value=10*ureg.s,
-                prior=None,
-                range=(0, 100)*ureg.s,
-                is_fixed=True,
+                **param_kwargs
             ),
             Param(
                 name="aeff_scale",
                 value=1.0*ureg.dimensionless,
-                prior=None,
-                range=(-1, 10)*ureg.dimensionless,
-                is_fixed=False,
+                **param_kwargs
             ),
             Param(
                 name="nutau_cc_norm",
                 value=1.0*ureg.dimensionless,
-                prior=None,
-                range=(-1, 10)*ureg.dimensionless,
-                is_fixed=False,
+                **param_kwargs
             ),
             Param(
                 name="nutau_norm",
                 value=1.0*ureg.dimensionless,
-                prior=None,
-                range=(-1, 10)*ureg.dimensionless,
-                is_fixed=False,
+                **param_kwargs
             ),
             Param(
                 name="nu_nc_norm",
                 value=1.0*ureg.dimensionless,
-                prior=None,
-                range=(-1, 10)*ureg.dimensionless,
-                is_fixed=False,
+                **param_kwargs
             ),
         ]
     )

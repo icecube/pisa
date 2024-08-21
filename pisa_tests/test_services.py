@@ -184,7 +184,8 @@ def test_services(
         else:
             try:
                 # Exploit presence of init_test (TODO: switch order with above?)
-                service = getattr(module, init_test_name)()
+                param_kwargs = {'prior': None, 'range': None, 'is_fixed': True}
+                service = getattr(module, init_test_name)(**param_kwargs)
             except:
                 logging.error(
                     f"{stage_dot_service} has an {init_test_name} function " +
