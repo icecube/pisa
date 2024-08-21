@@ -201,14 +201,14 @@ def init_test():
         [
             Param(
                 name="aeff_energy_paramfile",
-                value='../pisa/pisa_examples/resources/aeff/vlvnt_aeff_energy_param.json',
+                value='aeff/vlvnt_aeff_energy_param.json',
                 prior=None,
                 range=None,
                 is_fixed=True,
             ),
             Param(
                 name="aeff_coszen_paramfile",
-                value='../pisa/pisa_examples/resources/aeff/vlvnt_aeff_coszen_param.json',
+                value='aeff/vlvnt_aeff_coszen_param.json',
                 prior=None,
                 range=None,
                 is_fixed=True,

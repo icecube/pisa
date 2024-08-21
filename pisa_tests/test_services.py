@@ -14,9 +14,10 @@ from __future__ import absolute_import
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from importlib import import_module
-from numpy import linspace
 from os import walk
 from os.path import isfile, join, relpath
+
+from numpy import linspace
 
 from pisa.core.container import Container, ContainerSet
 from pisa.utils.fileio import expand, nsort_key_func
@@ -24,9 +25,18 @@ from pisa.utils.log import Levels, logging, set_verbosity
 from pisa_tests.run_unit_tests import PISA_PATH
 
 
-__all__ = ["STAGES_PATH", "test_services", "find_services", "find_services_in_file"]
+__all__ = [
+    "STAGES_PATH",
+    "test_services",
+    "find_services",
+    "find_services_in_file",
+    "get_stage_dot_service_from_module_pypath",
+    "add_test_inputs",
+    "set_service_modes",
+    "run_service_test"
+]
 
-__author__ = "T. Ehrhardt"
+__author__ = "T. Ehrhardt, J. Weldert"
 
 __license__ = """Copyright (c) 2014-2024, The IceCube Collaboration
 
@@ -43,11 +53,14 @@ __license__ = """Copyright (c) 2014-2024, The IceCube Collaboration
  limitations under the License."""
 
 
-
 STAGES_PATH = join(PISA_PATH, "stages")
+INIT_TEST_NAME = "init_test"
+"""Assumed name of custom function in each module which returns an
+example instance of the service in question"""
 
 # TODO: define hopeless cases? define services whose tests may fail?
 # optional modules from unit tests?
+# Add in <stage>.<service> format
 SKIP_SERVICES = (
     'likelihood.generalized_llh_params',
 )
@@ -91,8 +104,39 @@ def find_services_in_file(filepath):
     return services
 
 
+def get_stage_dot_service_from_module_pypath(module_pypath):
+    """Assumes `module_pypath` starts with pisa.stages and we
+    have one directory per stage, which contains all services
+    implementing that stage."""
+    return module_pypath[12:]
+
+
+def add_test_inputs(service):
+    """Try to come up with sensible test input data for the `Stage`
+    instance `service`"""
+    container1 = Container('test1')
+    container2 = Container('test2')
+    for k in service.expected_container_keys:
+        container1[k] = linspace(0, 1, 10)
+        container2[k] = linspace(0, 1, 10)
+    service.data = ContainerSet('data', [container1, container2])
+
+
+def set_service_modes(service, calc_mode, apply_mode):
+    """Set `calc_mode` and `apply_mode` for the `Stage` instance `service`"""
+    service.calc_mode = calc_mode
+    service.apply_mode = apply_mode
+
+
+def run_service_test(service):
+    """Try to set up and run the `Stage` instance `service`"""
+    service.setup()
+    service.run()
+
+
 def test_services(
-    path=STAGES_PATH, 
+    path=STAGES_PATH,
+    init_test_name=INIT_TEST_NAME,
     skip_services=SKIP_SERVICES,
     verbosity=Levels.WARN,
 ):
@@ -104,43 +148,73 @@ def test_services(
         if not service_names:
             continue
         assert len(service_names) == 1, 'Only specify one stage per file.'
+        service_name = service_names[0]
 
         pypath = ["pisa"] + rel_file_path[:-3].split("/")
         parent_pypath = ".".join(pypath[:-1])
         module_name = pypath[-1].replace(".", "_")
         module_pypath = f"{parent_pypath}.{module_name}"
+        stage_dot_service = get_stage_dot_service_from_module_pypath(module_pypath)
 
-        if module_pypath[12:] in skip_services:
-            logging.warning(f"{module_pypath[12:]} will be ignored in service test.")
+        # check whether we should skip testing this service for some reason
+        if stage_dot_service in skip_services:
+            logging.warning(f"{stage_dot_service} will be ignored in service test.")
+            continue
+
+        logging.info(f"Starting test for service {stage_dot_service}...")
+
+        # if service module import successful, try to initialise the service
+        try:
+            module = import_module(module_pypath, package=parent_pypath)
+        except:
+            logging.warning(f"{module_pypath} cannot be imported.")
+            continue
+
+        if not hasattr(module, init_test_name):
+            try:
+                # Without a dedicated `init_test` function, we just try to
+                # instantiate the service with std. Stage kwargs
+                service = getattr(module, service_name)()
+            except:
+                logging.warning(
+                    f"{stage_dot_service} has no {init_test_name} function " +
+                    "and could not be instantiated with standard kwargs only."
+                )
+                continue
+        else:
+            try:
+                # Exploit presence of init_test (TODO: switch order with above?)
+                service = getattr(module, init_test_name)()
+            except:
+                logging.error(
+                    f"{stage_dot_service} has an {init_test_name} function " +
+                    "which failed to instantiate the service."
+                )
+                continue
+
+        try:
+            add_test_inputs(service)
+        except:
+            logging.warning(
+                f"Failed to assign test inputs for {stage_dot_service}."
+            )
             continue
 
         try:
-            exec('from ' + module_pypath + ' import init_test')
-            test = init_test()
+            # Only try event-by-event mode for now
+            set_service_modes(service, calc_mode="events", apply_mode="events")
         except:
-            try:
-                module = import_module(module_pypath, package=parent_pypath)
-                test = getattr(module, service_names[0])()
-            except:
-                logging.warning(f"{module_pypath[12:]} can not be initialized and has no init_test function specified.")
-                continue
-
-        test.calc_mode = 'events'
-        test.apply_mode = 'events'
-
-        container1 = Container('test1')
-        container2 = Container('test2')
-        for k in test.expected_container_keys:
-            container1[k] = linspace(0, 1, 10)
-            container2[k] = linspace(0, 1, 10)
-        test.data = ContainerSet('data', [container1, container2])
+            logging.error(
+                "Failed to set `calc_mode` and `apply_mode` for " +
+                f"{stage_dot_service}."
+            )
+            continue
 
         try:
-            test.setup()
-            test.run()
-            logging.info(f"{module_pypath[12:]} passed the test.")
+            run_service_test(service)
+            logging.info(f"{stage_dot_service} passed the test.")
         except:
-            logging.error(f"{module_pypath[12:]} failed the test.")
+            logging.error(f"{stage_dot_service} failed to setup or run.")
 
 
 def parse_args(description=__doc__):
@@ -160,7 +234,7 @@ def main():
     kwargs = vars(args)
     kwargs["verbosity"] = kwargs.pop("v")
     test_services(**kwargs)
-    logging.info(f'services testing done')
+    logging.info('Services testing done.')
 
 
 if __name__ == "__main__":
