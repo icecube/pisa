@@ -13,12 +13,12 @@ from __future__ import absolute_import, print_function, division
 
 __author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 
-
-from pisa.core.stage import Stage
-
 # Load the modified index lookup function
 from pisa.core.bin_indexing import lookup_indices
+from pisa.core.binning import MultiDimBinning
+from pisa.core.stage import Stage
 
+__all__ = ['add_indices']
 
 
 class add_indices(Stage):  # pylint: disable=invalid-name
@@ -66,8 +66,10 @@ class add_indices(Stage):  # pylint: disable=invalid-name
         '''
 
         if self.calc_mode != 'events':
-            raise ValueError('calc mode must be set to "events for this module')
+            raise ValueError('calc mode must be set to "events" for this module')
 
+        if not isinstance(self.apply_mode, MultiDimBinning):
+            raise ValueError('apply mode must be set to a binning')
 
         for container in self.data:
             self.data.representation = self.calc_mode
@@ -76,7 +78,7 @@ class add_indices(Stage):  # pylint: disable=invalid-name
                 variables_to_bin.append(container[bin_name])
 
             indices = lookup_indices(sample=variables_to_bin,
-                                       binning=self.apply_mode)
+                                     binning=self.apply_mode)
 
             container['bin_indices'] = indices
 

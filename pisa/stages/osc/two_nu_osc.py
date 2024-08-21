@@ -7,11 +7,13 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 from numba import guvectorize
 
-from pisa import FTYPE, ITYPE, TARGET
+from pisa import FTYPE, ITYPE, TARGET, ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
 from pisa.utils.numba_tools import myjit
 
+__all__ = ['two_nu_osc', 'calc_probs', 'apply_probs_vectorized', 'init_test']
 
 class two_nu_osc(Stage):  # pylint: disable=invalid-name
     """
@@ -127,3 +129,12 @@ def apply_probs_vectorized(flux, t23, dm31, true_energy, true_coszen, nuflav, ou
     else:
         assert nuflav==0
         out[0] *= flux[0]
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name='theta', value=45*ureg.degree, **param_kwargs),
+        Param(name='deltam31', value=2.5e-3*ureg.eV**2, **param_kwargs),
+    ])
+    return two_nu_osc(params=param_set)

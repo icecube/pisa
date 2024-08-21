@@ -50,6 +50,7 @@ __author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 import numpy as np
 
 from pisa import FTYPE
+from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 
@@ -88,7 +89,8 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
         of MC events in each bin of each dataset and
         compute mean adjustment
         """
-
+        if not isinstance(self.apply_mode, MultiDimBinning):
+            raise ValueError('apply mode must be set to a binning')
         N_bins = self.apply_mode.tot_num_bins
 
         self.data.representation = self.apply_mode

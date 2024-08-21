@@ -11,6 +11,11 @@ from pisa.utils.log import logging
 from pisa.utils import vectorizer
 from pisa.core.binning import MultiDimBinning
 
+__all__ = [
+    "set_variance", "apply_floor", "apply_floor_gufunc",
+    "set_constant", "set_constant_gufunc", "init_test"
+]
+
 
 class set_variance(Stage):  # pylint: disable=invalid-name
     """
@@ -40,6 +45,7 @@ class set_variance(Stage):  # pylint: disable=invalid-name
         self.variance_floor = variance_floor
         assert self.variance_scale is not None
 
+        assert expected_total_mc is not None
         self.expected_total_mc = int(expected_total_mc)
         self.divide_n = divide_total_mc
         if self.divide_n:
@@ -94,3 +100,8 @@ def set_constant(val, out):
 @guvectorize([f"({FX}, {FX}[:])"], "() -> ()", target=TARGET)
 def set_constant_gufunc(val, out):
     out[0] = val
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    return set_variance(expected_total_mc=100) #FIXME

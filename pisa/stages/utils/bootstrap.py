@@ -31,6 +31,9 @@ __license__ = """Copyright (c) 2022, The IceCube Collaboration
  See the License for the specific language governing permissions and
  limitations under the License."""
 
+__all__ = ['bootstrap', 'insert_bootstrap_after_data_loader', 'test_bootstrap',
+           'init_test']
+
 
 class bootstrap(Stage):  # pylint: disable=invalid-name
     """
@@ -125,6 +128,11 @@ def insert_bootstrap_after_data_loader(cfg_dict, seed=None):
             bootstrap_pipe_cfg[("utils", "bootstrap")] = bootstrap_stage_cfg
 
     return bootstrap_pipe_cfg
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    return bootstrap(calc_mode='events')
 
 
 def test_bootstrap():

@@ -284,3 +284,7 @@ class kde(Stage):  # pylint: disable=invalid-name
 # into the main scope and thus overshadow `kde` (the module).
 # The unit test for this stage is therefore instead placed in
 # pisa/pisa_tests/test_kde_stage.py
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    return kde(calc_mode='events')

@@ -11,6 +11,8 @@ from pisa.core.binning import MultiDimBinning, OneDimBinning
 from pisa.utils.profiler import profile
 from pisa.utils.log import logging
 
+__all__ = ['hist', 'init_test']
+
 
 class hist(Stage):  # pylint: disable=invalid-name
     """Stage to histogram events
@@ -208,3 +210,8 @@ class hist(Stage):  # pylint: disable=invalid-name
                 if self.error_method == "sumw2":
                     container["errors"] = np.sqrt(sumw2)
                     container["bin_unc2"] = bin_unc2
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    return hist(calc_mode='events', apply_mode='events') # FIXME

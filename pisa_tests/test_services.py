@@ -22,7 +22,7 @@ from numpy import linspace
 from pisa.core.container import Container, ContainerSet
 from pisa.utils.fileio import expand, nsort_key_func
 from pisa.utils.log import Levels, logging, set_verbosity
-from pisa_tests.run_unit_tests import PISA_PATH
+from pisa_tests.run_unit_tests import PISA_PATH, OPTIONAL_MODULES
 
 
 __all__ = [
@@ -33,7 +33,7 @@ __all__ = [
     "get_stage_dot_service_from_module_pypath",
     "add_test_inputs",
     "set_service_modes",
-    "run_service_test"
+    "is_allowed_import_error"
 ]
 
 __author__ = "T. Ehrhardt, J. Weldert"
@@ -133,17 +133,40 @@ def run_service_test(service):
     service.run()
 
 
+def is_allowed_import_error(err, module_pypath, allow_missing=OPTIONAL_MODULES):
+    if (
+        isinstance(err, ImportError)
+        and hasattr(err, "name")
+        and err.name in allow_missing  # pylint: disable=no-member
+    ):
+        err_name = err.name # pylint: disable=no-member
+        logging.warning(
+            f"module {err_name} failed to import while importing "
+            f"{module_pypath}, but ok to ignore"
+        )
+        return True
+    return False
+
+
 def test_services(
     path=STAGES_PATH,
     init_test_name=INIT_TEST_NAME,
     skip_services=SKIP_SERVICES,
+    allow_missing=OPTIONAL_MODULES,
     verbosity=Levels.WARN,
 ):
     """Modelled after `run_unit_tests.run_unit_tests`"""
+    if allow_missing is None:
+        allow_missing = []
+    elif isinstance(allow_missing, str):
+        allow_missing = [allow_missing]
+
     services = find_services(path=path)
 
     ntries = 0
     nsuccesses = 0
+    stage_dot_services_failed_ignored = []
+    stage_dot_services_failed = []
     set_verbosity(verbosity)
 
     for rel_file_path, service_names in services.items():
@@ -169,8 +192,23 @@ def test_services(
         # if service module import successful, try to initialise the service
         try:
             module = import_module(module_pypath, package=parent_pypath)
-        except:
-            logging.warning(f"{module_pypath} cannot be imported.")
+        except Exception as err:
+            if is_allowed_import_error(err, module_pypath, allow_missing):
+                stage_dot_services_failed_ignored.append(stage_dot_service)
+                continue
+
+            stage_dot_services_failed.append(stage_dot_service)
+
+            set_verbosity(verbosity)
+            msg = f"<< FAILURE IMPORTING : {module_pypath} >>"
+            logging.error("=" * len(msg))
+            logging.error(msg)
+            logging.error("=" * len(msg))
+
+            set_verbosity(Levels.TRACE)
+            logging.exception(err)
+
+            set_verbosity(verbosity)
             continue
 
         if not hasattr(module, init_test_name):
@@ -179,11 +217,12 @@ def test_services(
                 # instantiate the service with std. Stage kwargs
                 service = getattr(module, service_name)()
             except Exception as err:
-                logging.warning(
-                    f"{stage_dot_service} has no {init_test_name} function " +
-                     "and could not be instantiated with standard kwargs only.\n" +
+                logging.error(
+                    f"{stage_dot_service} has no {init_test_name} function "
+                     "and could not be instantiated with standard kwargs only.\n"
                      "msg: %s" % err
                 )
+                stage_dot_services_failed.append(stage_dot_service)
                 continue
         else:
             try:
@@ -192,28 +231,31 @@ def test_services(
                 service = getattr(module, init_test_name)(**param_kwargs)
             except Exception as err:
                 logging.error(
-                    f"{stage_dot_service} has an {init_test_name} function " +
+                    f"{stage_dot_service} has an {init_test_name} function "
                     "which failed to instantiate the service with msg:\n %s." % err
                 )
+                stage_dot_services_failed.append(stage_dot_service)
                 continue
 
         try:
             add_test_inputs(service)
         except Exception as err:
-            logging.warning(
+            logging.error(
                 f"Failed to assign test inputs for {stage_dot_service} with msg:\n %s"
                 % err
             )
+            stage_dot_services_failed.append(stage_dot_service)
             continue
 
         try:
             # Only try event-by-event mode for now
             set_service_modes(service, calc_mode="events", apply_mode="events")
         except Exception as err:
-            logging.warning(
-                "Failed to set `calc_mode` and `apply_mode` for " +
+            logging.error(
+                "Failed to set `calc_mode` and `apply_mode` for "
                 f"{stage_dot_service} with msg:\n %s" % err
             )
+            stage_dot_services_failed.append(stage_dot_service)
             continue
 
         try:
@@ -221,10 +263,21 @@ def test_services(
             logging.info(f"{stage_dot_service} passed the test.")
             nsuccesses += 1
         except Exception as err:
+            if is_allowed_import_error(err, stage_dot_service, allow_missing):
+                stage_dot_services_failed_ignored.append(stage_dot_service)
+                continue
             logging.error(f"{stage_dot_service} failed to setup or run with msg:\n %s." % err)
+            stage_dot_services_failed.append(stage_dot_service)
             continue
 
-    logging.info("%d out of %d tested services passed the test" % (nsuccesses, ntries))
+    logging.info("%d out of %d tested services passed the test." % (nsuccesses, ntries))
+    nfail = ntries - nsuccesses
+    nfail_ignored = len(stage_dot_services_failed_ignored)
+    logging.info("%d/%d failures are fine (have been ignored)." % (nfail_ignored, nfail))
+    nfail_remain = nfail - nfail_ignored
+    if nfail_remain > 0:
+        logging.error("%d failures still need to be addressed:\n" % nfail_remain +
+                      ", ".join(stage_dot_services_failed))
 
 
 def parse_args(description=__doc__):

@@ -37,9 +37,12 @@ class shift_scale_pid(Stage):  # pylint: disable=invalid-name
         # register expected parameters
         expected_params = ('bias', 'scale',)
 
+        expected_container_keys = ('pid', )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -110,4 +113,4 @@ def init_test(**param_kwargs):
         Param(name='scale', value=1.0, **param_kwargs)
     ])
 
-    return shift_scale_pid(params=param_set)
+    return shift_scale_pid(calc_mode='events', params=param_set)

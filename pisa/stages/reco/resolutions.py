@@ -5,8 +5,11 @@ Stage for resolution improvement studies
 
 from __future__ import absolute_import, print_function, division
 
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
+
+__all__ = ['resolutions', 'init_test']
 
 
 class resolutions(Stage):  # pylint: disable=invalid-name
@@ -51,6 +54,7 @@ class resolutions(Stage):  # pylint: disable=invalid-name
             'true_coszen',
             'reco_energy',
             'reco_coszen',
+            'pid',
         )
 
         # init base class
@@ -81,3 +85,13 @@ class resolutions(Stage):  # pylint: disable=invalid-name
             else:
                 container['pid'] -= self.params.pid_improvement.m_as('dimensionless')
             container.mark_changed('pid')
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name='energy_improvement', value=0.9, **param_kwargs),
+        Param(name='coszen_improvement', value=0.5, **param_kwargs),
+        Param(name='pid_improvement', value=0.02, **param_kwargs)
+    ])
+    return resolutions(params=param_set)

@@ -13,10 +13,16 @@ import fnmatch
 import numpy as np
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 
 
 __all__ = [
+    "dict_lookup_wildcard",
+    "logistic_function",
+    "has_muon",
+    "visible_energy_correction",
+    "energy_dependent_sigma",
     "simple_param",
     "simple_reco_energy_parameterization",
     "simple_reco_coszen_parameterization",
@@ -416,7 +422,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
                 ):
 
         expected_params = (
-            "perfect_reco", #TODO move these to constructor args?
+            "perfect_reco", #TODO move these to constructor args? (yes, please)
             "reco_energy_params",
             "reco_coszen_params",
             "pid_track_params",
@@ -533,3 +539,16 @@ class simple_param(Stage):  # pylint: disable=invalid-name
             # Write to the container
             container["pid"][:] = pid
             container.mark_changed("pid")
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name='perfect_reco', value=False, **param_kwargs),
+        Param(name='reco_energy_params', value={'nue*_cc': [10., 0.2, 0.2]}, **param_kwargs), #FIXME
+        Param(name='reco_coszen_params', value={'nue*_cc': [10., 0.2, 0.5]}, **param_kwargs), #FIXME
+        Param(name='pid_track_params', value={'nue*_cc': [0.05, 0.2, 15.]}, **param_kwargs), #FIXME
+        Param(name='track_pid', value=1.0, **param_kwargs),
+        Param(name='cascade_pid', value=0.0, **param_kwargs),  
+    ])
+    return simple_param(params=param_set)

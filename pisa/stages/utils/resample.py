@@ -20,6 +20,10 @@ from pisa.core import translation
 from pisa.core.binning import MultiDimBinning
 from pisa.utils.log import logging, set_verbosity
 
+
+__all__ = ['ResampleMode', 'resample', 'init_test', 'test_resample']
+
+
 class ResampleMode(Enum):
     """Enumerates sampling methods of the `resample` stage."""
 
@@ -170,6 +174,11 @@ class resample(Stage):  # pylint: disable=invalid-name
 
             if self.scale_errors:
                 container["errors_resampled"] = np.sqrt(container["vars_resampled"])
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    return resample() #FIXME
+
 
 def test_resample():
     """Unit test for the resampling stage."""

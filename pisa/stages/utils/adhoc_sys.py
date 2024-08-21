@@ -15,6 +15,9 @@ from pisa.utils.resources import find_resource
 from pisa.utils.jsons import from_json
 from pisa.core.binning import MultiDimBinning
 
+__all__ = ['adhoc_sys', 'init_test']
+
+
 class adhoc_sys(Stage):  # pylint: disable=invalid-name
     """
     Stage to re-weight events according to factors derived from post-fit data/MC
@@ -79,3 +82,12 @@ class adhoc_sys(Stage):  # pylint: disable=invalid-name
     def apply_function(self):
         for container in self.data:
             container["weights"] *= container["adhoc_scale_factors"]
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    #FIXME: create temporary scale file on the fly?
+    return adhoc_sys(
+        variable_name='annoying_sys', scale_file='.json',
+        calc_mode='events', apply_mode='events'
+    )
