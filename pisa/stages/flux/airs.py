@@ -6,6 +6,7 @@ Ben Smithers
 """
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
@@ -13,6 +14,8 @@ from pisa.utils.resources import find_resource
 import photospline
 
 import numpy as np
+
+__all__ = ['airs', 'init_test']
 
 
 class airs(Stage):  # pylint: disable=invalid-name
@@ -24,9 +27,9 @@ class airs(Stage):  # pylint: disable=invalid-name
     params : ParamSet
         Must exclusively have parameters: .. ::
 
-            scale : quantity (dimensionless)
+            airs_scale : quantity (dimensionless)
                 the scale by which the weights are perturbed via the airs 1-sigma shift
-                
+
         Expected container keys are .. ::
 
             "true_energy"
@@ -41,7 +44,7 @@ class airs(Stage):  # pylint: disable=invalid-name
         expected_params = [
             "airs_scale",
         ]
-        
+
         expected_container_keys = (
             'true_energy',
             'true_coszen',
@@ -78,3 +81,12 @@ class airs(Stage):  # pylint: disable=invalid-name
             container["weights"] *= 1.0 + container[
                 "airs_1s_perturb"
             ] * self.params.airs_scale.value.m_as("dimensionless")
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    airs_spline = 'airs_spline.txt' #FIXME
+    param_set = ParamSet([
+        Param(name="airs_scale", value=1.0, **param_kwargs),
+    ])
+    return airs(airs_spline=airs_spline, params=param_set)

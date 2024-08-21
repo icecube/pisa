@@ -53,6 +53,8 @@ from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 
+__all__ = ['generalized_llh_params']
+
 PSEUDO_WEIGHT = 0.001
 
 

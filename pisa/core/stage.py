@@ -250,8 +250,8 @@ class Stage():
             # set to None
             return
         if self.expected_container_keys is None:
-            logging.warn(
-                'Service %s.%s: not specifying expected container keys is deprecated.'
+            raise ValueError(
+                'Service %s.%s is not specifying expected container keys.'
                 % (self.stage_name, self.service_name)
             )
             return

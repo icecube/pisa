@@ -16,12 +16,15 @@ import pickle
 
 import numpy as np
 
-from pisa import FTYPE
+from pisa import FTYPE, ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.numba_tools import myjit
 from pisa.utils.resources import find_resource
+
+__all__ = ['mceq_barr', 'spectral_index_scale', 'apply_sys_loop', 'init_test']
 
 
 class mceq_barr(Stage):  # pylint: disable=invalid-name
@@ -79,7 +82,7 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
 
     The MCEq-table has 2 solutions of the cascade equation per Barr variable (12)
     - one solution for meson and one solution for the antimeson production uncertainty.
-    
+
     Each solution consists of 8 splines: "numu", "numubar", "nue", and "nuebar"
     is the nominal flux.
     "dnumu", "dnumubar", "dnue", and "dnuebar" is the gradient of the Barr modification
@@ -179,7 +182,7 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
         self.use_honda_nominal_flux = use_honda_nominal_flux
 
         # init base class
-        super(mceq_barr, self).__init__(
+        super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
             **std_kwargs,
@@ -534,3 +537,36 @@ def apply_sys_loop(
             out[event, flav] = nu_flux_nominal[event, flav] * spec_scale
             for i in range(len(gradient_params)):
                 out[event, flav] += gradients[event, flav, i] * gradient_params[i]
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="pion_ratio", value=0.0, **param_kwargs),
+        Param(name="barr_a_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_b_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_c_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_d_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_e_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_f_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_g_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_h_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_i_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_w_K", value=0.0, **param_kwargs),
+        Param(name="barr_x_K", value=0.0, **param_kwargs),
+        Param(name="barr_y_K", value=0.0, **param_kwargs),
+        Param(name="barr_z_K", value=0.0, **param_kwargs),
+        Param(name="barr_w_antiK", value=0.0, **param_kwargs),
+        Param(name="barr_x_antiK", value=0.0, **param_kwargs),
+        Param(name="barr_y_antiK", value=0.0, **param_kwargs),
+        Param(name="barr_z_antiK", value=0.0, **param_kwargs),
+        Param(name="delta_index", value=0.0, **param_kwargs),
+        Param(name="energy_pivot", value=25*ureg.GeV, **param_kwargs),
+    ])
+
+    return mceq_barr(
+        table_file=".pckl", #FIXME (see scripts/create_barr_sys_tables_mceq.py)
+        include_nutau_flux=False,
+        use_honda_nominal_flux=True,
+        params=param_set
+    )

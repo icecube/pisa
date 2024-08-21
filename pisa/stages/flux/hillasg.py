@@ -6,10 +6,13 @@ Stage to evaluate the Hillas-Gaisser expectations from precalculated fluxes
 import numpy as np
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
+
+__all__ = ['hillasg', 'init_test']
 
 
 class hillasg(Stage):  # pylint: disable=invalid-name
@@ -35,7 +38,7 @@ class hillasg(Stage):  # pylint: disable=invalid-name
         expected_params = (
             "flux_table",
         )
-        
+
         expected_container_keys = (
             'true_energy',
             'true_coszen',
@@ -127,3 +130,12 @@ class hillasg(Stage):  # pylint: disable=invalid-name
 
         # don't forget to un-link everything again
         self.data.unlink_containers()
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name='flux_table', value='flux/honda-2015-spl-solmin-aa.d',  **param_kwargs), #FIXME
+    ])
+
+    return hillasg(params=param_set)

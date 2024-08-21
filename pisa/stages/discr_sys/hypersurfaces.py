@@ -98,9 +98,9 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         expected_container_keys = [
             'weights',
         ]
-        if not self.error_method == None:
+        if not self.error_method is None:
             expected_container_keys.append('errors')
-        
+
         # -- Initialize base class -- #
         super().__init__(
             expected_params=self.hypersurface_param_names + self.inter_params,
@@ -231,3 +231,8 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
 
             # Update weights according to hypersurfaces
             container["weights"] = np.clip(container["weights"] * container["hs_scales"], a_min=0, a_max=np.inf)
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    pass

@@ -4,13 +4,15 @@ Stage to apply pre-calculated Genie uncertainties
 
 from __future__ import absolute_import, print_function, division
 
-__all__ = ["genie_sys", "apply_genie_sys"] #, "SIGNATURE"
-
 import re
 import numpy as np
 
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
+
+__all__ = ["genie_sys", "apply_genie_sys", "init_test"] #, "SIGNATURE"
+
 
 class genie_sys(Stage): # pylint: disable=invalid-name
     """
@@ -47,7 +49,7 @@ class genie_sys(Stage): # pylint: disable=invalid-name
         self.interactions = interactions
         self.names = names
 
-        expected_container_keys = ['linear_fit_'+name for name in names] 
+        expected_container_keys = ['linear_fit_'+name for name in names]
         expected_container_keys += ['quad_fit_'+name for name in names]
         expected_container_keys += ['weights']
 
@@ -110,3 +112,14 @@ def apply_genie_sys(
     for i in range(len(genie_params)):
         factor *= 1. + (linear_fits[i] + quad_fits[i] * genie_params[i]) * genie_params[i]
     out *= np.maximum(0, factor)
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_kwargs.pop('range', None)
+    param_set = ParamSet([
+        Param(name="Genie_Ma_QE", value=0.0, range=[-1., 1.], **param_kwargs),
+        Param(name="Genie_Ma_RES", value=0.0, range=[-1., 1.], **param_kwargs)
+    ])
+
+    return genie_sys(params=param_set)

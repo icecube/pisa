@@ -15,11 +15,13 @@ from collections.abc import Mapping
 import numpy as np
 from scipy.interpolate import interp1d
 
+from pisa import ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.fileio import from_file
 
 
-__all__ = ['load_aeff_param', 'param']
+__all__ = ['load_aeff_param', 'param', 'init_test']
 
 __author__ = 'T.C. Arlen, T. Ehrhardt, S. Wren, J. Weldert'
 
@@ -194,32 +196,12 @@ class param(Stage): # pylint: disable=invalid-name
 
 
 def init_test(**param_kwargs):
-    from pisa.core.param import Param, ParamSet
-    from pisa import ureg
-
-    param_set = ParamSet(
-        [
-            Param(
-                name="aeff_energy_paramfile",
-                value='aeff/vlvnt_aeff_energy_param.json',
-                **param_kwargs
-            ),
-            Param(
-                name="aeff_coszen_paramfile",
-                value='aeff/vlvnt_aeff_coszen_param.json',
-                **param_kwargs
-            ),
-            Param(
-                name="livetime",
-                value=10*ureg.s,
-                **param_kwargs
-            ),
-            Param(
-                name="aeff_scale",
-                value=1.0*ureg.dimensionless,
-                **param_kwargs
-            ),
-        ]
-    )
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="aeff_energy_paramfile", value='aeff/vlvnt_aeff_energy_param.json', **param_kwargs),
+        Param(name="aeff_coszen_paramfile", value='aeff/vlvnt_aeff_coszen_param.json', **param_kwargs),
+        Param(name="livetime", value=10*ureg.s, **param_kwargs),
+        Param(name="aeff_scale", value=1.0, **param_kwargs)
+    ])
 
     return param(params=param_set)

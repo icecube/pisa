@@ -10,10 +10,14 @@ import numpy as np
 from numba import guvectorize, cuda
 
 from pisa import FTYPE, TARGET
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
 from pisa.utils.numba_tools import myjit, ftype
 from pisa.utils.barr_parameterization import modRatioNuBar, modRatioUpHor
+
+__all__ = ['barr_simple', 'apply_ratio_scale', 'spectral_index_scale',
+            'apply_sys_kernel', 'apply_sys_vectorized', 'init_test']
 
 
 class barr_simple(Stage):  # pylint: disable=invalid-name
@@ -62,7 +66,7 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
         )
 
         # init base class
-        super(barr_simple, self).__init__(
+        super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
             **std_kwargs,
@@ -235,3 +239,16 @@ def apply_sys_vectorized(
         Barr_nu_nubar_ratio,
         out,
     )
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="nue_numu_ratio", value=1.0, **param_kwargs),
+        Param(name="nu_nubar_ratio", value=1.0, **param_kwargs),
+        Param(name="delta_index", value=0.0, **param_kwargs),
+        Param(name="Barr_uphor_ratio", value=0.0, **param_kwargs),
+        Param(name="Barr_nu_nubar_ratio", value=0.0, **param_kwargs)
+    ])
+
+    return barr_simple(params=param_set)

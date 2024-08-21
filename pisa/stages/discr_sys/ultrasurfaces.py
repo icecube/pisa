@@ -285,3 +285,8 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
 def grad_shift_inplace(grads, shift, out):
     for i, g in enumerate(grads):
         out[i] += shift * g
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    pass

@@ -62,7 +62,6 @@ example instance of the service in question"""
 # optional modules from unit tests?
 # Add in <stage>.<service> format
 SKIP_SERVICES = (
-    'likelihood.generalized_llh_params',
 )
 
 
@@ -117,8 +116,8 @@ def add_test_inputs(service):
     container1 = Container('test1')
     container2 = Container('test2')
     for k in service.expected_container_keys:
-        container1[k] = linspace(0, 1, 10)
-        container2[k] = linspace(0, 1, 10)
+        container1[k] = linspace(0.1, 1, 10)
+        container2[k] = linspace(0.1, 1, 10)
     service.data = ContainerSet('data', [container1, container2])
 
 
@@ -143,7 +142,10 @@ def test_services(
     """Modelled after `run_unit_tests.run_unit_tests`"""
     services = find_services(path=path)
 
+    ntries = 0
+    nsuccesses = 0
     set_verbosity(verbosity)
+
     for rel_file_path, service_names in services.items():
         if not service_names:
             continue
@@ -156,12 +158,13 @@ def test_services(
         module_pypath = f"{parent_pypath}.{module_name}"
         stage_dot_service = get_stage_dot_service_from_module_pypath(module_pypath)
 
+        ntries += 1
         # check whether we should skip testing this service for some reason
         if stage_dot_service in skip_services:
             logging.warning(f"{stage_dot_service} will be ignored in service test.")
             continue
 
-        logging.info(f"Starting test for service {stage_dot_service}...")
+        logging.debug(f"Starting test for service {stage_dot_service}...")
 
         # if service module import successful, try to initialise the service
         try:
@@ -175,10 +178,11 @@ def test_services(
                 # Without a dedicated `init_test` function, we just try to
                 # instantiate the service with std. Stage kwargs
                 service = getattr(module, service_name)()
-            except:
+            except Exception as err:
                 logging.warning(
                     f"{stage_dot_service} has no {init_test_name} function " +
-                    "and could not be instantiated with standard kwargs only."
+                     "and could not be instantiated with standard kwargs only.\n" +
+                     "msg: %s" % err
                 )
                 continue
         else:
@@ -186,36 +190,41 @@ def test_services(
                 # Exploit presence of init_test (TODO: switch order with above?)
                 param_kwargs = {'prior': None, 'range': None, 'is_fixed': True}
                 service = getattr(module, init_test_name)(**param_kwargs)
-            except:
+            except Exception as err:
                 logging.error(
                     f"{stage_dot_service} has an {init_test_name} function " +
-                    "which failed to instantiate the service."
+                    "which failed to instantiate the service with msg:\n %s." % err
                 )
                 continue
 
         try:
             add_test_inputs(service)
-        except:
+        except Exception as err:
             logging.warning(
-                f"Failed to assign test inputs for {stage_dot_service}."
+                f"Failed to assign test inputs for {stage_dot_service} with msg:\n %s"
+                % err
             )
             continue
 
         try:
             # Only try event-by-event mode for now
             set_service_modes(service, calc_mode="events", apply_mode="events")
-        except:
-            logging.error(
+        except Exception as err:
+            logging.warning(
                 "Failed to set `calc_mode` and `apply_mode` for " +
-                f"{stage_dot_service}."
+                f"{stage_dot_service} with msg:\n %s" % err
             )
             continue
 
         try:
             run_service_test(service)
             logging.info(f"{stage_dot_service} passed the test.")
-        except:
-            logging.error(f"{stage_dot_service} failed to setup or run.")
+            nsuccesses += 1
+        except Exception as err:
+            logging.error(f"{stage_dot_service} failed to setup or run with msg:\n %s." % err)
+            continue
+
+    logging.info("%d out of %d tested services passed the test" % (nsuccesses, ntries))
 
 
 def parse_args(description=__doc__):
