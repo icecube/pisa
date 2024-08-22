@@ -43,14 +43,12 @@ class toy_event_generator(Stage):  # pylint: disable=invalid-name
 
         expected_params = ('n_events', 'random', 'seed')
 
-        expected_container_keys = ('initial_weights',)
-
         self.output_names = output_names
 
         # init base class
         super().__init__(
             expected_params=expected_params,
-            expected_container_keys=expected_container_keys,
+            expected_container_keys=(),
             **std_kwargs,
         )
 

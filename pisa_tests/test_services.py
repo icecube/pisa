@@ -250,6 +250,7 @@ def test_services(
                 f"Did not get an initialised `Stage` instance for {stage_dot_service} "
                 f"but {service_type}!"
             )
+            stage_dot_services_failed.append(stage_dot_service)
             continue
 
         if service.data is None:
