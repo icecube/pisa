@@ -11,6 +11,7 @@ from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+from pisa.utils.resources import find_resource
 
 __all__ = [
     "ultrasurfaces",
@@ -82,7 +83,7 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         assert std_kwargs["calc_mode"] == "events"
 
         # Store args
-        self.fit_results_file = fit_results_file
+        self.fit_results_file = find_resource(fit_results_file)
         self.varnames = varnames
         self.approx_exponential = approx_exponential
 
