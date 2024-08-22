@@ -18,12 +18,12 @@ from os import walk
 from os.path import isfile, join, relpath
 
 from numpy import linspace
-from numpy.random import random
 
-from pisa import ureg
+from pisa import CTYPE, FTYPE, ITYPE, ureg
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.container import Container, ContainerSet
 from pisa.core.stage import Stage
+from pisa.utils.random_numbers import get_random_state
 from pisa.utils.fileio import expand, nsort_key_func
 from pisa.utils.log import Levels, logging, set_verbosity
 from pisa_tests.run_unit_tests import PISA_PATH, OPTIONAL_MODULES
@@ -31,6 +31,10 @@ from pisa_tests.run_unit_tests import PISA_PATH, OPTIONAL_MODULES
 
 __all__ = [
     "STAGES_PATH",
+    "INIT_TEST_NAME",
+    "TEST_BINNING",
+    "SKIP_SERVICES",
+    "AUX_DATA_KEYS",
     "test_services",
     "find_services",
     "find_services_in_file",
@@ -123,22 +127,25 @@ def get_stage_dot_service_from_module_pypath(module_pypath):
 def add_test_inputs(service, empty=False):
     """Try to come up with sensible test input data for the `Stage`
     instance `service`"""
+    random_state = get_random_state(0)
     if not empty:
-        container1 = Container('test1')
-        container2 = Container('test2')
+        name1 = 'test1_cc'
+        name2 = 'test2_nc'
+        container1 = Container(name1)
+        container2 = Container(name2)
         keys = set(service.expected_container_keys +
                    ['reco_energy', 'reco_coszen', 'pid', 'weights']
                   )
         for k in keys:
             if k in AUX_DATA_KEYS:
-                container1.set_aux_data(k, 1)
-                container2.set_aux_data(k, 1)
+                container1.set_aux_data(k, ITYPE(1))
+                container2.set_aux_data(k, ITYPE(1))
             elif k == 'nu_flux':
-                container1[k] = random((10, 2))
-                container2[k] = random((10, 2))
+                container1[k] = random_state.random((10, 2)).astype(dtype=FTYPE)
+                container2[k] = random_state.random((10, 2)).astype(dtype=FTYPE)
             else:
-                container1[k] = linspace(0.1, 1, 10)
-                container2[k] = linspace(0.1, 1, 10)
+                container1[k] = linspace(0.1, 1, 10, dtype=FTYPE)
+                container2[k] = linspace(0.1, 1, 10, dtype=FTYPE)
         service.data = ContainerSet('data', [container1, container2])
     else:
         logging.debug("Creating empty test inputs...")

@@ -8,9 +8,12 @@ import numpy as np
 import pandas as pd
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.resources import find_resource
 from pisa.core.container import Container
+
+__all__ = ['csv_icc_hist', 'init_test']
 
 
 class csv_icc_hist(Stage):  # pylint: disable=invalid-name
@@ -66,3 +69,11 @@ class csv_icc_hist(Stage):  # pylint: disable=invalid-name
 
         for container in self.data:
             container['weights'] = container['count'] * scale
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    return csv_icc_hist(
+        events_file="events/IceCube_3y_oscillations/muons.csv.bz2",
+        params=ParamSet([Param(name='atm_muon_scale', value=0.2, **param_kwargs)])
+    )
