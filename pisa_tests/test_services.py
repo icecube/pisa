@@ -18,6 +18,7 @@ from os import walk
 from os.path import isfile, join, relpath
 
 from numpy import linspace
+from numpy.random import random
 
 from pisa import ureg
 from pisa.core.binning import OneDimBinning, MultiDimBinning
@@ -65,6 +66,7 @@ TEST_BINNING = MultiDimBinning([
     OneDimBinning(name='reco_coszen', is_lin=True, num_bins=3, domain=[0.1, 1]), 
     OneDimBinning(name='pid', is_lin=True, num_bins=3, domain=[0.1, 1]),
 ])
+AUX_DATA_KEYS = ['nubar', 'flav']
 
 # TODO: define hopeless cases? define services whose tests may fail?
 # optional modules from unit tests?
@@ -128,8 +130,15 @@ def add_test_inputs(service, empty=False):
                    ['reco_energy', 'reco_coszen', 'pid', 'weights']
                   )
         for k in keys:
-            container1[k] = linspace(0.1, 1, 10)
-            container2[k] = linspace(0.1, 1, 10)
+            if k in AUX_DATA_KEYS:
+                container1.set_aux_data(k, 1)
+                container2.set_aux_data(k, 1)
+            elif k == 'nu_flux':
+                container1[k] = random((10, 2))
+                container2[k] = random((10, 2))
+            else:
+                container1[k] = linspace(0.1, 1, 10)
+                container2[k] = linspace(0.1, 1, 10)
         service.data = ContainerSet('data', [container1, container2])
     else:
         logging.debug("Creating empty test inputs...")

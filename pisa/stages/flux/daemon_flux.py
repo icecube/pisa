@@ -104,7 +104,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         )
 
         # init base class
-        super(daemon_flux, self).__init__(
+        super().__init__(
             expected_params=tuple(self.daemon_params+['daemon_chi2','daemon_params_len']),
             expected_container_keys=expected_container_keys,
             **std_kwargs,
