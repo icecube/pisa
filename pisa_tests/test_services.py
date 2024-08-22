@@ -20,6 +20,7 @@ from os.path import isfile, join, relpath
 from numpy import linspace
 
 from pisa.core.container import Container, ContainerSet
+from pisa.core.stage import Stage
 from pisa.utils.fileio import expand, nsort_key_func
 from pisa.utils.log import Levels, logging, set_verbosity
 from pisa_tests.run_unit_tests import PISA_PATH, OPTIONAL_MODULES
@@ -110,15 +111,19 @@ def get_stage_dot_service_from_module_pypath(module_pypath):
     return module_pypath[12:]
 
 
-def add_test_inputs(service):
+def add_test_inputs(service, empty=False):
     """Try to come up with sensible test input data for the `Stage`
     instance `service`"""
-    container1 = Container('test1')
-    container2 = Container('test2')
-    for k in service.expected_container_keys:
-        container1[k] = linspace(0.1, 1, 10)
-        container2[k] = linspace(0.1, 1, 10)
-    service.data = ContainerSet('data', [container1, container2])
+    if not empty:
+        container1 = Container('test1')
+        container2 = Container('test2')
+        for k in service.expected_container_keys:
+            container1[k] = linspace(0.1, 1, 10)
+            container2[k] = linspace(0.1, 1, 10)
+        service.data = ContainerSet('data', [container1, container2])
+    else:
+        logging.debug("Creating empty test inputs...")
+        service.data = ContainerSet('data')
 
 
 def set_service_modes(service, calc_mode, apply_mode):
@@ -237,26 +242,45 @@ def test_services(
                 stage_dot_services_failed.append(stage_dot_service)
                 continue
 
-        try:
-            add_test_inputs(service)
-        except Exception as err:
+        if not isinstance(service, Stage):
+            # Could be that init test function exists and runs but doesn't
+            # actually return anything useful
+            service_type = type(service)
             logging.error(
-                f"Failed to assign test inputs for {stage_dot_service} with msg:\n %s"
-                % err
+                f"Did not get an initialised `Stage` instance for {stage_dot_service} "
+                f"but {service_type}!"
             )
-            stage_dot_services_failed.append(stage_dot_service)
             continue
 
-        try:
-            # Only try event-by-event mode for now
-            set_service_modes(service, calc_mode="events", apply_mode="events")
-        except Exception as err:
-            logging.error(
-                "Failed to set `calc_mode` and `apply_mode` for "
-                f"{stage_dot_service} with msg:\n %s" % err
-            )
-            stage_dot_services_failed.append(stage_dot_service)
-            continue
+        if service.data is None:
+            # For data services, setup usually adds to `data` attribute
+            # (`Pipeline.setup()` assigns empty `ContainerSet`)
+            # TODO: Can/should init ever already result in populated `data` attribute?
+            try:
+                add_test_inputs(
+                    service=service,
+                    empty=True if stage_dot_service.split('.')[0] == 'data' else False
+                )
+            except Exception as err:
+                logging.error(
+                    f"Failed to assign test inputs for {stage_dot_service} with msg:\n %s"
+                    % err
+                )
+                stage_dot_services_failed.append(stage_dot_service)
+                continue
+
+        #if service.data is not None: # we should never be in this state here
+        if service.calc_mode is None and service.apply_mode is None: #TODO
+            try:
+                # Only try event-by-event mode for now
+                set_service_modes(service, calc_mode='events', apply_mode='events')
+            except Exception as err:
+                logging.error(
+                    "Failed to set `calc_mode` and `apply_mode` for "
+                    f"{stage_dot_service} with msg:\n %s" % err
+                )
+                stage_dot_services_failed.append(stage_dot_service)
+                continue
 
         try:
             run_service_test(service)

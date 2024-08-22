@@ -8,12 +8,17 @@ from __future__ import absolute_import, print_function, division
 __author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 
 import numpy as np
-from pisa import FTYPE
-from pisa.core.container import Container
-from pisa.core.stage import Stage
+from scipy.stats import norm
 
+from pisa import FTYPE
 # Load the modified index lookup function
 from pisa.core.bin_indexing import lookup_indices
+from pisa.core.binning import MultiDimBinning
+from pisa.core.container import Container
+from pisa.core.param import Param, ParamSet
+from pisa.core.stage import Stage
+
+__all__ = ['simple_signal', 'init_test']
 
 
 class simple_signal(Stage):  # pylint: disable=invalid-name
@@ -102,6 +107,8 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
         #
         # Compute the bin indices associated with each event
         #
+        if not isinstance(self.apply_mode, MultiDimBinning):
+            raise ValueError('apply mode must be set to a binning')
         sig_indices = lookup_indices(sample=[signal_container['stuff']], binning=self.apply_mode)
         signal_container['bin_indices'] = sig_indices
 
@@ -171,7 +178,6 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
         # Make sure we are in events mode
         #
         self.data.representation = 'events'
-        from scipy.stats import norm
 
         for container in self.data:
 
@@ -205,3 +211,18 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
                 container.array_to_binned('errors',
                     self.data.representation, self.apply_mode, averaged=False
                 )
+
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    param_set = ParamSet([
+        Param(name='n_events_data', value=5512, **param_kwargs),
+        Param(name='stats_factor', value=1.0, **param_kwargs),
+        Param(name='signal_fraction', value=0.05, **param_kwargs),
+        Param(name='bkg_min', value=50., **param_kwargs),
+        Param(name='bkg_max', value=100., **param_kwargs),
+        Param(name='mu', value=75., **param_kwargs),
+        Param(name='sigma', value=8.5, **param_kwargs),
+    ])
+
+    return simple_signal(params=param_set)

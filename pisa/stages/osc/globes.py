@@ -20,11 +20,14 @@ import numpy as np
 from numba import guvectorize
 
 from pisa import FTYPE, TARGET, ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.osc_params import OscParams
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
+
+__all__ = ['globes', 'init_test']
 
 
 class globes(Stage):  # pylint: disable=invalid-name
@@ -290,3 +293,23 @@ else:
 @guvectorize([signature], '(d),(),(),()->()', target=TARGET)
 def apply_probs(flux, prob_e, prob_mu, prob_nonsterile, out):
     out[0] *= ((flux[0] * prob_e) + (flux[1] * prob_mu))*prob_nonsterile
+
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    param_set = ParamSet([
+        Param(name='theta12', value=33*ureg.degree, **param_kwargs),
+        Param(name='theta13', value=8*ureg.degree, **param_kwargs),
+        Param(name='theta23', value=50*ureg.degree, **param_kwargs),
+        Param(name='theta24', value=1*ureg.degree, **param_kwargs),
+        Param(name='theta34', value=0*ureg.degree, **param_kwargs),
+        Param(name='deltam21', value=8e-5*ureg.eV**2, **param_kwargs),
+        Param(name='deltam31', value=3e-3*ureg.eV**2, **param_kwargs),
+        Param(name='deltam41', value=1.*ureg.eV**2, **param_kwargs),
+        Param(name='deltacp', value=180*ureg.degree, **param_kwargs), 
+    ])
+    return globes(
+        earth_model='osc/PREM_12layer.dat',
+        globes_wrapper='GLoBES_wrapper', #FIXME
+        params=param_set
+    )

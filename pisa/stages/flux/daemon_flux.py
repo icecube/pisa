@@ -10,13 +10,17 @@ from daemonflux import Flux
 from daemonflux import __version__ as daemon_version
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.core.param import Param
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+from pisa.utils.random_numbers import get_random_state
 from numba import jit
 from scipy import interpolate
 from packaging.version import Version
+
+__all__ = ['daemon_flux', 'make_2d_flux_map', 'evaluate_flux_map', 'init_test']
 
 
 class daemon_flux(Stage):  # pylint: disable=invalid-name
@@ -190,3 +194,17 @@ def evaluate_flux_map(flux_map, true_energy, true_coszen):
     uconv = true_energy**-3 * 1e4
     return flux_map.ev(true_energy, true_coszen) * uconv
 
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    param_set = []
+    random_state = get_random_state(random_state=666)
+    for i, pname in enumerate(Flux(location='IceCube', use_calibration=True).params.known_parameters):
+        param = Param(
+            name='daemon_' + pname.replace('pi+','pi').replace('pi-','antipi').replace('K+','K').replace('K-','antiK'),
+            value=2 * random_state.rand() - 1,
+            **param_kwargs
+        )
+        param_set.append(param)
+    param_set = ParamSet(*param_set)
+    return daemon_flux(params=param_set)

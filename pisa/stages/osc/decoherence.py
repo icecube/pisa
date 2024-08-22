@@ -14,7 +14,8 @@ import math
 import numpy as np
 from numba import guvectorize
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE, TARGET, ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
 from pisa.stages.osc.osc_params import OscParams
@@ -24,7 +25,8 @@ from pisa.utils.resources import find_resource
 from pisa import ureg
 
 
-__all__ = ['DecoherenceParams', 'calc_decoherence_probs', "decoherence"]
+__all__ = ['DecoherenceParams', 'calc_decoherence_probs', 'decoherence',
+           'init_test']
 
 __author__ = 'T. Stuttard, M. Jensen'
 
@@ -488,3 +490,25 @@ else:
 @guvectorize([signature], '(d),(),()->()', target=TARGET)
 def apply_probs(flux, prob_e, prob_mu, out):
     out[0] *= (flux[0] * prob_e) + (flux[1] * prob_mu)
+
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    param_set = ParamSet([
+        Param(name='detector_depth', value=0.5*ureg.km, **param_kwargs),
+        Param(name='prop_height', value=20*ureg.km, **param_kwargs),
+        Param(name='earth_model', value=None, **param_kwargs),
+        Param(name='YeI', value=0.5, **param_kwargs),
+        Param(name='YeO', value=0.5, **param_kwargs),
+        Param(name='YeM', value=0.5, **param_kwargs),
+        Param(name='theta12', value=33*ureg.degree, **param_kwargs),
+        Param(name='theta13', value=8*ureg.degree, **param_kwargs),
+        Param(name='theta23', value=50*ureg.degree, **param_kwargs),
+        Param(name='deltam21', value=8e-5*ureg.eV**2, **param_kwargs),
+        Param(name='deltam31', value=3e-3*ureg.eV**2, **param_kwargs),
+        Param(name='deltacp', value=180*ureg.degree, **param_kwargs),
+        Param(name='gamma21', value=1e-11*ureg.GeV, **param_kwargs),
+        Param(name='gamma31', value=5e-10*ureg.GeV, **param_kwargs),
+        Param(name='gamma32', value=2.5e-13*ureg.GeV, **param_kwargs),
+    ])
+    return decoherence(params=param_set)
