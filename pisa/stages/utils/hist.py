@@ -10,6 +10,7 @@ from pisa.core.translation import histogram
 from pisa.core.binning import MultiDimBinning, OneDimBinning
 from pisa.utils.profiler import profile
 from pisa.utils.log import logging
+from pisa_tests.test_services import TEST_BINNING
 
 __all__ = ['hist', 'init_test']
 
@@ -214,4 +215,4 @@ class hist(Stage):  # pylint: disable=invalid-name
 
 def init_test(**param_kwargs):
     """Instantiation example"""
-    return hist(calc_mode='events', apply_mode='events') # FIXME
+    return hist(calc_mode='events', apply_mode=TEST_BINNING)

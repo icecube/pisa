@@ -17,6 +17,7 @@ __author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 from pisa.core.bin_indexing import lookup_indices
 from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
+from pisa_tests.test_services import TEST_BINNING
 
 __all__ = ['add_indices']
 
@@ -85,3 +86,8 @@ class add_indices(Stage):  # pylint: disable=invalid-name
             self.data.representation = self.apply_mode
             for bin_i in range(self.apply_mode.tot_num_bins):
                 container['bin_{}_mask'.format(bin_i)] = container['bin_indices'] == bin_i
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    return add_indices(calc_mode='events', apply_mode=TEST_BINNING)

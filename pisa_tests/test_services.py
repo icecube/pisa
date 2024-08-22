@@ -19,6 +19,8 @@ from os.path import isfile, join, relpath
 
 from numpy import linspace
 
+from pisa import ureg
+from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.container import Container, ContainerSet
 from pisa.core.stage import Stage
 from pisa.utils.fileio import expand, nsort_key_func
@@ -58,6 +60,11 @@ STAGES_PATH = join(PISA_PATH, "stages")
 INIT_TEST_NAME = "init_test"
 """Assumed name of custom function in each module which returns an
 example instance of the service in question"""
+TEST_BINNING = MultiDimBinning([
+    OneDimBinning(name='reco_energy', is_log=True, num_bins=3, domain=[0.1, 1]*ureg.GeV), 
+    OneDimBinning(name='reco_coszen', is_lin=True, num_bins=3, domain=[0.1, 1]), 
+    OneDimBinning(name='pid', is_lin=True, num_bins=3, domain=[0.1, 1]),
+])
 
 # TODO: define hopeless cases? define services whose tests may fail?
 # optional modules from unit tests?
@@ -117,7 +124,10 @@ def add_test_inputs(service, empty=False):
     if not empty:
         container1 = Container('test1')
         container2 = Container('test2')
-        for k in service.expected_container_keys:
+        keys = set(service.expected_container_keys +
+                   ['reco_energy', 'reco_coszen', 'pid', 'weights']
+                  )
+        for k in keys:
             container1[k] = linspace(0.1, 1, 10)
             container2[k] = linspace(0.1, 1, 10)
         service.data = ContainerSet('data', [container1, container2])

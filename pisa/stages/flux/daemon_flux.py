@@ -12,7 +12,6 @@ from daemonflux import __version__ as daemon_version
 from pisa import FTYPE
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
-from pisa.core.param import Param
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.random_numbers import get_random_state
