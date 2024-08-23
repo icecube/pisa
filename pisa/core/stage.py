@@ -11,6 +11,7 @@ import inspect
 from time import time
 import numpy as np
 
+from pisa.core.binning import MultiDimBinning
 from pisa.core.container import ContainerSet
 from pisa.utils.log import logging
 from pisa.core.param import ParamSelector
@@ -37,6 +38,9 @@ class Stage():
 
     expected_params : list of strings
         List containing required `params` names.
+        
+    expected_container_keys: list of strings
+        List containing required container keys.
 
     debug_mode : None, bool, or string
         If None, False, or empty string, the stage runs normally.
@@ -50,6 +54,11 @@ class Stage():
     error_method : None or string (not enforced)
         An option to define one or more dedicated error calculation methods
         for the stage transforms or outputs
+        
+    supported_modes : dict
+        Dictionary containing the representations allowed for calc_mode and
+        apply_mode. If nothing is specified, `events` and MultiDimBinning is assumed.
+        Has keys `calc_mode` and `apply_mode`, they will be created if not there.
 
     calc_mode : pisa.core.binning.MultiDimBinning, str, or None
         Specify the default data representation for `setup()` and `compute()`
@@ -70,6 +79,7 @@ class Stage():
         expected_container_keys=None,
         debug_mode=None,
         error_method=None,
+        supported_modes={},
         calc_mode=None,
         apply_mode=None,
         profile=False,
@@ -132,9 +142,24 @@ class Stage():
         else:
             self._debug_mode = None
 
+        if not 'calc_mode' in supported_modes:
+            supported_modes['calc_mode'] = ['events', MultiDimBinning]
+        if not 'apply_mode' in supported_modes:
+            supported_modes['apply_mode'] = ['events', MultiDimBinning]
+        self.supported_modes = supported_modes
 
-        self.calc_mode = calc_mode
-        self.apply_mode = apply_mode
+        if isinstance(calc_mode, str) and calc_mode not in supported_modes['calc_mode']:
+            raise ValueError(f"calc_mode {calc_mode} is not supported by {self.stage_name}.{self.service_name}")
+        if not isinstance(calc_mode, str) and type(calc_mode) not in supported_modes['calc_mode'] and calc_mode != None:
+            raise ValueError(f"calc_mode {type(calc_mode)} is not supported by {self.stage_name}.{self.service_name}")
+        self._calc_mode = calc_mode
+
+        if isinstance(apply_mode, str) and apply_mode not in supported_modes['apply_mode']:
+            raise ValueError(f"apply_mode {apply_mode} is not supported by {self.stage_name}.{self.service_name}")
+        if not isinstance(apply_mode, str) and type(apply_mode) not in supported_modes['apply_mode'] and apply_mode != None:
+            raise ValueError(f"apply_mode {type(apply_mode)} is not supported by {self.stage_name}.{self.service_name}")
+        self._apply_mode = apply_mode
+        
         self.data = data
 
         self._error_method = error_method
@@ -229,6 +254,32 @@ class Stage():
     def param_selections(self):
         """Param selections"""
         return sorted(deepcopy(self._param_selector.param_selections))
+
+    @property
+    def calc_mode(self):
+        """calc_mode"""
+        return self._calc_mode
+
+    @calc_mode.setter
+    def calc_mode(self, value):
+        if isinstance(value, str) and value not in self.supported_modes['calc_mode']:
+            raise ValueError(f"calc_mode {value} is not supported by {self.stage_name}.{self.service_name}")
+        if not isinstance(value, str) and type(value) not in self.supported_modes['calc_mode']:
+            raise ValueError(f"calc_mode {type(value)} is not supported by {self.stage_name}.{self.service_name}")
+        self._calc_mode = value
+
+    @property
+    def apply_mode(self):
+        """apply_mode"""
+        return self._apply_mode
+
+    @apply_mode.setter
+    def apply_mode(self, value):
+        if isinstance(value, str) and value not in self.supported_modes['apply_mode']:
+            raise ValueError(f"apply_mode {value} is not supported by {self.stage_name}.{self.service_name}")
+        if not isinstance(value, str) and type(value) not in self.supported_modes['apply_mode']:
+            raise ValueError(f"apply_mode {type(value)} is not supported by {self.stage_name}.{self.service_name}")
+        self._apply_mode = value
 
     def _check_exp_keys_in_data(self, error_on_missing=False):
         """Make sure that `expected_container_keys` is defined and that
