@@ -85,25 +85,25 @@ class kde(Stage):  # pylint: disable=invalid-name
             if self.bootstrap:
                 self.stashed_errors = None
 
+        supported_reps = {
+            'calc_mode': ['events'],
+            'apply_mode': [MultiDimBinning],
+        }
+
         # init base class
         super().__init__(
             expected_params=(),
             expected_container_keys=(),
+            supported_reps=supported_reps,
             **std_kargs,
         )
 
-        assert self.calc_mode == "events"
         self.regularized_apply_mode = None
 
     def setup_function(self):
 
-        assert isinstance(
-            self.apply_mode, MultiDimBinning
-        ), f"KDE stage needs a binning as `apply_mode`, but is {self.apply_mode}"
-
         # For dimensions that are logarithmic, we add a linear binning in
         # the logarithm (but only if this feature is enabled)
-
         if not self.linearize_log_dims:
             self.regularized_apply_mode = self.apply_mode
             return

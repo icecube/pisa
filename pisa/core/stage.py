@@ -12,15 +12,22 @@ from time import time
 import numpy as np
 
 from pisa.core.binning import MultiDimBinning
-from pisa.core.container import ContainerSet
+from pisa.core.container import Container, ContainerSet
 from pisa.utils.log import logging
 from pisa.core.param import ParamSelector
 from pisa.utils.format import arg_str_seq_none
 from pisa.utils.hash import hash_obj
 
 
-__all__ = ["Stage"]
+__all__ = ["check_representation", "Stage"]
 __author__ = "Philipp Eller, J. Lanfranchi"
+
+
+def check_representation(rep, supported_reps, mode, stagename, allow_None=False):
+    if isinstance(rep, str) and rep not in supported_reps[mode]:
+        raise ValueError(f"{mode} {rep} is not supported by {stagename}")
+    if not isinstance(rep, str) and type(rep) not in supported_reps[mode] and (rep != None or not allow_None):
+        raise ValueError(f"{mode} {type(rep)} is not supported by {stagename}")
 
 
 class Stage():
@@ -55,10 +62,11 @@ class Stage():
         An option to define one or more dedicated error calculation methods
         for the stage transforms or outputs
         
-    supported_modes : dict
+    supported_reps : dict
         Dictionary containing the representations allowed for calc_mode and
-        apply_mode. If nothing is specified, `events` and MultiDimBinning is assumed.
-        Has keys `calc_mode` and `apply_mode`, they will be created if not there.
+        apply_mode. If nothing is specified, Container.array_representations 
+        plus MultiDimBinning is assumed. Should have keys `calc_mode` and/or 
+        `apply_mode`, they will be created if not there.
 
     calc_mode : pisa.core.binning.MultiDimBinning, str, or None
         Specify the default data representation for `setup()` and `compute()`
@@ -79,7 +87,7 @@ class Stage():
         expected_container_keys=None,
         debug_mode=None,
         error_method=None,
-        supported_modes={},
+        supported_reps={},
         calc_mode=None,
         apply_mode=None,
         profile=False,
@@ -142,22 +150,16 @@ class Stage():
         else:
             self._debug_mode = None
 
-        if not 'calc_mode' in supported_modes:
-            supported_modes['calc_mode'] = ['events', MultiDimBinning]
-        if not 'apply_mode' in supported_modes:
-            supported_modes['apply_mode'] = ['events', MultiDimBinning]
-        self.supported_modes = supported_modes
+        if not 'calc_mode' in supported_reps:
+            supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning]
+        if not 'apply_mode' in supported_reps:
+            supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
+        self.supported_reps = supported_reps
 
-        if isinstance(calc_mode, str) and calc_mode not in supported_modes['calc_mode']:
-            raise ValueError(f"calc_mode {calc_mode} is not supported by {self.stage_name}.{self.service_name}")
-        if not isinstance(calc_mode, str) and type(calc_mode) not in supported_modes['calc_mode'] and calc_mode != None:
-            raise ValueError(f"calc_mode {type(calc_mode)} is not supported by {self.stage_name}.{self.service_name}")
+        check_representation(calc_mode, supported_reps, 'calc_mode', f"{self.stage_name}.{self.service_name}", allow_None=True)
         self._calc_mode = calc_mode
 
-        if isinstance(apply_mode, str) and apply_mode not in supported_modes['apply_mode']:
-            raise ValueError(f"apply_mode {apply_mode} is not supported by {self.stage_name}.{self.service_name}")
-        if not isinstance(apply_mode, str) and type(apply_mode) not in supported_modes['apply_mode'] and apply_mode != None:
-            raise ValueError(f"apply_mode {type(apply_mode)} is not supported by {self.stage_name}.{self.service_name}")
+        check_representation(apply_mode, supported_reps, 'apply_mode', f"{self.stage_name}.{self.service_name}", allow_None=True)
         self._apply_mode = apply_mode
         
         self.data = data
@@ -262,11 +264,9 @@ class Stage():
 
     @calc_mode.setter
     def calc_mode(self, value):
-        if isinstance(value, str) and value not in self.supported_modes['calc_mode']:
-            raise ValueError(f"calc_mode {value} is not supported by {self.stage_name}.{self.service_name}")
-        if not isinstance(value, str) and type(value) not in self.supported_modes['calc_mode']:
-            raise ValueError(f"calc_mode {type(value)} is not supported by {self.stage_name}.{self.service_name}")
+        check_representation(value, self.supported_reps, 'calc_mode', f"{self.stage_name}.{self.service_name}")
         self._calc_mode = value
+        self.setup()
 
     @property
     def apply_mode(self):
@@ -275,10 +275,7 @@ class Stage():
 
     @apply_mode.setter
     def apply_mode(self, value):
-        if isinstance(value, str) and value not in self.supported_modes['apply_mode']:
-            raise ValueError(f"apply_mode {value} is not supported by {self.stage_name}.{self.service_name}")
-        if not isinstance(value, str) and type(value) not in self.supported_modes['apply_mode']:
-            raise ValueError(f"apply_mode {type(value)} is not supported by {self.stage_name}.{self.service_name}")
+        check_representation(value, self.supported_reps, 'apply_mode', f"{self.stage_name}.{self.service_name}")
         self._apply_mode = value
 
     def _check_exp_keys_in_data(self, error_on_missing=False):
