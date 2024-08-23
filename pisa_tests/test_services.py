@@ -66,8 +66,8 @@ INIT_TEST_NAME = "init_test"
 """Assumed name of custom function in each module which returns an
 example instance of the service in question"""
 TEST_BINNING = MultiDimBinning([
-    OneDimBinning(name='reco_energy', is_log=True, num_bins=3, domain=[0.1, 1]*ureg.GeV), 
-    OneDimBinning(name='reco_coszen', is_lin=True, num_bins=3, domain=[0.1, 1]), 
+    OneDimBinning(name='reco_energy', is_log=True, num_bins=3, domain=[0.1, 1]*ureg.GeV),
+    OneDimBinning(name='reco_coszen', is_lin=True, num_bins=3, domain=[0.1, 1]),
     OneDimBinning(name='pid', is_lin=True, num_bins=3, domain=[0.1, 1]),
 ])
 AUX_DATA_KEYS = ['nubar', 'flav']

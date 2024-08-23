@@ -135,7 +135,8 @@ class hillasg(Stage):  # pylint: disable=invalid-name
 def init_test(**param_kwargs):
     """Instantiation example"""
     param_set = ParamSet([
-        Param(name='flux_table', value='flux/honda-2015-spl-solmin-aa.d',  **param_kwargs), #FIXME
+        Param(name='flux_table',
+              value='meows_sterile/resources/fluxes/pr_hillas_h3a_SIBYLL23C_AIRS_nominalize-aa.d',
+              **param_kwargs),
     ])
-
     return hillasg(params=param_set)

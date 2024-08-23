@@ -507,6 +507,6 @@ def init_test(**param_kwargs):
     ])
 
     return mceq_barr_red(
-        table_file=".pckl", #FIXME (see scripts/create_barr_sys_tables_mceq.py)
+        table_file="common/data/flux/v01/MCEq_flux_gradient_splines_2212_GlobalSplineFitBeta_SIBYLL23C_reduced_scheme.pckl.bz2",
         params=param_set
     )

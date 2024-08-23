@@ -565,7 +565,7 @@ def init_test(**param_kwargs):
     ])
 
     return mceq_barr(
-        table_file=".pckl", #FIXME (see scripts/create_barr_sys_tables_mceq.py)
+        table_file="common/data/flux/v02/MCEq_flux_gradient_splines_2212_GlobalSplineFitBeta_SIBYLL23C.pckl.bz2",
         include_nutau_flux=False,
         use_honda_nominal_flux=True,
         params=param_set
