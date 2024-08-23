@@ -86,6 +86,7 @@
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;ultrasurfaces&quot;</span><span class="p">,</span>
@@ -159,7 +160,7 @@
         <span class="k">assert</span> <span class="n">std_kwargs</span><span class="p">[</span><span class="s2">&quot;calc_mode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span>
 
         <span class="c1"># Store args</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span> <span class="o">=</span> <span class="n">fit_results_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">fit_results_file</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">varnames</span> <span class="o">=</span> <span class="n">varnames</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">approx_exponential</span> <span class="o">=</span> <span class="n">approx_exponential</span>
 
