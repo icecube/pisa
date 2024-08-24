@@ -57,17 +57,28 @@ class resample(Stage):  # pylint: disable=invalid-name
         if scale_errors:
             expected_container_keys.append('errors')
 
+        # This stage only makes sense when going binned to binned.
+        supported_reps = {
+            'calc_mode': [MultiDimBinning],
+            'apply_mode': [MultiDimBinning]
+        }
+
         # init base class
         super().__init__(
             expected_params=(),
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
-        # This stage only makes sense when going binned to binned.
-        assert isinstance(self.apply_mode, MultiDimBinning), "stage only produces binned output"
-        assert isinstance(self.calc_mode, MultiDimBinning), "stage only produces binned output"
-
+        if not self.apply_mode:
+            raise ValueError(
+                "Service requires specifying binning for `apply_mode` during init!"
+            )
+        if not self.calc_mode:
+            raise ValueError(
+                "Service requires specifying binning for `calc_mode` during init!"
+            )
         self.scale_errors = scale_errors
 
         # The following tests whether `apply_mode` is a strict up-sample
@@ -177,7 +188,8 @@ class resample(Stage):  # pylint: disable=invalid-name
 
 def init_test(**param_kwargs):
     """Initialisation example"""
-    return resample() #FIXME
+    from pisa_tests.test_services import TEST_BINNING
+    return resample(calc_mode=TEST_BINNING, apply_mode=TEST_BINNING)
 
 
 def test_resample():

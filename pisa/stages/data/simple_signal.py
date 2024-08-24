@@ -53,12 +53,18 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
 
             # fitted parameters
             'mu',
-            'sigma')
+            'sigma'
+        )
+
+        supported_reps = {
+            'apply_mode': [MultiDimBinning]
+        }
 
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=(),
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
@@ -107,8 +113,6 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
         #
         # Compute the bin indices associated with each event
         #
-        if not isinstance(self.apply_mode, MultiDimBinning):
-            raise ValueError('apply mode must be set to a binning')
         sig_indices = lookup_indices(sample=[signal_container['stuff']], binning=self.apply_mode)
         signal_container['bin_indices'] = sig_indices
 

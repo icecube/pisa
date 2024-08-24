@@ -54,7 +54,7 @@ from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 
-__all__ = ['generalized_llh_params']
+__all__ = ['generalized_llh_params', 'init_test']
 
 PSEUDO_WEIGHT = 0.001
 
@@ -72,14 +72,29 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
                  **std_kwargs,
                  ):
 
-        expected_container_keys = (
+        expected_container_keys = [
             'weights',
-        )
+        ]
+
+        supported_reps = {
+            'apply_mode' : [MultiDimBinning]
+        }
+
+        if not 'apply_mode' in std_kwargs:
+            raise ValueError(
+                "Service requires specifying binning for `apply_mode` during init!"
+            )
+        assert isinstance(std_kwargs['apply_mode'], MultiDimBinning)
+
+        N_bins = std_kwargs['apply_mode'].tot_num_bins
+        for index in range(N_bins):
+            expected_container_keys.append(f'bin_{index}_mask')
 
         # init base class
         super().__init__(
             expected_params=(),
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
@@ -89,8 +104,6 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
         of MC events in each bin of each dataset and
         compute mean adjustment
         """
-        if not isinstance(self.apply_mode, MultiDimBinning):
-            raise ValueError('apply mode must be set to a binning')
         N_bins = self.apply_mode.tot_num_bins
 
         self.data.representation = self.apply_mode
@@ -241,3 +254,9 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
             container.mark_changed('llh_betas')
             container.mark_changed('old_sum')
             container.mark_changed('weights')
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    from pisa_tests.test_services import TEST_BINNING
+    return generalized_llh_params(apply_mode=TEST_BINNING)

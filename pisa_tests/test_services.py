@@ -17,7 +17,7 @@ from importlib import import_module
 from os import walk
 from os.path import isfile, join, relpath
 
-from numpy import linspace
+import numpy as np
 
 from pisa import CTYPE, FTYPE, ITYPE, ureg
 from pisa.core.binning import OneDimBinning, MultiDimBinning
@@ -40,7 +40,6 @@ __all__ = [
     "find_services_in_file",
     "get_stage_dot_service_from_module_pypath",
     "add_test_inputs",
-    "set_service_modes",
     "is_allowed_import_error"
 ]
 
@@ -143,19 +142,16 @@ def add_test_inputs(service, empty=False):
             elif k == 'nu_flux':
                 container1[k] = random_state.random((10, 2)).astype(dtype=FTYPE)
                 container2[k] = random_state.random((10, 2)).astype(dtype=FTYPE)
+            elif k.endswith('mask'):
+                container1[k] = np.ones(10, dtype=ITYPE)
+                container2[k] = np.zeros(10, dtype=ITYPE)
             else:
-                container1[k] = linspace(0.1, 1, 10, dtype=FTYPE)
-                container2[k] = linspace(0.1, 1, 10, dtype=FTYPE)
+                container1[k] = np.linspace(0.1, 1, 10, dtype=FTYPE)
+                container2[k] = np.linspace(0.1, 1, 10, dtype=FTYPE)
         service.data = ContainerSet('data', [container1, container2])
     else:
         logging.debug("Creating empty test inputs...")
         service.data = ContainerSet('data')
-
-
-def set_service_modes(service, calc_mode, apply_mode):
-    """Set `calc_mode` and `apply_mode` for the `Stage` instance `service`"""
-    service.calc_mode = calc_mode
-    service.apply_mode = apply_mode
 
 
 def run_service_test(service):
@@ -297,20 +293,40 @@ def test_services(
                 continue
 
         #if service.data is not None: # we should never be in this state here
-        if service.calc_mode is None and service.apply_mode is None: #TODO
+        if service.calc_mode is None:
             try:
-                # Only try event-by-event mode for now
-                set_service_modes(service, calc_mode='events', apply_mode='events')
-            except Exception as err:
+                service.calc_mode = 'events'
+            except ValueError:
+                service.calc_mode = TEST_BINNING
+            except ImportError as err:
                 if is_allowed_import_error(err, stage_dot_service, allow_missing):
                     stage_dot_services_failed_ignored.append(stage_dot_service)
                     continue
+            except Exception as err:
                 logging.error(
-                    "Failed to set `calc_mode` and `apply_mode` for "
+                    "Failed to set `calc_mode` for "
                     f"{stage_dot_service} with msg:\n %s" % err
                 )
                 stage_dot_services_failed.append(stage_dot_service)
                 continue
+
+        if service.apply_mode is None:
+            try:
+                service.apply_mode = 'events'
+            except ValueError:
+                service.apply_mode = TEST_BINNING
+            except ImportError as err:
+                if is_allowed_import_error(err, stage_dot_service, allow_missing):
+                    stage_dot_services_failed_ignored.append(stage_dot_service)
+                    continue
+            except Exception as err:
+                logging.error(
+                    "Failed to set `apply_mode` for "
+                    f"{stage_dot_service} with msg:\n %s" % err
+                )
+                stage_dot_services_failed.append(stage_dot_service)
+                continue
+
 
         try:
             run_service_test(service)

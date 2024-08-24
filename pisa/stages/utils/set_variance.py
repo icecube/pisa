@@ -31,15 +31,18 @@ class set_variance(Stage):  # pylint: disable=invalid-name
         **std_kwargs,
     ):
 
+        supported_reps = {
+            'calc_mode': [MultiDimBinning],
+            'apply_mode': [MultiDimBinning]
+        }
+
         # init base class
         super().__init__(
             expected_params=(),
             expected_container_keys=(),
+            supported_reps=supported_reps,
             **std_kwargs,
         )
-
-        assert isinstance(self.calc_mode, MultiDimBinning)
-        assert isinstance(self.apply_mode, MultiDimBinning)
 
         self.variance_scale = variance_scale
         self.variance_floor = variance_floor
@@ -104,4 +107,4 @@ def set_constant_gufunc(val, out):
 
 def init_test(**param_kwargs):
     """Instantiation example"""
-    return set_variance(expected_total_mc=100) #FIXME
+    return set_variance(expected_total_mc=100)

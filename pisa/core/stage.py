@@ -85,7 +85,7 @@ class Stage():
         expected_container_keys=None,
         debug_mode=None,
         error_method=None,
-        supported_reps={},
+        supported_reps=None,
         calc_mode=None,
         apply_mode=None,
         profile=False,
@@ -150,6 +150,9 @@ class Stage():
         else:
             self._debug_mode = None
 
+        if supported_reps is None:
+            supported_reps = {}
+        assert isinstance(supported_reps, Mapping)
         if not 'calc_mode' in supported_reps:
             supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning]
         if not 'apply_mode' in supported_reps:
