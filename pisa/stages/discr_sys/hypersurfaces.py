@@ -10,12 +10,13 @@ PISA pi stage to apply hypersurface fits from discrete systematics parameterizat
 from __future__ import absolute_import, print_function, division
 
 import ast
-
+from collections.abc import Mapping
 import numpy as np
 
-from pisa import FTYPE
+from pisa import FTYPE, ureg
+from pisa.core.binning import OneDimBinning, MultiDimBinning
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
-from pisa.core.binning import MultiDimBinning
 from pisa.utils.log import logging
 import pisa.utils.hypersurface as hs
 
@@ -98,8 +99,13 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         expected_container_keys = [
             'weights',
         ]
-        if not self.error_method is None:
-            expected_container_keys.append('errors')
+        if 'error_method' in std_kwargs:
+            if std_kwargs['error_method']:
+                expected_container_keys.append('errors')
+                #TODO: When in a pipeline after utils.hist,
+                # this will cause a warning about missing presence of 'errors'
+                # because hist adds this key during apply
+
 
         # -- Initialize base class -- #
         super().__init__(
@@ -107,8 +113,12 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
             expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
-
-        self.links = ast.literal_eval(links)
+        if links is None:
+            self.links = {}
+        elif not isinstance(links, Mapping):
+            self.links = ast.literal_eval(links)
+        else:
+            self.links = links
         self.warning_issued = False # don't warn more than once about empty bins
 
         # Handle fluctuation option
@@ -235,4 +245,29 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
 
 def init_test(**param_kwargs):
     """Instantiation example"""
-    pass
+    param_set = ParamSet([
+        Param(name='opt_eff_overall', value=1.0, **param_kwargs),
+        Param(name='opt_eff_lateral', value=25, **param_kwargs),
+        Param(name='opt_eff_headon', value=0.0, **param_kwargs),
+        Param(name='ice_scattering', value=0.0, **param_kwargs),
+        Param(name='ice_absorption', value=0.0, **param_kwargs),
+    ])
+    dd_en = OneDimBinning(
+        'reco_energy', num_bins=8, is_log=True,
+        bin_edges=[5.62341325, 7.49894209, 10.0, 13.33521432, 17.7827941, 23.71373706, 31.6227766, 42.16965034, 56.23413252] * ureg.GeV,
+        tex=r'E_{\rm reco}'
+    )
+    dd_cz = OneDimBinning(
+        'reco_coszen', num_bins=8, is_lin=True, domain=[-1,1], tex=r'\cos{\theta}_{\rm reco}'
+    )
+    dd_pid = OneDimBinning('pid', bin_edges=[-0.5, 0.5, 1.5], tex=r'{\rm PID}')
+    return hypersurfaces(
+        params=param_set,
+        fit_results_file='events/IceCube_3y_oscillations/hyperplanes_*.csv.bz2',
+        error_method='sumw2',
+        calc_mode=MultiDimBinning([dd_en, dd_cz, dd_pid], name='dragon_datarelease'),
+        links={
+            'nue_cc+nuebar_cc':['test1_cc', 'test2_nc'],
+            #TODO: not ideal, because I need to know what test_services fills ContainerSet with
+        }
+    )

@@ -8,12 +8,15 @@ import numpy as np
 from numba import njit
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+from pisa.utils.resources import find_resource
 
 __all__ = [
     "ultrasurfaces",
+    "init_test"
 ]
 
 __author__ = "A. Trettin, L. Fischer"
@@ -82,7 +85,7 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         assert std_kwargs["calc_mode"] == "events"
 
         # Store args
-        self.fit_results_file = fit_results_file
+        self.fit_results_file = find_resource(fit_results_file)
         self.varnames = varnames
         self.approx_exponential = approx_exponential
 
@@ -289,4 +292,20 @@ def grad_shift_inplace(grads, shift, out):
 
 def init_test(**param_kwargs):
     """Instantiation example"""
-    pass
+    param_set = ParamSet([
+        Param(name='dom_eff', value=1.0, **param_kwargs),
+        Param(name='hole_ice_p0', value=0.0, **param_kwargs),
+        Param(name='hole_ice_p1', value=0.0, **param_kwargs),
+        Param(name='bulk_ice_abs', value=1.0, **param_kwargs),
+        Param(name='bulk_ice_scatter', value=1.0, **param_kwargs),
+        Param(name='bfr_eff', value=0.0, **param_kwargs),
+    ])
+    return ultrasurfaces(
+        params=param_set,
+        fit_results_file='fit_settings/oscNext_pisa_genie_flercnn_knn_grads_all.feather', #TODO
+        nominal_points = {
+            "dom_eff": 1.0, "hole_ice_p0": 0.101569, "hole_ice_p1": -0.049344,
+            "bulk_ice_abs": 1.0, "bulk_ice_scatter": 1.0, "bfr_eff": 0.0
+        },
+        calc_mode = 'events'
+    )

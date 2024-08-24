@@ -45,7 +45,7 @@ class Stage():
 
     expected_params : list of strings
         List containing required `params` names.
-        
+
     expected_container_keys: list of strings
         List containing required container keys.
 
@@ -61,11 +61,11 @@ class Stage():
     error_method : None or string (not enforced)
         An option to define one or more dedicated error calculation methods
         for the stage transforms or outputs
-        
+
     supported_reps : dict
         Dictionary containing the representations allowed for calc_mode and
-        apply_mode. If nothing is specified, Container.array_representations 
-        plus MultiDimBinning is assumed. Should have keys `calc_mode` and/or 
+        apply_mode. If nothing is specified, Container.array_representations
+        plus MultiDimBinning is assumed. Should have keys `calc_mode` and/or
         `apply_mode`, they will be created if not there.
 
     calc_mode : pisa.core.binning.MultiDimBinning, str, or None
@@ -91,6 +91,7 @@ class Stage():
         calc_mode=None,
         apply_mode=None,
         profile=False,
+        in_standalone_mode=True,
     ):
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
@@ -156,23 +157,33 @@ class Stage():
             supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
         self.supported_reps = supported_reps
 
-        check_representation(calc_mode, supported_reps, 'calc_mode', f"{self.stage_name}.{self.service_name}", allow_None=True)
+        check_representation(
+            rep=calc_mode, supported_reps=supported_reps, mode='calc_mode',
+            stagename=f"{self.stage_name}.{self.service_name}", allow_None=True
+        )
         self._calc_mode = calc_mode
 
-        check_representation(apply_mode, supported_reps, 'apply_mode', f"{self.stage_name}.{self.service_name}", allow_None=True)
+        check_representation(
+            rep=apply_mode, supported_reps=supported_reps, mode='apply_mode',
+            stagename=f"{self.stage_name}.{self.service_name}", allow_None=True
+        )
         self._apply_mode = apply_mode
-        
-        self.data = data
 
         self._error_method = error_method
 
         self.param_hash = None
+        """Also serves as indicator of whether setup has already been called"""
 
         self.profile = profile
         self.setup_times = []
         self.calc_times = []
         self.apply_times = []
 
+        self.in_standalone_mode = in_standalone_mode
+
+        self._original_data = None
+
+        self.data = data
 
     def __repr__(self):
         return 'Stage "%s"'%(self.__class__.__name__)
@@ -266,7 +277,28 @@ class Stage():
     def calc_mode(self, value):
         check_representation(value, self.supported_reps, 'calc_mode', f"{self.stage_name}.{self.service_name}")
         self._calc_mode = value
-        self.setup()
+        if self.in_standalone_mode and self.param_hash is not None:
+            # Only in standalone mode: repeat setup automatically only if
+            # setup has already been run; first reset `data` to pre-setup state
+            # TODO: test this scenario
+            self.data = deepcopy(self._original_data)
+            self.setup()
+        # In non-standalone (i.e., pipeline) mode, the user has to make sure
+        # they setup the pipeline again
+
+    @property
+    def data(self):
+        """data"""
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        # Keep a copy of any possible pre-setup data around whenever
+        # we are in standalone mode, and update it whenever data
+        # is updated before any call to setup()
+        if self.param_hash is None and self.in_standalone_mode:
+            self._original_data = deepcopy(value)
+        self._data = value
 
     @property
     def apply_mode(self):

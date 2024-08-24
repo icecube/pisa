@@ -302,6 +302,9 @@ def test_services(
                 # Only try event-by-event mode for now
                 set_service_modes(service, calc_mode='events', apply_mode='events')
             except Exception as err:
+                if is_allowed_import_error(err, stage_dot_service, allow_missing):
+                    stage_dot_services_failed_ignored.append(stage_dot_service)
+                    continue
                 logging.error(
                     "Failed to set `calc_mode` and `apply_mode` for "
                     f"{stage_dot_service} with msg:\n %s" % err
