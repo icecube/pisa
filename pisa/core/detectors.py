@@ -66,7 +66,7 @@ class Detectors(object):
         self._distribution_makers , self.det_names = [] , []
         for pipeline in pipelines:
             if not isinstance(pipeline, Pipeline):
-                pipeline = Pipeline(pipeline)
+                pipeline = Pipeline(pipeline, profile=profile)
             
             name = pipeline.detector_name
             if name in self.det_names:
@@ -111,7 +111,12 @@ class Detectors(object):
             
     def __iter__(self):
         return iter(self._distribution_makers)
-    
+
+    def report_profile(self, detailed=False):
+        for distribution_maker in self._distribution_makers:
+            print(distribution_maker.detector_name + ':')
+            distribution_maker.report_profile(detailed=detailed)
+
     @property
     def profile(self):
         return self._profile

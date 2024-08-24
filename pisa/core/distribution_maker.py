@@ -104,6 +104,8 @@ class DistributionMaker(object):
         for pipeline in pipelines:
             if not isinstance(pipeline, Pipeline):
                 pipeline = Pipeline(pipeline, profile=profile)
+            else:
+                pipeline.profile = profile
             self._pipelines.append(pipeline)
 
         data_run_livetime = None
@@ -214,6 +216,11 @@ class DistributionMaker(object):
 
     def __iter__(self):
         return iter(self._pipelines)
+
+    def report_profile(self, detailed=False):
+        for pipeline in self.pipelines:
+            print(pipeline.name + ':')
+            pipeline.report_profile(detailed=detailed)
 
     @property
     def profile(self):
