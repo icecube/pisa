@@ -19,15 +19,8 @@ from pisa.utils.format import arg_str_seq_none
 from pisa.utils.hash import hash_obj
 
 
-__all__ = ["check_representation", "Stage"]
+__all__ = ["Stage"]
 __author__ = "Philipp Eller, J. Lanfranchi"
-
-
-def check_representation(rep, supported_reps, mode, stagename, allow_None=False):
-    if isinstance(rep, str) and rep not in supported_reps[mode]:
-        raise ValueError(f"{mode} {rep} is not supported by {stagename}")
-    if not isinstance(rep, str) and type(rep) not in supported_reps[mode] and (rep != None or not allow_None):
-        raise ValueError(f"{mode} {type(rep)} is not supported by {stagename}")
 
 
 class Stage():
@@ -77,6 +70,11 @@ class Stage():
     profile : bool
         If True, perform timings for the setup, compute, and apply functions.
 
+    in_standalone_mode : bool
+        If True, assume stage is not part of a pipeline. Affects whether
+        `setup()` can be automatically rerun whenever `calc_mode` is
+        changed.
+
     """
 
     def __init__(
@@ -91,7 +89,7 @@ class Stage():
         calc_mode=None,
         apply_mode=None,
         profile=False,
-        in_standalone_mode=True,
+        in_standalone_mode=False,
     ):
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
@@ -121,6 +119,7 @@ class Stage():
         container within `data`"""
 
         self._source_code_hash = None
+        """Hash of the source code"""
 
         self._attrs_to_hash = set([])
         """Attributes of the stage that are to be included in its hash value"""
@@ -157,33 +156,31 @@ class Stage():
             supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
         self.supported_reps = supported_reps
 
-        check_representation(
-            rep=calc_mode, supported_reps=supported_reps, mode='calc_mode',
-            stagename=f"{self.stage_name}.{self.service_name}", allow_None=True
-        )
+        self._check_representation(rep=calc_mode, mode='calc_mode', allow_None=True)
         self._calc_mode = calc_mode
 
-        check_representation(
-            rep=apply_mode, supported_reps=supported_reps, mode='apply_mode',
-            stagename=f"{self.stage_name}.{self.service_name}", allow_None=True
-        )
+        self._check_representation(rep=apply_mode, mode='apply_mode', allow_None=True)
         self._apply_mode = apply_mode
 
         self._error_method = error_method
 
         self.param_hash = None
-        """Also serves as indicator of whether setup has already been called"""
+        """Hash of stage params. Also serves as an indicator of whether `setup()`
+        has already been called."""
 
         self.profile = profile
+        """Whether to perform timings"""
+
         self.setup_times = []
         self.calc_times = []
         self.apply_times = []
 
         self.in_standalone_mode = in_standalone_mode
-
-        self._original_data = None
+        """Whether stage is standalone or part of a pipeline"""
 
         self.data = data
+        """Data based on which stage may make computations and which it may
+        modify"""
 
     def __repr__(self):
         return 'Stage "%s"'%(self.__class__.__name__)
@@ -275,16 +272,20 @@ class Stage():
 
     @calc_mode.setter
     def calc_mode(self, value):
-        check_representation(value, self.supported_reps, 'calc_mode', f"{self.stage_name}.{self.service_name}")
-        self._calc_mode = value
-        if self.in_standalone_mode and self.param_hash is not None:
-            # Only in standalone mode: repeat setup automatically only if
-            # setup has already been run; first reset `data` to pre-setup state
-            # TODO: test this scenario
-            self.data = deepcopy(self._original_data)
-            self.setup()
-        # In non-standalone (i.e., pipeline) mode, the user has to make sure
-        # they setup the pipeline again
+        """Set `calc_mode` after checking the validity of `value`, and,
+        in standalone mode, rerun `setup()` if has already been executed at
+        least once."""
+        if value != self.calc_mode:
+            self._check_representation(rep=value, mode='calc_mode')
+            self._calc_mode = value
+            if self.in_standalone_mode and self.param_hash is not None:
+                # Only in standalone mode: repeat setup automatically only if
+                # setup has already been run; first reset `data` to pre-setup state
+                # TODO: test this scenario
+                self.data = deepcopy(self._original_data)
+                self.setup()
+            # In non-standalone (i.e., pipeline) mode, the user has to make sure
+            # they setup the pipeline again
 
     @property
     def data(self):
@@ -293,9 +294,9 @@ class Stage():
 
     @data.setter
     def data(self, value):
-        # Keep a copy of any possible pre-setup data around whenever
-        # we are in standalone mode, and update it whenever data
-        # is updated before any call to setup()
+        """Keep a copy of any possible pre-setup `data` around whenever
+        we are in standalone mode, and update it whenever `data`
+        is updated before any call to `setup()`."""
         if self.param_hash is None and self.in_standalone_mode:
             self._original_data = deepcopy(value)
         self._data = value
@@ -307,8 +308,23 @@ class Stage():
 
     @apply_mode.setter
     def apply_mode(self, value):
-        check_representation(value, self.supported_reps, 'apply_mode', f"{self.stage_name}.{self.service_name}")
-        self._apply_mode = value
+        """Set `apply_mode` after checking the validity of `value`"""
+        if value != self.apply_mode:
+            self._check_representation(rep=value, mode='apply_mode')
+            self._apply_mode = value
+
+    def _check_representation(self, rep, mode, allow_None=False):
+        if isinstance(rep, str) and rep not in self.supported_reps[mode]:
+            raise ValueError(
+                f"{mode} {rep} is not supported by {self.stage_name}"
+                f".{self.service_name}"
+            )
+        if (not isinstance(rep, str) and type(rep) not in self.supported_reps[mode]
+            and (rep is not None or not allow_None)):
+            raise ValueError(
+                f"{mode} {type(rep)} is not supported by {self.stage_name}"
+                f".{self.service_name}"
+            )
 
     def _check_exp_keys_in_data(self, error_on_missing=False):
         """Make sure that `expected_container_keys` is defined and that

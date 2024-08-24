@@ -246,7 +246,7 @@ def test_services(
             try:
                 # Without a dedicated `init_test` function, we just try to
                 # instantiate the service with std. Stage kwargs
-                service = getattr(module, service_name)()
+                service = getattr(module, service_name)(in_standalone_mode=True)
             except Exception as err:
                 logging.error(
                     f"{stage_dot_service} has no {init_test_name} function "

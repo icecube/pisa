@@ -259,9 +259,7 @@ class Pipeline(object):
                     % (stage_name, service_name, settings)
                 )
                 try:
-                    service = service_cls(
-                        **settings, profile=self._profile, in_standalone_mode=False
-                    )
+                    service = service_cls(**settings, profile=self._profile)
                 except Exception:
                     logging.error(
                         "Failed to instantiate stage.service %s.%s with settings %s",
