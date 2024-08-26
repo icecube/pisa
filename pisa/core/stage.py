@@ -363,9 +363,9 @@ class Stage():
             err_str += " but containers are missing keys: %s" % ", ".join(sorted(missing))
             if error_on_missing:
                 raise ValueError(err_str)
-            # Could be confusing until we have made setup-time check foolproof
-            logging.warn(err_str)
-
+            # TODO: warning could be confusing until we have made setup-time
+            # check foolproof
+            #logging.warn(err_str)
         return
 
     @property

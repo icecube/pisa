@@ -71,11 +71,13 @@ TEST_BINNING = MultiDimBinning([
 ])
 AUX_DATA_KEYS = ['nubar', 'flav']
 
-# TODO: define hopeless cases? define services whose tests may fail?
-# optional modules from unit tests?
-# Add in <stage>.<service> format
 SKIP_SERVICES = (
 )
+"""If no other way, add hopeless cases in <stage>.<service> format"""
+
+PFX = "[S] "
+"""Prefix each line output by this script to clearly delineate output from this
+script vs. output from test functions being run"""
 
 
 def find_services(path):
@@ -150,7 +152,7 @@ def add_test_inputs(service, empty=False):
                 container2[k] = np.linspace(0.1, 1, 10, dtype=FTYPE)
         service.data = ContainerSet('data', [container1, container2])
     else:
-        logging.debug("Creating empty test inputs...")
+        logging.debug(PFX + "Creating empty test inputs...")
         service.data = ContainerSet('data')
 
 
@@ -168,7 +170,7 @@ def is_allowed_import_error(err, module_pypath, allow_missing=OPTIONAL_MODULES):
     ):
         err_name = err.name # pylint: disable=no-member
         logging.warning(
-            f"module {err_name} failed to import while importing "
+            PFX + f"module {err_name} failed to import while importing "
             f"{module_pypath}, but ok to ignore"
         )
         return True
@@ -211,10 +213,13 @@ def test_services(
         ntries += 1
         # check whether we should skip testing this service for some reason
         if stage_dot_service in skip_services:
-            logging.warning(f"{stage_dot_service} will be ignored in service test.")
+            logging.warning(
+                PFX + f"{stage_dot_service} requested to be ignored in"
+                " service test."
+            )
             continue
 
-        logging.debug(f"Starting test for service {stage_dot_service}...")
+        logging.debug(PFX + f"Starting test for service {stage_dot_service}...")
 
         # if service module import successful, try to initialise the service
         try:
@@ -227,7 +232,7 @@ def test_services(
             stage_dot_services_failed.append(stage_dot_service)
 
             set_verbosity(verbosity)
-            msg = f"<< FAILURE IMPORTING : {module_pypath} >>"
+            msg = PFX + f"<< FAILURE IMPORTING : {module_pypath} >>"
             logging.error("=" * len(msg))
             logging.error(msg)
             logging.error("=" * len(msg))
@@ -245,7 +250,7 @@ def test_services(
                 service = getattr(module, service_name)(in_standalone_mode=True)
             except Exception as err:
                 logging.error(
-                    f"{stage_dot_service} has no {init_test_name} function "
+                    PFX + f"{stage_dot_service} has no {init_test_name} function "
                      "and could not be instantiated with standard kwargs only.\n"
                      "msg: %s" % err
                 )
@@ -258,7 +263,7 @@ def test_services(
                 service = getattr(module, init_test_name)(**param_kwargs)
             except Exception as err:
                 logging.error(
-                    f"{stage_dot_service} has an {init_test_name} function "
+                    PFX + f"{stage_dot_service} has an {init_test_name} function "
                     "which failed to instantiate the service with msg:\n %s." % err
                 )
                 stage_dot_services_failed.append(stage_dot_service)
@@ -269,8 +274,8 @@ def test_services(
             # actually return anything useful
             service_type = type(service)
             logging.error(
-                f"Did not get an initialised `Stage` instance for {stage_dot_service} "
-                f"but {service_type}!"
+                PFX + f"Did not get an initialised `Stage` instance for "
+                f"{stage_dot_service} but {service_type}!"
             )
             stage_dot_services_failed.append(stage_dot_service)
             continue
@@ -286,8 +291,8 @@ def test_services(
                 )
             except Exception as err:
                 logging.error(
-                    f"Failed to assign test inputs for {stage_dot_service} with msg:\n %s"
-                    % err
+                    PFX + f"Failed to assign test inputs for "
+                    f"{stage_dot_service} with msg:\n {err}"
                 )
                 stage_dot_services_failed.append(stage_dot_service)
                 continue
@@ -304,8 +309,8 @@ def test_services(
                     continue
             except Exception as err:
                 logging.error(
-                    "Failed to set `calc_mode` for "
-                    f"{stage_dot_service} with msg:\n %s" % err
+                    PFX + "Failed to set `calc_mode` for "
+                    f"{stage_dot_service} with msg:\n {err}"
                 )
                 stage_dot_services_failed.append(stage_dot_service)
                 continue
@@ -321,8 +326,8 @@ def test_services(
                     continue
             except Exception as err:
                 logging.error(
-                    "Failed to set `apply_mode` for "
-                    f"{stage_dot_service} with msg:\n %s" % err
+                    PFX + "Failed to set `apply_mode` for "
+                    f"{stage_dot_service} with msg:\n {err}"
                 )
                 stage_dot_services_failed.append(stage_dot_service)
                 continue
@@ -330,24 +335,33 @@ def test_services(
 
         try:
             run_service_test(service)
-            logging.info(f"{stage_dot_service} passed the test.")
+            logging.info(PFX + f"{stage_dot_service} passed the test.")
             nsuccesses += 1
         except Exception as err:
             if is_allowed_import_error(err, stage_dot_service, allow_missing):
                 stage_dot_services_failed_ignored.append(stage_dot_service)
                 continue
-            logging.error(f"{stage_dot_service} failed to setup or run with msg:\n %s." % err)
+            logging.error(
+                PFX + f"{stage_dot_service} failed to setup or run "
+                f"with msg:\n {err}."
+            )
             stage_dot_services_failed.append(stage_dot_service)
             continue
 
-    logging.info("%d out of %d tested services passed the test." % (nsuccesses, ntries))
+    logging.info(
+        PFX + f"{nsuccesses} out of {ntries} tested services passed the test."
+    )
     nfail = ntries - nsuccesses
     nfail_ignored = len(stage_dot_services_failed_ignored)
-    logging.info("%d/%d failures are fine (have been ignored)." % (nfail_ignored, nfail))
+    logging.info(
+        PFX + f"{nfail_ignored} out of {nfail} failures have been ignored."
+    )
     nfail_remain = nfail - nfail_ignored
     if nfail_remain > 0:
-        logging.error("%d failures still need to be addressed:\n" % nfail_remain +
-                      ", ".join(stage_dot_services_failed))
+        logging.error(
+            PFX + f"{nfail_remain} failures still need to be addressed:\n" +
+            ", ".join(stage_dot_services_failed)
+        )
 
 
 def parse_args(description=__doc__):
@@ -367,7 +381,7 @@ def main():
     kwargs = vars(args)
     kwargs["verbosity"] = kwargs.pop("v")
     test_services(**kwargs)
-    logging.info('Services testing done.')
+    logging.info(PFX + 'Services testing done.')
 
 
 if __name__ == "__main__":

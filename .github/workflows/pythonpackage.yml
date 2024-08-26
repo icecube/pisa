@@ -38,6 +38,9 @@ jobs:
       run: |
         pip install pytest
         PISA_FTYPE=fp32 PISA_TARGET=cpu MPLBACKEND=agg ./pisa_tests/test_example_pipelines.py -v
+    - name: Test PISA services
+      run: |
+        PISA_FTYPE=fp32 PISA_TARGET=cpu MPLBACKEND=agg ./pisa_tests/test_services.py -v
     - name: Test PISA imports and unit tests, double precision
       run: |
         pip install pytest
