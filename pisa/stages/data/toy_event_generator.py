@@ -112,4 +112,4 @@ def init_test(**param_kwargs):
         Param(name='random', value=1, **param_kwargs),
         Param(name='seed', value=666, **param_kwargs),
     ])
-    return toy_event_generator(output_names=['nu_me', 'nu_you'], params=param_set)
+    return toy_event_generator(output_names=['numu', 'nue_bar'], params=param_set)

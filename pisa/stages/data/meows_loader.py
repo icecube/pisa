@@ -10,6 +10,7 @@ import h5py as h5
 from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.core.container import Container
+from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
 
 
@@ -36,7 +37,7 @@ class meows_loader(Stage):  # pylint: disable=invalid-name
         We load the first data in specifically to setup the containers, and afterwards go through appending to the end of those arrays
         """
 
-        print("Loading data...", end="")
+        logging.debug("Loading MEOWS data...")
         st = time()
         raw_data = h5.File(find_resource(self.events_file), "r")
 
@@ -89,7 +90,7 @@ class meows_loader(Stage):  # pylint: disable=invalid-name
             self.data.add_container(container)
 
         ed = time()
-        print(" done! Took {} minutes".format((ed - st) / 60))
+        logging.debug("Done! Took {} minutes".format((ed - st) / 60))
         raw_data.close()
 
     def apply_function(self):
@@ -99,3 +100,34 @@ class meows_loader(Stage):  # pylint: disable=invalid-name
         for container in self.data:
             container["weights"] = np.copy(container["initial_weights"])
             container["astro_weights"] = np.copy(container["initial_weights"])
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    import os
+    from pisa import CACHE_DIR
+    from pisa.utils.fileio import to_file
+    from pisa.utils.random_numbers import get_random_state
+
+    expected_events_keys = [
+        'oneweight', 'TotalColumnDepth', 'FinalStateX', 'FinalStateY',
+        'NuEnergy', 'NuZenith', 'MuExEnergy', 'MuExZenith', 'pid', 'PrimaryType'
+    ]
+    # note: n_files seems to be completely irrelevant to the service
+    n_files = 2024
+    random_state = get_random_state(n_files)
+    n_evts = 48
+    raw_data = {}
+    for k in expected_events_keys:
+        if k == 'PrimaryType':
+            # make valid PDG nu type/flavour codes
+            raw_data[k] = [-12, 14, 12, 16, -14, -16] * 8
+        else:
+            raw_data[k] = random_state.random(n_evts).astype(FTYPE)
+
+    fpath = os.path.join(CACHE_DIR, 'meows_loader_test_file.hdf5')
+    to_file(raw_data, fpath, warn=False)
+
+    return meows_loader(
+        events_file=fpath, n_files=n_files, output_names=['nue', 'nutau_bar']
+    )
