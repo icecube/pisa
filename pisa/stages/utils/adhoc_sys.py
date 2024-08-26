@@ -108,7 +108,7 @@ def init_test(**param_kwargs):
     scales = get_random_state(0).random(len(bin_edges)-1).astype(dtype=FTYPE)
     scaling_dict = {var: {'binning':  var_binning, 'scales': scales}}
     scale_fpath = os.path.join(CACHE_DIR, 'test_scale_file.json')
-    to_file(scaling_dict, scale_fpath)
+    to_file(scaling_dict, scale_fpath, warn=False)
 
     return adhoc_sys(
         variable_name=var, scale_file=scale_fpath,

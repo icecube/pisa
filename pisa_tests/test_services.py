@@ -141,7 +141,7 @@ def add_test_inputs(service, empty=False):
             if k in AUX_DATA_KEYS:
                 container1.set_aux_data(k, ITYPE(1))
                 container2.set_aux_data(k, ITYPE(1))
-            elif k == 'nu_flux':
+            elif k in ['nu_flux', 'nu_flux_nominal', 'nubar_flux_nominal']:
                 container1[k] = random_state.random((10, 2)).astype(dtype=FTYPE)
                 container2[k] = random_state.random((10, 2)).astype(dtype=FTYPE)
             elif k.endswith('mask'):

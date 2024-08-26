@@ -99,9 +99,10 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
         signal_container = Container('signal')
         signal_container.representation = 'events'
         # Populate the signal physics quantity over a uniform range
-        signal_initial  = np.random.uniform(low=self.params.bkg_min.value.m,
-                                               high=self.params.bkg_max.value.m,
-                                               size=self.nsig)
+        signal_initial  = np.random.uniform(
+            low=self.params.bkg_min.value.m, high=self.params.bkg_max.value.m,
+            size=self.nsig
+        )
 
         # guys, seriouslsy....?! "stuff"??
         signal_container['stuff'] = signal_initial
@@ -219,14 +220,22 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
 
 def init_test(**param_kwargs):
     """Initialisation example"""
+    from pisa.core.binning import OneDimBinning
+    bkg_min, bkg_max = 50., 100.
     param_set = ParamSet([
         Param(name='n_events_data', value=5512, **param_kwargs),
         Param(name='stats_factor', value=1.0, **param_kwargs),
         Param(name='signal_fraction', value=0.05, **param_kwargs),
-        Param(name='bkg_min', value=50., **param_kwargs),
-        Param(name='bkg_max', value=100., **param_kwargs),
+        Param(name='bkg_min', value=bkg_min, **param_kwargs),
+        Param(name='bkg_max', value=bkg_max, **param_kwargs),
         Param(name='mu', value=75., **param_kwargs),
         Param(name='sigma', value=8.5, **param_kwargs),
     ])
-
-    return simple_signal(params=param_set)
+    test_binning = MultiDimBinning(
+        name='simple_signal_test_binning',
+        dimensions=[OneDimBinning(
+            name='stuff', bin_edges=[bkg_min, bkg_max],
+            is_lin=True)
+        ]
+    )
+    return simple_signal(params=param_set, apply_mode=test_binning)
