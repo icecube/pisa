@@ -47,15 +47,21 @@ class adhoc_sys(Stage):  # pylint: disable=invalid-name
     ):
 
         expected_params = ()
-        
-        expected_container_keys = (
-            'weights',
-        )
+
+        expected_container_keys = [
+            'weights', variable_name
+        ]
+
+        supported_reps = {
+            'calc_mode': 'events',
+            'apply_mode': 'events'
+        }
 
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
@@ -86,8 +92,25 @@ class adhoc_sys(Stage):  # pylint: disable=invalid-name
 
 def init_test(**param_kwargs):
     """Instantiation example"""
-    #FIXME: create temporary scale file on the fly?
+    import os
+    from pisa import CACHE_DIR
+    from pisa.core.binning import OneDimBinning
+    from pisa.utils.fileio import to_file
+    from pisa.utils.random_numbers import get_random_state
+
+    # create temporary scale file on the fly
+    var = 'reco_length'
+    bin_edges = [0, 0.5, 1.0]
+    var_binning = MultiDimBinning(
+        name='adhoc_sys_test_binning',
+        dimensions=[OneDimBinning(name=var, bin_edges=bin_edges, is_lin=True)]
+    )
+    scales = get_random_state(0).random(len(bin_edges)-1).astype(dtype=FTYPE)
+    scaling_dict = {var: {'binning':  var_binning, 'scales': scales}}
+    scale_fpath = os.path.join(CACHE_DIR, 'test_scale_file.json')
+    to_file(scaling_dict, scale_fpath)
+
     return adhoc_sys(
-        variable_name='annoying_sys', scale_file='.json',
+        variable_name=var, scale_file=scale_fpath,
         calc_mode='events', apply_mode='events'
     )
