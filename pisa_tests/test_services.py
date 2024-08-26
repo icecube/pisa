@@ -18,6 +18,7 @@ from os import walk
 from os.path import isfile, join, relpath
 
 import numpy as np
+import sys
 
 from pisa import CTYPE, FTYPE, ITYPE, ureg
 from pisa.core.binning import OneDimBinning, MultiDimBinning
@@ -40,7 +41,8 @@ __all__ = [
     "find_services_in_file",
     "get_stage_dot_service_from_module_pypath",
     "add_test_inputs",
-    "is_allowed_import_error"
+    "is_allowed_import_error",
+    "set_service_attributes"
 ]
 
 __author__ = "T. Ehrhardt, J. Weldert"
@@ -72,6 +74,7 @@ TEST_BINNING = MultiDimBinning([
 AUX_DATA_KEYS = ['nubar', 'flav']
 
 SKIP_SERVICES = (
+    'osc.external',
 )
 """If no other way, add hopeless cases in <stage>.<service> format"""
 
@@ -156,6 +159,17 @@ def add_test_inputs(service, empty=False):
         service.data = ContainerSet('data')
 
 
+def set_service_attributes(service, stage_dot_service):
+    """For services requiring special treatment before `setup()` or `run()`"""
+    if stage_dot_service == 'osc.external':
+        # TODO: `osc_prob` callable and `external_params` required by callable have to
+        # be set after init, where call signature is
+        # self.osc_prob(energies, distances, self.external_params, is_anti, densities, densities_neutron_weighted)...
+        #service.osc_prob = ....
+        #service.external_params = ...
+        pass
+
+
 def run_service_test(service):
     """Try to set up and run the `Stage` instance `service`"""
     service.setup()
@@ -210,7 +224,6 @@ def test_services(
         module_pypath = f"{parent_pypath}.{module_name}"
         stage_dot_service = get_stage_dot_service_from_module_pypath(module_pypath)
 
-        ntries += 1
         # check whether we should skip testing this service for some reason
         if stage_dot_service in skip_services:
             logging.warning(
@@ -220,6 +233,7 @@ def test_services(
             continue
 
         logging.debug(PFX + f"Starting test for service {stage_dot_service}...")
+        ntries += 1
 
         # if service module import successful, try to initialise the service
         try:
@@ -332,6 +346,15 @@ def test_services(
                 stage_dot_services_failed.append(stage_dot_service)
                 continue
 
+        try:
+            set_service_attributes(service, stage_dot_service)
+        except Exception as err:
+            logging.error(
+                PFX + "Failed to set attributes for "
+                f"{stage_dot_service} with msg:\n {err}"
+            )
+            stage_dot_services_failed.append(stage_dot_service)
+            continue
 
         try:
             run_service_test(service)
@@ -358,9 +381,11 @@ def test_services(
     )
     nfail_remain = nfail - nfail_ignored
     if nfail_remain > 0:
-        logging.error(
+        sys.stdout.flush()
+        sys.stderr.write("\n\n\n")
+        raise Exception(
             PFX + f"{nfail_remain} failures still need to be addressed:\n" +
-            ", ".join(stage_dot_services_failed)
+            ", ".join(stage_dot_services_failed) + "\n\n\n"
         )
 
 
