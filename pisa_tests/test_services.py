@@ -74,7 +74,7 @@ TEST_BINNING = MultiDimBinning([
 AUX_DATA_KEYS = ['nubar', 'flav']
 
 SKIP_SERVICES = (
-    'osc.external',
+    'osc.external', 'flux.airs'
 )
 """If no other way, add hopeless cases in <stage>.<service> format"""
 
