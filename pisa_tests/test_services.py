@@ -232,7 +232,7 @@ def test_services(
             )
             continue
 
-        logging.debug(PFX + f"Starting test for service {stage_dot_service}...")
+        logging.info(PFX + f"Starting test for service {stage_dot_service}...")
         ntries += 1
 
         # if service module import successful, try to initialise the service
@@ -313,6 +313,7 @@ def test_services(
 
         #if service.data is not None: # we should never be in this state here
         if service.calc_mode is None:
+            logging.debug(PFX + "Setting calc_mode ...")
             try:
                 service.calc_mode = 'events'
             except ValueError:
@@ -330,6 +331,7 @@ def test_services(
                 continue
 
         if service.apply_mode is None:
+            logging.debug(PFX + "Setting apply_mode ...")
             try:
                 service.apply_mode = 'events'
             except ValueError:
@@ -357,6 +359,7 @@ def test_services(
             continue
 
         try:
+            logging.debug(PFX + "Setting up and running service...")
             run_service_test(service)
             logging.info(PFX + f"{stage_dot_service} passed the test.")
             nsuccesses += 1
