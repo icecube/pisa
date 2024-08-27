@@ -407,7 +407,7 @@ class Container():
         
         if self.is_map:
             if key in self.representation.names:
-                raise Exception('Cannot add variable {key}, as it is a binning dimension')
+                raise Exception(f'Cannot add variable {key}, as it is a binning dimension')
         
         self.__add_data(key, data)                
         if not key in self.tranlation_modes.keys():

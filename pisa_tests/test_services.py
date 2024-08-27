@@ -75,8 +75,6 @@ AUX_DATA_KEYS = ['nubar', 'flav']
 
 SKIP_SERVICES = (
     'osc.external',
-    'data.sqlite_loader',
-    'data.freedom_hdf5_loader'
 )
 """If no other way, add hopeless cases in <stage>.<service> format"""
 

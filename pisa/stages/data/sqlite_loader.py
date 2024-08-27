@@ -141,3 +141,33 @@ class sqlite_loader(Stage):  # pylint: disable=invalid-name
     def apply_function(self):
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    import os
+    from pisa import CACHE_DIR
+    from pisa.utils.random_numbers import get_random_state
+
+    fpath = os.path.join(CACHE_DIR, 'sqlite_loader_test_file')
+
+    if not os.path.isfile(fpath):
+        random_state = get_random_state(42)
+        n_evts = 10
+        true_data, reco_data = [], []
+        for i in range(n_evts):
+            event = list(random_state.random(4).astype(float))
+            event += [i, n_evts, 1, 14, 1, 0]
+            true_data.append(tuple(event))
+            event = list(random_state.random(3).astype(float))
+            event += [i]
+            reco_data.append(tuple(event))
+
+        with sqlite3.connect(fpath) as con:
+            cur = con.cursor()
+            cur.execute("CREATE TABLE truth(energy, zenith, OneWeight, gen_ratio, event_no, NEvents, interaction_type, pid, RunID, SubrunID)")
+            cur.executemany("INSERT INTO truth VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", true_data)
+            cur.execute("CREATE TABLE reconstruction(energy_pred, zenith_pred, track_pred, event_no)")
+            cur.executemany("INSERT INTO reconstruction VALUES(?, ?, ?, ?)", reco_data)
+
+    return sqlite_loader(database=fpath, output_names=['numu_cc'])
