@@ -5,6 +5,7 @@ that represent event counts
 from copy import deepcopy
 
 import numpy as np
+from time import time
 
 from pisa.core.stage import Stage
 from pisa.core.binning import MultiDimBinning, OneDimBinning
@@ -132,11 +133,21 @@ class kde(Stage):  # pylint: disable=invalid-name
 
     @profile
     def apply(self):
-        # this is special, we want the actual event weights in the kde
-        # therefor we're overwritting the apply function
-        # normally in a stage you would implement the `apply_function` method
-        # and not the `apply` method!
+        """This is special, we want the actual event weights in the kde
+        therefor we're overwritting the apply function
+        normally in a stage you would implement the `apply_function` method
+        and not the `apply` method! We also have to reimplement the profiling
+        functionality in apply of the Base class"""
 
+        if self.profile:
+            start_t = time()
+            self.apply_function()
+            end_t = time()
+            self.apply_times.append(end_t - start_t)
+        else:
+            self.apply_function()
+
+    def apply_function(self):
         for container in self.data:
 
             if self.stash_valid:

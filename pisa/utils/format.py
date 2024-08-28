@@ -1267,6 +1267,25 @@ def format_num(
     return left_delimiter + num_str + right_delimiter
 
 
+def format_times(times):
+    """Helper function used to report sum and average of times
+    in `times` sequence as well as its length (representing number
+    of calls of some function).
+
+    Parameters
+    ----------
+    times : Sequence
+
+    Returns
+    -------
+    formatted : string
+    """
+    tot = np.sum(times)
+    n = len(times)
+    ave = 0. if n == 0 else tot/n
+    return 'Total time %.5f s, n calls: %i, time/call: %.5f s'%(tot, n, ave)
+
+
 def test_format_num():
     """Unit tests for the `format_num` function"""
     # sci_thresh

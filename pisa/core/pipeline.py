@@ -17,6 +17,7 @@ from itertools import product
 from inspect import getsource
 import os
 from tabulate import tabulate
+from time import time
 import traceback
 
 import numpy as np
@@ -30,6 +31,7 @@ from pisa.core.container import ContainerSet
 from pisa.core.binning import MultiDimBinning
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
+from pisa.utils.format import format_times
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
@@ -107,6 +109,9 @@ class Pipeline(object):
         self.output_key = config['pipeline']['output_key']
 
         self._profile = profile
+        self._setup_times = []
+        self._run_times = []
+        self._get_outputs_times = []
 
         self._stages = []
         self._config = config
@@ -141,6 +146,17 @@ class Pipeline(object):
         return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
 
     def report_profile(self, detailed=False):
+        print(f'Pipeline: {self.name}')
+        print('- setup: ', format_times(self._setup_times))
+        if detailed:
+            print('         Individual runs: ', ', '.join(['%i: %.3f s' % (i, t) for i, t in enumerate(self._setup_times)]))
+        print('- run:  ', format_times(self._run_times))
+        if detailed:
+            print('         Individual runs: ', ', '.join(['%i: %.3f s' % (i, t) for i, t in enumerate(self._run_times)]))
+        print('- get_outputs:  ', format_times(self._get_outputs_times))
+        if detailed:
+            print('         Individual runs: ', ', '.join(['%i: %.3f s' % (i, t) for i, t in enumerate(self._get_outputs_times)]))
+        print('Individual services:')
         for stage in self.stages:
             stage.report_profile(detailed=detailed)
 
@@ -315,7 +331,19 @@ class Pipeline(object):
 
         self.setup()
 
-    def get_outputs(self, output_binning=None, output_key=None):
+    def get_outputs(self, **get_outputs_kwargs):
+        """Wrapper around `_get_outputs`. The latter might
+        have quite some overhead compared to `run` alone"""
+        if self.profile:
+            start_t = time()
+            outputs = self._get_outputs(**get_outputs_kwargs)
+            end_t = time()
+            self._get_outputs_times.append(end_t - start_t)
+        else:
+            outputs = self._get_outputs(**get_outputs_kwargs)
+        return outputs
+        
+    def _get_outputs(self, output_binning=None, output_key=None):
         """Get MapSet output"""
 
 
@@ -393,12 +421,32 @@ class Pipeline(object):
         return success
 
     def run(self):
+        """Wrapper around `_run_function`"""
+        if self.profile:
+            start_t = time()
+            self._run_function()
+            end_t = time()
+            self._run_times.append(end_t - start_t)
+        else:
+            self._run_function()
+
+    def _run_function(self):
         """Run the pipeline to compute"""
         for stage in self.stages:
             logging.debug(f"Working on stage {stage.stage_name}.{stage.service_name}")
             stage.run()
 
     def setup(self):
+        """Wrapper around `_setup_function`"""
+        if self.profile:
+            start_t = time()
+            self._setup_function()
+            end_t = time()
+            self._setup_times.append(end_t - start_t)
+        else:
+            self._setup_function()
+
+    def _setup_function(self):
         """Setup (reset) all stages"""
         self.data = ContainerSet(self.name)
         for stage in self.stages:

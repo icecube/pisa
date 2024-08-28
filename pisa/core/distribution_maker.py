@@ -219,7 +219,6 @@ class DistributionMaker(object):
 
     def report_profile(self, detailed=False):
         for pipeline in self.pipelines:
-            print(pipeline.name + ':')
             pipeline.report_profile(detailed=detailed)
 
     @property
@@ -232,8 +231,8 @@ class DistributionMaker(object):
             pipeline.profile = value
         self._profile = value
 
-
     def run(self):
+        """Run all pipelines"""
         for pipeline in self:
             pipeline.run()
 
