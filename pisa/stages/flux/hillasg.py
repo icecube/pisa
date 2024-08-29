@@ -134,9 +134,43 @@ class hillasg(Stage):  # pylint: disable=invalid-name
 
 def init_test(**param_kwargs):
     """Instantiation example"""
+    import os
+    from pisa import CACHE_DIR
+    
+    fpath = os.path.join(CACHE_DIR, 'dummy_hillas_test_flux-aa.d')
+    if not os.path.isfile(fpath):
+        def form(val:float)->str:
+            return '%1.4E'%abs(val)
+
+        costh_nodes = np.linspace(-1,1,20)
+        energy_nodes = np.logspace(-1.05, 10.95, 121)
+
+        hundred_e = np.linspace(np.log10(min(energy_nodes)), np.log10(max(energy_nodes)), 100)
+        hundred_ct = np.linspace(-1, 1, 101)[::-1]
+
+        outfile = open(fpath, 'wt', encoding='utf-8', buffering=1)
+        for _i_theta in range(len(hundred_ct)):
+            i_theta = len(hundred_ct) - _i_theta - 1
+            if i_theta==0:
+                continue
+
+            sp1 = " " if hundred_ct[i_theta]>=0 else ""
+            sp2 = " " if hundred_ct[i_theta-1]>=0 else ""
+            outfile.write("average flux in [cosZ ={}{:.2f} -- {}{:.2f}, phi_Az =   0 -- 360]\n".format(sp1,hundred_ct[i_theta], sp2,hundred_ct[i_theta-1]))
+            outfile.write(" Enu(GeV)   NuMu       NuMubar    NuE        NuEbar     NuTau      NuTauBar   (m^2 sec sr GeV)^-1\n")
+
+            for i_e in range(len(hundred_e)):
+                outfile.write(" "+form(10**hundred_e[i_e]))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write("\n")
+        outfile.close()
+
     param_set = ParamSet([
-        Param(name='flux_table',
-              value='meows_sterile/resources/fluxes/pr_hillas_h3a_SIBYLL23C_AIRS_nominalize-aa.d',
-              **param_kwargs),
+        Param(name='flux_table', value=fpath, **param_kwargs),
     ])
     return hillasg(params=param_set)
