@@ -158,6 +158,15 @@ class Pipeline(object):
              Will display each number with three decimal digits by default.
 
         """
+        if not self.profile:
+            # Report warning only at the pipeline level, which is what the
+            # typical user should come across. Assume that users calling
+            # `report_profile` on a `Stage` instance directly know what they're
+            # doing.
+            logging.warn(
+                '`profile` is set to False. Results may not show the expected '
+                'numbers of function calls.'
+            )
         if format_num_kwargs is None:
             format_num_kwargs = {
                 'precision': 1e-3, 'fmt': 'full', 'trailing_zeros': True
