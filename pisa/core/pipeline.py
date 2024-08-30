@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 from argparse import ArgumentParser
 from collections import OrderedDict
+from collections.abc import Mapping
 from configparser import NoSectionError
 from copy import deepcopy
 from importlib import import_module
@@ -145,20 +146,37 @@ class Pipeline(object):
             table[-1] += [len(s.params.fixed), len(s.params.free)]
         return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
 
-    def report_profile(self, detailed=False):
+    def report_profile(self, detailed=False, format_num_kwargs=None):
+        """Report timing information on pipeline and contained services
+
+        Parameters
+        ----------
+        detailed : bool, default False
+            Whether to increase level of detail
+        format_num_kwargs : dict, optional
+            Dictionary containing arguments passed to `utils.format.format_num`.
+             Will display each number with three decimal digits by default.
+
+        """
+        if format_num_kwargs is None:
+            format_num_kwargs = {
+                'precision': 1e-3, 'fmt': 'full', 'trailing_zeros': True
+            }
+        assert isinstance(format_num_kwargs, Mapping)
         print(f'Pipeline: {self.name}')
-        print('- setup: ', format_times(self._setup_times))
-        if detailed:
-            print('         Individual runs: ', ', '.join(['%i: %.3f s' % (i, t) for i, t in enumerate(self._setup_times)]))
-        print('- run:  ', format_times(self._run_times))
-        if detailed:
-            print('         Individual runs: ', ', '.join(['%i: %.3f s' % (i, t) for i, t in enumerate(self._run_times)]))
-        print('- get_outputs:  ', format_times(self._get_outputs_times))
-        if detailed:
-            print('         Individual runs: ', ', '.join(['%i: %.3f s' % (i, t) for i, t in enumerate(self._get_outputs_times)]))
+        for func_str, times in [
+            ('- setup:       ', self._setup_times),
+            ('- run:         ', self._run_times),
+            ('- get_outputs: ', self._get_outputs_times)
+        ]:
+            print(func_str,
+                format_times(times=times,
+                             nindent_detailed=len(func_str) + 1,
+                             detailed=detailed, **format_num_kwargs)
+            )
         print('Individual services:')
         for stage in self.stages:
-            stage.report_profile(detailed=detailed)
+            stage.report_profile(detailed=detailed, **format_num_kwargs)
 
     @property
     def profile(self):

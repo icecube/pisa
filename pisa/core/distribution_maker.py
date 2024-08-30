@@ -11,7 +11,6 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 from collections.abc import Mapping
 import inspect
-from itertools import product
 import os
 from tabulate import tabulate
 
@@ -105,7 +104,10 @@ class DistributionMaker(object):
             if not isinstance(pipeline, Pipeline):
                 pipeline = Pipeline(pipeline, profile=profile)
             else:
-                pipeline.profile = profile
+                if profile:
+                    # Only propagate if set to `True` (don't allow negative
+                    # default to negate any original choice for the instance)
+                    pipeline.profile = profile
             self._pipelines.append(pipeline)
 
         data_run_livetime = None
@@ -217,9 +219,14 @@ class DistributionMaker(object):
     def __iter__(self):
         return iter(self._pipelines)
 
-    def report_profile(self, detailed=False):
+    def report_profile(self, detailed=False, format_num_kwargs=None):
+        """Report timing information on contained pipelines.
+        See `Pipeline.report_profile` for details.
+        """
         for pipeline in self.pipelines:
-            pipeline.report_profile(detailed=detailed)
+            pipeline.report_profile(
+                detailed=detailed, format_num_kwargs=format_num_kwargs
+            )
 
     @property
     def profile(self):
@@ -547,6 +554,22 @@ def test_DistributionMaker():
         #current_hier = new_hier
         #current_mat = new_mat
 
+    # test profile flag
+    p_cfg = 'settings/pipeline/example.cfg'
+    p = Pipeline(p_cfg, profile=True)
+    dm = DistributionMaker(pipelines=p)
+    # default init using Pipeline instance shouldn't negate
+    assert dm.pipelines[0].profile
+    # but explicit request should
+    dm.profile = False
+    assert not dm.pipelines[0].profile
+    # now init from cfg path and request profile
+    dm = DistributionMaker(pipelines=p_cfg, profile=True)
+    assert dm.pipelines[0].profile
+    # explicitly request no profile
+    dm = DistributionMaker(pipelines=p_cfg, profile=False)
+    assert not dm.pipelines[0].profile
+
 
 def parse_args():
     """Get command line arguments"""
@@ -632,4 +655,4 @@ def main(return_outputs=False):
 
 
 if __name__ == '__main__':
-    distribution_maker, outputs = main(return_outputs=True) # pylint: disable=invalid-name
+    distribution_maker, outputs = main(return_outputs=True)
