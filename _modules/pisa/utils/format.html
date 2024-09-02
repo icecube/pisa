@@ -327,18 +327,22 @@
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.format.arg_str_seq_none">[docs]</a>
 <span class="k">def</span> <span class="nf">arg_str_seq_none</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple input handler.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    inputs : None, string, or iterable of strings</span>
 <span class="sd">        Input value(s) provided by caller</span>
 <span class="sd">    name : string</span>
 <span class="sd">        Name of input, used for producing a meaningful error message</span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    inputs : None, or list of strings</span>
+
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    TypeError if unrecognized type</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">inputs</span><span class="p">]</span>
@@ -1409,6 +1413,52 @@
 
     <span class="k">return</span> <span class="n">left_delimiter</span> <span class="o">+</span> <span class="n">num_str</span> <span class="o">+</span> <span class="n">right_delimiter</span></div>
 
+
+
+<span class="k">def</span> <span class="nf">format_times</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">nindent_detailed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Report statistics derived from a sample of run times,</span>
+<span class="sd">    whose size may represent the number of calls to some function,</span>
+<span class="sd">    using a custom number format.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    times : Sequence of float</span>
+<span class="sd">        Sequence of run times</span>
+<span class="sd">    nindent_detailed : int, optional</span>
+<span class="sd">        Number of spaces for indentation of detailed info</span>
+<span class="sd">    detailed : bool, default False</span>
+<span class="sd">        Whether to output every individual run time also</span>
+<span class="sd">    **format_num_kwargs : dict, optional</span>
+<span class="sd">        Arguments to `format_num`: refer to its documentation for</span>
+<span class="sd">        the list of all possible arguments.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    formatted : str</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
+    <span class="n">tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;n calls: 0&#39;</span>
+    <span class="n">ave</span> <span class="o">=</span> <span class="n">format_num</span><span class="p">(</span><span class="n">tot</span><span class="o">/</span><span class="n">n</span><span class="p">,</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">)</span>
+    <span class="n">tot</span> <span class="o">=</span> <span class="n">format_num</span><span class="p">(</span><span class="n">tot</span><span class="p">,</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">)</span>
+    <span class="n">max_time</span> <span class="o">=</span> <span class="n">format_num</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">times</span><span class="p">),</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">)</span>
+    <span class="n">min_time</span> <span class="o">=</span> <span class="n">format_num</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">times</span><span class="p">),</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">)</span>
+    <span class="n">formatted</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Total time (s): </span><span class="si">{</span><span class="n">tot</span><span class="si">}</span><span class="s1">, n calls: </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">formatted</span> <span class="o">+=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;, time/call (s): mean </span><span class="si">{</span><span class="n">ave</span><span class="si">}</span><span class="s1">, max. </span><span class="si">{</span><span class="n">max_time</span><span class="si">}</span><span class="s1">, min. </span><span class="si">{</span><span class="n">min_time</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">detailed</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nindent_detailed</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="n">formatted</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">*</span> <span class="n">nindent_detailed</span> <span class="o">+</span> <span class="s1">&#39;Individual runs: &#39;</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
+                <span class="n">formatted</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">: </span><span class="si">%s</span><span class="s1"> s, &#39;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">i</span><span class="p">,</span> <span class="n">format_num</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">)</span>
+                <span class="p">)</span>
+    <span class="k">return</span> <span class="n">formatted</span>
 
 
 <div class="viewcode-block" id="test_format_num">

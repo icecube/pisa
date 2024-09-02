@@ -85,6 +85,7 @@
 
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
 <span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">NoSectionError</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span> <span class="nn">importlib</span> <span class="kn">import</span> <span class="n">import_module</span>
@@ -92,6 +93,7 @@
 <span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">getsource</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -105,6 +107,7 @@
 <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">PISAConfigParser</span><span class="p">,</span> <span class="n">parse_pipeline_config</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">mkdir</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">format_times</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
@@ -184,6 +187,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">output_key</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;output_key&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span> <span class="o">=</span> <span class="n">profile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_times</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_times</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_outputs_times</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_stages</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">config</span>
@@ -222,9 +228,46 @@
 
 <div class="viewcode-block" id="Pipeline.report_profile">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.report_profile">[docs]</a>
-    <span class="k">def</span> <span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">format_num_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Report timing information on pipeline and contained services</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        detailed : bool, default False</span>
+<span class="sd">            Whether to increase level of detail</span>
+<span class="sd">        format_num_kwargs : dict, optional</span>
+<span class="sd">            Dictionary containing arguments passed to `utils.format.format_num`.</span>
+<span class="sd">             Will display each number with three decimal digits by default.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">:</span>
+            <span class="c1"># Report warning only at the pipeline level, which is what the</span>
+            <span class="c1"># typical user should come across. Assume that users calling</span>
+            <span class="c1"># `report_profile` on a `Stage` instance directly know what they&#39;re</span>
+            <span class="c1"># doing.</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s1">&#39;`profile` is set to False. Results may not show the expected &#39;</span>
+                <span class="s1">&#39;numbers of function calls.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">format_num_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">format_num_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;precision&#39;</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="s1">&#39;fmt&#39;</span><span class="p">:</span> <span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;trailing_zeros&#39;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">}</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">format_num_kwargs</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Pipeline: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">func_str</span><span class="p">,</span> <span class="n">times</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s1">&#39;- setup:       &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setup_times</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;- run:         &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_times</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;- get_outputs: &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_outputs_times</span><span class="p">)</span>
+        <span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">func_str</span><span class="p">,</span>
+                <span class="n">format_times</span><span class="p">(</span><span class="n">times</span><span class="o">=</span><span class="n">times</span><span class="p">,</span>
+                             <span class="n">nindent_detailed</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">func_str</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                             <span class="n">detailed</span><span class="o">=</span><span class="n">detailed</span><span class="p">,</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Individual services:&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
-            <span class="n">stage</span><span class="o">.</span><span class="n">report_profile</span><span class="p">(</span><span class="n">detailed</span><span class="o">=</span><span class="n">detailed</span><span class="p">)</span></div>
+            <span class="n">stage</span><span class="o">.</span><span class="n">report_profile</span><span class="p">(</span><span class="n">detailed</span><span class="o">=</span><span class="n">detailed</span><span class="p">,</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">)</span></div>
 
 
     <span class="nd">@property</span>
@@ -403,7 +446,20 @@
 
 <div class="viewcode-block" id="Pipeline.get_outputs">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.get_outputs">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_binning</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">get_outputs_kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper around `_get_outputs`. The latter might</span>
+<span class="sd">        have quite some overhead compared to `run` alone&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">:</span>
+            <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_outputs</span><span class="p">(</span><span class="o">**</span><span class="n">get_outputs_kwargs</span><span class="p">)</span>
+            <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_outputs_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_outputs</span><span class="p">(</span><span class="o">**</span><span class="n">get_outputs_kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">outputs</span></div>
+
+        
+    <span class="k">def</span> <span class="nf">_get_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_binning</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get MapSet output&quot;&quot;&quot;</span>
 
 
@@ -426,8 +482,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_mapset</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">outputs</span></div>
-
+        <span class="k">return</span> <span class="n">outputs</span>
 
 <div class="viewcode-block" id="Pipeline.add_covariance">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.add_covariance">[docs]</a>
@@ -487,21 +542,41 @@
 <div class="viewcode-block" id="Pipeline.run">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.run">[docs]</a>
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper around `_run_function`&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">:</span>
+            <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_function</span><span class="p">()</span>
+            <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_function</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_run_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the pipeline to compute&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Working on stage </span><span class="si">{</span><span class="n">stage</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">stage</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">stage</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
-
+            <span class="n">stage</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Pipeline.setup">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.setup">[docs]</a>
     <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper around `_setup_function`&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">:</span>
+            <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_function</span><span class="p">()</span>
+            <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_function</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup (reset) all stages&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">ContainerSet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
             <span class="n">stage</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
-            <span class="n">stage</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span></div>
-
+            <span class="n">stage</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Pipeline.update_params">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.update_params">[docs]</a>

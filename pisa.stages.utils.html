@@ -328,7 +328,18 @@ binning range, otherwise events will only “bleed out”</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.utils.kde.kde.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/kde.html#kde.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.kde.kde.apply" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>This is special, we want the actual event weights in the kde
+therefor we’re overwritting the apply function
+normally in a stage you would implement the <cite>apply_function</cite> method
+and not the <cite>apply</cite> method! We also have to reimplement the profiling
+functionality in apply of the Base class</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.utils.kde.kde.apply_function">
+<span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/kde.html#kde.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.kde.kde.apply_function" title="Link to this definition"></a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.utils.kde.kde.setup_function">

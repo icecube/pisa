@@ -86,7 +86,6 @@
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
 
@@ -181,6 +180,11 @@
         <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="n">pipelines</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pipeline</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">):</span>
                 <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">pipeline</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
+                    <span class="c1"># Only propagate if set to `True` (don&#39;t allow negative</span>
+                    <span class="c1"># default to negate any original choice for the instance)</span>
+                    <span class="n">pipeline</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">profile</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pipelines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 
         <span class="n">data_run_livetime</span> <span class="o">=</span> <span class="kc">None</span>
@@ -295,6 +299,18 @@
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pipelines</span><span class="p">)</span>
 
+<div class="viewcode-block" id="DistributionMaker.report_profile">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.report_profile">[docs]</a>
+    <span class="k">def</span> <span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">format_num_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Report timing information on contained pipelines.</span>
+<span class="sd">        See `Pipeline.report_profile` for details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pipelines</span><span class="p">:</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="n">report_profile</span><span class="p">(</span>
+                <span class="n">detailed</span><span class="o">=</span><span class="n">detailed</span><span class="p">,</span> <span class="n">format_num_kwargs</span><span class="o">=</span><span class="n">format_num_kwargs</span>
+            <span class="p">)</span></div>
+
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span>
@@ -305,10 +321,10 @@
             <span class="n">pipeline</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span> <span class="o">=</span> <span class="n">value</span>
 
-
 <div class="viewcode-block" id="DistributionMaker.run">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.distribution_maker.DistributionMaker.run">[docs]</a>
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run all pipelines&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
 
@@ -642,8 +658,7 @@
         <span class="c1">#assert dm.param_selections == sorted([current_hier, current_mat]), \</span>
         <span class="c1">#        str(dm.param_selections)</span>
         <span class="c1">#assert dm.param_selections == sorted([current_hier, &#39;earth&#39;]), str(dm.param_selections)</span>
-        <span class="k">assert</span> <span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">t23</span><span class="p">[</span><span class="n">current_hier</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="p">)</span></div>
-
+        <span class="k">assert</span> <span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">t23</span><span class="p">[</span><span class="n">current_hier</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">dm</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="p">)</span>
         <span class="c1">#assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)</span>
 
         <span class="c1">## Select both hierarchy and material</span>
@@ -657,6 +672,23 @@
 
         <span class="c1">#current_hier = new_hier</span>
         <span class="c1">#current_mat = new_mat</span>
+
+    <span class="c1"># test profile flag</span>
+    <span class="n">p_cfg</span> <span class="o">=</span> <span class="s1">&#39;settings/pipeline/example.cfg&#39;</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">p_cfg</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">dm</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">(</span><span class="n">pipelines</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+    <span class="c1"># default init using Pipeline instance shouldn&#39;t negate</span>
+    <span class="k">assert</span> <span class="n">dm</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">profile</span>
+    <span class="c1"># but explicit request should</span>
+    <span class="n">dm</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">dm</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">profile</span>
+    <span class="c1"># now init from cfg path and request profile</span>
+    <span class="n">dm</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">(</span><span class="n">pipelines</span><span class="o">=</span><span class="n">p_cfg</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">dm</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">profile</span>
+    <span class="c1"># explicitly request no profile</span>
+    <span class="n">dm</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">(</span><span class="n">pipelines</span><span class="o">=</span><span class="n">p_cfg</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">dm</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">profile</span></div>
+
 
 
 <div class="viewcode-block" id="parse_args">
@@ -749,7 +781,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">distribution_maker</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">main</span><span class="p">(</span><span class="n">return_outputs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># pylint: disable=invalid-name</span>
+    <span class="n">distribution_maker</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">main</span><span class="p">(</span><span class="n">return_outputs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 
            </div>

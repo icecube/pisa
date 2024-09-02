@@ -80,6 +80,7 @@
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
 
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
@@ -214,11 +215,24 @@
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kde.kde.apply">[docs]</a>
     <span class="nd">@profile</span>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># this is special, we want the actual event weights in the kde</span>
-        <span class="c1"># therefor we&#39;re overwritting the apply function</span>
-        <span class="c1"># normally in a stage you would implement the `apply_function` method</span>
-        <span class="c1"># and not the `apply` method!</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is special, we want the actual event weights in the kde</span>
+<span class="sd">        therefor we&#39;re overwritting the apply function</span>
+<span class="sd">        normally in a stage you would implement the `apply_function` method</span>
+<span class="sd">        and not the `apply` method! We also have to reimplement the profiling</span>
+<span class="sd">        functionality in apply of the Base class&quot;&quot;&quot;</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">:</span>
+            <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">apply_function</span><span class="p">()</span>
+            <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">apply_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">apply_function</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="kde.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kde.kde.apply_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stash_valid</span><span class="p">:</span>
