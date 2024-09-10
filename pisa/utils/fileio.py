@@ -545,8 +545,9 @@ def to_file(obj, fname, fmt=None, overwrite=True, warn=True, **kwargs):
         ext = fmt.lower()
 
     dirname = os.path.dirname(fname)
-
-    os.makedirs(dirname, exist_ok=True)
+    if dirname != "":
+        # would fail with FileNotFoundError otherwise
+        mkdir(dirname, warn=warn)
 
     if ext in ZIP_EXTS or ext in XOR_EXTS:
         rootname, inner_ext = os.path.splitext(rootname)
