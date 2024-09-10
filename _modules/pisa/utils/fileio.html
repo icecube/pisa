@@ -655,8 +655,9 @@
         <span class="n">ext</span> <span class="o">=</span> <span class="n">fmt</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
     <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
-
-    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dirname</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="c1"># would fail with FileNotFoundError otherwise</span>
+        <span class="n">mkdir</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">ZIP_EXTS</span> <span class="ow">or</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">XOR_EXTS</span><span class="p">:</span>
         <span class="n">rootname</span><span class="p">,</span> <span class="n">inner_ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">rootname</span><span class="p">)</span>
