@@ -1,5 +1,3 @@
-# pylint: disable=not-callable, wrong-import-position
-
 """
 Stage to implement the old PISA/oscfit flux systematics
 """
@@ -7,8 +5,6 @@ Stage to implement the old PISA/oscfit flux systematics
 from __future__ import absolute_import, print_function, division
 
 import math
-import os
-import sys
 
 import numpy as np
 from numba import guvectorize, cuda
@@ -16,8 +12,7 @@ from numba import guvectorize, cuda
 from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import WHERE, myjit, ftype
-from pisa.utils.resources import find_resource
+from pisa.utils.numba_tools import myjit, ftype
 from pisa.utils.barr_parameterization import modRatioNuBar, modRatioUpHor
 
 

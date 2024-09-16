@@ -1,15 +1,13 @@
 """
-Stage to implement the atmospheric density uncertainty. 
+Stage to implement the atmospheric density uncertainty.
 Uses the neutrino fluxes calculated in the mceq_barr stage, and scales the weights
 
 Ben Smithers
 """
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import WHERE, myjit
 from pisa.utils.resources import find_resource
 
 import photospline
@@ -17,7 +15,7 @@ import photospline
 import numpy as np
 
 
-class airs(Stage):
+class airs(Stage):  # pylint: disable=invalid-name
     """
     Parameters
     ----------

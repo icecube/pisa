@@ -1,7 +1,5 @@
-# pylint: disable=not-callable
-
 """
-Create reconstructed and PID variables based on truth information 
+Create reconstructed and PID variables based on truth information
 for MC events using simple parameterisations.
 """
 
@@ -10,18 +8,20 @@ for MC events using simple parameterisations.
 
 from __future__ import absolute_import, print_function, division
 
-import math, fnmatch, collections
+import collections
+import fnmatch
 import numpy as np
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils.log import logging
-from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import WHERE, myjit, ftype
 
 
-
-__all__ = ["simple_param","simple_reco_energy_parameterization","simple_reco_coszen_parameterization","simple_pid_parameterization"]
+__all__ = [
+    "simple_param",
+    "simple_reco_energy_parameterization",
+    "simple_reco_coszen_parameterization",
+    "simple_pid_parameterization"
+]
 
 __author__ = 'T. Stuttard'
 
@@ -47,7 +47,7 @@ def dict_lookup_wildcard(dict_obj,key) :
     Parameters
     ----------
     dict_obj : dict
-        The dict (or dict-like) object to search 
+        The dict (or dict-like) object to search
     key : str
         The key to search for in the dict (may include wildcards)
 
@@ -78,10 +78,10 @@ def logistic_function(a,b,c,x) :
     Parameters
     ----------
     a : float
-        Normalisation (e.g. plateau height) 
+        Normalisation (e.g. plateau height)
     b : float
         Steepness of rise (larger value means steeper rise)
-    c : float 
+    c : float
         x value at half-height of curve
     x : array
         The continuous parameter
@@ -121,13 +121,13 @@ def visible_energy_correction(particle_key) :
     '''
     Simple way to estimate the amount of visible energy in the event.
 
-    Right now considering cases with final state neutrinos, such as NC events, 
+    Right now considering cases with final state neutrinos, such as NC events,
     and nutau CC events (where the tau decays to a tau neutrino).
 
     Neglecting the much lower losses due to muon decay for numu CC.
     Also neglecting fact that different particle types produce differing photon yields.
 
-    I've tuned these by eye due to the biases seen in GRECO pegleg, which to first 
+    I've tuned these by eye due to the biases seen in GRECO pegleg, which to first
     order I'm assuming are due to this missing energy.
     There is also a bias in numu CC in GRECO, but suspect this is due to containment
     or stochastics, but either way not reproducing this here.
@@ -168,15 +168,15 @@ def energy_dependent_sigma(energy,energy_0,sigma_0,energy_power) :
     Returns an energy dependent sigma (standard deviation) value(s),
     with energy dependence defined as follows:
 
-        sigma(E) = sigma(E=E0) * (E/E0)^n 
+        sigma(E) = sigma(E=E0) * (E/E0)^n
 
     Parameters
     ----------
     energy : array or float
-        Energy value to evaluate sigma at 
+        Energy value to evaluate sigma at
     energy_0 : float
         Energy at which sigma_0 is defined
-    sigma_0 : float 
+    sigma_0 : float
         The value of sigma at energy_0
     energy_power : float
         Power/index fo the energy dependence
@@ -209,7 +209,7 @@ def simple_reco_energy_parameterization(particle_key,true_energy,params,random_s
         (example: params = {'nue*_cc':[10.,0.2,0.2],})
 
     random_state : np.random.RandomState
-        User must provide the random state, meaning that reproducible results 
+        User must provide the random state, meaning that reproducible results
         can be obtained when calling multiple times.
 
     Returns
@@ -271,7 +271,7 @@ def simple_reco_coszen_parameterization(particle_key,true_energy,true_coszen,par
         (example: params = {'nue*_cc':[10.,0.2,0.5],})
 
     random_state : np.random.RandomState
-        User must provide the random state, meaning that reproducible results 
+        User must provide the random state, meaning that reproducible results
         can be obtained when calling multiple times.
 
     Returns
@@ -302,7 +302,7 @@ def simple_reco_coszen_parameterization(particle_key,true_energy,true_coszen,par
 
     # Compute the corresponding reco coszen
     # Use visible energy since that is what really matters
-    reco_coszen = true_coszen + reco_error 
+    reco_coszen = true_coszen + reco_error
 
     # Enforce rotational bounds
     out_of_bounds_mask = reco_coszen > 1.
@@ -341,7 +341,7 @@ def simple_pid_parameterization(particle_key,true_energy,params,track_pid,cascad
         A PID value to assign to cascade-like events
 
     random_state : np.random.RandomState
-        User must provide the random state, meaning that reproducible results 
+        User must provide the random state, meaning that reproducible results
         can be obtained when calling multiple times.
 
     Returns
@@ -369,10 +369,10 @@ def simple_pid_parameterization(particle_key,true_energy,params,track_pid,cascad
     return pid
 
 
-class simple_param(Stage):
+class simple_param(Stage):  # pylint: disable=invalid-name
     """
     Stage to generate reconstructed parameters (energy, coszen, pid) using simple parameterizations.
-    These are not fit to any input data, but are simple and easily understandable and require no 
+    These are not fit to any input data, but are simple and easily understandable and require no
     input reconstructed events.
 
     Can easily be tuned to any desired physics case, rught now repesent a DeepCore/ICU-like detector.
@@ -410,7 +410,7 @@ class simple_param(Stage):
                  **std_kwargs,
                 ):
 
-        expected_params = ( 
+        expected_params = (
                         "perfect_reco", #TODO move these to constructor args?
                         "reco_energy_params",
                         "reco_coszen_params",
@@ -438,7 +438,7 @@ class simple_param(Stage):
         track_pid = self.params.track_pid.value.m_as("dimensionless")
         cascade_pid = self.params.cascade_pid.value.m_as("dimensionless")
 
-        # If using random numbers, use a random state with a fixed seed to make the 
+        # If using random numbers, use a random state with a fixed seed to make the
         # same smearing for e.g. template and pseudodata (this achieves the same
         # as we would normally use if we had reco variales in the file).
         # Note that this doesn't affect other random numbers generated by other
@@ -522,6 +522,3 @@ class simple_param(Stage):
             # Write to the container
             container["pid"][:] = pid
             container.mark_changed("pid")
-
-
-

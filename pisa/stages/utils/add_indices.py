@@ -13,18 +13,15 @@ from __future__ import absolute_import, print_function, division
 
 __author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 
-import numpy as np
 
-from pisa import FTYPE
 from pisa.core.stage import Stage
-#from pisa.utils.log import logging
 
 # Load the modified index lookup function
 from pisa.core.bin_indexing import lookup_indices
 
 
 
-class add_indices(Stage):
+class add_indices(Stage):  # pylint: disable=invalid-name
     """
     PISA Pi stage to map out the index of the analysis
     binning where each event falls into.
@@ -47,7 +44,7 @@ class add_indices(Stage):
     """
 
     # this is the constructor with default arguments
-    
+
     def __init__(self,
                  **std_kwargs,
                  ):
@@ -66,8 +63,9 @@ class add_indices(Stage):
 
         Create one mask for each analysis bin.
         '''
-        
-        assert self.calc_mode == 'events', 'ERROR: calc specs must be set to "events for this module'
+
+        if self.calc_mode != 'events':
+            raise ValueError('calc mode must be set to "events for this module')
 
 
         for container in self.data:
@@ -84,4 +82,3 @@ class add_indices(Stage):
             self.data.representation = self.apply_mode
             for bin_i in range(self.apply_mode.tot_num_bins):
                 container['bin_{}_mask'.format(bin_i)] = container['bin_indices'] == bin_i
-

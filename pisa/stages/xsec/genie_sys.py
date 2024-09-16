@@ -8,12 +8,8 @@ __all__ = ["genie_sys", "apply_genie_sys"] #, "SIGNATURE"
 
 import re
 import numpy as np
-#from numba import guvectorize
 
-from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
-from pisa.utils.profiler import profile, line_profile
-from pisa.utils.numba_tools import WHERE
 from pisa.utils.log import logging
 
 class genie_sys(Stage): # pylint: disable=invalid-name
@@ -24,7 +20,7 @@ class genie_sys(Stage): # pylint: disable=invalid-name
     ----------
     params
         Must contain ::
-        
+
         parameters specified in interactions (dimensionless)
 
     Notes
@@ -46,7 +42,7 @@ class genie_sys(Stage): # pylint: disable=invalid-name
         interactions = re.split(r'\W+', interactions)
         names = re.split(r'\W+', names)
         assert len(interactions) == len(names), 'Specify a name for each interaction'
-        
+
         expected_params = tuple(interactions)
         self.interactions = interactions
         self.names = names
@@ -87,13 +83,13 @@ class genie_sys(Stage): # pylint: disable=invalid-name
 
             #
             # In cases where the axial mass is extrapolated outside
-            # the range of the points used in the interpolation, some 
+            # the range of the points used in the interpolation, some
             # weights become negative. These are floored at 0.
             #
             container.mark_changed('weights')
 
 
-
+# TODO: need to keep these comments?
 #if FTYPE == np.float64:
 #    SIGNATURE = '(f8, f8, f8, f8[:])'
 #else:

@@ -310,29 +310,25 @@ def do_setup():
         entry_points={
             'console_scripts': [
                 # Scripts in core dir
+                'pisa-detectors = pisa.core.detectors:main',
                 'pisa-distribution_maker = pisa.core.distribution_maker:main',
-                'pisa-pipeline = pisa.core.pipeline:main',
+                'pisa-pipeline = pisa.core.pipeline:main', #FIXME
 
                 # Scripts in scripts dir
                 'pisa-add_flux_to_events_file = pisa.scripts.add_flux_to_events_file:main',
-                'pisa-analysis = pisa.scripts.analysis:main',
-                'pisa-postproc = pisa.scripts.analysis_postprocess:main',
                 'pisa-compare = pisa.scripts.compare:main',
                 'pisa-convert_config_format = pisa.scripts.convert_config_format:main',
-                'pisa-fit_discrete_sys = pisa.scripts.fit_discrete_sys:main',
-                'pisa-fit_discrete_sys_nd = pisa.scripts.fit_discrete_sys_nd:main',
-                'pisa-make_asymmetry_plots = pisa.scripts.make_asymmetry_plots:main',
+                'pisa-create_barr_sys_tables_mceq = pisa.scripts.create_barr_sys_tables_mceq:main',
+                'pisa-fit_hypersurfaces = pisa.scripts.fit_hypersurfaces:main',
                 'pisa-make_events_file = pisa.scripts.make_events_file:main',
                 'pisa-make_nufit_theta23_spline_priors = pisa.scripts.make_nufit_theta23_spline_priors:main',
-                'pisa-make_systematic_variation_plots = pisa.scripts.make_systematic_variation_plots:main',
-                'pisa-make_toy_events = pisa.scripts.make_toy_events:main',
-                'pisa-profile_scan = pisa.scripts.profile_scan:main',
-                'pisa-scan_allsyst = pisa.scripts.scan_allsyst:main',
+                'pisa-test_flux_weights = pisa.scripts.test_flux_weights:main',
 
                 # Scripts in pisa_tests dir
-                'pisa-test_changes_with_combined_pidreco = pisa_tests.test_changes_with_combined_pidreco:main',
-                'pisa-test_example_pipelines = pisa_tests.test_example_pipelines:main',
                 'pisa-run_unit_tests = pisa_tests.run_unit_tests:run_unit_tests',
+                'pisa-test_covariance = pisa_tests.test_covariance:main',
+                'pisa-test_example_pipelines = pisa_tests.test_example_pipelines:main',
+                'pisa-test_kde_stage = pisa_tests.test_kde_stage:main',
             ]
         }
     )

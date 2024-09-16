@@ -29,7 +29,3 @@ Loading muons from iceCube datareleases
 ### csv_loader
 
 Loading MC from iceCube datareleases
-
-### grid
-
-Description missing

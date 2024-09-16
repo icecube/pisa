@@ -2,18 +2,16 @@
 PISA pi stage to apply ultrasurface fits from discrete systematics parameterizations
 """
 
+import collections
+
 import numpy as np
 from numba import njit
 
-import collections
-from pisa import FTYPE, TARGET
+from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.core.binning import MultiDimBinning
 from pisa.utils.log import logging
-from pisa.utils.profiler import profile, line_profile
-from pisa.utils.log import set_verbosity, Levels
-
-from itertools import combinations, chain
+from pisa.utils.profiler import profile
+from pisa.utils.resources import find_resource
 
 __all__ = [
     "ultrasurfaces",
@@ -36,7 +34,7 @@ __license__ = """Copyright (c) 2014-2022, The IceCube Collaboration
  limitations under the License."""
 
 
-class ultrasurfaces(Stage):
+class ultrasurfaces(Stage):  # pylint: disable=invalid-name
     """
     Service to apply ultrasurface parameterisation stored in a feather file.
 
@@ -85,7 +83,7 @@ class ultrasurfaces(Stage):
         assert std_kwargs["calc_mode"] == "events"
 
         # Store args
-        self.fit_results_file = fit_results_file
+        self.fit_results_file = find_resource(fit_results_file)
         self.varnames = varnames
         self.approx_exponential = approx_exponential
 

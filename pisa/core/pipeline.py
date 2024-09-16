@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 from argparse import ArgumentParser
 from collections import OrderedDict
+from collections.abc import Mapping
 from configparser import NoSectionError
 from copy import deepcopy
 from importlib import import_module
@@ -17,6 +18,7 @@ from itertools import product
 from inspect import getsource
 import os
 from tabulate import tabulate
+from time import time
 import traceback
 
 import numpy as np
@@ -30,6 +32,7 @@ from pisa.core.container import ContainerSet
 from pisa.core.binning import MultiDimBinning
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
+from pisa.utils.format import format_times
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
@@ -107,6 +110,9 @@ class Pipeline(object):
         self.output_key = config['pipeline']['output_key']
 
         self._profile = profile
+        self._setup_times = []
+        self._run_times = []
+        self._get_outputs_times = []
 
         self._stages = []
         self._config = config
@@ -140,9 +146,46 @@ class Pipeline(object):
             table[-1] += [len(s.params.fixed), len(s.params.free)]
         return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
 
-    def report_profile(self, detailed=False):
+    def report_profile(self, detailed=False, format_num_kwargs=None):
+        """Report timing information on pipeline and contained services
+
+        Parameters
+        ----------
+        detailed : bool, default False
+            Whether to increase level of detail
+        format_num_kwargs : dict, optional
+            Dictionary containing arguments passed to `utils.format.format_num`.
+             Will display each number with three decimal digits by default.
+
+        """
+        if not self.profile:
+            # Report warning only at the pipeline level, which is what the
+            # typical user should come across. Assume that users calling
+            # `report_profile` on a `Stage` instance directly know what they're
+            # doing.
+            logging.warn(
+                '`profile` is set to False. Results may not show the expected '
+                'numbers of function calls.'
+            )
+        if format_num_kwargs is None:
+            format_num_kwargs = {
+                'precision': 1e-3, 'fmt': 'full', 'trailing_zeros': True
+            }
+        assert isinstance(format_num_kwargs, Mapping)
+        print(f'Pipeline: {self.name}')
+        for func_str, times in [
+            ('- setup:       ', self._setup_times),
+            ('- run:         ', self._run_times),
+            ('- get_outputs: ', self._get_outputs_times)
+        ]:
+            print(func_str,
+                format_times(times=times,
+                             nindent_detailed=len(func_str) + 1,
+                             detailed=detailed, **format_num_kwargs)
+            )
+        print('Individual services:')
         for stage in self.stages:
-            stage.report_profile(detailed=detailed)
+            stage.report_profile(detailed=detailed, **format_num_kwargs)
 
     @property
     def profile(self):
@@ -315,7 +358,19 @@ class Pipeline(object):
 
         self.setup()
 
-    def get_outputs(self, output_binning=None, output_key=None):
+    def get_outputs(self, **get_outputs_kwargs):
+        """Wrapper around `_get_outputs`. The latter might
+        have quite some overhead compared to `run` alone"""
+        if self.profile:
+            start_t = time()
+            outputs = self._get_outputs(**get_outputs_kwargs)
+            end_t = time()
+            self._get_outputs_times.append(end_t - start_t)
+        else:
+            outputs = self._get_outputs(**get_outputs_kwargs)
+        return outputs
+        
+    def _get_outputs(self, output_binning=None, output_key=None):
         """Get MapSet output"""
 
 
@@ -393,12 +448,32 @@ class Pipeline(object):
         return success
 
     def run(self):
+        """Wrapper around `_run_function`"""
+        if self.profile:
+            start_t = time()
+            self._run_function()
+            end_t = time()
+            self._run_times.append(end_t - start_t)
+        else:
+            self._run_function()
+
+    def _run_function(self):
         """Run the pipeline to compute"""
         for stage in self.stages:
             logging.debug(f"Working on stage {stage.stage_name}.{stage.service_name}")
             stage.run()
 
     def setup(self):
+        """Wrapper around `_setup_function`"""
+        if self.profile:
+            start_t = time()
+            self._setup_function()
+            end_t = time()
+            self._setup_times.append(end_t - start_t)
+        else:
+            self._setup_function()
+
+    def _setup_function(self):
         """Setup (reset) all stages"""
         self.data = ContainerSet(self.name)
         for stage in self.stages:

@@ -1,5 +1,5 @@
 """
-A class to load lic files and weight existing events 
+A class to load lic files and weight existing events
 """
 import numpy as np
 import h5py as h5
@@ -8,14 +8,11 @@ import LeptonWeighter as LW
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils import vectorizer
-from pisa.utils.profiler import profile
 from pisa.core.container import Container
-from pisa.core.events_pi import EventsPi
 from pisa.utils.resources import find_resource
 
 
-class licloader_weighter(Stage):
+class licloader_weighter(Stage):  # pylint: disable=invalid-name
     """
     LeptonWeighter LIC file reader and LI event weighter. Sets two weight containers
         weights
