@@ -5,14 +5,14 @@ Thank you for reading this and for considering to contribute to PISA! We always 
 ## Submitting changes
 Found a bug or missing a functionality? Don't be afraid to tackle this! If you don't do it, maybe no one will.
 
-#### Open an issue
-In any case, it is a good first step to document what you've found (or what's missing) in a GitHub issue.
+#### Create an issue
+In any case, it is a good first step to document what you've found (or what's missing) in a GitHub issue. [Here](https://docs.github.com/en/issues/tracking-your-work-with-issues/creating-an-issue) is how-to-do it.
 
 #### Close an issue
 If you want to work on something already documented, you are more than welcome! But remember, the best way to close an issue is with a pull request.
 
 #### Open a pull request
-Once you implemented your changes, you can start a PR. You can start this early, even when you are still working on your code, to get feedback and let people know what you are working on. Use your own fork and/or a dedicated branch for your PR.
+Once you implemented your changes, you can start a PR. You can start this early, even when you are still working on your code, to get feedback and let people know what you are working on. Use your own fork and/or a dedicated branch for your PR. [Here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request) is how-to-do it.
 
 #### Review and merge a pull request
 Everyone can (and should) review and merge PRs opened by other contributors. You can also just review and wait for others to merge, if you are unsure about the proposed changes. 
