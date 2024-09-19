@@ -13,6 +13,7 @@ import numpy as np
 
 from pisa.core.binning import MultiDimBinning
 from pisa.core.container import Container, ContainerSet
+from pisa.utils.format import format_times
 from pisa.utils.log import logging
 from pisa.core.param import ParamSelector
 from pisa.utils.format import arg_str_seq_none
@@ -188,23 +189,20 @@ class Stage():
     def __repr__(self):
         return 'Stage "%s"'%(self.__class__.__name__)
 
-    def report_profile(self, detailed=False):
-        def format(times):
-            tot = np.sum(times)
-            n = len(times)
-            ave = 0. if n == 0 else tot/n
-            return 'Total time %.5f s, n calls: %i, time/call: %.5f s'%(tot, n, ave)
-
+    def report_profile(self, detailed=False, **format_num_kwargs):
+        """Report timing information on calls to setup, compute, and apply
+        """
         print(self.stage_name, self.service_name)
-        print('- setup: ', format(self.setup_times))
-        if detailed:
-            print('         Individual runs: ', ', '.join(['%i: %.3f s' % (i, t) for i, t in enumerate(self.setup_times)]))
-        print('- calc:  ', format(self.calc_times))
-        if detailed:
-            print('         Individual runs: ', ', '.join(['%i: %.3f s' % (i, t) for i, t in enumerate(self.calc_times)]))
-        print('- apply: ', format(self.apply_times))
-        if detailed:
-            print('         Individual runs: ', ', '.join(['%i: %.3f s' % (i, t) for i, t in enumerate(self.apply_times)]))
+        for func_str, times in [
+            ('- setup:   ', self.setup_times),
+            ('- compute: ', self.calc_times),
+            ('- apply:   ', self.apply_times)
+        ]:
+            print(func_str,
+                format_times(times=times,
+                             nindent_detailed=len(func_str) + 1,
+                             detailed=detailed, **format_num_kwargs)
+            )
 
     def select_params(self, selections, error_on_missing=False):
         """Apply the `selections` to contained ParamSet.
