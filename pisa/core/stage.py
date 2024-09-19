@@ -9,7 +9,6 @@ from copy import deepcopy
 from collections.abc import Mapping
 import inspect
 from time import time
-import numpy as np
 
 from pisa.core.binning import MultiDimBinning
 from pisa.core.container import Container, ContainerSet
@@ -154,9 +153,9 @@ class Stage():
         if supported_reps is None:
             supported_reps = {}
         assert isinstance(supported_reps, Mapping)
-        if not 'calc_mode' in supported_reps:
+        if 'calc_mode' not in supported_reps:
             supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning]
-        if not 'apply_mode' in supported_reps:
+        if 'apply_mode' not in supported_reps:
             supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
         self.supported_reps = supported_reps
 
@@ -351,7 +350,6 @@ class Stage():
                 'Service %s.%s is not specifying expected container keys.'
                 % (self.stage_name, self.service_name)
             )
-            return
         exp_k = set(self.expected_container_keys)
         got_k = set(self.data.get_shared_keys(rep_indep=True))
         missing = exp_k.difference(got_k)
@@ -449,6 +447,7 @@ class Stage():
 
     @property
     def is_map(self):
+        """See ContainerSet.is_map for documentation"""
         return self.data.is_map
 
     def setup(self):
@@ -524,5 +523,3 @@ class Stage():
     def run(self):
         self.compute()
         self.apply()
-        return None
-

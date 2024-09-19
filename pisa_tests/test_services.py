@@ -16,11 +16,11 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from importlib import import_module
 from os import walk
 from os.path import isfile, join, relpath
-
-import numpy as np
 import sys
 
-from pisa import CTYPE, FTYPE, ITYPE, ureg
+import numpy as np
+
+from pisa import FTYPE, ITYPE, ureg
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.container import Container, ContainerSet
 from pisa.core.stage import Stage
@@ -180,9 +180,9 @@ def is_allowed_import_error(err, module_pypath, allow_missing=OPTIONAL_MODULES):
     if (
         isinstance(err, ImportError)
         and hasattr(err, "name")
-        and err.name in allow_missing  # pylint: disable=no-member
+        and err.name in allow_missing
     ):
-        err_name = err.name # pylint: disable=no-member
+        err_name = err.name
         logging.warning(
             PFX + f"module {err_name} failed to import while importing "
             f"{module_pypath}, but ok to ignore"
@@ -215,13 +215,19 @@ def test_services(
     for rel_file_path, service_names in services.items():
         if not service_names:
             continue
-        assert len(service_names) == 1, 'Only specify one stage per file.'
-        service_name = service_names[0]
 
         pypath = ["pisa"] + rel_file_path[:-3].split("/")
         parent_pypath = ".".join(pypath[:-1])
         module_name = pypath[-1].replace(".", "_")
         module_pypath = f"{parent_pypath}.{module_name}"
+
+        if not len(service_names) == 1:
+            raise ValueError(
+                '%d > 1 services detected in file %s!'
+                % (len(service_names), module_pypath)
+            )
+
+        service_name = service_names[0]
         stage_dot_service = get_stage_dot_service_from_module_pypath(module_pypath)
 
         # check whether we should skip testing this service for some reason
@@ -301,7 +307,7 @@ def test_services(
             try:
                 add_test_inputs(
                     service=service,
-                    empty=True if stage_dot_service.split('.')[0] == 'data' else False
+                    empty=stage_dot_service.split('.')[0] == 'data'
                 )
             except Exception as err:
                 logging.error(
