@@ -18,10 +18,10 @@ Once you implemented your changes, you can start a PR. You can start this early,
 Everyone can (and should) review PRs opened by other contributors. This input is very valuable for the PR creator as well as other reviewers.
 
 ## Coding conventions
-Coding conventions can be found in [Conventions](pisa/general_conventions.md).
+Coding conventions can be found in [Conventions](https://github.com/icecube/pisa/blob/master/pisa/general_conventions.md).
 
 ## Testing
-If you add a feature, add a test that proves it works. More about tests can be found in [Conventions](pisa/general_conventions.md).
+If you add a feature, add a test that proves it works. More about tests can be found in [Conventions](https://github.com/icecube/pisa/blob/master/pisa/general_conventions.md).
 
 ## Ask for help
 If you are stuck with your code or have some general questions, feel free to ask other people on slack (e.g. in the pisa-help channel). If you are not a member of the IceCube collaboration, you can create an issue with your question.
