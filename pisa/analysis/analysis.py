@@ -2681,6 +2681,83 @@ class BasicAnalysis(object):
         """
         self._nit += 1
 
+    def MCMC_sampling(self, data_dist, hypo_maker, metric, nwalkers, burnin, nsteps):
+        """Performs MCMC sampling.
+
+        Parameters
+        ----------
+
+        data_dist : Sequence of MapSets or MapSet
+            Data distribution to be fit. Can be an actual-, Asimov-, or pseudo-data
+            distribution (where the latter two are derived from simulation and so aren't
+            technically "data").
+
+        hypo_maker : Detectors or DistributionMaker
+            Creates the per-bin expectation values per map based on its param values.
+            Free params in the `hypo_maker` are modified by the minimizer to achieve a
+            "best" fit.
+
+        metric : string or iterable of strings
+            Metric by which to evaluate the fit. See documentation of Map.
+
+        nwalkers : int
+            Number of walkers
+
+        burnin : int
+            Number of steps in burn in phase
+
+        nSteps : int
+            Number of steps after burn in
+
+        """
+        import emcee
+
+        params_truth = hypo_maker.params.free
+        x0 = np.array([p._rescaled_value for p in params_truth])
+        bounds = np.repeat([[0,1]], len(x0), axis=0)
+
+        ndim = len(hypo_maker.params.free)
+        p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
+        
+        def func(scaled_param_vals, bounds, data_dist, hypo_maker, metric):
+            if np.any(scaled_param_vals > np.array(bounds)[:, 1]) or np.any(scaled_param_vals < np.array(bounds)[:, 0]):
+                return -np.inf
+            sign = +1 if metric in METRICS_TO_MAXIMIZE else -1
+            hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
+            hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+            metric_val = (
+                data_dist.metric_total(expected_values=hypo_asimov_dist, metric=metric)
+                + hypo_maker.params.priors_penalty(metric=metric)
+            )
+            return sign*metric_val
+
+        sampler = emcee.EnsembleSampler(
+            nwalkers, ndim, func,
+            args=[bounds, data_dist, hypo_maker, metric]
+        )
+
+        pos, prob, state = sampler.run_mcmc(p0, burnin)
+        flatchainburnin = sampler.flatchain
+
+        sampler.reset()
+        for n, result in enumerate(sampler.sample(pos, iterations=nsteps)):
+            if (n+1) % 1 == 0 and self.pprint:
+                print(("{0:5.1%}".format(n/nsteps)))
+
+        flatchain = sampler.flatchain
+        scaled_chain = np.full_like(flatchain, np.nan, dtype=FTYPE)
+        param_copy = ParamSet(hypo_maker.params.free)
+
+        for s, sample in enumerate(flatchain):
+            for dim, rescaled_val in enumerate(sample):
+                param = param_copy[dim]
+                param._rescaled_value = rescaled_val
+                val = param.value.m
+                scaled_chain[s, dim] = val
+
+        return scaled_chain
+
+
 class Analysis(BasicAnalysis):
     """Analysis class for "canonical" IceCube/DeepCore/PINGU analyses.
 
