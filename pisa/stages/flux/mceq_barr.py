@@ -15,17 +15,16 @@ import collections
 import pickle
 
 import numpy as np
-from numba import guvectorize
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
-from pisa.utils.profiler import profile, line_profile
-from pisa.utils.numba_tools import WHERE, myjit
+from pisa.utils.profiler import profile
+from pisa.utils.numba_tools import myjit
 from pisa.utils.resources import find_resource
 
 
-class mceq_barr(Stage):
+class mceq_barr(Stage):  # pylint: disable=invalid-name
     """
     Stage that uses gradients calculated with MCEq to handle flux uncertainties.
     This stage calculates flux variations relative to a nominal flux that must
@@ -200,7 +199,7 @@ class mceq_barr(Stage):
             # Flux container shape : [ N events, N flavors in primary flux ]
             num_events = container.size
             num_flux_flavs = 3 if self.include_nutau_flux else 2
-            flux_container_shape = (num_events, num_flux_flavs) 
+            flux_container_shape = (num_events, num_flux_flavs)
 
             # Gradients container shape
             gradients_shape = tuple(
@@ -275,7 +274,7 @@ class mceq_barr(Stage):
             #
             # Nominal flux
             #
-            
+
             if not self.use_honda_nominal_flux :
 
                 # Evaluate splines to get nominal flux
@@ -437,7 +436,7 @@ class mceq_barr(Stage):
             #
             # Apply the systematics to the flux
             #
-            
+
             # Figure out which key to use for the nominal flux
             if self.use_honda_nominal_flux :
                 if container["nubar"] > 0: nominal_flux_key = "nu_flux_nominal"

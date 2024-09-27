@@ -1,9 +1,9 @@
 """
 Make K-folds of data.
 
-This stage can be used to split MC into chunks of equal size and to select only one 
+This stage can be used to split MC into chunks of equal size and to select only one
 chunk to make histograms from. It uses the KFold class from scikit-learn to make
-"test" and "train" indeces for the dataset and sets all weights in the "train" 
+"test" and "train" indeces for the dataset and sets all weights in the "train"
 indeces to zero. Optionally, weights can be re-scaled by the number of splits to
 renormalize the total rates.
 """
@@ -12,10 +12,9 @@ from __future__ import absolute_import, print_function, division
 
 import numpy as np
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils.numba_tools import WHERE
-from pisa.utils import vectorizer
+
 
 __author__ = "A. Trettin"
 
@@ -34,12 +33,12 @@ __license__ = """Copyright (c) 2020, The IceCube Collaboration
  limitations under the License."""
 
 
-class kfold(Stage):
+class kfold(Stage):  # pylint: disable=invalid-name
     """
     Stage to make splits of the MC set and select one split to make histograms.
-    The weight of all indeces not belonging to the selected split are set to 
+    The weight of all indeces not belonging to the selected split are set to
     zero.
-    
+
     Parameters
     ----------
     n_splits (int): number of splits
@@ -48,7 +47,7 @@ class kfold(Stage):
     renormalize (bool, optional): renormalize weights by multiplying
         by the number of splits
     shuffle (bool, optional): shuffle indeces before splitting
-    
+
     """
 
     def __init__(

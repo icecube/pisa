@@ -2,20 +2,19 @@
 Stage to transform arrays with weights into KDE maps
 that represent event counts
 """
-import numpy as np
-
-
 from copy import deepcopy
-from pisa import FTYPE, TARGET
+
+import numpy as np
+from time import time
+
 from pisa.core.stage import Stage
 from pisa.core.binning import MultiDimBinning, OneDimBinning
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils import vectorizer
 from pisa.utils import kde_hist
 
 
-class kde(Stage):
+class kde(Stage):  # pylint: disable=invalid-name
     """stage to KDE-map events
 
     Parameters
@@ -134,11 +133,21 @@ class kde(Stage):
 
     @profile
     def apply(self):
-        # this is special, we want the actual event weights in the kde
-        # therefor we're overwritting the apply function
-        # normally in a stage you would implement the `apply_function` method
-        # and not the `apply` method!
+        """This is special, we want the actual event weights in the kde
+        therefor we're overwritting the apply function
+        normally in a stage you would implement the `apply_function` method
+        and not the `apply` method! We also have to reimplement the profiling
+        functionality in apply of the Base class"""
 
+        if self.profile:
+            start_t = time()
+            self.apply_function()
+            end_t = time()
+            self.apply_times.append(end_t - start_t)
+        else:
+            self.apply_function()
+
+    def apply_function(self):
         for container in self.data:
 
             if self.stash_valid:

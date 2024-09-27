@@ -1,5 +1,5 @@
 """
-Stage to evaluate the Hillas-Gaisser expectations from precalculated fluxes 
+Stage to evaluate the Hillas-Gaisser expectations from precalculated fluxes
 
 """
 
@@ -12,7 +12,7 @@ from pisa.utils.profiler import profile
 from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
 
 
-class hillasg(Stage):
+class hillasg(Stage):  # pylint: disable=invalid-name
     """
     stage to generate nominal flux
 

@@ -7,11 +7,10 @@ import numpy as np
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils import vectorizer
 from pisa.core.container import Container
 
 
-class grid(Stage):
+class grid(Stage):  # pylint: disable=invalid-name
     """
     Create a grid of events
 

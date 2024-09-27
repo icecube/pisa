@@ -92,5 +92,5 @@ def apply_function(self):
 * `reco/` - All stages relating to applying reconstruction kernels.
 * `utils/` - All "utility" stages (not representing physics effects).
 * `xsec/` - All stages relating to cross sections.
-* `GLOBALS.md` - File that describes globally available variables within PISA that needs a significant overhaul (TODO).
+* `GLOBALS.md` - File that describes globally available variables within PISA together with the services that implement them.
 * `__init__.py` - File that makes the `stages` directory behave as a Python module.

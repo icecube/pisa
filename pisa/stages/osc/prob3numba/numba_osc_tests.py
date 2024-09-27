@@ -45,7 +45,6 @@ from pisa import FTYPE
 from pisa.utils.comparisons import ALLCLOSE_KW
 from pisa.utils.fileio import expand, from_file, to_file
 from pisa.utils.log import Levels, logging, set_verbosity
-from pisa.utils.numba_tools import WHERE
 from pisa.utils.resources import find_resource
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import (
     CX,

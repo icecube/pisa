@@ -13,7 +13,6 @@ from __future__ import absolute_import
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 import inspect
-from itertools import product
 import os
 from tabulate import tabulate
 from copy import deepcopy
@@ -21,7 +20,6 @@ from copy import deepcopy
 import numpy as np
 
 from pisa import ureg
-from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.param import ParamSet, Param
@@ -66,7 +64,7 @@ class Detectors(object):
         self._distribution_makers , self.det_names = [] , []
         for pipeline in pipelines:
             if not isinstance(pipeline, Pipeline):
-                pipeline = Pipeline(pipeline)
+                pipeline = Pipeline(pipeline, profile=profile)
             
             name = pipeline.detector_name
             if name in self.det_names:
@@ -115,7 +113,17 @@ class Detectors(object):
             
     def __iter__(self):
         return iter(self._distribution_makers)
-    
+
+    def report_profile(self, detailed=False, format_num_kwargs=None):
+        """Report timing information on contained distribution makers.
+        See `Pipeline.report_profile` for details.
+        """
+        for distribution_maker in self._distribution_makers:
+            print(distribution_maker.detector_name + ':')
+            distribution_maker.report_profile(
+                detailed=detailed, format_num_kwargs=format_num_kwargs
+            )
+
     @property
     def profile(self):
         return self._profile

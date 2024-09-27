@@ -20,12 +20,11 @@ from numba import njit, prange  # trivially parallelize for-loops
 from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
-from pisa.utils.profiler import profile, line_profile
-from pisa.utils.numba_tools import WHERE, myjit
+from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 
 
-class mceq_barr_red(Stage):
+class mceq_barr_red(Stage):  # pylint: disable=invalid-name
     """
     Stage that uses gradients calculated with MCEq to handle flux uncertainties.
     This stage calculates flux variations relative to a nominal flux that must
@@ -389,7 +388,7 @@ class mceq_barr_red(Stage):
             nubar = container["nubar"]
             if nubar > 0: flux_key = "nu_flux_nominal"
             elif nubar < 0: flux_key = "nubar_flux_nominal"
-            
+
             apply_sys_loop(
                 container["true_energy"],
                 container["true_coszen"],

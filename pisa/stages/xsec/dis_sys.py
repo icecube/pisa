@@ -16,7 +16,6 @@ from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
 from pisa.utils.fileio import from_file
-from pisa.utils.numba_tools import WHERE
 from pisa import ureg
 
 
@@ -126,7 +125,7 @@ class dis_sys(Stage): # pylint: disable=invalid-name
 
             # make centered arround 0, and set to 0 for all non-DIS events
             w_tot = (w_tot - 1) * dis
-          
+
             container["dis_correction_total"] = w_tot
             container.mark_changed('dis_correction_total')
 
@@ -150,10 +149,10 @@ class dis_sys(Stage): # pylint: disable=invalid-name
 
             # make centered arround 0, and set to 0 for all non-DIS events
             w_diff = (w_diff - 1) * dis
-            
+
             container["dis_correction_diff"] = w_diff
             container.mark_changed('dis_correction_diff')
-         
+
     @profile
     def apply_function(self):
         dis_csms = self.params.dis_csms.m_as('dimensionless')

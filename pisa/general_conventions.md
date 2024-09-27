@@ -8,7 +8,7 @@
   * To use matplotlib on a headless server, you can specify at the command line the environment variable `MPLBACKEND=agg` or `=pdf`, etc.
 
 # Naming conventions
-* Stage/service naming: see [creating a service](creating_a_service). (Note that the all-lower-case class naming scheme for services is one of the few exceptions we make to the general Python conventions above.)
+* Stage/service naming: in the absence of a tutorial for creating a service, note that an all-lower-case class naming scheme for services is one of the few exceptions we make to the general Python conventions above.
 * Use the following syntax to refer to neutrino signatures `*flavour*_*interaction*_*pid*` where:
   * `flavour` is one of `nue, nuebar, numu, numubar, nutau, nutaubar`
   * `interaction` is one of `cc, nc`
@@ -37,14 +37,11 @@ Docstrings can document nearly everything within a Python file. The various type
 * **attribute**: beneath the definition of a variable (in any scope in the file)
   * What purpose it serves. Note that if you add an attribute docstring, the attribute is included in the documentation, while if you do not add such a docstring, the attribute does not appear in the documentation.
 
-Examples of the above can be seen and are discussed further in the [tutorial for creating a service](creating_a_service).
-
 Docstrings should be formatted according to the NumPy/SciPy convention.
 * [PEP257: General Python docstring conventions](https://www.python.org/dev/peps/pep-0257/)
-* [NumPy/SciPy documentation style guide](https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt)
+* [NumPy/SciPy documentation style guide](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard)
 * [Example NumPy docstrings in code](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html)
 * [Recommonmark translates markdown into reST](http://recommonmark.readthedocs.io/en/latest/auto_structify.html)
-* Since all documentation will be run through Sphinx using the Napoleon and Recommonmark extensions, the final arbiter on whether a docstring is formatted correctly is the output generated using these. Good information for making nice docstrings can be found in both [Napoleon](http://sphinxcontrib-napoleon.readthedocs.io/)
 
 ## Standalone files
 
@@ -68,7 +65,7 @@ There is (or should be) one README.md file per directory in PISA. This should st
 
 * So just make that as high-level as possible. For example, for `$PISA/pisa/stages/pid/README.md`, guidance would be:
   * What is particle ID? I.e., what is the physics it represents, what is the process we generally use to do PID, and what systematics are pertinent to PID?
-  * What general categories to the contained service(s) fall into?
+  * What general categories do the contained service(s) fall into?
   * What are the major difference between services that would lead a user to pick one vs. another?
   * A table of what systematics are implemented by each service would be useful at this level
 
@@ -76,16 +73,16 @@ There is (or should be) one README.md file per directory in PISA. This should st
 If you add a feature: ***add a test that proves it works***. If you find a bug: ***add a test that it's fixed***. Not only does a test ensure that the functionality continues to work / bug continues to be squashed, through future iterations of the code, but it also is another way of communicating the assumptions that went into the code that might not be obvious from the code itself.
 
 ## Low-level testing: Unit tests
-Write simple functions named `test_<FUNCNAME>` or `test_<CLASSNAME>` within your modules. These get called automatically from [pytest](http://pytest.org/). Pytest picks up exceptions that occur, so sprinkle `assert` statements liberally in your `test_*` functions, and you should test both things you expect to succeed *and* test things that you expect to fail (wrap the latter in `try:/except:/else:` blocks, where the `assert` occurs in the `else:` clause).
+Write simple functions named `test_<FUNCNAME>` or `test_<CLASSNAME>` within your modules. These get called automatically from [pytest](https://docs.pytest.org/). Pytest picks up exceptions that occur, so sprinkle `assert` statements liberally in your `test_*` functions, and you should test both things you expect to succeed *and* test things that you expect to fail (wrap the latter in `try:/except:/else:` blocks, where the `assert` occurs in the `else:` clause).
 
-We chose [pytest](http://pytest.org/): We'd rather have more unit tests written because they're dead-easy to write than to use the full-featured (and built-in) framework that comes with Python.
+We chose [pytest](https://docs.pytest.org/): We'd rather have more unit tests written because they're dead-easy to write than to use the full-featured (and built-in) framework that comes with Python.
 
-Expect pytest to eventually be configured to run with [doctest](https://pytest.org/latest/doctest.html) functionality enabled, so it's also acceptable to put simple tests in docstrings, Markdown documentation files, or reST documentation files. (Just these won't be exercised until we get pytest fully configured to do look for these tests.)
+Expect pytest to eventually be configured to run with [doctest](https://docs.python.org/3/library/doctest.html#module-doctest) [functionality](https://docs.pytest.org/en/latest/how-to/doctest.html) enabled, so it's also acceptable to put simple tests in docstrings, Markdown documentation files, or reST documentation files. (Just these won't be exercised until we get pytest fully configured to do look for these tests.)
 
 Finally, until we get pytest configured, the `test_*` functions are called in the `__main__` section of many of the `pisa/core` modules (e.g., `map.py`, `binning.py`, `transform.py`, `param.py`). For now, these must be invoked by calling `python <filename>`.
 
 ### How to test a service
-Look at the `pisa.core.pipeline.stage_test()` function to implement tests for your service. It can run a stage in isolation (either with maps you supply or with dummy `numpy.ones()` maps) or will run a pipeline from beginning up until the stage you're testing. To keep tests synchronized with the code they are testing, it is recommended that configurations be generated within the test code rather than read from an external file. This is not a hard-and-fast rule, but usually results in better long-term outcomes.
+There are no general conventions on how to test a service currently in place. However, to keep tests synchronized with the code they are testing, it is recommended that configurations be generated within the test code rather than read from an external file. This is not a hard-and-fast rule, but usually results in better long-term outcomes.
 
 ## High-level testing
 Here we will supply whatever basic configuration files and example data is necessary to fully test all high-level functionality. Outputs should be able to be compared against known-outputs, either exactly (for deterministic processes or pseudo-random processes) or as a ratio with a know result (in the case of a "new" physics implementation).
@@ -107,4 +104,4 @@ This is essential so that, transparently, the user can input units are most comp
 Likewise, measured quantities with uncertainties should have these specified as well. Since there is a performance penalty for computing with uncertainties, this is a feature that can be enabled or disabled according to the task the user is working on. Certain parts of PISA (e.g., the convolutional likelihood metric) will only work if errors are propagated through the analysis.
 
 ## Further documentation
-For more information on using units and uncertainties, see the [Units and uncertainties](units_and_uncertainties) page.
+For more information on using units and uncertainties, see the [Units and uncertainties](units_and_uncertainties.md) page.

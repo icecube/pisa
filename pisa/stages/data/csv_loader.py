@@ -9,13 +9,11 @@ import pandas as pd
 
 from pisa import FTYPE
 from pisa.core.stage import Stage
-from pisa.utils import vectorizer
 from pisa.utils.resources import find_resource
-from pisa.utils.profiler import profile
 from pisa.core.container import Container
 
 
-class csv_loader(Stage):
+class csv_loader(Stage):  # pylint: disable=invalid-name
     """
     CSV file loader PISA Pi class
 
@@ -61,6 +59,7 @@ class csv_loader(Stage):
                 flav = 1
             if 'tau' in name:
                 flav = 2
+
 
             # cut out right part
             pdg = nubar * (12 + 2 * flav)

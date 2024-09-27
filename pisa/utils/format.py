@@ -247,18 +247,22 @@ def split(string, sep=',', force_case=None, parse_func=None):
 
 def arg_str_seq_none(inputs, name):
     """Simple input handler.
+
     Parameters
     ----------
     inputs : None, string, or iterable of strings
         Input value(s) provided by caller
     name : string
         Name of input, used for producing a meaningful error message
+
     Returns
     -------
     inputs : None, or list of strings
+
     Raises
     ------
     TypeError if unrecognized type
+
     """
     if isinstance(inputs, str):
         inputs = [inputs]
@@ -1265,6 +1269,52 @@ def format_num(
                 num_str += expprefix + exp_sign + str(exponent) + exppostfix
 
     return left_delimiter + num_str + right_delimiter
+
+
+def format_times(times, nindent_detailed=0, detailed=False, **format_num_kwargs):
+    """Report statistics derived from a sample of run times,
+    whose size may represent the number of calls to some function,
+    using a custom number format.
+
+    Parameters
+    ----------
+    times : Sequence of float
+        Sequence of run times
+    nindent_detailed : int, optional
+        Number of spaces for indentation of detailed info
+    detailed : bool, default False
+        Whether to output every individual run time also
+    **format_num_kwargs : dict, optional
+        Arguments to `format_num`: refer to its documentation for
+        the list of all possible arguments.
+
+    Returns
+    -------
+    formatted : str
+
+    """
+    assert isinstance(times, Sequence)
+    tot = np.sum(times)
+    n = len(times)
+    if n == 0:
+        return 'n calls: 0'
+    ave = format_num(tot/n, **format_num_kwargs)
+    tot = format_num(tot, **format_num_kwargs)
+    max_time = format_num(np.max(times), **format_num_kwargs)
+    min_time = format_num(np.min(times), **format_num_kwargs)
+    formatted = f'Total time (s): {tot}, n calls: {n}'
+    if n > 1:
+        formatted += (
+            f', time/call (s): mean {ave}, max. {max_time}, min. {min_time}'
+        )
+        if detailed:
+            assert isinstance(nindent_detailed, int)
+            formatted += '\n' + ' ' * nindent_detailed + 'Individual runs: '
+            for i, t in enumerate(times):
+                formatted += '%i: %s s, ' % (
+                    i, format_num(t, **format_num_kwargs)
+                )
+    return formatted
 
 
 def test_format_num():
