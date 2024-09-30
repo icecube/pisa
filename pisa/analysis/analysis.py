@@ -2682,7 +2682,8 @@ class BasicAnalysis(object):
         self._nit += 1
 
     def MCMC_sampling(self, data_dist, hypo_maker, metric, nwalkers, burnin, nsteps):
-        """Performs MCMC sampling.
+        """Performs MCMC sampling. Only supports serial (single CPU) execution at the 
+        moment. See issue #830.
 
         Parameters
         ----------
@@ -2736,13 +2737,17 @@ class BasicAnalysis(object):
             args=[bounds, data_dist, hypo_maker, metric]
         )
 
-        pos, prob, state = sampler.run_mcmc(p0, burnin)
+        if self.pprint:
+            sys.stdout.write('Burn in')
+            sys.stdout.flush()
+        pos, prob, state = sampler.run_mcmc(p0, burnin, progress=self.pprint)
         flatchainburnin = sampler.flatchain
 
         sampler.reset()
-        for n, result in enumerate(sampler.sample(pos, iterations=nsteps)):
-            if (n+1) % 1 == 0 and self.pprint:
-                print(("{0:5.1%}".format(n/nsteps)))
+        if self.pprint:
+            sys.stdout.write('Main sampling')
+            sys.stdout.flush()
+        sampler.run_mcmc(pos, nsteps, progress=self.pprint)
 
         flatchain = sampler.flatchain
         scaled_chain = np.full_like(flatchain, np.nan, dtype=FTYPE)
