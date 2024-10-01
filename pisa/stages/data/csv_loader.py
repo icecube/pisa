@@ -37,6 +37,7 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
         # init base class
         super().__init__(
             expected_params=(),
+            expected_container_keys=(),
             **std_kwargs,
         )
 
@@ -94,3 +95,10 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
     def apply_function(self):
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])
+
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    return csv_loader(events_file='events/IceCube_3y_oscillations/neutrino_mc.csv.bz2',
+                      output_names=['nue_cc', 'numu_cc'],
+                     )

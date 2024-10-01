@@ -33,6 +33,9 @@ __license__ = """Copyright (c) 2020, The IceCube Collaboration
  limitations under the License."""
 
 
+__all__ = ['kfold', 'init_test']
+
+
 class kfold(Stage):  # pylint: disable=invalid-name
     """
     Stage to make splits of the MC set and select one split to make histograms.
@@ -61,9 +64,14 @@ class kfold(Stage):  # pylint: disable=invalid-name
         **std_kwargs,
     ):
 
+        expected_container_keys = (
+            'weights',
+        )
+
         # init base class
         super().__init__(
             expected_params=(),
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -106,3 +114,8 @@ class kfold(Stage):  # pylint: disable=invalid-name
     def apply_function(self):
         for container in self.data:
             container["weights"] *= container["fold_weight"]
+
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    return kfold(n_splits=2, calc_mode='events')

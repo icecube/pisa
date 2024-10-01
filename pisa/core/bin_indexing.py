@@ -132,7 +132,7 @@ def lookup_indices(sample, binning):
     if len(sample) != binning.num_dims:
         raise ValueError(
             f"`binning` has {binning.num_dims} dimension(s), but `sample`"
-            f"contains {len(sample)} arrays (so represents {len(sample)}"
+            f" contains {len(sample)} arrays (so represents {len(sample)}"
             f" dimensions)"
         )
 

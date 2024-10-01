@@ -11,6 +11,8 @@ from pisa.core.stage import Stage
 from pisa.utils.resources import find_resource
 from pisa.core.container import Container
 
+__all__ = ['csv_data_hist', 'init_test']
+
 
 class csv_data_hist(Stage):  # pylint: disable=invalid-name
     """
@@ -35,6 +37,7 @@ class csv_data_hist(Stage):  # pylint: disable=invalid-name
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=(),
             **std_kwargs,
         )
 
@@ -59,3 +62,7 @@ class csv_data_hist(Stage):  # pylint: disable=invalid-name
                 'No containers created during data loading for some reason.'
             )
 
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    return csv_data_hist(events_file='events/IceCube_3y_oscillations/data.csv.bz2')

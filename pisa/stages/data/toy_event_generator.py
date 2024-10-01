@@ -7,9 +7,12 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 
 from pisa import FTYPE
-from pisa.core.container import Container
 from pisa.core.binning import MultiDimBinning
+from pisa.core.container import Container
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
+
+__all__ = ['toy_event_generator', 'init_test']
 
 
 class toy_event_generator(Stage):  # pylint: disable=invalid-name
@@ -45,6 +48,7 @@ class toy_event_generator(Stage):  # pylint: disable=invalid-name
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=(),
             **std_kwargs,
         )
 
@@ -99,3 +103,13 @@ class toy_event_generator(Stage):  # pylint: disable=invalid-name
         # reset weights
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])
+
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    param_set = ParamSet([
+        Param(name='n_events', value=100, **param_kwargs),
+        Param(name='random', value=1, **param_kwargs),
+        Param(name='seed', value=666, **param_kwargs),
+    ])
+    return toy_event_generator(output_names=['numu', 'nue_bar'], params=param_set)

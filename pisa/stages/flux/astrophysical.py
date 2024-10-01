@@ -4,9 +4,11 @@ stage to implement getting the contribution to fluxes from astrophysical neutrin
 import numpy as np
 
 from pisa import FTYPE
-from pisa.utils.profiler import profile
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
+from pisa.utils.profiler import profile
 
+__all__ = ['astrophysical', 'spectral_index_scale', 'apply_sys_loop', 'init_test']
 
 PIVOT = FTYPE(100.0e3)
 
@@ -19,8 +21,15 @@ class astrophysical(Stage):  # pylint: disable=invalid-name
     ----------
     params
         Expected params are .. ::
+
             astro_delta : quantity (dimensionless)
             astro_norm : quantity (dimensionless)
+            
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "initial_weights"
 
     TODO: flavor ratio as a parameter? Save for later.
     """
@@ -33,10 +42,20 @@ class astrophysical(Stage):  # pylint: disable=invalid-name
         self._mu_ratio = FTYPE(1.0)
         self._tau_ratio = FTYPE(1.0)
 
-        expected_params = ("astro_delta", "astro_norm")
+        expected_params = (
+            "astro_delta",
+            "astro_norm",
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'initial_weights',
+        )
 
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -136,3 +155,13 @@ def apply_sys_loop(
     for event in range(n_evts):
         spec_scale = spectral_index_scale(true_energy[event], delta_index)
         out[event] = norm * astroflux_nominal[event] * spec_scale
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="astro_norm", value=1.0, **param_kwargs),
+        Param(name="astro_delta", value=0.0, **param_kwargs),
+    ])
+
+    return astrophysical(params=param_set)

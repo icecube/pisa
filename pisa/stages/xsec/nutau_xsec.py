@@ -12,8 +12,11 @@ import numpy as np
 from numba import guvectorize
 
 from pisa import FTYPE, TARGET
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
-from pisa.utils.resources import open_resource
+from pisa.utils.resources import find_resource, open_resource
+
+__all__ = ['nutau_xsec', 'calc_scale_vectorized', 'init_test']
 
 
 class nutau_xsec(Stage):  # pylint: disable=invalid-name
@@ -31,9 +34,14 @@ class nutau_xsec(Stage):  # pylint: disable=invalid-name
     params : ParamSet or sequence with which to instantiate a ParamSet.
         Expected params .. ::
 
-            scale : quantity (dimensionless)
+            nutau_xsec_scale : quantity (dimensionless)
                 Scaling between different cross-section models. The range [-1, 1]
                 covers all models tested in the paper.
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "weights"
 
     """
     def __init__(
@@ -42,18 +50,26 @@ class nutau_xsec(Stage):  # pylint: disable=invalid-name
         **std_kwargs,
     ):
 
-        expected_params = ("nutau_xsec_scale")
+        expected_params = (
+            "nutau_xsec_scale",
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'weights',
+        )
 
         # init base class
         super(nutau_xsec, self).__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
         self.xsec_file = xsec_file
 
     def setup_function(self):
-        with open_resource(self.xsec_file, mode="rb") as fl:
+        with open_resource(find_resource(self.xsec_file), mode="rb") as fl:
             interp_dict = pickle.load(fl, encoding='latin1')
         interp_nutau = interp_dict["NuTau"]
         interp_nutaubar = interp_dict["NuTauBar"]
@@ -110,3 +126,12 @@ def calc_scale_vectorized(func, scale, out):
         out[0] = 1. + func[0] * scale
     else:
         out[0] = 0.
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="nutau_xsec_scale", value=1.0, **param_kwargs)
+    ])
+
+    return nutau_xsec(params=param_set)
