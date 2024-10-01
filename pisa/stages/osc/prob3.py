@@ -11,6 +11,7 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 
 from pisa import FTYPE, ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.stages.osc.nsi_params import StdNSIParams, VacuumLikeNSIParams
@@ -21,6 +22,8 @@ from pisa.stages.osc.scaling_params import Mass_scaling, Core_scaling_w_constrai
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
 from pisa.utils.resources import find_resource
+
+__all__ = ['prob3', 'init_test']
 
 
 class prob3(Stage):  # pylint: disable=invalid-name
@@ -68,6 +71,14 @@ class prob3(Stage):  # pylint: disable=invalid-name
             decay_alpha3 : quantity (energy^2)
             v_lri : quantity (eV)
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nubar"
+            "flav"
+            "nu_flux"
+            "weights"
 
     **kwargs
         Other kwargs are handled by Stage
@@ -98,6 +109,15 @@ class prob3(Stage):  # pylint: disable=invalid-name
           'deltam21',
           'deltam31',
           'deltacp'
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'nubar',
+            'flav',
+            'nu_flux',
+            'weights'
         )
 
 
@@ -192,6 +212,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -486,3 +507,22 @@ class prob3(Stage):  # pylint: disable=invalid-name
         # update the outputted weights
         for container in self.data:
             container['weights'] *= (container['nu_flux'][:,0] * container['prob_e']) + (container['nu_flux'][:,1] * container['prob_mu'])
+
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    param_set = ParamSet([
+        Param(name='detector_depth', value=10*ureg.km, **param_kwargs),
+        Param(name='prop_height', value=18*ureg.km, **param_kwargs),
+        Param(name='earth_model', value='osc/PREM_4layer.dat', **param_kwargs),
+        Param(name='YeI', value=0.5, **param_kwargs),
+        Param(name='YeO', value=0.5, **param_kwargs),
+        Param(name='YeM', value=0.5, **param_kwargs),
+        Param(name='theta12', value=33*ureg.degree, **param_kwargs),
+        Param(name='theta13', value=8*ureg.degree, **param_kwargs),
+        Param(name='theta23', value=50*ureg.degree, **param_kwargs),
+        Param(name='deltam21', value=8e-5*ureg.eV**2, **param_kwargs),
+        Param(name='deltam31', value=3e-3*ureg.eV**2, **param_kwargs),
+        Param(name='deltacp', value=180*ureg.degree, **param_kwargs),
+    ])
+    return prob3(params=param_set)

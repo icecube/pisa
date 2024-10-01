@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 from scipy.interpolate import interp1d
 
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.resources import open_resource
 from pisa.utils.profiler import profile
@@ -41,6 +42,10 @@ class atm_muons(Stage):  # pylint: disable=invalid-name
             delta_gamma_mu : quantity (dimensionless)
                 Parameter controlling variation in spectral index
 
+        Expected container keys are .. ::
+
+            "weights"
+
     """
 
     def __init__(self,
@@ -53,12 +58,18 @@ class atm_muons(Stage):  # pylint: disable=invalid-name
             'delta_gamma_mu_file',
             'delta_gamma_mu_spline_kind',
             'delta_gamma_mu_variable',
-            'delta_gamma_mu'
+            'delta_gamma_mu',
+        )
+
+        expected_container_keys = (
+            'true_coszen',
+            'weights',
         )
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -169,3 +180,16 @@ class atm_muons(Stage):  # pylint: disable=invalid-name
         )
 
         return muon_uncf
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name='atm_muon_scale', value=1.0, **param_kwargs),
+        Param(name='delta_gamma_mu_file', value='background/muongun_primary_cr_uncertainties_coszenith.txt', **param_kwargs),
+        Param(name='delta_gamma_mu_spline_kind', value='linear', **param_kwargs),
+        Param(name='delta_gamma_mu_variable', value='true_coszen', **param_kwargs),
+        Param(name='delta_gamma_mu', value=1.0, **param_kwargs)
+    ])
+
+    return atm_muons(input_names='muon', params=param_set)

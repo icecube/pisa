@@ -8,10 +8,13 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
+
+__all__ = ['honda_ip', 'init_test']
 
 
 class honda_ip(Stage):  # pylint: disable=invalid-name
@@ -24,6 +27,11 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
         Expected params .. ::
             flux_table : str
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+
     """
 
     def __init__(
@@ -31,11 +39,19 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
         **std_kwargs
     ):
 
-        expected_params = ('flux_table',)
+        expected_params = (
+            'flux_table',
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+        )
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -100,3 +116,12 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
     #     for container in self.data:
     #         np.copyto( src=container["nu%s_flux_nominal"%("" if container["nubar"] > 0 else "bar")].get("host"), dst=container["nu_flux"].get("host") )
     #         container.mark_changed('nu_flux')
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name='flux_table', value='flux/honda-2015-spl-solmin-aa.d',  **param_kwargs),
+    ])
+
+    return honda_ip(params=param_set)

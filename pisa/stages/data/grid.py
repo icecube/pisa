@@ -8,6 +8,9 @@ import numpy as np
 from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.core.container import Container
+from pisa_tests.test_services import TEST_BINNING
+
+__all__ = ['grid', 'init_test']
 
 
 class grid(Stage):  # pylint: disable=invalid-name
@@ -41,10 +44,12 @@ class grid(Stage):  # pylint: disable=invalid-name
         # init base class
         super(grid, self).__init__(
             expected_params=expected_params,
+            expected_container_keys=(),
             **std_kwargs,
         )
 
         assert self.calc_mode == "events"
+        assert self.output_names is not None
 
     def setup_function(self):
 
@@ -83,3 +88,12 @@ class grid(Stage):  # pylint: disable=invalid-name
         # reset weights
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    return grid(
+        grid_binning=TEST_BINNING, calc_mode='events',
+        output_names = ['nue_cc', 'numu_cc', 'nutau_cc', 'nuebar_cc', 'numubar_cc', 'nutaubar_cc',
+                        'nue_nc', 'numu_nc', 'nutau_nc', 'nuebar_nc', 'numubar_nc', 'nutaubar_nc']
+    )

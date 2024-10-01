@@ -8,10 +8,11 @@ from numba import guvectorize
 import numpy as np
 
 from pisa import FTYPE, TARGET
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils import vectorizer
 
-__all__ = ['shift_scale_pid']
+__all__ = ['shift_scale_pid', 'calculate_pid_function', 'init_test']
 
 __author__ = 'L. Fischer'
 
@@ -36,9 +37,12 @@ class shift_scale_pid(Stage):  # pylint: disable=invalid-name
         # register expected parameters
         expected_params = ('bias', 'scale',)
 
+        expected_container_keys = ('pid', )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -100,3 +104,13 @@ def calculate_pid_function(bias_value, scale_factor, pid, out):
     """
 
     out[0] = (scale_factor[0] * pid[0]) + bias_value[0]
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name='bias', value=0.0, **param_kwargs),
+        Param(name='scale', value=1.0, **param_kwargs)
+    ])
+
+    return shift_scale_pid(calc_mode='events', params=param_set)

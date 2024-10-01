@@ -7,11 +7,15 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 
 from pisa import FTYPE, TARGET, ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.layers import Layers
 from pisa.utils.resources import find_resource
+
+__all__ = ['external', 'init_test']
+
 
 class external(Stage):
     """
@@ -32,6 +36,16 @@ class external(Stage):
             YeI : quantity (dimensionless)
             YeO : quantity (dimensionless)
             YeM : quantity (dimensionless)
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nubar"
+            "flav"
+            "nu_flux"
+            "weights"
+
     **kwargs
         Other kwargs are handled by Stage
     -----
@@ -50,11 +64,21 @@ class external(Stage):
           'YeO',
           'YeM',
         )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'nubar',
+            'flav',
+            'nu_flux',
+            'weights'
+        )
       
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -182,3 +206,15 @@ class external(Stage):
         for container in self.data:
             container['weights'] *= (container['nu_flux'][:,0] * container['prob_e']) + (container['nu_flux'][:,1] * container['prob_mu'])
 
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    param_set = ParamSet([
+        Param(name='detector_depth', value=3*ureg.km, **param_kwargs),
+        Param(name='prop_height', value=20*ureg.km, **param_kwargs),
+        Param(name='earth_model', value='osc/PREM_59layer.dat', **param_kwargs),
+        Param(name='YeI', value=0.5, **param_kwargs),
+        Param(name='YeO', value=0.5, **param_kwargs),
+        Param(name='YeM', value=0.5, **param_kwargs),
+    ])
+    return external(params=param_set)

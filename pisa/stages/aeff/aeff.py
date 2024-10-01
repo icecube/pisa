@@ -4,8 +4,12 @@ PISA pi stage to apply effective area weights
 
 from __future__ import absolute_import, print_function, division
 
+from pisa import ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
+
+__all__ = ['aeff', 'init_test']
 
 
 class aeff(Stage):  # pylint: disable=invalid-name
@@ -29,6 +33,12 @@ class aeff(Stage):  # pylint: disable=invalid-name
             nutau_norm : dimensionless Quantity
             nu_nc_norm : dimensionless Quantity
 
+        Expected container keys are .. ::
+
+            "weights"
+            "weighted_aeff"
+
+
     """
     def __init__(
         self,
@@ -42,9 +52,15 @@ class aeff(Stage):  # pylint: disable=invalid-name
             'nu_nc_norm',
         )
 
+        expected_container_keys = (
+            'weights',
+            'weighted_aeff',
+        )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -70,3 +86,16 @@ class aeff(Stage):  # pylint: disable=invalid-name
 
             container['weights'] *= container['weighted_aeff'] * scale
             container.mark_changed('weights')
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="livetime", value=10*ureg.s, **param_kwargs),
+        Param(name="aeff_scale", value=1.0, **param_kwargs),
+        Param(name="nutau_cc_norm", value=1.0, **param_kwargs),
+        Param(name="nutau_norm", value=1.0, **param_kwargs),
+        Param(name="nu_nc_norm", value=1.0, **param_kwargs)
+    ])
+
+    return aeff(params=param_set)

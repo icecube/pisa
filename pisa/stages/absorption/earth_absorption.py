@@ -76,9 +76,18 @@ class earth_absorption(Stage):  # pylint: disable=invalid-name
         **std_kwargs,
     ):
 
+        expected_container_keys = (
+            'true_coszen',
+            'true_energy',
+            'flav',
+            'nubar',
+            'weights',
+        )
+
         # init base class
         super().__init__(
             expected_params=(),
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -246,3 +255,10 @@ def calculate_survivalprob(int_rho, xsection, out):
     # int_rho [cm] * 1 [g/cm^3] * xsection [cm^2] * 1 [mol/g] * Na [1/mol] = [ 1 ] (all units cancel)
     out = np.exp(-int_rho*xsection*Na)
 
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    return earth_absorption(
+        earth_model='osc/PREM_4layer.dat',
+        xsec_file='cross_sections/genie_xsec_H2O.root'
+    )

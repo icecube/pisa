@@ -15,11 +15,13 @@ from collections.abc import Mapping
 import numpy as np
 from scipy.interpolate import interp1d
 
+from pisa import ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.fileio import from_file
 
 
-__all__ = ['load_aeff_param', 'param']
+__all__ = ['load_aeff_param', 'param', 'init_test']
 
 __author__ = 'T.C. Arlen, T. Ehrhardt, S. Wren, J. Weldert'
 
@@ -38,17 +40,20 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 def load_aeff_param(source):
     """Load aeff parameterisation (energy- or coszen-dependent) from file
     or dictionary.
+
     Parameters
     ----------
     source : string or mapping
         Source of the parameterization. If string, treat as file path or
         resource location and load from the file; this must yield a mapping. If
         `source` is a mapping, it is used directly. See notes below on format.
+
     Returns
     -------
     aeff_params : OrderedDict
         Keys are stringified flavintgroups and values are the callables that
         produce aeff when called with energy or coszen values.
+
     Notes
     -----
     The mapping passed via `source` or loaded therefrom must have the format:
@@ -69,8 +74,8 @@ def load_aeff_param(source):
                 "aeff": [sequence of values]
             }
           the two sequences are used to form a linear interpolant callable that
-          maps energy or coszen values to aeff values. The effective area for any 
-          energy or coszen outside the bounds of the corresponding sequence is 
+          maps energy or coszen values to aeff values. The effective area for any
+          energy or coszen outside the bounds of the corresponding sequence is
           assumed to be 0.
     """
     if not isinstance(source, (str, Mapping)):
@@ -126,18 +131,27 @@ class param(Stage): # pylint: disable=invalid-name
     """Effective area service based on parameterisation functions stored in a
     .json file.
     Transforms an input map of a flux of a given flavour (and interaction)
-    into maps of event rates, according to energy and cosine zenith dependent 
+    into maps of event rates, according to energy and cosine zenith dependent
     effective areas specified by parameterisation functions.
-    Requires true_energy, true_coszen, and weights to be present in the container.
+
     Parameters
     ----------
-    params : ParamSet
-        Must exclusively have parameters:
-        aeff_energy_paramfile
-        aeff_coszen_paramfile
-        livetime
-        aeff_scale
+    params : ParamSet or sequence with which to instantiate a ParamSet.
+        Expected params are .. ::
+
+            aeff_energy_paramfile : string
+            aeff_coszen_paramfile : string
+            livetime : Quantity [time]
+            aeff_scale : Quantity [dimensionless]
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "weights"
+
     """
+
     def __init__(
         self,
         **std_kwargs,
@@ -149,8 +163,15 @@ class param(Stage): # pylint: disable=invalid-name
             'aeff_scale'
         )
 
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'weights',
+        )
+
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -172,3 +193,15 @@ class param(Stage): # pylint: disable=invalid-name
 
             container['weights'] *= scale
             container.mark_changed('weights')
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="aeff_energy_paramfile", value='aeff/vlvnt_aeff_energy_param.json', **param_kwargs),
+        Param(name="aeff_coszen_paramfile", value='aeff/vlvnt_aeff_coszen_param.json', **param_kwargs),
+        Param(name="livetime", value=10*ureg.s, **param_kwargs),
+        Param(name="aeff_scale", value=1.0, **param_kwargs)
+    ])
+
+    return param(params=param_set)

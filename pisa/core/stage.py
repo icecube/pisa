@@ -9,9 +9,9 @@ from copy import deepcopy
 from collections.abc import Mapping
 import inspect
 from time import time
-import numpy as np
 
-from pisa.core.container import ContainerSet
+from pisa.core.binning import MultiDimBinning
+from pisa.core.container import Container, ContainerSet
 from pisa.utils.format import format_times
 from pisa.utils.log import logging
 from pisa.core.param import ParamSelector
@@ -39,6 +39,9 @@ class Stage():
     expected_params : list of strings
         List containing required `params` names.
 
+    expected_container_keys: list of strings
+        List containing required container keys.
+
     debug_mode : None, bool, or string
         If None, False, or empty string, the stage runs normally.
 
@@ -52,6 +55,12 @@ class Stage():
         An option to define one or more dedicated error calculation methods
         for the stage transforms or outputs
 
+    supported_reps : dict
+        Dictionary containing the representations allowed for calc_mode and
+        apply_mode. If nothing is specified, Container.array_representations
+        plus MultiDimBinning is assumed. Should have keys `calc_mode` and/or
+        `apply_mode`, they will be created if not there.
+
     calc_mode : pisa.core.binning.MultiDimBinning, str, or None
         Specify the default data representation for `setup()` and `compute()`
 
@@ -61,6 +70,11 @@ class Stage():
     profile : bool
         If True, perform timings for the setup, compute, and apply functions.
 
+    in_standalone_mode : bool
+        If True, assume stage is not part of a pipeline. Affects whether
+        `setup()` can be automatically rerun whenever `calc_mode` is
+        changed.
+
     """
 
     def __init__(
@@ -68,15 +82,25 @@ class Stage():
         data=None,
         params=None,
         expected_params=None,
+        expected_container_keys=None,
         debug_mode=None,
         error_method=None,
+        supported_reps=None,
         calc_mode=None,
         apply_mode=None,
         profile=False,
+        in_standalone_mode=False,
     ):
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
-        expected_params = arg_str_seq_none(expected_params, "expected_params")
+        expected_params = arg_str_seq_none(
+            inputs=expected_params, name="expected_params"
+        )
+
+        # dito
+        expected_container_keys = arg_str_seq_none(
+            inputs=expected_container_keys, name="expected_container_keys"
+        )
 
         module_path = self.__module__.split(".")
 
@@ -90,7 +114,12 @@ class Stage():
         """The full set of parameters (by name) that must be present in
         `params`"""
 
+        self.expected_container_keys = expected_container_keys
+        """The full set of keys that is expected to be present in each
+        container within `data`"""
+
         self._source_code_hash = None
+        """Hash of the source code"""
 
         self._attrs_to_hash = set([])
         """Attributes of the stage that are to be included in its hash value"""
@@ -121,20 +150,40 @@ class Stage():
         else:
             self._debug_mode = None
 
+        if supported_reps is None:
+            supported_reps = {}
+        assert isinstance(supported_reps, Mapping)
+        if 'calc_mode' not in supported_reps:
+            supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning]
+        if 'apply_mode' not in supported_reps:
+            supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
+        self.supported_reps = supported_reps
 
-        self.calc_mode = calc_mode
-        self.apply_mode = apply_mode
-        self.data = data
+        self._check_representation(rep=calc_mode, mode='calc_mode', allow_None=True)
+        self._calc_mode = calc_mode
+
+        self._check_representation(rep=apply_mode, mode='apply_mode', allow_None=True)
+        self._apply_mode = apply_mode
 
         self._error_method = error_method
 
         self.param_hash = None
+        """Hash of stage params. Also serves as an indicator of whether `setup()`
+        has already been called."""
 
         self.profile = profile
+        """Whether to perform timings"""
+
         self.setup_times = []
         self.calc_times = []
         self.apply_times = []
 
+        self.in_standalone_mode = in_standalone_mode
+        """Whether stage is standalone or part of a pipeline"""
+
+        self.data = data
+        """Data based on which stage may make computations and which it may
+        modify"""
 
     def __repr__(self):
         return 'Stage "%s"'%(self.__class__.__name__)
@@ -176,7 +225,7 @@ class Stage():
                 "`selections` = %s yielded `params` = %s" % (selections, self.params)
             )
 
-    def _check_params(self, params, ignore_excess = False):
+    def _check_params(self, params, ignore_excess=False):
         """Make sure that `expected_params` is defined and that exactly the
         params specified in self.expected_params are present.
 
@@ -206,8 +255,6 @@ class Stage():
             + ";\n".join(err_strs)
         )
 
-
-
     @property
     def params(self):
         """Params"""
@@ -217,6 +264,105 @@ class Stage():
     def param_selections(self):
         """Param selections"""
         return sorted(deepcopy(self._param_selector.param_selections))
+
+    @property
+    def calc_mode(self):
+        """calc_mode"""
+        return self._calc_mode
+
+    @calc_mode.setter
+    def calc_mode(self, value):
+        """Set `calc_mode` after checking the validity of `value`, and,
+        in standalone mode, rerun `setup()` if has already been executed at
+        least once."""
+        if value != self.calc_mode:
+            self._check_representation(rep=value, mode='calc_mode')
+            self._calc_mode = value
+            if self.in_standalone_mode and self.param_hash is not None:
+                # Only in standalone mode: repeat setup automatically only if
+                # setup has already been run; first reset `data` to pre-setup state
+                # TODO: test this scenario
+                self.data = deepcopy(self._original_data)
+                self.setup()
+            # In non-standalone (i.e., pipeline) mode, the user has to make sure
+            # they setup the pipeline again
+
+    @property
+    def data(self):
+        """data"""
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        """Keep a copy of any possible pre-setup `data` around whenever
+        we are in standalone mode, and update it whenever `data`
+        is updated before any call to `setup()`."""
+        if self.param_hash is None and self.in_standalone_mode:
+            self._original_data = deepcopy(value)
+        self._data = value
+
+    @property
+    def apply_mode(self):
+        """apply_mode"""
+        return self._apply_mode
+
+    @apply_mode.setter
+    def apply_mode(self, value):
+        """Set `apply_mode` after checking the validity of `value`"""
+        if value != self.apply_mode:
+            self._check_representation(rep=value, mode='apply_mode')
+            self._apply_mode = value
+
+    def _check_representation(self, rep, mode, allow_None=False):
+        if isinstance(rep, str) and rep not in self.supported_reps[mode]:
+            raise ValueError(
+                f"{mode} {rep} is not supported by {self.stage_name}"
+                f".{self.service_name}"
+            )
+        if (not isinstance(rep, str) and type(rep) not in self.supported_reps[mode]
+            and (rep is not None or not allow_None)):
+            raise ValueError(
+                f"{mode} {type(rep)} is not supported by {self.stage_name}"
+                f".{self.service_name}"
+            )
+
+    def _check_exp_keys_in_data(self, error_on_missing=False):
+        """Make sure that `expected_container_keys` is defined and that
+        they are present in all containers among `self.data`, independent of
+        representation.
+
+        Parameters
+        ----------
+        error_on_missing : bool
+            Whether to raise error upon missing keys (default: False)
+
+        Returns
+        -------
+        bool
+
+        """
+        if self.data is None:
+            # nothing to do, we were probably directly instantiated with data
+            # set to None
+            return
+        if self.expected_container_keys is None:
+            raise ValueError(
+                'Service %s.%s is not specifying expected container keys.'
+                % (self.stage_name, self.service_name)
+            )
+        exp_k = set(self.expected_container_keys)
+        got_k = set(self.data.get_shared_keys(rep_indep=True))
+        missing = exp_k.difference(got_k)
+        if len(missing) > 0:
+            err_str = "Service %s.%s," % (self.stage_name, self.service_name)
+            err_str += " expected container keys: %s," % ", ".join(sorted(exp_k))
+            err_str += " but containers are missing keys: %s" % ", ".join(sorted(missing))
+            if error_on_missing:
+                raise ValueError(err_str)
+            # TODO: warning could be confusing until we have made setup-time
+            # check foolproof
+            #logging.warn(err_str)
+        return
 
     @property
     def source_code_hash(self):
@@ -301,6 +447,7 @@ class Stage():
 
     @property
     def is_map(self):
+        """See ContainerSet.is_map for documentation"""
         return self.data.is_map
 
     def setup(self):
@@ -309,6 +456,8 @@ class Stage():
         if self.data is not None:
             if not isinstance(self.data, ContainerSet):
                 raise TypeError("`data` must be a `pisa.core.container.ContainerSet`")
+
+            self._check_exp_keys_in_data(error_on_missing=False)
 
         if self.calc_mode is not None:
             self.data.representation = self.calc_mode
@@ -374,5 +523,3 @@ class Stage():
     def run(self):
         self.compute()
         self.apply()
-        return None
-
