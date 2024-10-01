@@ -29,6 +29,7 @@ from pisa.core.pipeline import Pipeline
 from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC, ALLCLOSE_KW
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.fileio import to_file
+from pisa.utils.random_numbers import get_random_state
 from pisa.utils.stats import (METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE,
                               LLH_METRICS, CHI2_METRICS, weighted_chi2,
                               it_got_better, is_metric_to_maximize)
@@ -2681,7 +2682,8 @@ class BasicAnalysis(object):
         """
         self._nit += 1
 
-    def MCMC_sampling(self, data_dist, hypo_maker, metric, nwalkers, burnin, nsteps):
+    def MCMC_sampling(self, data_dist, hypo_maker, metric, nwalkers, burnin, nsteps,
+                      return_burn_in=False, random_state=42):
         """Performs MCMC sampling. Only supports serial (single CPU) execution at the 
         moment. See issue #830.
 
@@ -2709,6 +2711,24 @@ class BasicAnalysis(object):
 
         nSteps : int
             Number of steps after burn in
+            
+        return_burn_in : bool
+            Also return the steps of the burn in phase. Default is False
+
+        random_state : int
+            Random state of the walker starting points.
+
+        Returns
+        -------
+
+        scaled_chain : numpy array
+            Array containing all points in the parameter space visited by each walker.
+            It is sorted by steps, so all the first steps of all walkers come first.
+            To for example get all values of the Nth parameter and the ith walker, use
+            scaled_chain[i::nwalkers, N].
+
+        scaled_chain_burnin : numpy array (optional)
+            Same as scaled_chain, but for the burn in phase.
 
         """
         import emcee
@@ -2718,9 +2738,14 @@ class BasicAnalysis(object):
         bounds = np.repeat([[0,1]], len(x0), axis=0)
 
         ndim = len(hypo_maker.params.free)
-        p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
+        rs = get_random_state(random_state)
+        p0 = rs.random(ndim * nwalkers).reshape((nwalkers, ndim))
         
         def func(scaled_param_vals, bounds, data_dist, hypo_maker, metric):
+            """Function called by the MCMC sampler. Similar to _minimizer_callable it
+            returns the current metric value + prior penalties.
+            
+            """
             if np.any(scaled_param_vals > np.array(bounds)[:, 1]) or np.any(scaled_param_vals < np.array(bounds)[:, 0]):
                 return -np.inf
             sign = +1 if metric in METRICS_TO_MAXIMIZE else -1
@@ -2741,7 +2766,18 @@ class BasicAnalysis(object):
             sys.stdout.write('Burn in')
             sys.stdout.flush()
         pos, prob, state = sampler.run_mcmc(p0, burnin, progress=self.pprint)
-        flatchainburnin = sampler.flatchain
+        
+        if return_burn_in:
+            flatchain_burnin = sampler.flatchain
+            scaled_chain_burnin = np.full_like(flatchain_burnin, np.nan, dtype=FTYPE)
+            param_copy_burnin = ParamSet(hypo_maker.params.free)
+
+            for s, sample in enumerate(flatchain_burnin):
+                for dim, rescaled_val in enumerate(sample):
+                    param = param_copy_burnin[dim]
+                    param._rescaled_value = rescaled_val
+                    val = param.value.m
+                    scaled_chain_burnin[s, dim] = val
 
         sampler.reset()
         if self.pprint:
@@ -2760,7 +2796,10 @@ class BasicAnalysis(object):
                 val = param.value.m
                 scaled_chain[s, dim] = val
 
-        return scaled_chain
+        if return_burn_in:
+            return scaled_chain, scaled_chain_burnin
+        else:
+            return scaled_chain
 
 
 class Analysis(BasicAnalysis):
