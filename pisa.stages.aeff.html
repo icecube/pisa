@@ -119,6 +119,11 @@ then multiplied by the livetime to get an event count.</p>
 <span class="n">nu_nc_norm</span> <span class="p">:</span> <span class="n">dimensionless</span> <span class="n">Quantity</span>
 </pre></div>
 </div>
+<p>Expected container keys are ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;weights&quot;</span>
+<span class="s2">&quot;weighted_aeff&quot;</span>
+</pre></div>
+</div>
 </p>
 </dd>
 </dl>
@@ -128,6 +133,12 @@ then multiplied by the livetime to get an event count.</p>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.aeff.aeff.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.aeff.aeff.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/aeff.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.aeff.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
 </dd></dl>
 
 </section>
@@ -140,22 +151,28 @@ functions or interpolated discrete data points, dependent on energy
 (and optionally cosine zenith), and which can thus be used as reference or
 benchmark scenarios.</p>
 <dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.aeff.param.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.aeff.param.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/param.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.param.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.aeff.param.load_aeff_param">
 <span class="sig-prename descclassname"><span class="pre">pisa.stages.aeff.param.</span></span><span class="sig-name descname"><span class="pre">load_aeff_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/param.html#load_aeff_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.param.load_aeff_param" title="Link to this definition"></a></dt>
 <dd><p>Load aeff parameterisation (energy- or coszen-dependent) from file
-or dictionary.
-:param source: Source of the parameterization. If string, treat as file path or</p>
-<blockquote>
-<div><p>resource location and load from the file; this must yield a mapping. If
-<cite>source</cite> is a mapping, it is used directly. See notes below on format.</p>
-</div></blockquote>
+or dictionary.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>aeff_params</strong> – Keys are stringified flavintgroups and values are the callables that
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source</strong> (<em>string</em><em> or </em><em>mapping</em>) – Source of the parameterization. If string, treat as file path or
+resource location and load from the file; this must yield a mapping. If
+<cite>source</cite> is a mapping, it is used directly. See notes below on format.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>aeff_params</strong> – Keys are stringified flavintgroups and values are the callables that
 produce aeff when called with energy or coszen values.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="pisa.html#pisa.OrderedDict" title="pisa.OrderedDict">OrderedDict</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pisa.html#pisa.OrderedDict" title="pisa.OrderedDict">OrderedDict</a></p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
@@ -203,16 +220,24 @@ assumed to be 0.</p>
 .json file.
 Transforms an input map of a flux of a given flavour (and interaction)
 into maps of event rates, according to energy and cosine zenith dependent
-effective areas specified by parameterisation functions.
-Requires true_energy, true_coszen, and weights to be present in the container.
-:param params: Must exclusively have parameters:</p>
-<blockquote>
-<div><p>aeff_energy_paramfile
-aeff_coszen_paramfile
-livetime
-aeff_scale</p>
-</div></blockquote>
+effective areas specified by parameterisation functions.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a><em> or </em><em>sequence with which to instantiate a ParamSet.</em>) – <p>Expected params are ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">aeff_energy_paramfile</span> <span class="p">:</span> <span class="n">string</span>
+<span class="n">aeff_coszen_paramfile</span> <span class="p">:</span> <span class="n">string</span>
+<span class="n">livetime</span> <span class="p">:</span> <span class="n">Quantity</span> <span class="p">[</span><span class="n">time</span><span class="p">]</span>
+<span class="n">aeff_scale</span> <span class="p">:</span> <span class="n">Quantity</span> <span class="p">[</span><span class="n">dimensionless</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Expected container keys are ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
+<span class="s2">&quot;true_coszen&quot;</span>
+<span class="s2">&quot;weights&quot;</span>
+</pre></div>
+</div>
+</p>
+</dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.aeff.param.param.apply_function">
@@ -226,6 +251,12 @@ aeff_scale</p>
 <section id="module-pisa.stages.aeff.weight">
 <span id="pisa-stages-aeff-weight-module"></span><h2>pisa.stages.aeff.weight module<a class="headerlink" href="#module-pisa.stages.aeff.weight" title="Link to this heading"></a></h2>
 <p>PISA pi stage to apply weights</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.aeff.weight.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.aeff.weight.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/weight.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.weight.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.aeff.weight.weight">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.aeff.weight.</span></span><span class="sig-name descname"><span class="pre">weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/weight.html#weight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.weight.weight" title="Link to this definition"></a></dt>
@@ -240,6 +271,10 @@ The weight is then multiplied by the livetime to get an event count.</p>
     <span class="n">Detector</span> <span class="n">livetime</span> <span class="k">for</span> <span class="n">scaling</span> <span class="n">template</span>
 <span class="n">weight_scale</span> <span class="p">:</span> <span class="n">Quantity</span> <span class="p">[</span><span class="n">dimensionless</span><span class="p">]</span>
     <span class="n">Overall</span> <span class="n">scaling</span><span class="o">/</span><span class="n">normalisation</span> <span class="n">of</span> <span class="n">template</span>
+</pre></div>
+</div>
+<p>Expected container keys are ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;weights&quot;</span>
 </pre></div>
 </div>
 </p>
@@ -257,6 +292,12 @@ The weight is then multiplied by the livetime to get an event count.</p>
 <section id="module-pisa.stages.aeff.weight_hnl">
 <span id="pisa-stages-aeff-weight-hnl-module"></span><h2>pisa.stages.aeff.weight_hnl module<a class="headerlink" href="#module-pisa.stages.aeff.weight_hnl" title="Link to this heading"></a></h2>
 <p>PISA pi stage to apply HNL specific re-weighting</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.aeff.weight_hnl.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.aeff.weight_hnl.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/weight_hnl.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.weight_hnl.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.aeff.weight_hnl.re_weight_hnl">
 <span class="sig-prename descclassname"><span class="pre">pisa.stages.aeff.weight_hnl.</span></span><span class="sig-name descname"><span class="pre">re_weight_hnl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U_tau4_sq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hnl_decay_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c=&lt;Quantity(2.99792458e+08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'meter</span> <span class="pre">/</span> <span class="pre">second')&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hbar=&lt;Quantity(6.58211957e-25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'gigaelectron_volt</span> <span class="pre">*</span> <span class="pre">second')&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/aeff/weight_hnl.html#re_weight_hnl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.aeff.weight_hnl.re_weight_hnl" title="Link to this definition"></a></dt>

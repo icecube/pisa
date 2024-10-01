@@ -90,6 +90,9 @@
 <span class="kn">from</span> <span class="nn">pisa.utils.jsons</span> <span class="kn">import</span> <span class="n">from_json</span>
 <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
 
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;adhoc_sys&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+
+
 <div class="viewcode-block" id="adhoc_sys">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys">[docs]</a>
 <span class="k">class</span> <span class="nc">adhoc_sys</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
@@ -122,9 +125,20 @@
 
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">()</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">variable_name</span>
+        <span class="p">]</span>
+
+        <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;events&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;events&#39;</span>
+        <span class="p">}</span>
+
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
+            <span class="n">supported_reps</span><span class="o">=</span><span class="n">supported_reps</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -157,6 +171,35 @@
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;adhoc_scale_factors&quot;</span><span class="p">]</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">CACHE_DIR</span>
+    <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">to_file</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
+
+    <span class="c1"># create temporary scale file on the fly</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;reco_length&#39;</span>
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
+    <span class="n">var_binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;adhoc_sys_test_binning&#39;</span><span class="p">,</span>
+        <span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">var</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+    <span class="p">)</span>
+    <span class="n">scales</span> <span class="o">=</span> <span class="n">get_random_state</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+    <span class="n">scaling_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;binning&#39;</span><span class="p">:</span>  <span class="n">var_binning</span><span class="p">,</span> <span class="s1">&#39;scales&#39;</span><span class="p">:</span> <span class="n">scales</span><span class="p">}}</span>
+    <span class="n">scale_fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">&#39;test_scale_file.json&#39;</span><span class="p">)</span>
+    <span class="n">to_file</span><span class="p">(</span><span class="n">scaling_dict</span><span class="p">,</span> <span class="n">scale_fpath</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">adhoc_sys</span><span class="p">(</span>
+        <span class="n">variable_name</span><span class="o">=</span><span class="n">var</span><span class="p">,</span> <span class="n">scale_file</span><span class="o">=</span><span class="n">scale_fpath</span><span class="p">,</span>
+        <span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

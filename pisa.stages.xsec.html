@@ -116,6 +116,14 @@ ToDo: tech note being written, link here as soon as available</p>
 <dt>Must contain ::</dt><dd><p>dis_csms : quantity (dimensionless)</p>
 </dd>
 </dl>
+<p>Expected container keys are ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
+<span class="s2">&quot;bjorken_y&quot;</span>
+<span class="s2">&quot;dis&quot;</span>
+<span class="s2">&quot;nubar&quot;</span>
+<span class="s2">&quot;weights&quot;</span>
+</pre></div>
+</div>
 </p></li>
 <li><p><strong>extrapolation_type</strong> (<em>string</em>) – choice of [‘constant’, ‘linear’, ‘higher’]</p></li>
 <li><p><strong>extrapolation_energy_threshold</strong> (<em>float</em>) – Below what energy (in GeV) to extrapolate
@@ -147,6 +155,12 @@ Defaults to 100. CSMS not considered reliable below 50-100 GeV</p></li>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.xsec.dis_sys.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.dis_sys.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/dis_sys.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.dis_sys.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
 </dd></dl>
 
 </section>
@@ -194,6 +208,12 @@ Defaults to 100. CSMS not considered reliable below 50-100 GeV</p></li>
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.xsec.genie_sys.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.genie_sys.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/genie_sys.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.genie_sys.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 </section>
 <section id="module-pisa.stages.xsec.nutau_xsec">
 <span id="pisa-stages-xsec-nutau-xsec-module"></span><h2>pisa.stages.xsec.nutau_xsec module<a class="headerlink" href="#module-pisa.stages.xsec.nutau_xsec" title="Link to this heading"></a></h2>
@@ -202,6 +222,12 @@ Defaults to 100. CSMS not considered reliable below 50-100 GeV</p></li>
 It interpolates between different nutau CC cross section models as compared in this
 paper:
 <a class="reference external" href="https://arxiv.org/pdf/1008.2984.pdf?fname=cm&amp;font=TypeI">https://arxiv.org/pdf/1008.2984.pdf?fname=cm&amp;font=TypeI</a></p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.xsec.nutau_xsec.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.nutau_xsec.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/nutau_xsec.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.nutau_xsec.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.xsec.nutau_xsec.nutau_xsec">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.nutau_xsec.</span></span><span class="sig-name descname"><span class="pre">nutau_xsec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xsec_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cross_sections/interp_nutau_xsec_protocol2.pckl'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/nutau_xsec.html#nutau_xsec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.nutau_xsec.nutau_xsec" title="Link to this definition"></a></dt>
@@ -215,9 +241,14 @@ Maria Liubarska: <a class="reference external" href="https://github.com/marialiu
 <li><p><strong>xsec_file</strong> (<em>(</em><em>string</em><em>)</em>) – Path to pickled interpolated function. Default is included in PISA in
 <cite>pisa_examples/resources/cross_sections/interp_nutau_xsec_protocol2.pckl</cite></p></li>
 <li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a><em> or </em><em>sequence with which to instantiate a ParamSet.</em>) – <p>Expected params ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">scale</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nutau_xsec_scale</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
     <span class="n">Scaling</span> <span class="n">between</span> <span class="n">different</span> <span class="n">cross</span><span class="o">-</span><span class="n">section</span> <span class="n">models</span><span class="o">.</span> <span class="n">The</span> <span class="nb">range</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
     <span class="n">covers</span> <span class="nb">all</span> <span class="n">models</span> <span class="n">tested</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">paper</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>Expected container keys are ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
+<span class="s2">&quot;weights&quot;</span>
 </pre></div>
 </div>
 </p></li>

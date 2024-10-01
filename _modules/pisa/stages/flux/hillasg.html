@@ -81,10 +81,13 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.flux_weights</span> <span class="kn">import</span> <span class="n">load_2d_table</span><span class="p">,</span> <span class="n">calculate_2d_flux_weights</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hillasg&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="hillasg">
@@ -97,17 +100,31 @@
 <span class="sd">    ----------</span>
 <span class="sd">    params</span>
 <span class="sd">        Expected params .. ::</span>
+
 <span class="sd">            flux_table : str</span>
+
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;true_energy&quot;</span>
+<span class="sd">            &quot;true_coszen&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">std_kwargs</span><span class="p">):</span>
 
-        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;flux_table&quot;</span><span class="p">,)</span>
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;flux_table&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -196,6 +213,53 @@
         <span class="c1"># don&#39;t forget to un-link everything again</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.hillasg.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">CACHE_DIR</span>
+    
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">&#39;dummy_hillas_test_flux-aa.d&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">form</span><span class="p">(</span><span class="n">val</span><span class="p">:</span><span class="nb">float</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%1.4E</span><span class="s1">&#39;</span><span class="o">%</span><span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+        <span class="n">costh_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">energy_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.05</span><span class="p">,</span> <span class="mf">10.95</span><span class="p">,</span> <span class="mi">121</span><span class="p">)</span>
+
+        <span class="n">hundred_e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">energy_nodes</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">energy_nodes</span><span class="p">)),</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">hundred_ct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">buffering</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_i_theta</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hundred_ct</span><span class="p">)):</span>
+            <span class="n">i_theta</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hundred_ct</span><span class="p">)</span> <span class="o">-</span> <span class="n">_i_theta</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">i_theta</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">sp1</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span> <span class="k">if</span> <span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="p">]</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">sp2</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span> <span class="k">if</span> <span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;average flux in [cosZ =</span><span class="si">{}{:.2f}</span><span class="s2"> -- </span><span class="si">{}{:.2f}</span><span class="s2">, phi_Az =   0 -- 360]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sp1</span><span class="p">,</span><span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="p">],</span> <span class="n">sp2</span><span class="p">,</span><span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; Enu(GeV)   NuMu       NuMubar    NuE        NuEbar     NuTau      NuTauBar   (m^2 sec sr GeV)^-1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i_e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hundred_e</span><span class="p">)):</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="n">hundred_e</span><span class="p">[</span><span class="n">i_e</span><span class="p">]))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">outfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;flux_table&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">hillasg</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
 </pre></div>
 

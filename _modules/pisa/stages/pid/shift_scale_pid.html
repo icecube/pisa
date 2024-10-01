@@ -83,10 +83,11 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;shift_scale_pid&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;shift_scale_pid&#39;</span><span class="p">,</span> <span class="s1">&#39;calculate_pid_function&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;L. Fischer&#39;</span>
 
@@ -113,9 +114,12 @@
         <span class="c1"># register expected parameters</span>
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;bias&#39;</span><span class="p">,</span> <span class="s1">&#39;scale&#39;</span><span class="p">,)</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;pid&#39;</span><span class="p">,</span> <span class="p">)</span>
+
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -187,6 +191,19 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">scale_factor</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">pid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">bias_value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bias&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;scale&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
+    <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">shift_scale_pid</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>

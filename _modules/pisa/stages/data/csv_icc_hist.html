@@ -83,9 +83,12 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
 <span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;csv_icc_hist&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="csv_icc_hist">
@@ -112,6 +115,7 @@
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="p">(),</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -148,6 +152,17 @@
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_icc_hist.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">csv_icc_hist</span><span class="p">(</span>
+        <span class="n">events_file</span><span class="o">=</span><span class="s2">&quot;events/IceCube_3y_oscillations/muons.csv.bz2&quot;</span><span class="p">,</span>
+        <span class="n">params</span><span class="o">=</span><span class="n">ParamSet</span><span class="p">([</span><span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;atm_muon_scale&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)])</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

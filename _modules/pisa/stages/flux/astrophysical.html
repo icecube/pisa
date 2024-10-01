@@ -79,9 +79,11 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;astrophysical&#39;</span><span class="p">,</span> <span class="s1">&#39;spectral_index_scale&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_sys_loop&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 <span class="n">PIVOT</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="mf">100.0e3</span><span class="p">)</span>
 
@@ -96,8 +98,15 @@
 <span class="sd">    ----------</span>
 <span class="sd">    params</span>
 <span class="sd">        Expected params are .. ::</span>
+
 <span class="sd">            astro_delta : quantity (dimensionless)</span>
 <span class="sd">            astro_norm : quantity (dimensionless)</span>
+<span class="sd">            </span>
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;true_energy&quot;</span>
+<span class="sd">            &quot;true_coszen&quot;</span>
+<span class="sd">            &quot;initial_weights&quot;</span>
 
 <span class="sd">    TODO: flavor ratio as a parameter? Save for later.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -110,10 +119,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_mu_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tau_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;astro_delta&quot;</span><span class="p">,</span> <span class="s2">&quot;astro_norm&quot;</span><span class="p">)</span>
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;astro_delta&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;astro_norm&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;initial_weights&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -228,6 +247,19 @@
     <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_evts</span><span class="p">):</span>
         <span class="n">spec_scale</span> <span class="o">=</span> <span class="n">spectral_index_scale</span><span class="p">(</span><span class="n">true_energy</span><span class="p">[</span><span class="n">event</span><span class="p">],</span> <span class="n">delta_index</span><span class="p">)</span>
         <span class="n">out</span><span class="p">[</span><span class="n">event</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm</span> <span class="o">*</span> <span class="n">astroflux_nominal</span><span class="p">[</span><span class="n">event</span><span class="p">]</span> <span class="o">*</span> <span class="n">spec_scale</span></div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.astrophysical.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;astro_norm&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;astro_delta&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+    <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">astrophysical</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
 </pre></div>
 

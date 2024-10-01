@@ -114,6 +114,7 @@
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="p">(),</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -241,6 +242,39 @@
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">CACHE_DIR</span>
+    <span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
+
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">&#39;sqlite_loader_test_file&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
+        <span class="n">random_state</span> <span class="o">=</span> <span class="n">get_random_state</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+        <span class="n">n_evts</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">true_data</span><span class="p">,</span> <span class="n">reco_data</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_evts</span><span class="p">):</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">random_state</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span>
+            <span class="n">event</span> <span class="o">+=</span> <span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n_evts</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">true_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">event</span><span class="p">))</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">random_state</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span>
+            <span class="n">event</span> <span class="o">+=</span> <span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">reco_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">event</span><span class="p">))</span>
+
+        <span class="k">with</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span> <span class="k">as</span> <span class="n">con</span><span class="p">:</span>
+            <span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+            <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE truth(energy, zenith, OneWeight, gen_ratio, event_no, NEvents, interaction_type, pid, RunID, SubrunID)&quot;</span><span class="p">)</span>
+            <span class="n">cur</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">&quot;INSERT INTO truth VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)&quot;</span><span class="p">,</span> <span class="n">true_data</span><span class="p">)</span>
+            <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE reconstruction(energy_pred, zenith_pred, track_pred, event_no)&quot;</span><span class="p">)</span>
+            <span class="n">cur</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">&quot;INSERT INTO reconstruction VALUES(?, ?, ?, ?)&quot;</span><span class="p">,</span> <span class="n">reco_data</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sqlite_loader</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;numu_cc&#39;</span><span class="p">])</span></div>
 
 </pre></div>
 

@@ -99,9 +99,14 @@
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;errors&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 

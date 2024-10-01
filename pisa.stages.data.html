@@ -118,6 +118,12 @@
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.data.csv_data_hist.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.data.csv_data_hist.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/csv_data_hist.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.csv_data_hist.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 </section>
 <section id="module-pisa.stages.data.csv_icc_hist">
 <span id="pisa-stages-data-csv-icc-hist-module"></span><h2>pisa.stages.data.csv_icc_hist module<a class="headerlink" href="#module-pisa.stages.data.csv_icc_hist" title="Link to this heading"></a></h2>
@@ -144,6 +150,12 @@
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.data.csv_icc_hist.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.data.csv_icc_hist.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/csv_icc_hist.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.csv_icc_hist.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
 </dd></dl>
 
 </section>
@@ -177,73 +189,10 @@
 
 </dd></dl>
 
-</section>
-<section id="module-pisa.stages.data.freedom_hdf5_loader">
-<span id="pisa-stages-data-freedom-hdf5-loader-module"></span><h2>pisa.stages.data.freedom_hdf5_loader module<a class="headerlink" href="#module-pisa.stages.data.freedom_hdf5_loader" title="Link to this heading"></a></h2>
-<p>A Stage to load data from a FreeDOM hdf5 file (generated using the I3HDFWriter)</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.freedom_hdf5_loader.</span></span><span class="sig-name descname"><span class="pre">freedom_hdf5_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files_per_flavor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reco</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cuts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_E_cut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/freedom_hdf5_loader.html#freedom_hdf5_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>FreeDOM hdf5 file loader</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>events_file</strong> (<em>hdf5 file path</em>)</p></li>
-<li><p><strong>files_per_flavor</strong> (<em>list</em>) – number of files for each nu flavor</p></li>
-<li><p><strong>reco</strong> (<em>str</em>) – which reco to use</p></li>
-<li><p><strong>keys</strong> (<em>list</em>) – which keys to unpack</p></li>
-<li><p><strong>cuts</strong> (<em>dict</em>) – cuts to apply when loading the data</p></li>
-<li><p><strong>track_E_cut</strong> (<em>float</em>) – track energy cut for PID.
-If not set, L7_PIDClassifier_ProbTrack will be used</p></li>
-<li><p><strong>**kwargs</strong> – Passed to Stage</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.apply_cuts">
-<span class="sig-name descname"><span class="pre">apply_cuts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cuts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/freedom_hdf5_loader.html#freedom_hdf5_loader.apply_cuts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.apply_cuts" title="Link to this definition"></a></dt>
-<dd><p>apply cuts in place</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.apply_function">
-<span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/freedom_hdf5_loader.html#freedom_hdf5_loader.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.apply_function" title="Link to this definition"></a></dt>
-<dd><p>Implement in services (subclasses of Stage)</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.calc_rho36">
-<span class="sig-name descname"><span class="pre">calc_rho36</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/freedom_hdf5_loader.html#freedom_hdf5_loader.calc_rho36"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.calc_rho36" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.calc_uncertainties">
-<span class="sig-name descname"><span class="pre">calc_uncertainties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-15</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/freedom_hdf5_loader.html#freedom_hdf5_loader.calc_uncertainties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.calc_uncertainties" title="Link to this definition"></a></dt>
-<dd><p>add uncertainty estimates to data; return modified data</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.fill_variable_dict">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fill_variable_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/freedom_hdf5_loader.html#freedom_hdf5_loader.fill_variable_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.fill_variable_dict" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.load_hdf5_file">
-<span class="sig-name descname"><span class="pre">load_hdf5_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/freedom_hdf5_loader.html#freedom_hdf5_loader.load_hdf5_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.load_hdf5_file" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.setup_function">
-<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/freedom_hdf5_loader.html#freedom_hdf5_loader.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.setup_function" title="Link to this definition"></a></dt>
-<dd><p>Implement in services (subclasses of Stage)</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.unpack_file_data">
-<span class="sig-name descname"><span class="pre">unpack_file_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/freedom_hdf5_loader.html#freedom_hdf5_loader.unpack_file_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.freedom_hdf5_loader.freedom_hdf5_loader.unpack_file_data" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.data.csv_loader.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.data.csv_loader.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/csv_loader.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.csv_loader.init_test" title="Link to this definition"></a></dt>
+<dd><p>Initialisation example</p>
 </dd></dl>
 
 </section>
@@ -279,6 +228,12 @@ fucntion docs for details)</p>
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.data.grid.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.data.grid.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/grid.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.grid.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 </section>
 <section id="pisa-stages-data-licloader-weighter-module">
 <h2>pisa.stages.data.licloader_weighter module<a class="headerlink" href="#pisa-stages-data-licloader-weighter-module" title="Link to this heading"></a></h2>
@@ -286,6 +241,12 @@ fucntion docs for details)</p>
 <section id="module-pisa.stages.data.meows_loader">
 <span id="pisa-stages-data-meows-loader-module"></span><h2>pisa.stages.data.meows_loader module<a class="headerlink" href="#module-pisa.stages.data.meows_loader" title="Link to this heading"></a></h2>
 <p>A class to load in the MEOWS hdf5 files</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.data.meows_loader.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.data.meows_loader.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/meows_loader.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.meows_loader.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.data.meows_loader.meows_loader">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.meows_loader.</span></span><span class="sig-name descname"><span class="pre">meows_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_files</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/meows_loader.html#meows_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.meows_loader.meows_loader" title="Link to this definition"></a></dt>
@@ -310,6 +271,12 @@ fucntion docs for details)</p>
 <section id="module-pisa.stages.data.simple_data_loader">
 <span id="pisa-stages-data-simple-data-loader-module"></span><h2>pisa.stages.data.simple_data_loader module<a class="headerlink" href="#module-pisa.stages.data.simple_data_loader" title="Link to this heading"></a></h2>
 <p>A Stage to load data from a PISA style hdf5 file into a PISA pi ContainerSet</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.data.simple_data_loader.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.data.simple_data_loader.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/simple_data_loader.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.simple_data_loader.init_test" title="Link to this definition"></a></dt>
+<dd><p>Initialisation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.data.simple_data_loader.simple_data_loader">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.simple_data_loader.</span></span><span class="sig-name descname"><span class="pre">simple_data_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mc_cuts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neutrinos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fraction_events_to_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events_subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">123456</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/simple_data_loader.html#simple_data_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.simple_data_loader.simple_data_loader" title="Link to this definition"></a></dt>
@@ -377,6 +344,12 @@ service initialisation. Cf. <cite>Stage</cite> docs.</p>
 <span id="pisa-stages-data-simple-signal-module"></span><h2>pisa.stages.data.simple_signal module<a class="headerlink" href="#module-pisa.stages.data.simple_signal" title="Link to this heading"></a></h2>
 <p>Stage to generate simple 1D data consisting
 of a flat background + gaussian peak with a mean and a width</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.data.simple_signal.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.data.simple_signal.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/simple_signal.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.simple_signal.init_test" title="Link to this definition"></a></dt>
+<dd><p>Initialisation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.data.simple_signal.simple_signal">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.simple_signal.</span></span><span class="sig-name descname"><span class="pre">simple_signal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/simple_signal.html#simple_signal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.simple_signal.simple_signal" title="Link to this definition"></a></dt>
@@ -422,6 +395,12 @@ and initialize the container we will need</p>
 <section id="module-pisa.stages.data.sqlite_loader">
 <span id="pisa-stages-data-sqlite-loader-module"></span><h2>pisa.stages.data.sqlite_loader module<a class="headerlink" href="#module-pisa.stages.data.sqlite_loader" title="Link to this heading"></a></h2>
 <p>A Stage to load data from an sqlite database</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.data.sqlite_loader.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.data.sqlite_loader.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/sqlite_loader.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.sqlite_loader.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.data.sqlite_loader.sqlite_loader">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.sqlite_loader.</span></span><span class="sig-name descname"><span class="pre">sqlite_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">post_fix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'_pred'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/sqlite_loader.html#sqlite_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.sqlite_loader.sqlite_loader" title="Link to this definition"></a></dt>
@@ -481,6 +460,12 @@ and initialize the container we will need</p>
 <section id="module-pisa.stages.data.toy_event_generator">
 <span id="pisa-stages-data-toy-event-generator-module"></span><h2>pisa.stages.data.toy_event_generator module<a class="headerlink" href="#module-pisa.stages.data.toy_event_generator" title="Link to this heading"></a></h2>
 <p>Stage to generate some random data</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.data.toy_event_generator.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.data.toy_event_generator.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/toy_event_generator.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.toy_event_generator.init_test" title="Link to this definition"></a></dt>
+<dd><p>Initialisation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.data.toy_event_generator.toy_event_generator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.toy_event_generator.</span></span><span class="sig-name descname"><span class="pre">toy_event_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/toy_event_generator.html#toy_event_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.toy_event_generator.toy_event_generator" title="Link to this definition"></a></dt>

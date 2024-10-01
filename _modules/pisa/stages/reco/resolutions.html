@@ -80,8 +80,11 @@
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;resolutions&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="resolutions">
@@ -104,6 +107,14 @@
 <span class="sd">            pid_improvement : quantity (dimensionless)</span>
 <span class="sd">                applies a shift to the classification parameter</span>
 
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;true_energy&quot;</span>
+<span class="sd">            &quot;true_coszen&quot;</span>
+<span class="sd">            &quot;reco_energy&quot;</span>
+<span class="sd">            &quot;reco_coszen&quot;</span>
+<span class="sd">            &quot;pid&quot;</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -114,9 +125,19 @@
             <span class="s1">&#39;coszen_improvement&#39;</span><span class="p">,</span>
             <span class="s1">&#39;pid_improvement&#39;</span><span class="p">,</span>
         <span class="p">)</span>
+
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;reco_energy&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;reco_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;pid&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -144,6 +165,19 @@
                 <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">pid_improvement</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;pid&#39;</span><span class="p">)</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.resolutions.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy_improvement&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;coszen_improvement&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pid_improvement&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">resolutions</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
 </pre></div>
 

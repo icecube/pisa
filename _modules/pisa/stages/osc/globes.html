@@ -95,11 +95,14 @@
 <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
 
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.layers</span> <span class="kn">import</span> <span class="n">Layers</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.osc_params</span> <span class="kn">import</span> <span class="n">OscParams</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;globes&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="globes">
@@ -127,6 +130,15 @@
 <span class="sd">            theta34 : quantity (angle)</span>
 <span class="sd">            deltacp : quantity (angle)</span>
 
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;true_energy&quot;</span>
+<span class="sd">            &quot;true_coszen&quot;</span>
+<span class="sd">            &quot;nubar&quot;</span>
+<span class="sd">            &quot;flav&quot;</span>
+<span class="sd">            &quot;nu_flux&quot;</span>
+<span class="sd">            &quot;weights&quot;</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -149,9 +161,19 @@
             <span class="s1">&#39;deltacp&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;nubar&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;flav&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;nu_flux&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;weights&#39;</span>
+        <span class="p">)</span>
+
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -364,6 +386,29 @@
 <span class="nd">@guvectorize</span><span class="p">([</span><span class="n">signature</span><span class="p">],</span> <span class="s1">&#39;(d),(),(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">apply_probs</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">prob_nonsterile</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="p">((</span><span class="n">flux</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">prob_e</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">flux</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">prob_mu</span><span class="p">))</span><span class="o">*</span><span class="n">prob_nonsterile</span>
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.globes.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta12&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">33</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta13&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">8</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta23&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">50</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta24&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta34&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;deltam21&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">8e-5</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;deltam31&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">3e-3</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;deltam41&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;deltacp&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">180</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span> 
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">globes</span><span class="p">(</span>
+        <span class="n">earth_model</span><span class="o">=</span><span class="s1">&#39;osc/PREM_12layer.dat&#39;</span><span class="p">,</span>
+        <span class="n">globes_wrapper</span><span class="o">=</span><span class="s1">&#39;GLoBES_wrapper&#39;</span><span class="p">,</span> <span class="c1">#FIXME</span>
+        <span class="n">params</span><span class="o">=</span><span class="n">param_set</span>
+    <span class="p">)</span></div>
+
 </pre></div>
 
            </div>

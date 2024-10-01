@@ -28,14 +28,6 @@ pisa.stages.data.csv\_loader module
    :undoc-members:
    :show-inheritance:
 
-pisa.stages.data.freedom\_hdf5\_loader module
----------------------------------------------
-
-.. automodule:: pisa.stages.data.freedom_hdf5_loader
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 pisa.stages.data.grid module
 ----------------------------
 

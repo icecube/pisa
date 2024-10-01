@@ -85,29 +85,44 @@
 <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">pisa_tests.test_services</span> <span class="kn">import</span> <span class="n">TEST_BINNING</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hist&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="hist">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.hist.hist">[docs]</a>
 <span class="k">class</span> <span class="nc">hist</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;stage to histogram events</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stage to histogram events</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    unweighted : bool, optional</span>
-<span class="sd">        Return un-weighted event counts in each bin.</span>
+<span class="sd">    unweighted : bool, default False</span>
+<span class="sd">        Return un-weighted event counts in each bin</span>
+<span class="sd">    apply_unc_weights : bool, default False</span>
+
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;weights&quot;</span>
+<span class="sd">            &quot;unc_weights&quot; (if `apply_unc_weights`)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">apply_unc_weights</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">unweighted</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;weights&#39;</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">apply_unc_weights</span><span class="p">:</span>
+            <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;unc_weights&#39;</span><span class="p">)</span>
 
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -279,6 +294,14 @@
                     <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sumw2</span><span class="p">)</span>
                     <span class="n">container</span><span class="p">[</span><span class="s2">&quot;bin_unc2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_unc2</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.hist.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">hist</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span></div>
 
 </pre></div>
 

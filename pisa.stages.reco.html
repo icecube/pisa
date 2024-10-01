@@ -100,6 +100,12 @@
 <section id="module-pisa.stages.reco.resolutions">
 <span id="pisa-stages-reco-resolutions-module"></span><h2>pisa.stages.reco.resolutions module<a class="headerlink" href="#module-pisa.stages.reco.resolutions" title="Link to this heading"></a></h2>
 <p>Stage for resolution improvement studies</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.reco.resolutions.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.resolutions.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/resolutions.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.resolutions.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.reco.resolutions.resolutions">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.resolutions.</span></span><span class="sig-name descname"><span class="pre">resolutions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/resolutions.html#resolutions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.resolutions.resolutions" title="Link to this definition"></a></dt>
@@ -118,6 +124,14 @@ resolutions for instance</p>
     <span class="n">applies</span> <span class="n">a</span> <span class="n">shift</span> <span class="n">to</span> <span class="n">the</span> <span class="n">classification</span> <span class="n">parameter</span>
 </pre></div>
 </div>
+<p>Expected container keys are ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
+<span class="s2">&quot;true_coszen&quot;</span>
+<span class="s2">&quot;reco_energy&quot;</span>
+<span class="s2">&quot;reco_coszen&quot;</span>
+<span class="s2">&quot;pid&quot;</span>
+</pre></div>
+</div>
 </p>
 </dd>
 </dl>
@@ -134,6 +148,94 @@ resolutions for instance</p>
 <span id="pisa-stages-reco-simple-param-module"></span><h2>pisa.stages.reco.simple_param module<a class="headerlink" href="#module-pisa.stages.reco.simple_param" title="Link to this heading"></a></h2>
 <p>Create reconstructed and PID variables based on truth information
 for MC events using simple parameterisations.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.reco.simple_param.dict_lookup_wildcard">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.simple_param.</span></span><span class="sig-name descname"><span class="pre">dict_lookup_wildcard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/simple_param.html#dict_lookup_wildcard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.simple_param.dict_lookup_wildcard" title="Link to this definition"></a></dt>
+<dd><p>Find the object in a dict specified by a key, where the key may include wildcards</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dict_obj</strong> (<em>dict</em>) – The dict (or dict-like) object to search</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – The key to search for in the dict (may include wildcards)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>key</strong> (<em>str</em>) – The str found in the dict matching the wildcard</p></li>
+<li><p><strong>value</strong> (<em>anything</em>) – The value found corresponding to the the requested key</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.reco.simple_param.energy_dependent_sigma">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.simple_param.</span></span><span class="sig-name descname"><span class="pre">energy_dependent_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_power</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/simple_param.html#energy_dependent_sigma"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.simple_param.energy_dependent_sigma" title="Link to this definition"></a></dt>
+<dd><p>Returns an energy dependent sigma (standard deviation) value(s),
+with energy dependence defined as follows:</p>
+<blockquote>
+<div><p>sigma(E) = sigma(E=E0) * (E/E0)^n</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>energy</strong> (<em>array</em><em> or </em><em>float</em>) – Energy value to evaluate sigma at</p></li>
+<li><p><strong>energy_0</strong> (<em>float</em>) – Energy at which sigma_0 is defined</p></li>
+<li><p><strong>sigma_0</strong> (<em>float</em>) – The value of sigma at energy_0</p></li>
+<li><p><strong>energy_power</strong> (<em>float</em>) – Power/index fo the energy dependence</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sigma(energy)</strong> – The value of sigma at the specified energy (or energies)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array or float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.reco.simple_param.has_muon">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.simple_param.</span></span><span class="sig-name descname"><span class="pre">has_muon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle_key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/simple_param.html#has_muon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.simple_param.has_muon" title="Link to this definition"></a></dt>
+<dd><p>Function returning True if the particle type has muons in the final state
+This is numu CC and atmopsheric muons</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>particle_key</strong> (<em>string</em>) – Key identifiying the particle type, e.g. numu_cc, nutau_nc, muon, etc.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>has_muon</strong> – Flag set to try if particle has muon in final state</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.reco.simple_param.logistic_function">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.simple_param.</span></span><span class="sig-name descname"><span class="pre">logistic_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/simple_param.html#logistic_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.simple_param.logistic_function" title="Link to this definition"></a></dt>
+<dd><p>Logistic function as defined here: <a class="reference external" href="https://en.wikipedia.org/wiki/Logistic_function">https://en.wikipedia.org/wiki/Logistic_function</a>.
+Starts off slowly rising, before steeply rising, then plateaus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> (<em>float</em>) – Normalisation (e.g. plateau height)</p></li>
+<li><p><strong>b</strong> (<em>float</em>) – Steepness of rise (larger value means steeper rise)</p></li>
+<li><p><strong>c</strong> (<em>float</em>) – x value at half-height of curve</p></li>
+<li><p><strong>x</strong> (<em>array</em>) – The continuous parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>f(x)</strong> – The results of applying the logistic function to x</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.reco.simple_param.simple_param">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.simple_param.</span></span><span class="sig-name descname"><span class="pre">simple_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/simple_param.html#simple_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.simple_param.simple_param" title="Link to this definition"></a></dt>
@@ -163,6 +265,11 @@ See <cite>simple_pid_parameterization</cite> documentatio for more details</p>
 <dt>cascade_pid<span class="classifier">float</span></dt><dd><p>The numerical ‘pid’ variable value to assign for cascades</p>
 </dd>
 </dl>
+<p>Expected container keys are ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
+<span class="s2">&quot;true_coszen&quot;</span>
+</pre></div>
+</div>
 </p>
 </dd>
 </dl>
@@ -252,6 +359,31 @@ can be obtained when calling multiple times.</p></li>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>reco_energy</strong> – Reconstructed energy array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.reco.simple_param.visible_energy_correction">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.simple_param.</span></span><span class="sig-name descname"><span class="pre">visible_energy_correction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle_key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/simple_param.html#visible_energy_correction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.simple_param.visible_energy_correction" title="Link to this definition"></a></dt>
+<dd><p>Simple way to estimate the amount of visible energy in the event.</p>
+<p>Right now considering cases with final state neutrinos, such as NC events,
+and nutau CC events (where the tau decays to a tau neutrino).</p>
+<p>Neglecting the much lower losses due to muon decay for numu CC.
+Also neglecting fact that different particle types produce differing photon yields.</p>
+<p>I’ve tuned these by eye due to the biases seen in GRECO pegleg, which to first
+order I’m assuming are due to this missing energy.
+There is also a bias in numu CC in GRECO, but suspect this is due to containment
+or stochastics, but either way not reproducing this here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>particle_key</strong> (<em>string</em>) – Key identifiying the particle type, e.g. numu_cc, nutau_nc, muon, etc.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>visible_energy</strong> – Estimated visible energy in each event</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>array</p>

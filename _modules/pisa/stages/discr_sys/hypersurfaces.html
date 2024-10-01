@@ -85,12 +85,13 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
 <span class="kn">import</span> <span class="nn">ast</span>
-
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
 <span class="kn">import</span> <span class="nn">pisa.utils.hypersurface</span> <span class="k">as</span> <span class="nn">hs</span>
 
@@ -172,13 +173,29 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">load_hypersurfaces</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span><span class="p">,</span> <span class="n">expected_binning</span><span class="o">=</span><span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hypersurface_param_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hypersurfaces</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">param_names</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;error_method&#39;</span> <span class="ow">in</span> <span class="n">std_kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;error_method&#39;</span><span class="p">]:</span>
+                <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">)</span>
+                <span class="c1">#TODO: When in a pipeline after utils.hist,</span>
+                <span class="c1"># this will cause a warning about missing presence of &#39;errors&#39;</span>
+                <span class="c1"># because hist adds this key during apply</span>
+
+
         <span class="c1"># -- Initialize base class -- #</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hypersurface_param_names</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">inter_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">links</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">links</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">links</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">warning_issued</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># don&#39;t warn more than once about empty bins</span>
 
         <span class="c1"># Handle fluctuation option</span>
@@ -311,6 +328,36 @@
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span></div>
 </div>
 
+
+
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;opt_eff_overall&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;opt_eff_lateral&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;opt_eff_headon&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ice_scattering&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ice_absorption&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+    <span class="p">])</span>
+    <span class="n">dd_en</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
+        <span class="s1">&#39;reco_energy&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">bin_edges</span><span class="o">=</span><span class="p">[</span><span class="mf">5.62341325</span><span class="p">,</span> <span class="mf">7.49894209</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">13.33521432</span><span class="p">,</span> <span class="mf">17.7827941</span><span class="p">,</span> <span class="mf">23.71373706</span><span class="p">,</span> <span class="mf">31.6227766</span><span class="p">,</span> <span class="mf">42.16965034</span><span class="p">,</span> <span class="mf">56.23413252</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span>
+        <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;E_{\rm reco}&#39;</span>
+    <span class="p">)</span>
+    <span class="n">dd_cz</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
+        <span class="s1">&#39;reco_coszen&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\cos{\theta}_{\rm reco}&#39;</span>
+    <span class="p">)</span>
+    <span class="n">dd_pid</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="s1">&#39;pid&#39;</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">],</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;{\rm PID}&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hypersurfaces</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">,</span>
+        <span class="n">fit_results_file</span><span class="o">=</span><span class="s1">&#39;events/IceCube_3y_oscillations/hyperplanes_*.csv.bz2&#39;</span><span class="p">,</span>
+        <span class="n">error_method</span><span class="o">=</span><span class="s1">&#39;sumw2&#39;</span><span class="p">,</span>
+        <span class="n">calc_mode</span><span class="o">=</span><span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">dd_en</span><span class="p">,</span> <span class="n">dd_cz</span><span class="p">,</span> <span class="n">dd_pid</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;dragon_datarelease&#39;</span><span class="p">),</span>
+        <span class="n">links</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;nue_cc+nuebar_cc&#39;</span><span class="p">:[</span><span class="s1">&#39;test1_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;test2_nc&#39;</span><span class="p">],</span>
+            <span class="c1">#TODO: not ideal, because I need to know what test_services fills ContainerSet with</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
 </pre></div>
 
            </div>

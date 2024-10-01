@@ -125,8 +125,11 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;generalized_llh_params&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 <span class="n">PSEUDO_WEIGHT</span> <span class="o">=</span> <span class="mf">0.001</span>
 
@@ -146,10 +149,31 @@
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                  <span class="p">):</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;apply_mode&#39;</span> <span class="p">:</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">]</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;apply_mode&#39;</span> <span class="ow">in</span> <span class="n">std_kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Service requires specifying binning for `apply_mode` during init!&quot;</span>
+            <span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">],</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+
+        <span class="n">N_bins</span> <span class="o">=</span> <span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tot_num_bins</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_bins</span><span class="p">):</span>
+            <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;bin_</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s1">_mask&#39;</span><span class="p">)</span>
+
         <span class="c1"># init base class</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">generalized_llh_params</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
-                                                     <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
-                                                     <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
+            <span class="n">supported_reps</span><span class="o">=</span><span class="n">supported_reps</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="generalized_llh_params.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.likelihood.html#pisa.stages.likelihood.generalized_llh_params.generalized_llh_params.setup_function">[docs]</a>
@@ -159,7 +183,6 @@
 <span class="sd">        of MC events in each bin of each dataset and</span>
 <span class="sd">        compute mean adjustment</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">N_bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">tot_num_bins</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
@@ -314,6 +337,15 @@
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;old_sum&#39;</span><span class="p">)</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.likelihood.html#pisa.stages.likelihood.generalized_llh_params.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pisa_tests.test_services</span> <span class="kn">import</span> <span class="n">TEST_BINNING</span>
+    <span class="k">return</span> <span class="n">generalized_llh_params</span><span class="p">(</span><span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span></div>
 
 </pre></div>
 

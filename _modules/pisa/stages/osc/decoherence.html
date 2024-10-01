@@ -89,7 +89,8 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.stages.osc.osc_params</span> <span class="kn">import</span> <span class="n">OscParams</span>
@@ -99,7 +100,8 @@
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DecoherenceParams&#39;</span><span class="p">,</span> <span class="s1">&#39;calc_decoherence_probs&#39;</span><span class="p">,</span> <span class="s2">&quot;decoherence&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DecoherenceParams&#39;</span><span class="p">,</span> <span class="s1">&#39;calc_decoherence_probs&#39;</span><span class="p">,</span> <span class="s1">&#39;decoherence&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;T. Stuttard, M. Jensen&#39;</span>
 
@@ -353,6 +355,15 @@
 <span class="sd">            gamma13 : quantity (energy)</span>
 <span class="sd">            gamma23 : quantity (energy)</span>
 
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;true_energy&quot;</span>
+<span class="sd">            &quot;true_coszen&quot;</span>
+<span class="sd">            &quot;weights&quot;</span>
+<span class="sd">            &quot;nubar&quot;</span>
+<span class="sd">            &quot;flav&quot;</span>
+<span class="sd">            &quot;sys_flux&quot;</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
@@ -375,11 +386,22 @@
                            <span class="s1">&#39;gamma32&#39;</span><span class="p">,</span>
                           <span class="p">)</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;nubar&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;flav&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;sys_flux&#39;</span><span class="p">,</span>
+            
+        <span class="p">)</span>
+
         <span class="c1"># init base class</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">decoherence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-                                       <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
-                                       <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
-                                      <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="c1">#Have not yet implemented matter effects</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">earth_model</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -564,6 +586,31 @@
 <span class="nd">@guvectorize</span><span class="p">([</span><span class="n">signature</span><span class="p">],</span> <span class="s1">&#39;(d),(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">apply_probs</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="n">flux</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">prob_e</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">flux</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">prob_mu</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;detector_depth&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">km</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;prop_height&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">20</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">km</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;earth_model&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;YeI&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;YeO&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;YeM&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta12&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">33</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta13&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">8</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta23&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">50</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;deltam21&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">8e-5</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;deltam31&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">3e-3</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;deltacp&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">180</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;gamma21&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1e-11</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;gamma31&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">5e-10</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;gamma32&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">2.5e-13</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">decoherence</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>

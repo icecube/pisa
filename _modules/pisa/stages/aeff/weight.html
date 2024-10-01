@@ -79,9 +79,12 @@
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 <div class="viewcode-block" id="weight">
 <a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.weight.weight">[docs]</a>
@@ -102,16 +105,28 @@
 <span class="sd">            weight_scale : Quantity [dimensionless]</span>
 <span class="sd">                Overall scaling/normalisation of template</span>
 
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;weights&quot;</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;livetime&#39;</span><span class="p">,</span> <span class="s1">&#39;weight_scale&#39;</span><span class="p">)</span>
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;livetime&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;weight_scale&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -129,6 +144,19 @@
             <span class="k">if</span> <span class="s2">&quot;errors&quot;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
                 <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.weight.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;livetime&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">3</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;weight_scale&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+    <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">weight</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
 </pre></div>
 

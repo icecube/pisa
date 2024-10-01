@@ -85,13 +85,16 @@
 <span class="kn">from</span> <span class="nn">daemonflux</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">daemon_version</span>
 
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
 <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">jit</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">interpolate</span>
 <span class="kn">from</span> <span class="nn">packaging.version</span> <span class="kn">import</span> <span class="n">Version</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;daemon_flux&#39;</span><span class="p">,</span> <span class="s1">&#39;make_2d_flux_map&#39;</span><span class="p">,</span> <span class="s1">&#39;evaluate_flux_map&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="daemon_flux">
@@ -107,52 +110,35 @@
 <span class="sd">        Must have parameters: .. ::</span>
 
 <span class="sd">            daemon_K_158G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_K_2P : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_K_31G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_antiK_158G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_antiK_2P : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_antiK_31G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_n_158G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_n_2P : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_p_158G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_p_2P : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_pi_158G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_pi_20T : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_pi_2P : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_pi_31G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_antipi_158G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_antipi_20T : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_antipi_2P : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_antipi_31G : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_GSF_1 : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_GSF_2 : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_GSF_3 : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_GSF_4 : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_GSF_5 : quantity (dimensionless)</span>
-
 <span class="sd">            daemon_GSF_6 : quantity (dimensionless)</span>
+
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;true_energy&quot;</span>
+<span class="sd">            &quot;true_coszen&quot;</span>
+<span class="sd">            &quot;nubar&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -187,10 +173,17 @@
                                   <span class="n">value</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">daemon_names</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_fixed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">daemon_chi2</span><span class="p">,</span><span class="n">daemon_params_len</span><span class="p">])</span>
+        
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;nubar&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="c1"># init base class</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">daemon_flux</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">daemon_params</span><span class="o">+</span><span class="p">[</span><span class="s1">&#39;daemon_chi2&#39;</span><span class="p">,</span><span class="s1">&#39;daemon_params_len&#39;</span><span class="p">]),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -289,6 +282,23 @@
     <span class="n">uconv</span> <span class="o">=</span> <span class="n">true_energy</span><span class="o">**-</span><span class="mi">3</span> <span class="o">*</span> <span class="mf">1e4</span>
     <span class="k">return</span> <span class="n">flux_map</span><span class="o">.</span><span class="n">ev</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">)</span> <span class="o">*</span> <span class="n">uconv</span></div>
 
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.daemon_flux.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">random_state</span> <span class="o">=</span> <span class="n">get_random_state</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">666</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pname</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Flux</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="s1">&#39;IceCube&#39;</span><span class="p">,</span> <span class="n">use_calibration</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">known_parameters</span><span class="p">):</span>
+        <span class="n">param</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;daemon_&#39;</span> <span class="o">+</span> <span class="n">pname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pi+&#39;</span><span class="p">,</span><span class="s1">&#39;pi&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;pi-&#39;</span><span class="p">,</span><span class="s1">&#39;antipi&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;K+&#39;</span><span class="p">,</span><span class="s1">&#39;K&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;K-&#39;</span><span class="p">,</span><span class="s1">&#39;antiK&#39;</span><span class="p">),</span>
+            <span class="n">value</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">random_state</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">param_kwargs</span>
+        <span class="p">)</span>
+        <span class="n">param_set</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">(</span><span class="o">*</span><span class="n">param_set</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">daemon_flux</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
 </pre></div>
 

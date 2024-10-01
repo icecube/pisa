@@ -87,6 +87,7 @@
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">kde_hist</span>
+<span class="kn">from</span> <span class="nn">pisa_tests.test_services</span> <span class="kn">import</span> <span class="n">TEST_BINNING</span>
 
 
 <div class="viewcode-block" id="kde">
@@ -162,26 +163,27 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bootstrap</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">stashed_errors</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;events&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">],</span>
+        <span class="p">}</span>
+
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">supported_reps</span><span class="o">=</span><span class="n">supported_reps</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kargs</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">regularized_apply_mode</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="kde.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kde.kde.setup_function">[docs]</a>
     <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;KDE stage needs a binning as `apply_mode`, but is </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="si">}</span><span class="s2">&quot;</span>
-
         <span class="c1"># For dimensions that are logarithmic, we add a linear binning in</span>
         <span class="c1"># the logarithm (but only if this feature is enabled)</span>
-
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">linearize_log_dims</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">regularized_apply_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
             <span class="k">return</span>
@@ -381,6 +383,13 @@
 <span class="c1"># into the main scope and thus overshadow `kde` (the module).</span>
 <span class="c1"># The unit test for this stage is therefore instead placed in</span>
 <span class="c1"># pisa/pisa_tests/test_kde_stage.py</span>
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kde.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">kde</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>

@@ -95,6 +95,10 @@
 <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ResampleMode&#39;</span><span class="p">,</span> <span class="s1">&#39;resample&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">,</span> <span class="s1">&#39;test_resample&#39;</span><span class="p">]</span>
+
+
 <div class="viewcode-block" id="ResampleMode">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.ResampleMode">[docs]</a>
 <span class="k">class</span> <span class="nc">ResampleMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
@@ -127,16 +131,34 @@
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">scale_errors</span><span class="p">:</span>
+            <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">)</span>
+
+        <span class="c1"># This stage only makes sense when going binned to binned.</span>
+        <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">],</span>
+            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">]</span>
+        <span class="p">}</span>
+
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
+            <span class="n">supported_reps</span><span class="o">=</span><span class="n">supported_reps</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="c1"># This stage only makes sense when going binned to binned.</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">),</span> <span class="s2">&quot;stage only produces binned output&quot;</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">),</span> <span class="s2">&quot;stage only produces binned output&quot;</span>
-
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Service requires specifying binning for `apply_mode` during init!&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Service requires specifying binning for `calc_mode` during init!&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span> <span class="o">=</span> <span class="n">scale_errors</span>
 
         <span class="c1"># The following tests whether `apply_mode` is a strict up-sample</span>
@@ -249,6 +271,15 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_errors</span><span class="p">:</span>
                 <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors_resampled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;vars_resampled&quot;</span><span class="p">])</span></div>
 </div>
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pisa_tests.test_services</span> <span class="kn">import</span> <span class="n">TEST_BINNING</span>
+    <span class="k">return</span> <span class="n">resample</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="test_resample">

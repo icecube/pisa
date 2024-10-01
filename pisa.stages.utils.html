@@ -172,6 +172,12 @@ an array of factors. This file is produced externally from PISA.</p></li>
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.utils.adhoc_sys.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.adhoc_sys.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/adhoc_sys.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.adhoc_sys.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 </section>
 <section id="module-pisa.stages.utils.bootstrap">
 <span id="pisa-stages-utils-bootstrap-module"></span><h2>pisa.stages.utils.bootstrap module<a class="headerlink" href="#module-pisa.stages.utils.bootstrap" title="Link to this heading"></a></h2>
@@ -202,6 +208,12 @@ events.</p>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.utils.bootstrap.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.bootstrap.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/bootstrap.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.bootstrap.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
 </dd></dl>
 
 <dl class="py function">
@@ -273,10 +285,18 @@ that represent event counts</p>
 <dt class="sig sig-object py" id="pisa.stages.utils.hist.hist">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.hist.</span></span><span class="sig-name descname"><span class="pre">hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apply_unc_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unweighted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/hist.html#hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.hist.hist" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>stage to histogram events</p>
+<p>Stage to histogram events</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>unweighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – Return un-weighted event counts in each bin.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>unweighted</strong> (<em>bool</em><em>, </em><em>default False</em>) – Return un-weighted event counts in each bin</p></li>
+<li><p><strong>apply_unc_weights</strong> (<em>bool</em><em>, </em><em>default False</em>) – <p>Expected container keys are ..</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&quot;weights&quot;
+&quot;unc_weights&quot; (if `apply_unc_weights`)
+</pre></div>
+</div>
+</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -293,11 +313,23 @@ that represent event counts</p>
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.utils.hist.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.hist.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/hist.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.hist.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
 </section>
 <section id="module-pisa.stages.utils.kde">
 <span id="pisa-stages-utils-kde-module"></span><h2>pisa.stages.utils.kde module<a class="headerlink" href="#module-pisa.stages.utils.kde" title="Link to this heading"></a></h2>
 <p>Stage to transform arrays with weights into KDE maps
 that represent event counts</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.utils.kde.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.kde.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/kde.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.kde.init_test" title="Link to this definition"></a></dt>
+<dd><p>Initialisation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.utils.kde.kde">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.kde.</span></span><span class="sig-name descname"><span class="pre">kde</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bw_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'silverman'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coszen_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'reco_coszen'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coszen_reflection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stack_pid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stash_hists</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_niter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearize_log_dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/kde.html#kde"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.kde.kde" title="Link to this definition"></a></dt>
@@ -358,6 +390,12 @@ chunk to make histograms from. It uses the KFold class from scikit-learn to make
 “test” and “train” indeces for the dataset and sets all weights in the “train”
 indeces to zero. Optionally, weights can be re-scaled by the number of splits to
 renormalize the total rates.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.utils.kfold.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.kfold.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/kfold.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.kfold.init_test" title="Link to this definition"></a></dt>
+<dd><p>Initialisation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.utils.kfold.kfold">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.kfold.</span></span><span class="sig-name descname"><span class="pre">kfold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_splits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renormalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/kfold.html#kfold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.kfold.kfold" title="Link to this definition"></a></dt>
@@ -424,6 +462,12 @@ the <cite>apply</cite> method.</p>
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.utils.resample.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.resample.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/resample.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.resample.init_test" title="Link to this definition"></a></dt>
+<dd><p>Initialisation example</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.utils.resample.resample">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.resample.</span></span><span class="sig-name descname"><span class="pre">resample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale_errors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/resample.html#resample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.resample.resample" title="Link to this definition"></a></dt>
@@ -463,6 +507,12 @@ the <cite>apply</cite> method.</p>
 <dt class="sig sig-object py" id="pisa.stages.utils.set_variance.apply_floor">
 <span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.set_variance.</span></span><span class="sig-name descname"><span class="pre">apply_floor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/set_variance.html#apply_floor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.set_variance.apply_floor" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.utils.set_variance.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.set_variance.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/set_variance.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.set_variance.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.utils.set_variance.set_constant">

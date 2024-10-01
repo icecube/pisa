@@ -281,6 +281,7 @@
 <li class="toctree-l2"><a class="reference internal" href="pisa.core.html#module-pisa.core.container">pisa.core.container module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container"><code class="docutils literal notranslate"><span class="pre">Container</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.all_keys"><code class="docutils literal notranslate"><span class="pre">Container.all_keys</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.all_keys_incl_aux_data"><code class="docutils literal notranslate"><span class="pre">Container.all_keys_incl_aux_data</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.array_representations"><code class="docutils literal notranslate"><span class="pre">Container.array_representations</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.array_to_binned"><code class="docutils literal notranslate"><span class="pre">Container.array_to_binned()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.auto_translate"><code class="docutils literal notranslate"><span class="pre">Container.auto_translate()</span></code></a></li>
@@ -291,6 +292,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.get_map"><code class="docutils literal notranslate"><span class="pre">Container.get_map()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.is_map"><code class="docutils literal notranslate"><span class="pre">Container.is_map</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.keys"><code class="docutils literal notranslate"><span class="pre">Container.keys</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.keys_incl_aux_data"><code class="docutils literal notranslate"><span class="pre">Container.keys_incl_aux_data</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.mark_changed"><code class="docutils literal notranslate"><span class="pre">Container.mark_changed()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.mark_valid"><code class="docutils literal notranslate"><span class="pre">Container.mark_valid()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.num_dims"><code class="docutils literal notranslate"><span class="pre">Container.num_dims</span></code></a></li>
@@ -309,6 +311,7 @@
 <li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.container.ContainerSet"><code class="docutils literal notranslate"><span class="pre">ContainerSet</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.ContainerSet.add_container"><code class="docutils literal notranslate"><span class="pre">ContainerSet.add_container()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.ContainerSet.get_mapset"><code class="docutils literal notranslate"><span class="pre">ContainerSet.get_mapset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.ContainerSet.get_shared_keys"><code class="docutils literal notranslate"><span class="pre">ContainerSet.get_shared_keys()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.ContainerSet.is_map"><code class="docutils literal notranslate"><span class="pre">ContainerSet.is_map</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.ContainerSet.link_containers"><code class="docutils literal notranslate"><span class="pre">ContainerSet.link_containers()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.ContainerSet.names"><code class="docutils literal notranslate"><span class="pre">ContainerSet.names</span></code></a></li>
@@ -681,17 +684,24 @@
 <li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage"><code class="docutils literal notranslate"><span class="pre">Stage</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.apply"><code class="docutils literal notranslate"><span class="pre">Stage.apply()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.apply_function"><code class="docutils literal notranslate"><span class="pre">Stage.apply_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.apply_mode"><code class="docutils literal notranslate"><span class="pre">Stage.apply_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.calc_mode"><code class="docutils literal notranslate"><span class="pre">Stage.calc_mode</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.compute"><code class="docutils literal notranslate"><span class="pre">Stage.compute()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.compute_function"><code class="docutils literal notranslate"><span class="pre">Stage.compute_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.data"><code class="docutils literal notranslate"><span class="pre">Stage.data</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.debug_mode"><code class="docutils literal notranslate"><span class="pre">Stage.debug_mode</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.error_method"><code class="docutils literal notranslate"><span class="pre">Stage.error_method</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.expected_container_keys"><code class="docutils literal notranslate"><span class="pre">Stage.expected_container_keys</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.expected_params"><code class="docutils literal notranslate"><span class="pre">Stage.expected_params</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.full_hash"><code class="docutils literal notranslate"><span class="pre">Stage.full_hash</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.hash"><code class="docutils literal notranslate"><span class="pre">Stage.hash</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.in_standalone_mode"><code class="docutils literal notranslate"><span class="pre">Stage.in_standalone_mode</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.include_attrs_for_hashes"><code class="docutils literal notranslate"><span class="pre">Stage.include_attrs_for_hashes()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.is_map"><code class="docutils literal notranslate"><span class="pre">Stage.is_map</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.param_hash"><code class="docutils literal notranslate"><span class="pre">Stage.param_hash</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.param_selections"><code class="docutils literal notranslate"><span class="pre">Stage.param_selections</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.params"><code class="docutils literal notranslate"><span class="pre">Stage.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.profile"><code class="docutils literal notranslate"><span class="pre">Stage.profile</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.report_profile"><code class="docutils literal notranslate"><span class="pre">Stage.report_profile()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.run"><code class="docutils literal notranslate"><span class="pre">Stage.run()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage.select_params"><code class="docutils literal notranslate"><span class="pre">Stage.select_params()</span></code></a></li>
@@ -822,7 +832,6 @@
 <li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.csv_data_hist">pisa.stages.data.csv_data_hist module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.csv_icc_hist">pisa.stages.data.csv_icc_hist module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.csv_loader">pisa.stages.data.csv_loader module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.freedom_hdf5_loader">pisa.stages.data.freedom_hdf5_loader module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.grid">pisa.stages.data.grid module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#pisa-stages-data-licloader-weighter-module">pisa.stages.data.licloader_weighter module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.stages.data.html#module-pisa.stages.data.meows_loader">pisa.stages.data.meows_loader module</a></li>

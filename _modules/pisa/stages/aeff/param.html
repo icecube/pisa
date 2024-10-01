@@ -90,11 +90,13 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
 
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;load_aeff_param&#39;</span><span class="p">,</span> <span class="s1">&#39;param&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;load_aeff_param&#39;</span><span class="p">,</span> <span class="s1">&#39;param&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;T.C. Arlen, T. Ehrhardt, S. Wren, J. Weldert&#39;</span>
 
@@ -115,17 +117,20 @@
 <span class="k">def</span> <span class="nf">load_aeff_param</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load aeff parameterisation (energy- or coszen-dependent) from file</span>
 <span class="sd">    or dictionary.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    source : string or mapping</span>
 <span class="sd">        Source of the parameterization. If string, treat as file path or</span>
 <span class="sd">        resource location and load from the file; this must yield a mapping. If</span>
 <span class="sd">        `source` is a mapping, it is used directly. See notes below on format.</span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    aeff_params : OrderedDict</span>
 <span class="sd">        Keys are stringified flavintgroups and values are the callables that</span>
 <span class="sd">        produce aeff when called with energy or coszen values.</span>
+
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    The mapping passed via `source` or loaded therefrom must have the format:</span>
@@ -146,8 +151,8 @@
 <span class="sd">                &quot;aeff&quot;: [sequence of values]</span>
 <span class="sd">            }</span>
 <span class="sd">          the two sequences are used to form a linear interpolant callable that</span>
-<span class="sd">          maps energy or coszen values to aeff values. The effective area for any </span>
-<span class="sd">          energy or coszen outside the bounds of the corresponding sequence is </span>
+<span class="sd">          maps energy or coszen values to aeff values. The effective area for any</span>
+<span class="sd">          energy or coszen outside the bounds of the corresponding sequence is</span>
 <span class="sd">          assumed to be 0.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)):</span>
@@ -206,18 +211,27 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Effective area service based on parameterisation functions stored in a</span>
 <span class="sd">    .json file.</span>
 <span class="sd">    Transforms an input map of a flux of a given flavour (and interaction)</span>
-<span class="sd">    into maps of event rates, according to energy and cosine zenith dependent </span>
+<span class="sd">    into maps of event rates, according to energy and cosine zenith dependent</span>
 <span class="sd">    effective areas specified by parameterisation functions.</span>
-<span class="sd">    Requires true_energy, true_coszen, and weights to be present in the container.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    params : ParamSet</span>
-<span class="sd">        Must exclusively have parameters:</span>
-<span class="sd">        aeff_energy_paramfile</span>
-<span class="sd">        aeff_coszen_paramfile</span>
-<span class="sd">        livetime</span>
-<span class="sd">        aeff_scale</span>
+<span class="sd">    params : ParamSet or sequence with which to instantiate a ParamSet.</span>
+<span class="sd">        Expected params are .. ::</span>
+
+<span class="sd">            aeff_energy_paramfile : string</span>
+<span class="sd">            aeff_coszen_paramfile : string</span>
+<span class="sd">            livetime : Quantity [time]</span>
+<span class="sd">            aeff_scale : Quantity [dimensionless]</span>
+
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;true_energy&quot;</span>
+<span class="sd">            &quot;true_coszen&quot;</span>
+<span class="sd">            &quot;weights&quot;</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
@@ -229,8 +243,15 @@
             <span class="s1">&#39;aeff_scale&#39;</span>
         <span class="p">)</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -255,6 +276,21 @@
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.param.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;aeff_energy_paramfile&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;aeff/vlvnt_aeff_energy_param.json&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;aeff_coszen_paramfile&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;aeff/vlvnt_aeff_coszen_param.json&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;livetime&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">10</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;aeff_scale&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
+    <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">param</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
 </pre></div>
 

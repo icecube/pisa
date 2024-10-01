@@ -83,6 +83,9 @@
 <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span> <span class="nn">pisa_tests.test_services</span> <span class="kn">import</span> <span class="n">TEST_BINNING</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;grid&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="grid">
@@ -118,10 +121,12 @@
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="p">(),</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="grid.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.grid.grid.setup_function">[docs]</a>
@@ -166,6 +171,18 @@
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.grid.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">grid</span><span class="p">(</span>
+        <span class="n">grid_binning</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">,</span> <span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span>
+        <span class="n">output_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;nue_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">]</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

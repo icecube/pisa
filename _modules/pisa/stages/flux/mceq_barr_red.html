@@ -92,11 +92,14 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span><span class="p">,</span> <span class="n">prange</span>  <span class="c1"># trivially parallelize for-loops</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mceq_barr_red&#39;</span><span class="p">,</span> <span class="s1">&#39;spectral_index_scale&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_sys_loop&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="mceq_barr_red">
@@ -142,6 +145,14 @@
 <span class="sd">                * from w to z</span>
 <span class="sd">                Uncertainty on K- and K+ production is assumed to be</span>
 <span class="sd">                uncorrelated as the ratio is badly determined.</span>
+
+<span class="sd">        Expected container keys are .. ::</span>
+
+<span class="sd">            &quot;true_energy&quot;</span>
+<span class="sd">            &quot;true_coszen&quot;</span>
+<span class="sd">            &quot;nu_flux_nominal&quot;</span>
+<span class="sd">            &quot;nubar_flux_nominal&quot;</span>
+<span class="sd">            &quot;nubar&quot;</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -227,6 +238,14 @@
             <span class="s2">&quot;energy_pivot&quot;</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;true_energy&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;nubar&quot;</span>
+        <span class="p">)</span>
+
         <span class="c1"># Using Honda for nominal flux. Keys should already exist</span>
         <span class="c1"># what are keys added or altered in the calculation used during apply</span>
         <span class="c1"># what keys are added or altered for the outputs during apply</span>
@@ -235,8 +254,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">table_file</span> <span class="o">=</span> <span class="n">table_file</span>
 
         <span class="c1"># init base class</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">mceq_barr_red</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -556,6 +576,35 @@
             <span class="n">out</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">=</span> <span class="n">nu_flux_nominal</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">*</span> <span class="n">spec_scale</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gradient_params</span><span class="p">)):</span>
                 <span class="n">out</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">+=</span> <span class="n">gradients</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">gradient_params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.mceq_barr_red.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pion_ratio&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_af_Pi&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_g_Pi&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_h_Pi&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_i_Pi&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_w_K&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_x_K&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_y_K&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_z_K&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_w_antiK&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_x_antiK&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_y_antiK&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr_z_antiK&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;delta_index&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;energy_pivot&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">25</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+    <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">mceq_barr_red</span><span class="p">(</span>
+        <span class="n">table_file</span><span class="o">=</span><span class="s2">&quot;flux/MCEq_flux_gradient_splines_2212_GlobalSplineFitBeta_SIBYLL23C_reduced_scheme.pckl.bz2&quot;</span><span class="p">,</span>
+        <span class="n">params</span><span class="o">=</span><span class="n">param_set</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

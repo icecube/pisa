@@ -106,6 +106,9 @@
 <span class="s2"> See the License for the specific language governing permissions and</span>
 <span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
 
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bootstrap&#39;</span><span class="p">,</span> <span class="s1">&#39;insert_bootstrap_after_data_loader&#39;</span><span class="p">,</span> <span class="s1">&#39;test_bootstrap&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+
 
 <div class="viewcode-block" id="bootstrap">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.bootstrap.bootstrap">[docs]</a>
@@ -124,9 +127,15 @@
         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
+
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -205,6 +214,14 @@
             <span class="n">bootstrap_pipe_cfg</span><span class="p">[(</span><span class="s2">&quot;utils&quot;</span><span class="p">,</span> <span class="s2">&quot;bootstrap&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">bootstrap_stage_cfg</span>
 
     <span class="k">return</span> <span class="n">bootstrap_pipe_cfg</span></div>
+
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.bootstrap.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">bootstrap</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">)</span></div>
 
 
 

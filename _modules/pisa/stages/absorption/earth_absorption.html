@@ -153,9 +153,18 @@
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;flav&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;nubar&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -338,6 +347,16 @@
     <span class="c1"># int_rho [cm] * 1 [g/cm^3] * xsection [cm^2] * 1 [mol/g] * Na [1/mol] = [ 1 ] (all units cancel)</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">int_rho</span><span class="o">*</span><span class="n">xsection</span><span class="o">*</span><span class="n">Na</span><span class="p">)</span></div>
 
+
+
+<div class="viewcode-block" id="init_test">
+<a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.init_test">[docs]</a>
+<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">earth_absorption</span><span class="p">(</span>
+        <span class="n">earth_model</span><span class="o">=</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">,</span>
+        <span class="n">xsec_file</span><span class="o">=</span><span class="s1">&#39;cross_sections/genie_xsec_H2O.root&#39;</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 
