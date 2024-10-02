@@ -2683,7 +2683,7 @@ class BasicAnalysis(object):
         self._nit += 1
 
     def MCMC_sampling(self, data_dist, hypo_maker, metric, nwalkers, burnin, nsteps,
-                      return_burn_in=False, random_state=42):
+                      return_burn_in=False, random_state=None):
         """Performs MCMC sampling. Only supports serial (single CPU) execution at the 
         moment. See issue #830.
 
@@ -2713,10 +2713,10 @@ class BasicAnalysis(object):
             Number of steps after burn in
             
         return_burn_in : bool
-            Also return the steps of the burn in phase. Default is False
+            Also return the steps of the burn in phase. Default is False.
 
-        random_state : int
-            Random state of the walker starting points.
+        random_state : None or type accepted by utils.random_numbers.get_random_state
+            Random state of the walker starting points. Default is None.
 
         Returns
         -------
