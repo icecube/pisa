@@ -14,6 +14,8 @@ from pisa.core.container import Container
 from pisa.core.events_pi import EventsPi
 from pisa.utils.format import split
 
+__all__ = ['simple_data_loader', 'init_test']
+
 
 class simple_data_loader(Stage):  # pylint: disable=invalid-name
     """
@@ -88,6 +90,7 @@ class simple_data_loader(Stage):  # pylint: disable=invalid-name
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=(),
             **std_kwargs,
         )
 
@@ -229,3 +232,22 @@ class simple_data_loader(Stage):  # pylint: disable=invalid-name
         # reset weights to initial weights prior to downstream stages running
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    return simple_data_loader(
+        events_file='events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e2evts_set0__unjoined__with_fluxes_honda-2015-spl-solmin-aa.hdf5',
+        mc_cuts = '(true_coszen <= 0.5) & (true_energy <= 70)',
+        data_dict = {
+            'true_energy': 'true_energy',
+            'true_coszen': 'true_coszen',
+            'reco_energy': 'reco_energy',
+            'reco_coszen': 'reco_coszen',
+            'pid': 'pid',
+            'weighted_aeff': 'weighted_aeff',
+            'nu_flux_nominal': ['nominal_nue_flux', 'nominal_numu_flux'],
+            'nubar_flux_nominal': ['nominal_nuebar_flux', 'nominal_numubar_flux']
+        },
+        output_names = ['nue_cc', 'numu_cc', 'nutau_cc', 'nuebar_cc', 'numubar_cc', 'nutaubar_cc',
+                        'nue_nc', 'numu_nc', 'nutau_nc', 'nuebar_nc', 'numubar_nc', 'nutaubar_nc']
+    )

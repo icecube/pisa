@@ -7,17 +7,16 @@ ToDo: tech note being written, link here as soon as available
 
 from __future__ import absolute_import, print_function, division
 
-__all__ = ["dis_sys", "apply_dis_sys"]
-
 import numpy as np
 from numba import guvectorize
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE, TARGET, ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
 from pisa.utils.fileio import from_file
-from pisa import ureg
 
+__all__ = ['dis_sys', 'apply_dis_sys', 'init_test']
 
 class dis_sys(Stage): # pylint: disable=invalid-name
     """
@@ -29,6 +28,14 @@ class dis_sys(Stage): # pylint: disable=invalid-name
     params
         Must contain ::
             dis_csms : quantity (dimensionless)
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "bjorken_y"
+            "dis"
+            "nubar"
+            "weights"
 
     extrapolation_type : string
         choice of ['constant', 'linear', 'higher']
@@ -58,9 +65,18 @@ class dis_sys(Stage): # pylint: disable=invalid-name
             'dis_csms',
         )
 
+        expected_container_keys = (
+            'true_energy',
+            'bjorken_y',
+            'dis',
+            'nubar',
+            'weights',
+        )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -177,3 +193,12 @@ def apply_dis_sys(
     out,
 ):
     out[0] *= max(0, (1. + dis_correction_total * dis_csms) * (1. + dis_correction_diff * dis_csms) )
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="dis_csms", value=0.0, **param_kwargs)
+    ])
+
+    return dis_sys(params=param_set)

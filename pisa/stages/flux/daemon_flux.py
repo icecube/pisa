@@ -10,13 +10,16 @@ from daemonflux import Flux
 from daemonflux import __version__ as daemon_version
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
-from pisa.core.param import Param
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+from pisa.utils.random_numbers import get_random_state
 from numba import jit
 from scipy import interpolate
 from packaging.version import Version
+
+__all__ = ['daemon_flux', 'make_2d_flux_map', 'evaluate_flux_map', 'init_test']
 
 
 class daemon_flux(Stage):  # pylint: disable=invalid-name
@@ -30,52 +33,35 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         Must have parameters: .. ::
 
             daemon_K_158G : quantity (dimensionless)
-
             daemon_K_2P : quantity (dimensionless)
-
             daemon_K_31G : quantity (dimensionless)
-
             daemon_antiK_158G : quantity (dimensionless)
-
             daemon_antiK_2P : quantity (dimensionless)
-
             daemon_antiK_31G : quantity (dimensionless)
-
             daemon_n_158G : quantity (dimensionless)
-
             daemon_n_2P : quantity (dimensionless)
-
             daemon_p_158G : quantity (dimensionless)
-
             daemon_p_2P : quantity (dimensionless)
-
             daemon_pi_158G : quantity (dimensionless)
-
             daemon_pi_20T : quantity (dimensionless)
-
             daemon_pi_2P : quantity (dimensionless)
-
             daemon_pi_31G : quantity (dimensionless)
-
             daemon_antipi_158G : quantity (dimensionless)
-
             daemon_antipi_20T : quantity (dimensionless)
-
             daemon_antipi_2P : quantity (dimensionless)
-
             daemon_antipi_31G : quantity (dimensionless)
-
             daemon_GSF_1 : quantity (dimensionless)
-
             daemon_GSF_2 : quantity (dimensionless)
-
             daemon_GSF_3 : quantity (dimensionless)
-
             daemon_GSF_4 : quantity (dimensionless)
-
             daemon_GSF_5 : quantity (dimensionless)
-
             daemon_GSF_6 : quantity (dimensionless)
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nubar"
 
     """
 
@@ -110,10 +96,17 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
                                   value=len(self.daemon_names)+2, prior=None, range=None, is_fixed=True)
 
         std_kwargs['params'].update([daemon_chi2,daemon_params_len])
+        
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'nubar',
+        )
 
         # init base class
-        super(daemon_flux, self).__init__(
+        super().__init__(
             expected_params=tuple(self.daemon_params+['daemon_chi2','daemon_params_len']),
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -200,3 +193,17 @@ def evaluate_flux_map(flux_map, true_energy, true_coszen):
     uconv = true_energy**-3 * 1e4
     return flux_map.ev(true_energy, true_coszen) * uconv
 
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    param_set = []
+    random_state = get_random_state(random_state=666)
+    for i, pname in enumerate(Flux(location='IceCube', use_calibration=True).params.known_parameters):
+        param = Param(
+            name='daemon_' + pname.replace('pi+','pi').replace('pi-','antipi').replace('K+','K').replace('K-','antiK'),
+            value=2 * random_state.rand() - 1,
+            **param_kwargs
+        )
+        param_set.append(param)
+    param_set = ParamSet(*param_set)
+    return daemon_flux(params=param_set)

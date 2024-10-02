@@ -13,10 +13,16 @@ import fnmatch
 import numpy as np
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 
 
 __all__ = [
+    "dict_lookup_wildcard",
+    "logistic_function",
+    "has_muon",
+    "visible_energy_correction",
+    "energy_dependent_sigma",
     "simple_param",
     "simple_reco_energy_parameterization",
     "simple_reco_coszen_parameterization",
@@ -67,7 +73,7 @@ def dict_lookup_wildcard(dict_obj,key) :
     assert len(matches) > 0, "No match for '%s' found in dict" % key
     assert len(matches) < 2, "Multiple matches for '%s' found in dict : %s" % (key,matches.keys())
 
-    return matches.keys()[0], matches.values()[0]
+    return list(matches.keys())[0], list(matches.values())[0]
 
 
 def logistic_function(a,b,c,x) :
@@ -404,6 +410,11 @@ class simple_param(Stage):  # pylint: disable=invalid-name
         cascade_pid : float
             The numerical 'pid' variable value to assign for cascades
 
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+
     """
 
     def __init__(self,
@@ -411,17 +422,23 @@ class simple_param(Stage):  # pylint: disable=invalid-name
                 ):
 
         expected_params = (
-                        "perfect_reco", #TODO move these to constructor args?
-                        "reco_energy_params",
-                        "reco_coszen_params",
-                        "pid_track_params",
-                        "track_pid",
-                        "cascade_pid",
-                        )
+            "perfect_reco", #TODO move these to constructor args? (yes, please)
+            "reco_energy_params",
+            "reco_coszen_params",
+            "pid_track_params",
+            "track_pid",
+            "cascade_pid",
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+        )
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -453,7 +470,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
             true_coszen = container["true_coszen"]
 
             # Create container if not already present
-            if "reco_energy" not in container :
+            if "reco_energy" not in container.keys :
                 container['reco_energy'] = np.full_like(true_energy,np.NaN,dtype=FTYPE)
 
             # Create the reco energy variable
@@ -477,7 +494,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
             #
 
             # Create container if not already present
-            if "reco_coszen" not in container :
+            if "reco_coszen" not in container.keys :
                 container['reco_coszen'] = np.full_like(true_coszen,np.NaN,dtype=FTYPE)
 
             # Create the reco coszen variable
@@ -502,7 +519,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
             #
 
             # Create container if not already present
-            if "pid" not in container :
+            if "pid" not in container.keys :
                 container['pid'] = np.full_like(true_energy,np.NaN,dtype=FTYPE)
 
             # Create the PID variable
@@ -522,3 +539,16 @@ class simple_param(Stage):  # pylint: disable=invalid-name
             # Write to the container
             container["pid"][:] = pid
             container.mark_changed("pid")
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name='perfect_reco', value=False, **param_kwargs),
+        Param(name='reco_energy_params', value="{'test*': [10., 0.2, 0.2]}", **param_kwargs),
+        Param(name='reco_coszen_params', value="{'test*': [10., 0.2, 0.5]}", **param_kwargs),
+        Param(name='pid_track_params', value="{'test*': [0.05, 0.2, 15.]}", **param_kwargs),
+        Param(name='track_pid', value=1.0, **param_kwargs),
+        Param(name='cascade_pid', value=0.0, **param_kwargs),
+    ])
+    return simple_param(params=param_set)

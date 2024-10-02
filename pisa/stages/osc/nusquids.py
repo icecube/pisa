@@ -179,6 +179,15 @@ class nusquids(Stage):  # pylint: disable=invalid-name
             gamma12 : quantity (energy)
             gamma13 : quantity (energy)
             gamma23 : quantity (energy)
+            
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nubar"
+            "flav"
+            "nu_flux"
+            "weights"
 
     """
 
@@ -320,9 +329,19 @@ class nusquids(Stage):  # pylint: disable=invalid-name
                 ]
             )
 
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'nubar',
+            'flav',
+            'nu_flux',
+            'weights'
+        )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

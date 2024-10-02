@@ -22,9 +22,14 @@ class fix_error(Stage):  # pylint: disable=invalid-name
         **std_kwargs,
     ):
 
+        expected_container_keys = (
+            'errors',
+        )
+
         # init base class
         super().__init__(
             expected_params=(),
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 

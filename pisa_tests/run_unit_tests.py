@@ -70,7 +70,8 @@ OPTIONAL_MODULES = (
     "nuSQUIDSpy",
     "nuSQuIDS",
     "LeptonWeighter",
-    "photospline"
+    "photospline",
+    "GLoBES",
 )
 """Okay if imports or test_* functions fail due to these not being import-able"""
 
