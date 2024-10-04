@@ -2733,6 +2733,11 @@ class BasicAnalysis(object):
         """
         import emcee
 
+        assert 'llh' in metric or 'chi2' in metric, 'Use either a llh or chi2 metric'
+        if 'chi2' in metric:
+            warnings.warn("You are using a chi2 metric for the MCMC sampling."
+                          "The sampler will assume that llh=0.5*chi2.")
+
         params_truth = hypo_maker.params.free
         x0 = np.array([p._rescaled_value for p in params_truth])
         bounds = np.repeat([[0,1]], len(x0), axis=0)
@@ -2749,10 +2754,15 @@ class BasicAnalysis(object):
             if np.any(scaled_param_vals > np.array(bounds)[:, 1]) or np.any(scaled_param_vals < np.array(bounds)[:, 0]):
                 return -np.inf
             sign = +1 if metric in METRICS_TO_MAXIMIZE else -1
+            if 'llh' in metric:
+                N = 1
+            elif 'chi2' in metric:
+                N = 0.5
+
             hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
             hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
             metric_val = (
-                data_dist.metric_total(expected_values=hypo_asimov_dist, metric=metric)
+                N * data_dist.metric_total(expected_values=hypo_asimov_dist, metric=metric)
                 + hypo_maker.params.priors_penalty(metric=metric)
             )
             return sign*metric_val
