@@ -3042,6 +3042,306 @@ class MultiDimBinning(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+class EventSpecie(object):
+    # pylint: disable=line-too-long
+    r"""
+    Definition of an EventSpecie object. An EventSpecie object has following properties:
+    
+    * name : name of the specie
+    
+    * selection : selection criteria (e.g. cuts, flags)
+    
+    * binning : binning to use for this specie of events
+    
+    """
+    # pylint: enable=line-too-long
+    def __init__(self, binning, name=None, selection=None):
+        self.name = name
+        self.selection = selection # TODO: format?
+        self.binning = binning # sould be MultiDimBinning (maybe OneDim too?)
+        # TODO: add checks for proper format, type
+        self._serializable_state = None
+
+    @property
+    def serializable_state(self):
+        """OrderedDict containing savable state attributes"""
+        if self._serializable_state is None:
+            state = OrderedDict()
+            state['name'] = self.name
+            state['selection'] = self.selection
+            state['binning'] = self.binning.serializable_state
+            self._serializable_state = state
+        # Since the tex property can be modified, must set every time this
+        # property is called
+        return self._serializable_state
+
+    @property
+    def hashable_state(self):
+        """OrderedDict containing savable state attributes"""
+        return self.serializable_state
+
+    def __repr__(self):
+        previous_precision = np.get_printoptions()['precision']
+        np.set_printoptions(precision=18)
+        try:
+            argstrs = [('%s=%r' %item) for item in
+                       self.serializable_state.items()]
+            r = '%s(%s)' %(self.__class__.__name__, ',\n    '.join(argstrs))
+        finally:
+            np.set_printoptions(precision=previous_precision)
+        return r
+
+class VarMultiDimBinning(object):
+    # pylint: disable=line-too-long
+    r"""
+    Multi-dimentional binning with possibility of splitting sample is several event types
+    
+    """
+    # pylint: enable=line-too-long
+
+    _attrs_to_create_new = ('name', 'tex', 'bin_edges', 'is_log', 'is_lin', 'bin_names')
+
+    def __init__(self, event_species, name=None, mask=None):
+
+        if isinstance(event_species, MultiDimBinning):
+            species = [EventSpecie(name='all', selection=None, binning=event_species)]
+        elif isinstance(event_species, Sequence):
+            species = []
+            for obj_num, obj in enumerate(event_species):
+                if isinstance(obj, EventSpecie):
+                    species.append(obj)
+                elif isinstance(obj, MultiDimBinning):
+                    species.append(EventSpecie(name='specie '+str(obj_num), 
+                                               selection=None, binning=obj))
+                else: 
+                    TypeError('Argument/object #%d unhandled type: %s'%(obj_num, type(obj)))
+
+        self._species = tuple(species)
+        self._name = name
+        self._names = None
+        self._binnings = None
+        self._selections = None
+        self._shape = None
+        self._hashable_state = None
+
+        self.mask = None # not implemented, here so Map does not complain
+
+    @property
+    def shape(self):
+        """Variable binning shape. Defined as ..."""
+        if self._shape is None:
+            self._shape = [b.shape for b in self.binnings]
+        return self._shape
+
+    @property
+    def name(self):
+        """Name of the species"""
+        return self._name
+
+    @property
+    def species(self):
+        """list of the species"""
+        return self._species
+
+    @property
+    def names(self):
+        """list of strings : names of each dimension contained"""
+        if self._names is None:
+            self._names = [specie.name for specie in self._species]
+        return self._names
+
+    @property
+    def binnings(self):
+        """list of MultiDimBinning : binnings of each dimension contained"""
+        if self._binnings is None:
+            self._binnings = [specie.binning for specie in self._species]
+        return self._binnings
+
+    @property
+    def selections(self):
+        """list of strings : selections of each dimension contained"""
+        if self._selections is None:
+            self._selections = [specie.selection for specie in self._species]
+        return self._selections
+
+    @property
+    def serializable_state(self):
+
+        d = OrderedDict({'event_species': [d.serializable_state for d in self]})
+        d['name'] = self.name
+        return d
+
+    @property
+    def hashable_state(self):
+        """Everything necessary to fully describe this object's state. Note
+        that objects may be returned by reference, so to prevent external
+        modification, the user must call deepcopy() separately on the returned
+        OrderedDict.
+
+        Returns
+        -------
+        state : OrderedDict that can be passed to instantiate a new
+            VarMultiDimBinning via VarMultiDimBinning(**state)
+
+        """
+        if self._hashable_state is None:
+
+            state = OrderedDict()
+            # TODO: Shouldn't order matter?
+            #state['dimensions'] = [self[name]._hashable_state
+            #                       for name in sorted(self.names)]
+            state['event_species'] = [d.hashable_state for d in self.species]
+            state['name'] = self.name
+
+            self._hashable_state = state
+
+        return self._hashable_state
+
+    def assert_array_fits(self, array):
+        """Check if a 
+
+        """
+        if len(array) != len(self.shape):
+            raise ValueError(
+                'Array length %s does not match variable binning length %s'
+                % (len(array), len(self.shape))
+            )
+        for sp, array_el in zip(self.shape, array):
+            if array_el.shape != sp:
+                raise ValueError(
+                    'Array shape %s does not match binning shape %s'
+                    % (array_el.shape, sp)
+                )
+
+    def __repr__(self):
+        previous_precision = np.get_printoptions()['precision']
+        np.set_printoptions(precision=18)
+        try:
+            argstrs = [('%s=%r' %item) for item in
+                       self.serializable_state.items()]
+            r = '%s(%s)' %(self.__class__.__name__, ',\n    '.join(argstrs))
+        finally:
+            np.set_printoptions(precision=previous_precision)
+        return r
+
+    def __add__(self, other):
+        other = VarMultiDimBinning(other)
+        return VarMultiDimBinning(chain(self, other))
+
+    def __mul__(self, other):
+        if isinstance(other, MultiDimBinning):
+            other = [EventSpecie(name='all', selection=None, binning=other)]
+        other = VarMultiDimBinning(other)
+        return VarMultiDimBinning(chain(self, other))
+
+    def __getitem__(self, index):
+        """Return a new EventSpecie(s), sub-selected by `index`.
+
+        Parameters
+        ----------
+        index : int, slice, str 
+        if str has to be a name of event specie
+
+        Returns
+        -------
+        A new EventSpecie selected by `index`.
+
+        """
+
+        sp_names = self.names
+        mylen = len(sp_names)
+        orig_index = index
+
+        # indexing by name
+        if isinstance(index, str):
+            assert sp_names is not None
+            index = sp_names.index(index)
+            return deepcopy(self._species[index])
+
+        # indexing by int
+        if isinstance(index, int):
+            return deepcopy(self._species[index])
+    
+        # indexing by slice
+        if isinstance(index, slice):
+            index = list(range(*index.indices(mylen)))
+
+        if isinstance(index, Iterable):
+            if not isinstance(index, Sequence):
+                index = list(index)
+            for sp_index in index:
+                if isinstance(sp_index, str):
+                    raise ValueError('Slicing by seq of names currently not'
+                                     ' supported')
+            if not index:
+                raise ValueError('`index` "%s" results in no species being'
+                                 ' specified.' %orig_index)
+            if len(index) > 1 and not np.all(np.diff(index) == 1):
+                raise ValueError('Indices must be monotonically'
+                                 ' increasing and adjacent.')
+            new_species = []
+#             new_names = []
+#             new_selections = []
+#             new_binnings = []
+            for sp_index in index:
+                if sp_index < -mylen or sp_index >= mylen:
+                    raise ValueError(
+                        "Dimension '%s': bin index %s is invalid. Bin index"
+                        " must be >= %+d and <= %+d"
+                        %(self.name, bin_index, -mylen, mylen-1)
+                    )
+                new_species.append(deepcopy(self._species[sp_index]))
+#                 new_names.append(self._names[sp_index])
+#                 new_selections.append(self._selections[sp_index])
+#                 new_binnings.append(self._binnings[sp_index])
+        else:
+            raise TypeError('Unhandled index type %s' %type(orig_index))
+
+        return new_species
+
+        
+#     def __repr__(): # TODO
+
+#     @property
+#     def midpoints(self):
+#         """Return a list of the contained dimensions' midpoints"""
+#         return [d.midpoints for d in self]
+
+#     @property
+#     def weighted_centers(self):
+#         """Return a list of the contained dimensions' weighted_centers (e.g.
+#         equidistant from bin edges on logarithmic scale, if the binning is
+#         logarithmic; otherwise linear). Access `midpoints` attribute for
+#         always-linear alternative."""
+#         return [d.weighted_centers for d in self]
+
+#     @property
+#     def num_bins(self):
+#         """
+#         Return a list of the contained dimensions' num_bins.
+#         Note that this does not accpunt for any bin mask (since it is computed per dimension)
+#         """
+#         return [d.num_bins for d in self]
+
+#     @property
+#     def tot_num_bins(self):
+#         """
+#         Return total number of bins.
+#         If a bin mask is used, this will only count bins that are not masked off
+#         """
+#         if self.mask is None :
+#             return np.product(self.shape)
+#         else :
+#             return np.sum(self.mask.astype(int))
+
+#     @property
+#     def units(self):
+#         """list : Return a list of the contained dimensions' units"""
+#         return [d.units for d in self]
+
+#     def index(self, dim, use_basenames=False):
+
+
 
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""

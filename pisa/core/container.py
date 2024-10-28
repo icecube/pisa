@@ -15,7 +15,7 @@ from itertools import chain
 import numpy as np
 
 from pisa import FTYPE
-from pisa.core.binning import OneDimBinning, MultiDimBinning
+from pisa.core.binning import OneDimBinning, MultiDimBinning, VarMultiDimBinning
 from pisa.core.map import Map, MapSet
 from pisa.core.translation import histogram, lookup, resample
 from pisa.utils.comparisons import ALLCLOSE_KW
@@ -33,7 +33,7 @@ class ContainerSet(object):
 
     containers : list or None
 
-    data_specs : MultiDimBinning, "events" or None
+    data_specs : MultiDimBinning, VarMultiDimBinning, "events" or None
 
     """
     def __init__(self, name, containers=None, data_specs=None):
@@ -67,7 +67,7 @@ class ContainerSet(object):
         """
         Parameters
         ----------
-        representation : str, MultiDimBinning or any hashable object
+        representation : str, MultiDimBinning, VarMultiDimBinning or any hashable object
             Data specs should be set to retreive the right representation
             i.e. the representation one is working in at the moment
 
@@ -302,7 +302,7 @@ class Container():
         key = hash(representation)
         if not key in self.representation_keys:
             self._representations[key] = representation
-            if isinstance(representation, MultiDimBinning):
+            if isinstance(representation, (MultiDimBinning,VarMultiDimBinning)):
                 for name in representation.names:
                     self.validity[name][key] = True
             elif isinstance(representation, str):
@@ -355,7 +355,7 @@ class Container():
     @property
     def is_map(self):
         '''Is current representation a map/grid'''
-        return isinstance(self.representation, MultiDimBinning)
+        return isinstance(self.representation, (MultiDimBinning,VarMultiDimBinning))
         
     def mark_changed(self, key):
         '''mark a key as changed and only what is in the current representation is valid'''
@@ -415,7 +415,7 @@ class Container():
 
         elif isinstance(data, Sequence) and len(data) == 2:
             binning, array = data
-            assert isinstance(binning, MultiDimBinning)
+            assert isinstance(binning, (MultiDimBinning,VarMultiDimBinning))
             
             assert hash(self.representation) == hash(binning)
                             
@@ -516,8 +516,8 @@ class Container():
             # nothing to do
             return    
     
-        from_map = isinstance(src_representation, MultiDimBinning)
-        to_map = isinstance(dest_representation, MultiDimBinning)
+        from_map = isinstance(src_representation, (MultiDimBinning,VarMultiDimBinning))
+        to_map = isinstance(dest_representation, (MultiDimBinning,VarMultiDimBinning))
     
         if self.tranlation_modes[key] == 'average':            
             if from_map and to_map:
@@ -619,9 +619,10 @@ class Container():
         """
         # TODO: make work for n-dim
         logging.trace('Transforming %s array to binned data'%(key))
+#         print('calling container.array_to_binned() method')
         
         assert src_representation in self.array_representations
-        assert isinstance(dest_representation, MultiDimBinning)
+        assert isinstance(dest_representation, (MultiDimBinning,VarMultiDimBinning))
         
         if not dest_representation.is_irregular:
             sample = []

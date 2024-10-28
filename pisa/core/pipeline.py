@@ -27,7 +27,7 @@ from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet, DerivedParam
 from pisa.core.stage import Stage
 from pisa.core.container import ContainerSet
-from pisa.core.binning import MultiDimBinning
+from pisa.core.binning import MultiDimBinning, VarMultiDimBinning
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.hash import hash_obj
@@ -326,7 +326,7 @@ class Pipeline(object):
             output_binning = self.output_binning
             output_key = self.output_key
         else:
-            assert(isinstance(output_binning, MultiDimBinning))
+            assert(isinstance(output_binning, (MultiDimBinning,VarMultiDimBinning)))
 
         assert output_binning is not None
 
