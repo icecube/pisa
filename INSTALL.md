@@ -1,76 +1,46 @@
 ## Installation Guide
 
-### **Instruction to install PISA on your local machine**
+### **Instruction to install PISA using Anaconda or Miniconda**
 
 1. Install the essential dependencies
+   
+   Choose either Anaconda (~4.4 GB) or Miniconda (~480 MB)
 
-   1. Anaconda (https://www.anaconda.com/)
-      ```bash
-      wget -nc https://repo.anaconda.com/archive/Anaconda3-2023.07-2-Linux-x86_64.sh
+   Anaconda (https://docs.anaconda.com/anaconda/)
+   ```bash
+   mkdir -p PATH_TO_ANACONDA/anaconda3
+   wget https://repo.anaconda.com/archive/Anaconda3-<INSTALLER_VERSION>-Linux-x86_64.sh -O PATH_TO_ANACONDA/anaconda3/anaconda.sh
+   bash PATH_TO_ANACONDA/anaconda3/anaconda.sh -b -u -p PATH_TO_ANACONDA/anaconda3
+   rm PATH_TO_ANACONDA/anaconda3/anaconda.sh
+   ```
+   You can view a list of available installer versions at https://repo.anaconda.com/archive/.
+      
+   Miniconda (https://docs.anaconda.com/miniconda/)
+   ```bash
+   mkdir -p PATH_TO_ANACONDA/miniconda3
+   wget https://repo.anaconda.com/miniconda/Miniconda3-<INSTALLER_VERSION>-Linux-x86_64.sh -O PATH_TO_ANACONDA/miniconda3/miniconda.sh
+   bash PATH_TO_ANACONDA/miniconda3/miniconda.sh -b -u -p PATH_TO_ANACONDA/miniconda3
+   rm PATH_TO_ANACONDA/miniconda3/miniconda.sh
+   ```
+   You can view a list of available installer versions at https://repo.anaconda.com/miniconda/.
+      
+   **If you install on the cobalts, rather use /data/user/YOURNAME/ than $HOME/ for PATH_TO_ANACONDA**
+   
+   Note that you will also need pip and git. They are already installed on the cobalts, ask your local system administrator if they are not in your local machine.
 
-      bash Anaconda3-2023.07-2-Linux-x86_64.sh
-      ```
-   2. pip (Python package installer)
-      ```bash
-      conda install pip
-      ```
-   3. git
-      ```bash
-      sudo apt install git
-      ```
+   Other required libraries will be installed automatically during the setup (listed in https://github.com/icecube/pisa/blob/master/setup.py).
 
-   Other required libraries (listed below) will be installed automatically during the setup (listed in `setup.py`).
-
-   - fast-histogram >= 0.10
-   - h5py
-   - iminuit >= 2
-   - line_profiler
-   - llvmlite
-   - matplotlib >= 3.0
-   - nlopt
-   - numba >= 0.53
-   - numpy >=1.17, < 1.23
-   - pandas
-   - pint <=0.19
-   - py-cpuinfo
-   - pyarrow
-   - scikit-learn <= 1.1.2
-   - scipy >= 1.6
-   - simplejson == 3.18.4
-   - sympy
-   - tables
-   - tabulate
-   - tqdm
-   - uncertainties
-   - kiwisolver >= 1.3.1
-   - cycler >= 0.10
-   - packaging >= 20.0
-   - fonttools >= 4.22.0
-   - python-dateutil >= 2.7
-   - pillow >= 8
-   - contourpy >= 1.0.1
-   - pyparsing >= 2.3.1
-   - threadpoolctl >= 2.0.0
-   - joblib >= 1.0.0
-   - numexpr
-   - pytz >= 2020.1
-   - tzdata >= 2022.1
-   - mpmath >= 0.19
-   - blosc2 >= 2.3.0
-   - future
-   - ndindex >= 1.4
-   - msgpack
-   - six >= 1.5
-2. Create conda environment/ virtual environment for the installation of PISA. Assume that the name of the environment is `pisa_env` you can choose your preferred version of python >= 3.10
+2. Create an environment for the installation of PISA (after activating anaconda). You can choose your preferred version of python >= 3.10. E.g. use:
 
 ```bash
-conda create -n pisa_env python=3.10
+source PATH_TO_ANACONDA/miniconda3/bin/activate
+conda create -n NAME_OF_YOUR_PISA_ENV python=3.10
 ```
 
-3. Activate the newly created environment (You can see the name of your environment in the bash shell after the activation)
+3. Activate the newly created environment
 
 ```bash
-conda activate pisa_env
+conda activate NAME_OF_YOUR_PISA_ENV
 ```
 
 4. Clone the PISA repository from github (https://github.com/icecube/pisa.git)
@@ -82,22 +52,40 @@ git clone https://github.com/icecube/pisa.git
 5. Install PISA with the following command
 
 ```bash
-pip install -e pisa
+pip install -e $PISA[develop] -vvv
 ```
 
-Arguments:
-
-* `pisa ` directory of source code
-* `-e`  (editable) Installs from source located at `$PISA` (Installed directory - pisa) and  allows for changes to the source code within to be immediately propagated to your Python installation.
-* `-vvv` Be maximally verbose during the install. You'll see lots of messages, including warnings that are irrelevant, but if your installation fails, it's easiest to debug if you use `-vvv`
+Explanation:
+* First, note that this is ***not run as administrator***. It is discouraged to do so (and has not been tested this way).
+* `-e $PISA` (or equivalently, `--editable $PISA`): Installs from source located at `$PISA` and  allows for changes to the source code within to be immediately propagated to your Python installation.
+Within the Python library tree, all files under `pisa` are links to your source code, so changes within your source are seen directly by the Python installation. Note that major changes to your source code (file names or directory structure changing) will require re-installation, though, for the links to be updated (see below for the command for re-installing).
 * `[develop]` Specify optional dependency groups. You can omit any or all of these if your system does not support them or if you do not need them.
+* `-vvv` Be maximally verbose during the install. You'll see lots of messages, including warnings that are irrelevant, but if your installation fails, it's easiest to debug if you use `-vvv`.
+* If a specific compiler is set by the `CC` environment variable (`export CC=<path>`), it will be used; otherwise, the `cc` command will be run on the system for compiling C-code.
+
+#### Notes:
+* You can work with your installation using the usual git commands (pull, push, etc.). However, these ***won't recompile*** any of the extension (i.e. pyx, _C/C++_) libraries. See below for how to reinstall PISA when you need these to recompile.
+
+
+#### Reinstall PISA
+
+Sometimes a change within PISA requires re-installation (particularly if a compiled module changes, the below forces re-compilation).
+
+```bash
+pip install -e $PISA[develop] --force-reinstall -vvv
+```
+
+Note that if files change names or locations, though, the above can still not be enough.
+In this case, the old files have to be removed manually (along with any associated `.pyc` files, as Python will use these even if the `.py` files have been removed).
+them.
 
 ### **Test your installation by running a simple script:**
 
-- Activate your python environment (`pisa_env`)
+- Activate your python environment
 
   ```bash
-  conda activate pisa_env
+  source PATH_TO_ANACONDA/miniconda3/bin/activate
+  conda activate NAME_OF_YOUR_PISA_ENV
   ```
 - Start python interpretator in terminal
 
@@ -137,7 +125,7 @@ Arguments:
   outputs['nutau_cc'].plot(ax=axes[2], cmap='RdYlBu_r', vmin=0, vmax=1);
   ```
 
-### Instructions to install PISA on Madison working group servers cobalts (current guide from August 2023):
+### Instructions to install PISA using cvmfs and virtual environment:
 
 Assuming you already are in the directory where you want to store fridge/pisa source files and the python virtualenv and build pisa. You also need access to github through your account.
 
