@@ -3123,6 +3123,7 @@ class VarMultiDimBinning(object):
         self._selections = None
         self._shape = None
         self._hashable_state = None
+        self._hash = None
 
         self.mask = None # not implemented, here so Map does not complain
 
@@ -3197,6 +3198,16 @@ class VarMultiDimBinning(object):
 
         return self._hashable_state
 
+    @property
+    def hash(self):
+        """Unique hash value for this object"""
+        if self._hash is None:
+            self._hash = hash_obj(self.hashable_state)
+        return self._hash
+
+    def __hash__(self):
+        return self.hash
+
     def assert_array_fits(self, array):
         """Check if a 
 
@@ -3212,6 +3223,33 @@ class VarMultiDimBinning(object):
                     'Array shape %s does not match binning shape %s'
                     % (array_el.shape, sp)
                 )
+
+    def assert_compat(self, other):
+        """Check if a (possibly different) binning can map onto the defined
+        binning. Allows for simple re-binning schemes (but no interpolation).
+
+        Parameters
+        ----------
+        other : Binning or container with attribute "binning"
+
+        Returns
+        -------
+        compat : bool
+
+        """
+        if not isinstance(other, VarMultiDimBinning):
+            for val in other.__dict__.values():
+                if isinstance(val, VarMultiDimBinning):
+                    other = val
+                    break
+        assert isinstance(other, VarMultiDimBinning), str(type(other))
+        if other == self:
+            return True
+        for my_sp, other_sp in zip(self, other):
+            if not (my_sp.binning.assert_compat(other_sp.binning) 
+                    and my_sp.selection == other_sp.selection):
+                return False
+        return True
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
@@ -3233,6 +3271,14 @@ class VarMultiDimBinning(object):
             other = [EventSpecie(name='all', selection=None, binning=other)]
         other = VarMultiDimBinning(other)
         return VarMultiDimBinning(chain(self, other))
+
+    def __eq__(self, other):
+        if not isinstance(other, VarMultiDimBinning):
+            return False
+        return recursiveEquality(self.hashable_state, other.hashable_state)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __getitem__(self, index):
         """Return a new EventSpecie(s), sub-selected by `index`.
@@ -3280,9 +3326,6 @@ class VarMultiDimBinning(object):
                 raise ValueError('Indices must be monotonically'
                                  ' increasing and adjacent.')
             new_species = []
-#             new_names = []
-#             new_selections = []
-#             new_binnings = []
             for sp_index in index:
                 if sp_index < -mylen or sp_index >= mylen:
                     raise ValueError(
@@ -3291,56 +3334,10 @@ class VarMultiDimBinning(object):
                         %(self.name, bin_index, -mylen, mylen-1)
                     )
                 new_species.append(deepcopy(self._species[sp_index]))
-#                 new_names.append(self._names[sp_index])
-#                 new_selections.append(self._selections[sp_index])
-#                 new_binnings.append(self._binnings[sp_index])
         else:
             raise TypeError('Unhandled index type %s' %type(orig_index))
 
         return new_species
-
-        
-#     def __repr__(): # TODO
-
-#     @property
-#     def midpoints(self):
-#         """Return a list of the contained dimensions' midpoints"""
-#         return [d.midpoints for d in self]
-
-#     @property
-#     def weighted_centers(self):
-#         """Return a list of the contained dimensions' weighted_centers (e.g.
-#         equidistant from bin edges on logarithmic scale, if the binning is
-#         logarithmic; otherwise linear). Access `midpoints` attribute for
-#         always-linear alternative."""
-#         return [d.weighted_centers for d in self]
-
-#     @property
-#     def num_bins(self):
-#         """
-#         Return a list of the contained dimensions' num_bins.
-#         Note that this does not accpunt for any bin mask (since it is computed per dimension)
-#         """
-#         return [d.num_bins for d in self]
-
-#     @property
-#     def tot_num_bins(self):
-#         """
-#         Return total number of bins.
-#         If a bin mask is used, this will only count bins that are not masked off
-#         """
-#         if self.mask is None :
-#             return np.product(self.shape)
-#         else :
-#             return np.sum(self.mask.astype(int))
-
-#     @property
-#     def units(self):
-#         """list : Return a list of the contained dimensions' units"""
-#         return [d.units for d in self]
-
-#     def index(self, dim, use_basenames=False):
-
 
 
 def test_OneDimBinning():

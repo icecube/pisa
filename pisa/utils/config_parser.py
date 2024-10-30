@@ -590,7 +590,7 @@ def parse_pipeline_config(config):
 
     """
     # Note: imports placed here to avoid circular imports
-    from pisa.core.binning import MultiDimBinning, OneDimBinning
+    from pisa.core.binning import MultiDimBinning, OneDimBinning, VarMultiDimBinning, EventSpecie
     from pisa.core.param import ParamSelector, DerivedParam
 
     if isinstance(config, str):
@@ -660,7 +660,32 @@ def parse_pipeline_config(config):
                 mask = eval(mask)
             # Create the binning object
             binning_dict[binning] = MultiDimBinning(bins, name=binning, mask=mask)
+        # Now read the variable binning definitions
+        elif name.endswith('.specie_names'):
+            specie_names = split(config.get('binning', name))
+            binning, _ = split(name, sep='.')
 
+            species = []
+            for specie_name in specie_names:
+                try:
+                    sel = config.get('binning', binning + '.' + specie_name + '.selection')
+                    bin_def = config.get('binning', binning + '.' + specie_name + '.binning')
+                except:
+                    logging.error(
+                        "Failed to find definition of '%s'"
+                        " variable binning entry.",
+                        binning
+                    )
+                if not bin_def in binning_dict:
+                    logging.error(
+                        "Failed to find definition of '%s'"
+                        " binning used in '%s' variable binning entry. Variable binnings"
+                        "should be defined after MultiDimBinnings used in their definition.",
+                        binning
+                    )
+                species.append(EventSpecie(name=specie_name, selection=sel, 
+                                           binning=binning_dict[bin_def]))
+            binning_dict[binning] = VarMultiDimBinning(name=binning, event_species=species)
 
     stage_dicts = OrderedDict()
 
