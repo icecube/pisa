@@ -330,7 +330,9 @@ class Pipeline(object):
 
         assert output_binning is not None
 
-        self.data.representation = output_binning
+        # TODO: figure out how this is messing up variable binning!!!
+#         self.data.representation = output_binning
+#         print(self.data.keys)
 
         if isinstance(output_key, tuple):
             assert len(output_key) == 2

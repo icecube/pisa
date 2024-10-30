@@ -500,10 +500,16 @@ class Map(object):
             )
             return
         self.assert_compat(error_hist)
-        super().__setattr__(
-            '_hist',
-            unp.uarray(self.nominal_values, np.ascontiguousarray(error_hist))
-        )
+        if not isinstance(self.binning, VarMultiDimBinning):
+            super().__setattr__(
+                '_hist',
+                unp.uarray(self.nominal_values, np.ascontiguousarray(error_hist))
+            )
+        else:
+            super().__setattr__(
+                '_hist', [unp.uarray(nv, np.ascontiguousarray(ehi)) \
+                                     for nv, ehi in zip(self.nominal_values,error_hist)]
+            )
 
     # TODO: make this return an OrderedDict to organize all of the returned
     # objects
@@ -1338,7 +1344,7 @@ class Map(object):
     def assert_compat(self, other):
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             return
-        elif isinstance(other, np.ndarray):
+        elif isinstance(other, (np.ndarray, list)):
             self.binning.assert_array_fits(other)
         elif isinstance(other, Map):
             self.binning.assert_compat(other.binning)

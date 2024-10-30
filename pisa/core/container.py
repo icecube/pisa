@@ -302,9 +302,15 @@ class Container():
         key = hash(representation)
         if not key in self.representation_keys:
             self._representations[key] = representation
-            if isinstance(representation, (MultiDimBinning,VarMultiDimBinning)):
+            if isinstance(representation, MultiDimBinning):
                 for name in representation.names:
                     self.validity[name][key] = True
+            elif isinstance(representation, VarMultiDimBinning):
+#                 self.representation = 'events'
+                for bn in representation.binnings:
+                    for bn_name in bn.names:
+#                         print(bn_name, key)
+                        self.validity[bn_name][key] = True
             elif isinstance(representation, str):
                 if representation not in self.array_representations:
                     raise ValueError(f"Unknown representation '{representation}'")
@@ -418,22 +424,43 @@ class Container():
             assert isinstance(binning, (MultiDimBinning,VarMultiDimBinning))
             
             assert hash(self.representation) == hash(binning)
-                            
-            is_flat = array.shape[0] == binning.size
-            
-            if is_flat:
-                flat_array = array
-            else:
-                # first dimesnions must match
-                assert array.shape[:binning.num_dims] == binning.shape
-                
-                
-                if array.ndim > binning.num_dims:
-                    flat_shape = (binning.size, -1)
+            if isinstance(binning, MultiDimBinning):
+                is_flat = array.shape[0] == binning.size
+
+                if is_flat:
+                    flat_array = array
                 else:
-                    flat_shape = (binning.size, )
-                flat_array = array.reshape(flat_shape)
-            self.current_data[key] = flat_array
+                    # first dimesnions must match
+                    assert array.shape[:binning.num_dims] == binning.shape
+
+
+                    if array.ndim > binning.num_dims:
+                        flat_shape = (binning.size, -1)
+                    else:
+                        flat_shape = (binning.size, )
+                    flat_array = array.reshape(flat_shape)
+                self.current_data[key] = flat_array
+            elif isinstance(binning, VarMultiDimBinning):
+                # TODO: deal with duplicate code
+                arrays = []
+                for arr, binn in zip(array,binning):
+                    arr_binning = binn.binning
+                    is_flat = arr.shape[0] == arr_binning.size
+
+                    if is_flat:
+                        flat_array = arr
+                    else:
+                        # first dimesnions must match
+                        assert arr.shape[:arr_binning.num_dims] == arr_binning.shape
+
+
+                        if array.ndim > arr_binning.num_dims:
+                            flat_shape = (arr_binning.size, -1)
+                        else:
+                            flat_shape = (arr_binning.size, )
+                        flat_array = arr.reshape(flat_shape)
+                    arrays.append(flat_array)
+                self.current_data[key] = arrays
         else:
             raise TypeError('unknown dataformat')
             
@@ -474,11 +501,26 @@ class Container():
         """Return reshaped data as normal n-dimensional histogram"""
         assert self.is_map, 'Cannot retrieve hists from non-map data'
         
-        # retrieve in case needs translation
-        self[key]
+        # retrieve in case needs translation (except VarMultiDimBinning)
+#         print(key, self.keys)
+        if not isinstance(self.representation, VarMultiDimBinning):
+            self[key]
 
         binning = self.representation
         data = self[key]
+        print(binning, data)
+
+        if isinstance(binning, VarMultiDimBinning):
+            assert len(binning.species) == len(data)
+            reshaped_data = []
+            for d, binn in zip(data,binning.binnings):
+                if d.ndim > binn.num_dims:
+                    full_shape = list(binn.shape) + [-1] 
+                else:
+                    full_shape = list(binn.shape)
+                reshaped_data.append(d.reshape(full_shape))
+            return reshaped_data, binning
+
         if data.ndim > binning.num_dims:
             full_shape = list(binning.shape) + [-1] 
         else:
@@ -493,7 +535,10 @@ class Container():
             error_hist = np.abs(self.get_hist(error)[0])
         else:
             error_hist = None
-        assert hist.ndim == binning.num_dims
+        if isinstance(binning, VarMultiDimBinning):
+            assert len(binning.species) == len(hist)
+        else:
+            assert hist.ndim == binning.num_dims
         return Map(name=self.name, hist=hist, error_hist=error_hist, binning=binning)
     
     def __iter__(self):
