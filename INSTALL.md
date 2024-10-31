@@ -2,11 +2,13 @@
 
 ## Instruction to install PISA using Anaconda or Miniconda
 
+The following commands are intended for execution in a terminal. If you encounter any problems with the installation, please file an issue and/or ask on slack.
+
 1. Install the essential dependencies
    
-   Choose either Anaconda (~4.4 GB) or Miniconda (~480 MB)
+   Choose either Anaconda (~4.4 GB) OR Miniconda (~480 MB)
 
-   Anaconda (https://docs.anaconda.com/anaconda/), e.g.
+   **Anaconda** (https://docs.anaconda.com/anaconda/), e.g.
    ```bash
    mkdir -p PATH_TO_ANACONDA/anaconda3
    wget https://repo.anaconda.com/archive/Anaconda3-<INSTALLER_VERSION>-Linux-x86_64.sh -O PATH_TO_ANACONDA/anaconda3/anaconda.sh
@@ -15,7 +17,7 @@
    ```
    You can view a list of available installer versions at https://repo.anaconda.com/archive/.
    
-   Miniconda (https://docs.anaconda.com/miniconda/), e.g.
+   **Miniconda** (https://docs.anaconda.com/miniconda/), e.g.
    ```bash
    mkdir -p PATH_TO_ANACONDA/miniconda3
    wget https://repo.anaconda.com/miniconda/Miniconda3-<INSTALLER_VERSION>-Linux-x86_64.sh -O PATH_TO_ANACONDA/miniconda3/miniconda.sh
@@ -26,9 +28,9 @@
    
    **If you install on the cobalts, rather use /data/user/YOURNAME/ than $HOME/ for PATH_TO_ANACONDA**
    
-   Note that you will also need pip and git. They are already installed on the cobalts, ask your local system administrator if they are not in your local machine.
+   **Note** that you will also need git. It is already installed on the cobalts, ask your local system administrator if it is not on your local machine. The other non-python requirements are listed [here](https://github.com/icecube/pisa/blob/master/INSTALL.md#required-dependencies) and should already come with the conda environment.
 
-   Other required libraries will be installed automatically during the setup (listed in https://github.com/icecube/pisa/blob/master/setup.py).
+   Other required libraries will be installed automatically during the setup (listed in https://github.com/icecube/pisa/blob/master/setup.py). If something is missing, you can install it via pip afterwards.
 
 2. Create an environment for the installation of PISA (after activating anaconda). You can choose your preferred version of python >= 3.10. E.g. use:
 
@@ -43,13 +45,13 @@ conda create -n NAME_OF_YOUR_PISA_ENV python=3.10
 conda activate NAME_OF_YOUR_PISA_ENV
 ```
 
-4. Clone the PISA repository from github (https://github.com/icecube/pisa.git). You can also create your own fork first.
+4. Clone the PISA repository from github (https://github.com/icecube/pisa.git). You can also create your own fork first. For more information on how to obtain the pisa source code see [obtain-pisa-sourcecode](https://github.com/icecube/pisa/blob/master/INSTALL.md#obtain-pisa-sourcecode)
 
-In your terminal, define a directory for PISA sourcecode to live in.
+Define a directory for PISA sourcecode to live in.
 ```bash
 export PISA="PATH_WHERE_PISA_SHOULD_LIVE/pisa
 ```
-Add this line to your ~/.bashrc file so you can refer to the `$PISA` variable without doing this everytime. 
+Add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this everytime. 
 PATH_WHERE_PISA_SHOULD_LIVE could for example be the same as PATH_TO_ANACONDA.
 
 The clone the source code
@@ -64,7 +66,7 @@ git clone https://github.com/icecube/pisa.git $PISA
 pip install -e $PISA[develop] -vvv
 ```
 
-Explanation:
+**Explanation:**
    * First, note that this is ***not run as administrator***. It is discouraged to do so (and has not been tested this way).
    * `-e $PISA` (or equivalently, `--editable $PISA`): Installs from source located at `$PISA` and  allows for changes to the source code within to be immediately propagated to your Python installation.
    Within the Python library tree, all files under `pisa` are links to your source code, so changes within your source are seen directly by the Python installation. Note that major changes to your source code (file names or directory structure changing) will require re-installation, though, for the links to be updated (see below for the command for re-installing).
@@ -72,8 +74,7 @@ Explanation:
    * `-vvv` Be maximally verbose during the install. You'll see lots of messages, including warnings that are irrelevant, but if your installation fails, it's easiest to debug if you use `-vvv`.
    * If a specific compiler is set by the `CC` environment variable (`export CC=<path>`), it will be used; otherwise, the `cc` command will be run on the system for compiling C-code.
 
-#### Notes:
-   * You can work with your installation using the usual git commands (pull, push, etc.). However, these ***won't recompile*** any of the extension (i.e. pyx, _C/C++_) libraries. See below for how to reinstall PISA when you need these to recompile.
+**Note** that you can work with your installation using the usual git commands (pull, push, etc.). However, these ***won't recompile*** any of the extension (i.e. pyx, _C/C++_) libraries. See below for how to reinstall PISA when you need these to recompile.
 
 
 ### Reinstall PISA
@@ -258,7 +259,6 @@ Optional dependencies. Some of these must be installed manually prior to install
 #### Develop PISA: Fork then clone
 
 If you wish to modify PISA and contribute your code changes back to the PISA project (*highly recommended!*), fork `IceCubeOpenSource/pisa` from Github.
-*(How to work with the `cake` branch of PISA will be detailed below.)*
 
 Forking creates your own version of PISA within your Github account.
 You can freely create your own *branch*, modify the code, and then *add* and *commit* changes to that branch within your fork of PISA.
