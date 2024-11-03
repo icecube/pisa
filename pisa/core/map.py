@@ -296,7 +296,8 @@ class Map(object):
 
     """
     _slots = ('name', 'hist', 'binning', 'hash', '_hash', 'tex',
-              'full_comparison', 'parent_indexer', '_normalize_values')
+              'full_comparison', 'parent_indexer', '_normalize_values',
+              'variable_binning')
     _state_attrs = ('name', 'hist', 'binning', 'hash', 'tex',
                     'full_comparison')
 
@@ -319,15 +320,15 @@ class Map(object):
                                  ' type %s' %(binning, type(binning)))
         self.parent_indexer = None
 
-#         if isinstance(binning, VarMultiDimBinning):
-#             self.varbinning = True
-#         else:
-#             self.varbinning = False
+        if isinstance(binning, VarMultiDimBinning):
+            self.variable_binning = True
+        else:
+            self.variable_binning = False
 
         # Do the work here to set read-only attributes
         super().__setattr__('_binning', binning)
         binning.assert_array_fits(hist)
-        if not isinstance(binning, VarMultiDimBinning):
+        if not self.variable_binning:
             super().__setattr__(
                 '_hist', np.ascontiguousarray(hist)
             )
@@ -500,7 +501,7 @@ class Map(object):
             )
             return
         self.assert_compat(error_hist)
-        if not isinstance(self.binning, VarMultiDimBinning):
+        if not self.variable_binning:
             super().__setattr__(
                 '_hist',
                 unp.uarray(self.nominal_values, np.ascontiguousarray(error_hist))
@@ -1565,9 +1566,8 @@ class Map(object):
         """
         expected_values = reduceToHist(expected_values)
 
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if binned:
-            if is_not_vb:
+            if not self.variable_binning:
                 return stats.llh(actual_values=self.hist,
                                  expected_values=expected_values)
             else:
@@ -1600,9 +1600,8 @@ class Map(object):
         """
         expected_values = reduceToHist(expected_values)
 
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if binned:
-            if is_not_vb:
+            if not self.variable_binning:
                 return stats.mcllh_mean(actual_values=self.hist,
                                  expected_values=expected_values)
             else:
@@ -1636,9 +1635,8 @@ class Map(object):
         """
         expected_values = reduceToHist(expected_values)
 
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if binned:
-            if is_not_vb:
+            if not self.variable_binning:
                 return stats.mcllh_eff(actual_values=self.hist,
                                  expected_values=expected_values)
             else:
@@ -1671,9 +1669,8 @@ class Map(object):
         """
         expected_values = reduceToHist(expected_values)
 
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if binned:
-            if is_not_vb:
+            if not self.variable_binning:
                 return stats.conv_llh(actual_values=self.hist,
                                  expected_values=expected_values)
             else:
@@ -1712,9 +1709,8 @@ class Map(object):
         elif isinstance(expected_values, Iterable):
             expected_values = [reduceToHist(x) for x in expected_values]
 
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if binned:
-            if is_not_vb:
+            if not self.variable_binning:
                 return stats.barlow_llh(actual_values=self.hist,
                                  expected_values=expected_values)
             else:
@@ -1748,9 +1744,8 @@ class Map(object):
         """
         expected_values = reduceToHist(expected_values)
 
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if binned:
-            if is_not_vb:
+            if not self.variable_binning:
                 return stats.mod_chi2(actual_values=self.hist,
                                  expected_values=expected_values)
             else:
@@ -1783,9 +1778,8 @@ class Map(object):
         """
         expected_values = reduceToHist(expected_values)
 
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if binned:
-            if is_not_vb:
+            if not self.variable_binning:
                 return stats.correct_chi2(actual_values=self.hist,
                                  expected_values=expected_values)
             else:
@@ -1818,9 +1812,8 @@ class Map(object):
         """
         expected_values = reduceToHist(expected_values)
 
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if binned:
-            if is_not_vb:
+            if not self.variable_binning:
                 return stats.chi2(actual_values=self.hist,
                                  expected_values=expected_values)
             else:
@@ -1851,8 +1844,7 @@ class Map(object):
         """
         expected_values = reduceToHist(expected_values)
 
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
-        if is_not_vb:
+        if not self.variable_binning:
             return stats.chi2(actual_values=self.hist,
                              expected_values=expected_values)
         return [stats.chi2(actual_values=hi,
@@ -1877,12 +1869,13 @@ class Map(object):
 
         '''
 
+        #TODO: implement for VarMultiDimBinning
+        if self.variable_binning:
+            raise ValueError("generalized_poisson_llh not implemented for Maps with VarMultiDimBinning")
+
         llh_per_bin = stats.generalized_poisson_llh(actual_values=self.hist,
                                                     expected_values=expected_values,
                                                     empty_bins=empty_bins)
-        #TODO: implement for VarMultiDimBinning
-        if isinstance(self.binning, VarMultiDimBinning):
-            raise ValueError("generalized_poisson_llh not implemented for Maps with VarMultiDimBinning")
 
         if binned:
             return llh_per_bin
@@ -1967,7 +1960,7 @@ class Map(object):
         # Apply bin mask, if one exists
         # Set masked off elements to NaN (handling both cases where the hst is either a simple array, or has uncertainties)
         if self.binning.mask is not None :
-            if not isinstance(self.binning, VarMultiDimBinning):
+            if not self.variable_binning:
                 hist[~self.binning.mask] = ufloat(np.NaN, np.NaN) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.NaN #TODO Is there a better way to check if this is a uarray?
             else:
                 raise ValueError("Masking for Maps with Variable binning is not implemented")
@@ -1978,7 +1971,7 @@ class Map(object):
     @property
     def nominal_values(self):
         """numpy.ndarray : Bin values stripped of uncertainties"""
-        if not isinstance(self.binning, VarMultiDimBinning):
+        if not self.variable_binning:
             return unp.nominal_values(self.hist)
         else:
             return [unp.nominal_values(hi) for hi in self.hist]
@@ -1986,7 +1979,7 @@ class Map(object):
     @property
     def std_devs(self):
         """numpy.ndarray : Uncertainties (standard deviations) per bin"""
-        if not isinstance(self.binning, VarMultiDimBinning):
+        if not self.variable_binning:
             return unp.std_devs(self.hist)
         else:
             return [unp.std_devs(hi) for hi in self.hist]
@@ -2010,11 +2003,10 @@ class Map(object):
 
     @_new_obj
     def __abs__(self):
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         state_updates = {
             #'name': "|%s|" % (self.name,),
             #'tex': r"{\left| %s \right|}" % strip_outer_parens(self.tex),
-            'hist': np.abs(self.hist) if is_not_vb else \
+            'hist': np.abs(self.hist) if not self.variable_binning else \
             [np.abs(hi) for hi in self.hist]
         }
         return state_updates
@@ -2022,16 +2014,15 @@ class Map(object):
     @_new_obj
     def __add__(self, other):
         """Add `other` to self"""
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             state_updates = {
                 #'name': "(%s + %s)" % (self.name, other),
                 #'tex': r"{(%s + %s)}" % (self.tex, other),
-                'hist': self.hist + other if is_not_vb else \
+                'hist': self.hist + other if not self.variable_binning else \
                 [hi+other for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            if is_not_vb:
+            if not self.variable_binning:
                 state_updates = {
                     #'name': "(%s + array)" % self.name,
                     #'tex': r"{(%s + X)}" % self.tex,
@@ -2044,7 +2035,7 @@ class Map(object):
             state_updates = {
                 #'name': "(%s + %s)" % (self.name, other.name),
                 #'tex': r"{(%s + %s)}" % (self.tex, other.tex),
-                'hist': self.hist + other.hist if is_not_vb else \
+                'hist': self.hist + other.hist if not self.variable_binning else \
                 [hi+other_hi for hi, other_hi in zip(self.hist,other.hist)],
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
@@ -2058,16 +2049,15 @@ class Map(object):
 
     @_new_obj
     def __sub__(self, other):
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             state_updates = {
                 #'name': "(%s - %s)" % (self.name, other),
                 #'tex': "{(%s - %s)}" % (self.tex, other),
-                'hist': self.hist - other if is_not_vb else \
+                'hist': self.hist - other if not self.variable_binning else \
                 [hi-other for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            if is_not_vb:
+            if not self.variable_binning:
                 state_updates = {
                     #'name': "(%s - array)" % self.name,
                     #'tex': "{(%s - X)}" % self.tex,
@@ -2080,7 +2070,7 @@ class Map(object):
             state_updates = {
                 #'name': "%s - %s" % (self.name, other.name),
                 #'tex': "{(%s - %s)}" % (self.tex, other.tex),
-                'hist': self.hist - other.hist if is_not_vb else \
+                'hist': self.hist - other.hist if not self.variable_binning else \
                 [hi-other_hi for hi, other_hi in zip(self.hist,other.hist)],
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
@@ -2091,16 +2081,15 @@ class Map(object):
 
     @_new_obj
     def __div__(self, other):
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             state_updates = {
                 #'name': "(%s / %s)" % (self.name, other),
                 #'tex': r"{(%s / %s)}" % (self.tex, other),
-                'hist': self.hist / other if is_not_vb else \
+                'hist': self.hist / other if not self.variable_binning else \
                 [hi/other for hi in self.hist]
             }
         elif isinstance(other, np.ndarray):
-            if is_not_vb:
+            if not self.variable_binning:
                 state_updates = {
                     #'name': "(%s / array)" % self.name,
                     #'tex': r"{(%s / X)}" % self.tex,
@@ -2113,7 +2102,7 @@ class Map(object):
             state_updates = {
                 #'name': "(%s / %s)" % (self.name, other.name),
                 #'tex': r"{(%s / %s)}" % (self.tex, other.tex),
-                'hist': self.hist / other.hist if is_not_vb else \
+                'hist': self.hist / other.hist if not self.variable_binning else \
                 [hi/other_hi for hi, other_hi in zip(self.hist,other.hist)],
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
@@ -2145,16 +2134,15 @@ class Map(object):
         Otherwise, simply checks that the hashes are equal.
 
         """
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if np.isscalar(other):
-            if is_not_vb:
+            if not self.variable_binning:
                 return np.all(self.nominal_values == other)
             else:
                 return np.all([np.all(nv==other) for nv in self.nominal_values])
 
         if type(other) is uncertainties.core.Variable \
                 or isinstance(other, np.ndarray):
-            if is_not_vb:
+            if not self.variable_binning:
                 return (np.all(self.nominal_values
                                == unp.nominal_values(other))
                         and np.all(self.std_devs
@@ -2182,11 +2170,10 @@ class Map(object):
         log_map : Map
 
         """
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         state_updates = {
             #'name': "log(%s)" % self.name,
             #'tex': r"\ln\left( %s \right)" % self.tex,
-            'hist': unp.log(self.hist) if is_not_vb else [unp.log(hi) for hi in self.hist]
+            'hist': unp.log(self.hist) if not self.variable_binning else [unp.log(hi) for hi in self.hist]
         }
         return state_updates
 
@@ -2199,26 +2186,25 @@ class Map(object):
         log10_map : Map
 
         """
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         state_updates = {
             #'name': "log10(%s)" % self.name,
             #'tex': r"\log_{10}\left( %s \right)" % self.tex,
-            'hist': unp.log10(self.hist) if is_not_vb else [unp.log10(hi) for hi in self.hist]
+            'hist': unp.log10(self.hist) if not self.variable_binning else \
+            [unp.log10(hi) for hi in self.hist]
         }
         return state_updates
 
     @_new_obj
     def __mul__(self, other):
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             state_updates = {
                 #'name': "%s * %s" % (other, self.name),
                 #'tex': r"%s \cdot %s" % (other, self.tex),
-                'hist': self.hist * other if is_not_vb else \
+                'hist': self.hist * other if not self.variable_binning else \
                 [hi * other for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            if is_not_vb:
+            if not self.variable_binning:
                 state_updates = {
                     #'name': "array * %s" % self.name,
                     #'tex': r"X \cdot %s" % self.tex,
@@ -2231,7 +2217,7 @@ class Map(object):
             state_updates = {
                 #'name': "%s * %s" % (self.name, other.name),
                 #'tex': r"%s \cdot %s" % (self.tex, other.tex),
-                'hist': self.hist * other.hist if is_not_vb else \
+                'hist': self.hist * other.hist if not self.variable_binning else \
                 [hi * other_hi for hi, other_hi in zip(self.hist,other.hist)],
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
@@ -2245,26 +2231,24 @@ class Map(object):
 
     @_new_obj
     def __neg__(self):
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         state_updates = {
             #'name': "-%s" % self.name,
             #'tex': r"-%s" % self.tex,
-            'hist': -self.hist if is_not_vb else [-hi for hi in self.hist],
+            'hist': -self.hist if not self.variable_binning else [-hi for hi in self.hist],
         }
         return state_updates
 
     @_new_obj
     def __pow__(self, other):
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             state_updates = {
                 #'name': "%s**%s" % (self.name, other),
                 #'tex': "%s^{%s}" % (self.tex, other),
-                'hist': unp.pow(self.hist, other) if is_not_vb else \
+                'hist': unp.pow(self.hist, other) if not self.variable_binning else \
                 [unp.pow(hi, other) for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            if is_not_vb:
+            if not self.variable_binning:
                 state_updates = {
                     #'name': "%s**(array)" % self.name,
                     #'tex': r"%s^{X}" % self.tex,
@@ -2278,7 +2262,7 @@ class Map(object):
                 #'name': "%s**(%s)" % (self.name,
                 #                      strip_outer_parens(other.name)),
                 #'tex': r"%s^{%s}" % (self.tex, strip_outer_parens(other.tex)),
-                'hist': unp.pow(self.hist, other.hist) if is_not_vb else \
+                'hist': unp.pow(self.hist, other.hist) if not self.variable_binning else \
                 [unp.pow(hi, other_hi) for hi, other_hi in zip(self.hist, other.hist)],
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
@@ -2297,16 +2281,15 @@ class Map(object):
 
     @_new_obj
     def __rdiv(self, other):
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             state_updates = {
                 #'name': "(%s / %s)" % (other, self.name),
                 #'tex': "{(%s / %s)}" % (other, self.tex),
-                'hist': other / self.hist if is_not_vb else \
+                'hist': other / self.hist if not self.variable_binning else \
                 [other / hi for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            if is_not_vb:
+            if not self.variable_binning:
                 state_updates = {
                     #'name': "array / %s" % self.name,
                     #'tex': "{(X / %s)}" % self.tex,
@@ -2329,16 +2312,15 @@ class Map(object):
 
     @_new_obj
     def __rsub(self, other):
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             state_updates = {
                 #'name': "(%s - %s)" % (other, self.name),
                 #'tex': "{(%s - %s)}" % (other, self.tex),
-                'hist': other - self.hist if is_not_vb else \
+                'hist': other - self.hist if not self.variable_binning else \
                 [other - hi for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            if is_not_vb:
+            if not self.variable_binning:
                 state_updates = {
                     #'name': "(array - %s)" % self.name,
                     #'tex': "{(X - %s)}" % self.tex,
@@ -2360,20 +2342,19 @@ class Map(object):
         sqrt_map : Map
 
         """
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
         state_updates = {
             #'name': "sqrt(%s)" % self.name,
             #'tex': r"\sqrt{%s}" % self.tex,
             #'hist': np.asarray(unp.sqrt(self.hist), dtype='float'),
-            'hist': unp.sqrt(self.hist) if is_not_vb else [unp.sqrt(hi) for hi in self.hist],
+            'hist': unp.sqrt(self.hist) if not self.variable_binning else \
+            [unp.sqrt(hi) for hi in self.hist],
         }
         return state_updates
 
     def allclose(self, other):
         '''Check if this map and another have the same (within machine precision) bin counts'''
         self.assert_compat(other)
-        is_not_vb = not isinstance(self.binning, VarMultiDimBinning)
-        if is_not_vb:
+        if not self.variable_binning:
             return np.allclose(self.nominal_values, other.nominal_values, **ALLCLOSE_KW)
         else:
             return np.all([np.allclose(nv, other_nv, **ALLCLOSE_KW) \
