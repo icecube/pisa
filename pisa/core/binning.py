@@ -3056,11 +3056,35 @@ class EventSpecie(object):
     """
     # pylint: enable=line-too-long
     def __init__(self, binning, name=None, selection=None):
-        self.name = name
-        self.selection = selection # TODO: format?
-        self.binning = binning # sould be MultiDimBinning (maybe OneDim too?)
-        # TODO: add checks for proper format, type
+
+        if not isinstance(binning, MultiDimBinning):
+            try:
+                binning = MultiDimBinning(binning)
+            except:
+                TypeError('EventSpecie accepts MultiDimBinning as \
+                binning. Unable to initialize MultiDimBinning using \
+                provided binning: %s'%(binning))
+
+        self._name = name
+        self._selection = selection # TODO: add check for selection format?
+        self._binning = binning
+
         self._serializable_state = None
+
+    @property
+    def name(self):
+        """Name of the specie"""
+        return self._name
+
+    @property
+    def selection(self):
+        """Specie selection string"""
+        return self._selection
+
+    @property
+    def binning(self):
+        """Specie binning"""
+        return self._binning
 
     @property
     def serializable_state(self):
@@ -3069,10 +3093,8 @@ class EventSpecie(object):
             state = OrderedDict()
             state['name'] = self.name
             state['selection'] = self.selection
-            state['binning'] = self.binning.serializable_state
+            state['binning'] = 'MultiDimBinning(%s)'%self.binning.serializable_state
             self._serializable_state = state
-        # Since the tex property can be modified, must set every time this
-        # property is called
         return self._serializable_state
 
     @property
@@ -3084,12 +3106,22 @@ class EventSpecie(object):
         previous_precision = np.get_printoptions()['precision']
         np.set_printoptions(precision=18)
         try:
-            argstrs = [('%s=%r' %item) for item in
-                       self.serializable_state.items()]
+            argstrs = [('%s=%r'%(k,self.serializable_state[k])) for k in
+                       ('name','selection')]
+            argstrs.append('%s=%s'%('binning',repr(self.binning)))
             r = '%s(%s)' %(self.__class__.__name__, ',\n    '.join(argstrs))
         finally:
             np.set_printoptions(precision=previous_precision)
         return r
+
+    def __eq__(self, other):
+        if not isinstance(other, EventSpecie):
+            return False
+        if (self.name == other.name 
+            and self.selection == other.selection 
+            and self.binning == other.binning):
+            return True
+        return False
 
 class VarMultiDimBinning(object):
     # pylint: disable=line-too-long
@@ -3136,7 +3168,7 @@ class VarMultiDimBinning(object):
 
     @property
     def name(self):
-        """Name of the species"""
+        """Name of the VarMultiDimBinning object"""
         return self._name
 
     @property
@@ -3188,9 +3220,6 @@ class VarMultiDimBinning(object):
         if self._hashable_state is None:
 
             state = OrderedDict()
-            # TODO: Shouldn't order matter?
-            #state['dimensions'] = [self[name]._hashable_state
-            #                       for name in sorted(self.names)]
             state['event_species'] = [d.hashable_state for d in self.species]
             state['name'] = self.name
 
@@ -3255,8 +3284,9 @@ class VarMultiDimBinning(object):
         previous_precision = np.get_printoptions()['precision']
         np.set_printoptions(precision=18)
         try:
-            argstrs = [('%s=%r' %item) for item in
-                       self.serializable_state.items()]
+            species_argstrs = ['%r'%sp for sp in self.species]
+            argstrs = [('event_species=[%s]' %',\n    '.join(species_argstrs))]
+            argstrs.append('name=%s' %self.name)
             r = '%s(%s)' %(self.__class__.__name__, ',\n    '.join(argstrs))
         finally:
             np.set_printoptions(precision=previous_precision)
@@ -3275,7 +3305,35 @@ class VarMultiDimBinning(object):
     def __eq__(self, other):
         if not isinstance(other, VarMultiDimBinning):
             return False
-        return recursiveEquality(self.hashable_state, other.hashable_state)
+        # only comparing length of specie arrays since order can be different
+        if not len(self.shape)==len(other.shape):
+            return False
+
+        # sort by selection in case names are not unique
+        comp_order_self = np.argsort(self.selections)
+        comp_order_other = np.argsort(other.selections)
+        for i,j in zip(comp_order_self, comp_order_other):
+            if self.species[i] != other.species[j]:
+                return False
+        # throw warning if species are the same but in different order
+        if np.any(comp_order_self != comp_order_other):
+            logging.warning(
+                'Following VarMultiDimBinning objects are not equal because they '
+                'have different order of `event_species`:\n\n %r \n\nand\n\n %r',
+                self, other
+            )
+            return False
+        # throw info in case binnings only differ by name 
+        if self.name != other.name:
+            logging.info(
+                'Following VarMultiDimBinning objects are not equal '
+                'only because of different names.'
+                'Both binnings contain identical `event_species`:\n\n %r \n\nand\n\n %r',
+                self, other
+            )
+            return False
+            
+        return True
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -3795,8 +3853,113 @@ def test_MultiDimBinning():
     
     logging.info('<< PASS : test_MultiDimBinning >>')
 
+def test_EventSpecie():
+
+    # needed so that eval(repr(ev_sp)) works
+    from numpy import array, float32, float64 # pylint: disable=unused-variable
+
+    binning_2d = MultiDimBinning([dict(name='reco_energy', is_log=True, num_bins=8, 
+                                       domain=[5., 80.], units='GeV'),
+                                  dict(name='reco_coszen', is_lin=True, num_bins=10, 
+                                       domain=[-1, 0.])
+                                ])
+    binning_3d = MultiDimBinning([dict(name='reco_energy', is_log=True, num_bins=12, 
+                                       domain=[5., 80.], units='GeV'),
+                                  dict(name='reco_coszen', is_lin=True, num_bins=5, 
+                                       domain=[-1, -0.2]),
+                                  dict(name='pid', is_lin=True, bin_edges=[0.0, 0.25, 0.55, 1.0], 
+                                       bin_names=['cascades', 'mixed','tracks'])
+                                ])
+
+    ev_sp1 = EventSpecie(binning=binning_2d, name='sp1_2d', selection='reco_rho36>200')
+    ev_sp2 = EventSpecie(binning=binning_3d, name='sp2_3d', selection='reco_rho36<=200')
+    ev_sp3 = EventSpecie(binning=binning_2d, name='sp1_2d', selection='reco_rho36<=200')
+
+    name1 = ev_sp1.name
+    name2 = ev_sp2.name
+    name3 = ev_sp3.name
+    selection1 = ev_sp1.selection
+    selection2 = ev_sp2.selection
+    selection3 = ev_sp3.selection
+    binning1 = ev_sp1.binning
+    binning2 = ev_sp2.binning
+    binning3 = ev_sp3.binning
+
+    assert name1 != name2
+    assert name1 == name3
+    assert selection1 != selection2
+    assert selection2 == selection3
+    assert binning1 != binning2
+    assert binning1 == binning3
+
+    _ = binning1.hashable_state
+
+    assert eval(repr(ev_sp1)) == ev_sp1 # pylint: disable=eval-used
+
+    # TODO: saving to file
+
+    logging.info('<< PASS : test_EventSpecie >>')
+
+def test_VarMultiDimBinning():
+
+    # needed so that eval(repr(vb)) works
+    from numpy import array, float32, float64 # pylint: disable=unused-variable
+
+    binning_2d = MultiDimBinning([dict(name='reco_energy', is_log=True, num_bins=8, 
+                                       domain=[5., 80.], units='GeV'),
+                                  dict(name='reco_coszen', is_lin=True, num_bins=10, 
+                                       domain=[-1, 0.])
+                                ])
+    binning_3d = MultiDimBinning([dict(name='reco_energy', is_log=True, num_bins=12, 
+                                       domain=[5., 80.], units='GeV'),
+                                  dict(name='reco_coszen', is_lin=True, num_bins=5, 
+                                       domain=[-1, -0.2]),
+                                  dict(name='pid', is_lin=True, bin_edges=[0.0, 0.25, 0.55, 1.0], 
+                                       bin_names=['cascades', 'mixed','tracks'])
+                                ])
+
+    vb = VarMultiDimBinning([EventSpecie(name='high_ndom', selection='n_hit_doms>20', binning=binning_3d),
+                             EventSpecie(name='low_ndom', selection='n_hit_doms<=20', binning=binning_2d),
+                            ])
+    vb2 = VarMultiDimBinning([EventSpecie(name='low_ndom', selection='n_hit_doms<=20', binning=binning_2d),
+                             EventSpecie(name='high_ndom', selection='n_hit_doms>20', binning=binning_3d),
+                            ])
+    vb2a = VarMultiDimBinning([EventSpecie(name='low_ndom', selection='n_hit_doms<=20', binning=binning_2d),
+                             EventSpecie(name='high_ndom', selection='n_hit_doms>20', binning=binning_3d),
+                            ],
+                             name='2a')
+    vb3 = VarMultiDimBinning([EventSpecie(name='low_ndom', selection='n_hit_doms<=20', binning=binning_2d),
+                             EventSpecie(name='mid_ndom', selection='(n_hit_doms>20)&(n_hit_doms<=30)', 
+                                         binning=binning_3d),
+                             EventSpecie(name='high_ndom', selection='n_hit_doms>30', binning=binning_3d),
+                            ])
+    
+
+    assert eval(repr(vb)) == vb # pylint: disable=eval-used
+
+    assert vb != vb2
+    assert vb2 != vb2a
+    assert vb2 != vb3
+    assert vb2.assert_compat(vb2a)
+    assert vb[0] != vb[1]
+
+    _ = vb.shape
+    _ = vb.name
+    _ = vb.species
+    _ = vb.names
+    _ = vb.binnings
+    _ = vb.selections
+    _ = vb.serializable_state
+    _ = vb.hashable_state
+    _ = hash(vb)
+
+    # TODO: saving to file
+
+    logging.info('<< PASS : test_VarMultiDimBinning >>')
 
 if __name__ == "__main__":
     set_verbosity(1)
     test_OneDimBinning()
     test_MultiDimBinning()
+    test_EventSpecie()
+    test_VarMultiDimBinning()
