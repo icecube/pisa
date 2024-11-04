@@ -3093,7 +3093,7 @@ class EventSpecie(object):
             state = OrderedDict()
             state['name'] = self.name
             state['selection'] = self.selection
-            state['binning'] = 'MultiDimBinning(%s)'%self.binning.serializable_state
+            state['binning'] = self.binning.serializable_state
             self._serializable_state = state
         return self._serializable_state
 

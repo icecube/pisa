@@ -30,7 +30,7 @@ from uncertainties import ufloat
 from uncertainties import unumpy as unp
 
 from pisa import ureg, HASH_SIGFIGS
-from pisa.core.binning import OneDimBinning, MultiDimBinning, VarMultiDimBinning
+from pisa.core.binning import OneDimBinning, MultiDimBinning, VarMultiDimBinning, EventSpecie
 from pisa.utils.comparisons import normQuant, recursiveEquality, ALLCLOSE_KW
 from pisa.utils.flavInt import NuFlavIntGroup
 from pisa.utils.hash import hash_obj
@@ -315,6 +315,15 @@ class Map(object):
                 binning = MultiDimBinning(dimensions=binning)
             elif isinstance(binning, Mapping):
                 binning = MultiDimBinning(**binning)
+                # TODO: figure out file read out for VarMultiDimBinning
+#                 if not 'event_species' in binning.keys():
+#                     binning = MultiDimBinning(**binning)
+#                 else:
+#                     ev_species = [EventSpecie(**es_str) for es_str 
+#                                   in binning['event_species']]
+#                     print(binning['event_species'])
+#                     binning = VarMultiDimBinning(event_species=ev_species,
+#                                                  name=binning['name'])
             else:
                 raise ValueError('Do not know what to do with `binning`=%s of'
                                  ' type %s' %(binning, type(binning)))
@@ -345,9 +354,17 @@ class Map(object):
         np.set_printoptions(precision=18)
         try:
             state = self.serializable_state
-            state['hist'] = np.array_repr(state['hist'])
+
+            if not self.variable_binning:
+                state['hist'] = np.array_repr(state['hist'])
+            else:
+                state['hist'] = [np.array_repr(h) for h in state['hist']]
+
             if state['error_hist'] is not None:
-                state['error_hist'] = np.array_repr(state['error_hist'])
+                if not self.variable_binning:
+                    state['error_hist'] = np.array_repr(state['error_hist'])
+                else:
+                    state['error_hist'] = [np.array_repr(eh) for eh in state['error_hist']]
             argstrs = [('%s=%r' % item) for item in
                        self.serializable_state.items()]
             r = '%s(%s)' % (self.__class__.__name__, ',\n    '.join(argstrs))
@@ -361,7 +378,10 @@ class Map(object):
         state = {a: getattr(self, a) for a in attrs}
         state['name'] = repr(state['name'])
         state['tex'] = repr(state['tex'])
-        state['hist'] = np.array_repr(state['hist'])
+        if not self.variable_binning:
+            state['hist'] = np.array_repr(state['hist'])
+        else:
+            state['hist'] = [np.array_repr(h) for h in state['hist']]
         argstrs = [('%s=%s' % (a, state[a])) for a in attrs]
         s = '%s(%s)' % (self.__class__.__name__, ',\n    '.join(argstrs))
         return s
@@ -404,6 +424,9 @@ class Map(object):
         z : Standard Python scalar object
 
         """
+        if self.variable_binning:
+            raise TypeError('item() method not supported for Map with VarMultiDimBinning')
+
         return self.hist.item(*args)
 
     def slice(self, **kwargs):
@@ -473,15 +496,24 @@ class Map(object):
             object's dimensionality.
 
         """
+        if self.variable_binning:
+            raise TypeError('slice() method not supported for Map with VarMultiDimBinning')
+
         return self[self.binning.indexer(**kwargs)]
 
     def set_poisson_errors(self):
         """Approximate poisson errors using sqrt(n)."""
         nom_values = self.nominal_values
-        super().__setattr__(
-            '_hist',
-            unp.uarray(nom_values, np.sqrt(nom_values))
-        )
+        if not self.variable_binning:
+            super().__setattr__(
+                '_hist',
+                unp.uarray(nom_values, np.sqrt(nom_values))
+            )
+        else:
+            super().__setattr__(
+                '_hist',
+                [unp.uarray(nv, np.sqrt(nv)) for nv in nom_values]
+            )
 
     def set_errors(self, error_hist):
         """Manually define the error with an array the same shape as the
@@ -538,6 +570,11 @@ class Map(object):
           * 'infmatch' : bool, whether +inf (and separately -inf) entries match
 
         """
+
+        if self.variable_binning:
+            raise TypeError('compare() method is not implemented for '
+            'Map with VarMultiDimBinning')
+
         assert isinstance(ref, Map)
         assert ref.binning == self.binning
         diff = self - ref
@@ -705,6 +742,11 @@ class Map(object):
         colorbar : :class:`matplotlib.colorbar.Colorbar`
 
         """
+
+        if self.variable_binning:
+            raise TypeError('plot() method is not implemented for '
+            'Map with VarMultiDimBinning')
+
         import matplotlib as mpl
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -949,6 +991,11 @@ class Map(object):
             Modify Map (and its binning) by combining adjacent bins
 
         """
+
+        if self.variable_binning:
+            raise TypeError('reorder_dimensions() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         new_binning = self.binning.reorder_dimensions(order)
         orig_order = list(range(len(self.binning)))
         new_order = [self.binning.index(b, use_basenames=False)
@@ -969,6 +1016,11 @@ class Map(object):
         Map with equivalent values but singleton dimensions removed
 
         """
+
+        if self.variable_binning:
+            raise TypeError('squeeze() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         new_binning = self.binning.squeeze()
         new_hist = self.hist.squeeze()
         return {'hist': new_hist, 'binning': new_binning}
@@ -976,9 +1028,13 @@ class Map(object):
     @_new_obj
     def round2int(self):
         binning = self.binning
-        nominal_values = np.rint(self.nominal_values)
+        nominal_values = self.nominal_values
         std_devs = self.std_devs
-        return {'hist': unp.uarray(nominal_values, std_devs)}
+        if not self.variable_binning:
+            return {'hist': unp.uarray(np.rint(nominal_values), std_devs)}
+        else:
+            return {'hist': [unp.uarray(np.rint(nv), sd) for nv,sd 
+                             in zip(nominal_values, std_devs)]}
 
     @_new_obj
     def sum(self, axis=None, keepdims=False):
@@ -1007,6 +1063,10 @@ class Map(object):
         """
 
         #TODO This function does't work if axis=None, since @_new_obj expects the output to be a map
+
+        if self.variable_binning:
+            raise TypeError('sum() method not supported for '
+                            'Map with VarMultiDimBinning')
 
         if axis is None:
             axis = self.binning.names
@@ -1045,6 +1105,11 @@ class Map(object):
         projection : Map
 
         """
+
+        if self.variable_binning:
+            raise TypeError('project() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         keep_index = self.binning.index(axis)
         sum_indices = list(range(len(self.binning.dims)))
         sum_indices.remove(keep_index)
@@ -1076,6 +1141,10 @@ class Map(object):
         """
         # TODO: put uncertainties in
 
+        if self.variable_binning:
+            raise TypeError('rebin() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         assert self.binning.mask is None, "`rebin` function does not currenty support bin masking"
 
         new_hist = rebin(hist=self.hist, orig_binning=self.binning,
@@ -1090,6 +1159,11 @@ class Map(object):
         details.
 
         """
+
+        if self.variable_binning:
+            raise TypeError('downsample() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         new_binning = self.binning.downsample(*args, **kwargs)
         return self.rebin(new_binning)
 
@@ -1121,6 +1195,11 @@ class Map(object):
         ..  [1] Bohm & Zech, "Statistics of weighted Poisson events and its applications" (2013),
             https://arxiv.org/abs/1309.1287
         """
+
+        if self.variable_binning:
+            raise TypeError('fluctuate() method not yet implemented for '
+                            'Map with VarMultiDimBinning (TODO)')
+
         orig = method
         method = str(method).strip().lower().replace(' ', '')
         if not method in FLUCTUATE_METHODS:
@@ -1234,17 +1313,25 @@ class Map(object):
     @property
     def shape(self):
         """tuple : shape of the map, akin to `nump.ndarray.shape`"""
-        return self.hist.shape
+        # return self.hist.shape
+        # any reason to take shape from the hist and not binning for Map with MultiDimBinning?
+        return self.binning.shape
 
     @property
     def size(self):
         """int : total number of elements"""
-        return self.hist.size
+        if not self.variable_binning:
+            return self.hist.size
+        else:
+            return np.sum([h.size for h in self.hist])
 
     @property
     def num_entries(self):
         """int : total number of weighted entries in all bins"""
-        return np.sum(valid_nominal_values(self.hist))
+        if not self.variable_binning:
+            return np.sum(valid_nominal_values(self.hist))
+        else:
+            return np.sum([np.sum(valid_nominal_values(h)) for h in self.hist])
 
     @property
     def serializable_state(self):
@@ -1316,6 +1403,10 @@ class Map(object):
         pisa.utils.jsons.to_json
 
         """
+        if self.variable_binning:
+            raise TypeError('to_json() method not yet implemented for '
+                            'Map with VarMultiDimBinning (TODO)')
+
         jsons.to_json(self.serializable_state, filename=filename, **kwargs)
 
     @classmethod
@@ -1365,6 +1456,10 @@ class Map(object):
         Map object containing one of each bin of this Map
 
         """
+        if self.variable_binning:
+            raise TypeError('iterbins() method is not supported for '
+                            'Map with VarMultiDimBinning')
+
         for i in range(self.size):
             idx_coord = self.binning.index2coord(i)
             idx_view = tuple(slice(x, x+1) for x in idx_coord)
@@ -1382,6 +1477,10 @@ class Map(object):
     # TODO : example!
     def itercoords(self):
         """Iterator that yields the coordinate of each bin in the map."""
+        if self.variable_binning:
+            raise TypeError('itercoords() method is not supported for '
+                            'Map with VarMultiDimBinning')
+
         return self.binning.itercoords()
 
     def __hash__(self):
@@ -1406,6 +1505,10 @@ class Map(object):
         hist should be).
 
         """
+        if self.variable_binning:
+            raise TypeError('_slice_or_index() method is not supported for '
+                            'Map with VarMultiDimBinning')
+
         new_binning = self.binning[idx]
 
         new_map = Map(name=self.name,
@@ -1473,6 +1576,9 @@ class Map(object):
             copied into the new map(s).
 
         """
+        if self.variable_binning:
+            raise TypeError('split() method is not supported for '
+                            'Map with VarMultiDimBinning')
 
         dim_index = self.binning.index(dim, use_basenames=use_basenames)
         spliton_dim = self.binning.dims[dim_index]
@@ -3499,6 +3605,46 @@ def test_Map():
         # assert test_return[1] == matplotlib.axes._subplots.AxesSubplot
         # assert test_return[2] == matplotlib.collections.QuadMesh
         # assert test_return[3] == matplotlib.colorbar.Colorbar
+
+
+    # Test Map with VarMultiDimBinning
+    binning_2d = MultiDimBinning([dict(name='reco_energy', is_log=True, 
+                                       num_bins=12, domain=[5., 80.], units='GeV'),
+                                  dict(name='reco_coszen', is_lin=True, 
+                                       num_bins=10, domain=[-1, 0.])
+                                ])
+    binning_3d = MultiDimBinning([dict(name='reco_energy', is_log=True, 
+                                       num_bins=12, domain=[5., 80.], units='GeV'),
+                                  dict(name='reco_coszen', is_lin=True,
+                                       num_bins=10, domain=[-1, 0.]),
+                                  dict(name='pid', is_lin=True, 
+                                       bin_edges=[0.0, 0.25, 0.55, 1.0], 
+                                       bin_names=['cascades', 'mixed','tracks'])
+                                ])
+    vb = VarMultiDimBinning([EventSpecie(name='high_ndom', selection='n_hit_doms>20', 
+                                         binning=binning_3d),
+                             EventSpecie(name='low_ndom', selection='n_hit_doms<20', 
+                                         binning=binning_2d),
+                            ])
+
+    hist_vb = [np.ones(sp) for sp in vb.shape]
+    mvb = Map(name='a', hist=hist_vb, error_hist=hist_vb, binning=vb)
+
+    mvb.set_poisson_errors()
+    mvb.set_errors([3*np.ones(sp) for sp in vb.shape])
+    _ = mvb.shape
+    _ = mvb.size
+    _ = mvb.num_entries
+
+    mvb_copy = deepcopy(mvb)
+    assert mvb == mvb_copy
+    assert mvb*2 != mvb_copy
+    assert mvb.sqrt()**2 == mvb_copy
+
+    _ = mvb+mvb_copy
+    _ = mvb-mvb_copy
+    _ = mvb*mvb_copy
+    _ = mvb/mvb_copy
 
     logging.info(str(('<< PASS : test_Map >>')))
 
