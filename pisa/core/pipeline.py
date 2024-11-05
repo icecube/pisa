@@ -318,8 +318,6 @@ class Pipeline(object):
     def get_outputs(self, output_binning=None, output_key=None):
         """Get MapSet output"""
 
-
-
         self.run()
 
         if output_binning is None:
@@ -330,9 +328,9 @@ class Pipeline(object):
 
         assert output_binning is not None
 
-        # TODO: figure out how this is messing up variable binning!!!
-#         self.data.representation = output_binning
-#         print(self.data.keys)
+        # avoid unnecessary translation
+        if self.data.representation != output_binning:
+            self.data.representation = output_binning
 
         if isinstance(output_key, tuple):
             assert len(output_key) == 2

@@ -33,7 +33,7 @@ class ContainerSet(object):
 
     containers : list or None
 
-    data_specs : MultiDimBinning, VarMultiDimBinning, "events" or None
+    data_specs : MultiDimBinning, VarMultiDimBinning (partial support), "events" or None
 
     """
     def __init__(self, name, containers=None, data_specs=None):
@@ -306,10 +306,8 @@ class Container():
                 for name in representation.names:
                     self.validity[name][key] = True
             elif isinstance(representation, VarMultiDimBinning):
-#                 self.representation = 'events'
                 for bn in representation.binnings:
                     for bn_name in bn.names:
-#                         print(bn_name, key)
                         self.validity[bn_name][key] = True
             elif isinstance(representation, str):
                 if representation not in self.array_representations:
@@ -501,14 +499,11 @@ class Container():
         """Return reshaped data as normal n-dimensional histogram"""
         assert self.is_map, 'Cannot retrieve hists from non-map data'
         
-        # retrieve in case needs translation (except VarMultiDimBinning)
-#         print(key, self.keys)
-        if not isinstance(self.representation, VarMultiDimBinning):
-            self[key]
+        # retrieve in case needs translation
+        self[key]
 
         binning = self.representation
         data = self[key]
-        print(binning, data)
 
         if isinstance(binning, VarMultiDimBinning):
             assert len(binning.species) == len(data)
@@ -561,8 +556,8 @@ class Container():
             # nothing to do
             return    
     
-        from_map = isinstance(src_representation, (MultiDimBinning,VarMultiDimBinning))
-        to_map = isinstance(dest_representation, (MultiDimBinning,VarMultiDimBinning))
+        from_map = isinstance(src_representation, MultiDimBinning)
+        to_map = isinstance(dest_representation, MultiDimBinning)
     
         if self.tranlation_modes[key] == 'average':            
             if from_map and to_map:
@@ -664,10 +659,9 @@ class Container():
         """
         # TODO: make work for n-dim
         logging.trace('Transforming %s array to binned data'%(key))
-#         print('calling container.array_to_binned() method')
         
         assert src_representation in self.array_representations
-        assert isinstance(dest_representation, (MultiDimBinning,VarMultiDimBinning))
+        assert isinstance(dest_representation, MultiDimBinning)
         
         if not dest_representation.is_irregular:
             sample = []

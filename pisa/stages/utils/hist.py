@@ -48,9 +48,6 @@ class hist(Stage):  # pylint: disable=invalid-name
             "Hist stage needs a binning as `apply_mode`, but is %s" % self.apply_mode
         )
 
-#         for container in self.data:
-#             print('initial', container.keys)
-
         self.variable_binning = False
         if isinstance(self.apply_mode, VarMultiDimBinning):
             self.variable_binning = True
@@ -134,14 +131,12 @@ class hist(Stage):  # pylint: disable=invalid-name
                 )
             else:
                 # TODO: deal with repeat code
-                print('calculating using var binning!!!')
                 species = []
                 for specie in self.apply_mode.species:
                     dimensions = []
                     for dim in specie.binning:
                         if dim.is_irregular:
                             varname = dim.name + "__" + specie.name + "_" + "_idx"
-                            print(varname)
                             new_dim = OneDimBinning(
                                 varname, domain=[0, dim.num_bins], num_bins=dim.num_bins
                             )
@@ -170,14 +165,8 @@ class hist(Stage):  # pylint: disable=invalid-name
         else:
             raise ValueError(f"unknown calc mode: {self.calc_mode}")
 
-#         for container in self.data:
-#             print('setup_final', container.keys)
-
     @profile
     def apply_function(self):
-
-#         for container in self.data:
-#             print('apply_initial', container.keys)
 
         if isinstance(self.calc_mode, MultiDimBinning):
 
@@ -212,9 +201,7 @@ class hist(Stage):  # pylint: disable=invalid-name
 
         elif self.calc_mode == "events":
             for container in self.data:
-#                 print(container.keys)
                 container.representation = self.calc_mode
-                print(container.keys)
                 hists = []
                 errors = []
                 bin_unc2s = []
@@ -225,13 +212,11 @@ class hist(Stage):  # pylint: disable=invalid-name
                         sel_mask = np.ones_like(container["weights"])
                     for var_name in container.keys: #TODO add check that masks don't overlap
                         # using word boundary \b to replace whole words only
-                        print(type(var_name), var_name)
                         selection = re.sub(
                             r'\b{}\b'.format(var_name),
                             'container["%s"]' % (var_name),
                             selection
                         )
-                    print(selection)
                     sel_mask = eval(selection)  # pylint: disable=eval-used
                     
                     sample = []
@@ -273,18 +258,16 @@ class hist(Stage):  # pylint: disable=invalid-name
                         MultiDimBinning(reg_specie.binning),
                         averaged=False
                     )
-#                     print(hist)
                     hists.append(hist)
 
                     if self.error_method == "sumw2":
                         errors.append( np.sqrt(histogram(sample, np.square(unc_weights*weights),
                             reg_specie.binning, averaged=False)) )
-                        bin_unc2s.append(histogram(sample, np.square(unc_weights)*weights,
-                            reg_specie.binning, averaged=False))
+                        bin_unc2s.append( histogram(sample, np.square(unc_weights)*weights,
+                            reg_specie.binning, averaged=False) )
 
                 container.representation = self.apply_mode
                 container["weights"] = self.apply_mode, hists
-                print(container)
 
                 if self.error_method == "sumw2":
                     container["errors"] = self.apply_mode, errors
