@@ -1,8 +1,9 @@
 # Installation Guide
 
+
 ## Instruction to install PISA using Anaconda or Miniconda
 
-The following commands are intended for execution in a terminal. If you encounter any problems with the installation, please file an issue and/or ask on slack.
+The following commands are intended for execution in a terminal. If you encounter any problems with the installation, please create an issue and/or ask on the IceCube slack (if possible).
 
 1. Install the essential dependencies
    
@@ -32,7 +33,7 @@ The following commands are intended for execution in a terminal. If you encounte
 
    Other required libraries will be installed automatically during the setup (listed in https://github.com/icecube/pisa/blob/master/setup.py). If something is missing, you can install it via pip afterwards.
 
-2. Create an environment for the installation of PISA (after activating anaconda). You can choose your preferred version of python >= 3.10. E.g. use:
+2. Create an environment for the installation of PISA (after activating anaconda). You can choose your preferred version of python >= 3.10. E.g. for miniconda with python 3.10 use:
 
 ```bash
 source PATH_TO_ANACONDA/miniconda3/bin/activate
@@ -85,19 +86,27 @@ Sometimes a change within PISA requires re-installation (particularly if a compi
 pip install -e $PISA[develop] --force-reinstall -vvv
 ```
 
-Note that if files change names or locations, though, the above can still not be enough.
+**Note** that if files change names or locations, though, the above can still not be enough.
 In this case, the old files have to be removed manually (along with any associated `.pyc` files, as Python will use these even if the `.py` files have been removed).
 them.
 
 
 ### Test PISA
 
- First activate your python environment (if not already active)
+ First activate your python environment (if not already active). Assuming you used Miniconda, you can do that with:
 
   ```bash
   source PATH_TO_ANACONDA/miniconda3/bin/activate
   conda activate NAME_OF_YOUR_PISA_ENV
   ```
+
+#### Running a simple script
+
+Running the following command should create a folder in `/tmp` containing a pdf with output maps for different neutrino types and interactions.
+
+```bash
+$PISA/pisa/core/distribution_maker.py --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir /tmp/pipeline_output --pdf
+```
 
 #### Unit Tests
 
@@ -107,12 +116,6 @@ Unit tests are designed to ensure that the basic mechanisms of objects' function
 These are all run, plus additional tests (takes about 15-20 minutes on a laptop) with the command
 ```bash
 $PISA/pisa_tests/test_command_lines.sh
-```
-
-#### Running a simple script
-
-```bash
-$PISA/pisa/core/pipeline.py --pipeline settings/pipeline/example.cfg  --outdir /tmp/pipeline_output --intermediate --pdf -v
 ```
 
 
