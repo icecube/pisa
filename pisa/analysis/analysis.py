@@ -2683,7 +2683,7 @@ class BasicAnalysis(object):
         self._nit += 1
 
     def MCMC_sampling(self, data_dist, hypo_maker, metric, nwalkers, burnin, nsteps,
-                      return_burn_in=False, random_state=None):
+                      return_burn_in=False, random_state=None, sampling_algorithm=None):
         """Performs MCMC sampling. Only supports serial (single CPU) execution at the 
         moment. See issue #830.
 
@@ -2717,6 +2717,12 @@ class BasicAnalysis(object):
 
         random_state : None or type accepted by utils.random_numbers.get_random_state
             Random state of the walker starting points. Default is None.
+            
+        sampling_algorithm : None or emcee.moves object
+            Sampling algorithm used by the emcee sampler. None means to use the default which
+            is a Goodman & Weare “stretch move” with parallelization.
+            See https://emcee.readthedocs.io/en/stable/user/moves/#moves-user to learn more
+            about the emcee sampling algorithms.
 
         Returns
         -------
@@ -2738,11 +2744,8 @@ class BasicAnalysis(object):
             warnings.warn("You are using a chi2 metric for the MCMC sampling."
                           "The sampler will assume that llh=0.5*chi2.")
 
-        params_truth = hypo_maker.params.free
-        x0 = np.array([p._rescaled_value for p in params_truth])
-        bounds = np.repeat([[0,1]], len(x0), axis=0)
-
         ndim = len(hypo_maker.params.free)
+        bounds = np.repeat([[0,1]], ndim, axis=0)
         rs = get_random_state(random_state)
         p0 = rs.random(ndim * nwalkers).reshape((nwalkers, ndim))
         
@@ -2769,6 +2772,7 @@ class BasicAnalysis(object):
 
         sampler = emcee.EnsembleSampler(
             nwalkers, ndim, func,
+            moves=sampling_algorithm,
             args=[bounds, data_dist, hypo_maker, metric]
         )
 
