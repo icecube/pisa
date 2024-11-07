@@ -55,7 +55,7 @@ export PISA="PATH_WHERE_PISA_SHOULD_LIVE/pisa
 Add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this everytime. 
 PATH_WHERE_PISA_SHOULD_LIVE could for example be the same as PATH_TO_ANACONDA.
 
-The clone the source code
+Then clone the source code
 ```bash
 mkdir -p $PISA
 git clone https://github.com/icecube/pisa.git $PISA
