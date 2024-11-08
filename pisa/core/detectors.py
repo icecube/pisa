@@ -83,15 +83,19 @@ class Detectors(object):
                                                             )
             
         for sp in self.shared_params:
-            n = 0
+            N, n = 0, 0
             for distribution_maker in self._distribution_makers:
+                if sp in distribution_maker.params.names:
+                    N += 1
                 if sp in distribution_maker.params.free.names:
                     n += 1
-            if n < 2:
-                raise NameError('Shared param %s only a free param in less than 2 detectors.' % sp)
+            if N < 2:
+                raise NameError(f'Shared param {sp} only exists in {N} detectors.')
+            if n > 0 and n != N:
+                raise NameError(f'Shared param {sp} exists in {N} detectors but only a free param in {n} detectors.')
         
         self.init_params()
-                
+
     def __repr__(self):
         return self.tabulate(tablefmt="presto")
 
@@ -225,7 +229,7 @@ class Detectors(object):
             spi = []
             for p_name in free_names:
                 if p_name in self.shared_params:
-                    spi.append((free_names.index(p_name),self.shared_params.index(p_name)))
+                    spi.append((free_names.index(p_name), self.shared_params.index(p_name)))
             shared_param_ind_list.append(spi)
         return shared_param_ind_list
             
@@ -347,7 +351,7 @@ class Detectors(object):
                 for j in range(len(self._distribution_makers[i].params.free) - len(spi[i])):
                     rp.append(rvalues.pop(0))
                 for j in range(len(spi[i])):
-                    rp.insert(spi[i][j][0],sp[spi[i][j][1]])
+                    rp.insert(spi[i][j][0], sp[spi[i][j][1]])
                 self._distribution_makers[i]._set_rescaled_free_params(rp)
 
 
