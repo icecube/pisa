@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
@@ -6,18 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.analysis package &mdash; PISA 4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=9f5556dd"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=9f5556dd"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -36,9 +34,6 @@
           <a href="index.html" class="icon icon-home">
             PISA
           </a>
-              <div class="version">
-                4.0
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -559,6 +554,45 @@ like so:</p>
 <span class="p">)</span>
 </pre></div>
 </div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.BasicAnalysis.MCMC_sampling">
+<span class="sig-name descname"><span class="pre">MCMC_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burnin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_burn_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#BasicAnalysis.MCMC_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.BasicAnalysis.MCMC_sampling" title="Link to this definition"></a></dt>
+<dd><p>Performs MCMC sampling. Only supports serial (single CPU) execution at the
+moment. See issue #830.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_dist</strong> (<em>Sequence</em><em> of </em><em>MapSets</em><em> or </em><a class="reference internal" href="pisa.core.html#pisa.core.map.MapSet" title="pisa.core.map.MapSet"><em>MapSet</em></a>) – Data distribution to be fit. Can be an actual-, Asimov-, or pseudo-data
+distribution (where the latter two are derived from simulation and so aren’t
+technically “data”).</p></li>
+<li><p><strong>hypo_maker</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.detectors.Detectors" title="pisa.core.detectors.Detectors"><em>Detectors</em></a><em> or </em><a class="reference internal" href="pisa.core.html#pisa.core.distribution_maker.DistributionMaker" title="pisa.core.distribution_maker.DistributionMaker"><em>DistributionMaker</em></a>) – Creates the per-bin expectation values per map based on its param values.
+Free params in the <cite>hypo_maker</cite> are modified by the minimizer to achieve a
+“best” fit.</p></li>
+<li><p><strong>metric</strong> (<em>string</em><em> or </em><em>iterable</em><em> of </em><em>strings</em>) – Metric by which to evaluate the fit. See documentation of Map.</p></li>
+<li><p><strong>nwalkers</strong> (<em>int</em>) – Number of walkers</p></li>
+<li><p><strong>burnin</strong> (<em>int</em>) – Number of steps in burn in phase</p></li>
+<li><p><strong>nSteps</strong> (<em>int</em>) – Number of steps after burn in</p></li>
+<li><p><strong>return_burn_in</strong> (<em>bool</em>) – Also return the steps of the burn in phase. Default is False.</p></li>
+<li><p><strong>random_state</strong> (<em>None</em><em> or </em><em>type accepted by utils.random_numbers.get_random_state</em>) – Random state of the walker starting points. Default is None.</p></li>
+<li><p><strong>sampling_algorithm</strong> (<em>None</em><em> or </em><em>emcee.moves object</em>) – Sampling algorithm used by the emcee sampler. None means to use the default which
+is a Goodman &amp; Weare “stretch move” with parallelization.
+See <a class="reference external" href="https://emcee.readthedocs.io/en/stable/user/moves/#moves-user">https://emcee.readthedocs.io/en/stable/user/moves/#moves-user</a> to learn more
+about the emcee sampling algorithms.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>scaled_chain</strong> (<em>numpy array</em>) – Array containing all points in the parameter space visited by each walker.
+It is sorted by steps, so all the first steps of all walkers come first.
+To for example get all values of the Nth parameter and the ith walker, use
+scaled_chain[i::nwalkers, N].</p></li>
+<li><p><strong>scaled_chain_burnin</strong> (<em>numpy array (optional)</em>) – Same as scaled_chain, but for the burn in phase.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.analysis.analysis.BasicAnalysis.fit_recursively">
 <span class="sig-name descname"><span class="pre">fit_recursively</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external_priors_penalty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_fit_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#BasicAnalysis.fit_recursively"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.BasicAnalysis.fit_recursively" title="Link to this definition"></a></dt>
