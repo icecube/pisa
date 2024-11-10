@@ -8,12 +8,15 @@ import numpy as np
 from numba import njit
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+from pisa.utils.resources import find_resource
 
 __all__ = [
     "ultrasurfaces",
+    "init_test"
 ]
 
 __author__ = "A. Trettin, L. Fischer"
@@ -82,7 +85,7 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         assert std_kwargs["calc_mode"] == "events"
 
         # Store args
-        self.fit_results_file = fit_results_file
+        self.fit_results_file = find_resource(fit_results_file)
         self.varnames = varnames
         self.approx_exponential = approx_exponential
 
@@ -111,9 +114,15 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
                     f"Support range is missing for parameter {pname}"
                 )
 
+        expected_container_keys = varnames + ['weights']
+        # 'true_energy' is hard-coded to get sample size
+        if not 'true_energy' in expected_container_keys:
+            expected_container_keys.append('true_energy')
+
         # -- Initialize base class -- #
         super().__init__(
             expected_params=param_names,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -284,3 +293,40 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
 def grad_shift_inplace(grads, shift, out):
     for i, g in enumerate(grads):
         out[i] += shift * g
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    import os
+    import pandas as pd
+    from pisa import CACHE_DIR
+    from pisa.utils.random_numbers import get_random_state
+
+    p1, p2 = 'opt_eff_overall', 'ice_scattering'
+    param_set = ParamSet([
+        Param(name=p1, value=1.0, **param_kwargs),
+        Param(name=p2, value=0.0, **param_kwargs)
+    ])
+    # We cannot just use `value` attribute here (service unable to deal with pint quantity)
+    nominal_points = {
+        p1: param_set[p1].value.m_as('dimensionless'),
+        p2: param_set[p2].value.m_as('dimensionless')
+    }
+
+    # create a test file containing 100 gradients on the fly
+    N = 100
+    random_state = get_random_state(0)
+    varnames = ['inelasticity', 'reco_energy']
+    df = {var: random_state.random(N).astype(dtype=FTYPE) for var in varnames}
+    df.update({f'grad_{p}': np.multiply(random_state.random(N), 2).astype(dtype=FTYPE) for p in param_set.names})
+    # also add an interaction term
+    df[f'grad__{p1}__{p2}'] = np.multiply(random_state.random(N), 2).astype(dtype=FTYPE)
+
+    df = pd.DataFrame.from_dict(data=df, dtype=FTYPE)
+    fpath = os.path.join(CACHE_DIR, 'test_us_file.feather')
+    df.to_feather(fpath)
+
+    return ultrasurfaces(
+        params=param_set, fit_results_file=fpath, varnames=varnames,
+        nominal_points=nominal_points, calc_mode='events'
+    )

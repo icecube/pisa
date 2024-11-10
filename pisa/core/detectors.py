@@ -13,7 +13,6 @@ from __future__ import absolute_import
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 import inspect
-from itertools import product
 import os
 from tabulate import tabulate
 from copy import deepcopy
@@ -21,7 +20,6 @@ from copy import deepcopy
 import numpy as np
 
 from pisa import ureg
-from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.param import ParamSet, Param
@@ -66,7 +64,7 @@ class Detectors(object):
         self._distribution_makers , self.det_names = [] , []
         for pipeline in pipelines:
             if not isinstance(pipeline, Pipeline):
-                pipeline = Pipeline(pipeline)
+                pipeline = Pipeline(pipeline, profile=profile)
             
             name = pipeline.detector_name
             if name in self.det_names:
@@ -85,15 +83,19 @@ class Detectors(object):
                                                             )
             
         for sp in self.shared_params:
-            n = 0
+            N, n = 0, 0
             for distribution_maker in self._distribution_makers:
+                if sp in distribution_maker.params.names:
+                    N += 1
                 if sp in distribution_maker.params.free.names:
                     n += 1
-            if n < 2:
-                raise NameError('Shared param %s only a free param in less than 2 detectors.' % sp)
+            if N < 2:
+                raise NameError(f'Shared param {sp} only exists in {N} detectors.')
+            if n > 0 and n != N:
+                raise NameError(f'Shared param {sp} exists in {N} detectors but only a free param in {n} detectors.')
         
         self.init_params()
-                
+
     def __repr__(self):
         return self.tabulate(tablefmt="presto")
 
@@ -111,7 +113,17 @@ class Detectors(object):
             
     def __iter__(self):
         return iter(self._distribution_makers)
-    
+
+    def report_profile(self, detailed=False, format_num_kwargs=None):
+        """Report timing information on contained distribution makers.
+        See `Pipeline.report_profile` for details.
+        """
+        for distribution_maker in self._distribution_makers:
+            print(distribution_maker.detector_name + ':')
+            distribution_maker.report_profile(
+                detailed=detailed, format_num_kwargs=format_num_kwargs
+            )
+
     @property
     def profile(self):
         return self._profile
@@ -217,7 +229,7 @@ class Detectors(object):
             spi = []
             for p_name in free_names:
                 if p_name in self.shared_params:
-                    spi.append((free_names.index(p_name),self.shared_params.index(p_name)))
+                    spi.append((free_names.index(p_name), self.shared_params.index(p_name)))
             shared_param_ind_list.append(spi)
         return shared_param_ind_list
             
@@ -339,7 +351,7 @@ class Detectors(object):
                 for j in range(len(self._distribution_makers[i].params.free) - len(spi[i])):
                     rp.append(rvalues.pop(0))
                 for j in range(len(spi[i])):
-                    rp.insert(spi[i][j][0],sp[spi[i][j][1]])
+                    rp.insert(spi[i][j][0], sp[spi[i][j][1]])
                 self._distribution_makers[i]._set_rescaled_free_params(rp)
 
 

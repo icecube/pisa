@@ -4,10 +4,10 @@ PISA pi stage to apply HNL specific re-weighting
 
 from __future__ import absolute_import, print_function, division
 
+from pisa import ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
-
-from pisa import ureg
 
 import numpy as np
 
@@ -94,9 +94,20 @@ class weight_hnl(Stage):  # pylint: disable=invalid-name
     ):
         expected_params = ("U_tau4_sq",)
 
+        expected_container_keys = (
+            'mHNL',
+            'hnl_true_energy',
+            'hnl_proper_lifetime',
+            'hnl_distance_min',
+            'hnl_distance_max',
+            'hnl_decay_width',
+            'weights',
+        )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -117,3 +128,12 @@ class weight_hnl(Stage):  # pylint: disable=invalid-name
 
             container["weights"] *= hnl_weight
             container.mark_changed("weights")
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="U_tau4_sq", value=0.1, **param_kwargs)
+    ])
+
+    return weight_hnl(params=param_set)

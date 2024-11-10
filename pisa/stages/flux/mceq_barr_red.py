@@ -17,11 +17,14 @@ import pickle
 import numpy as np
 from numba import njit, prange  # trivially parallelize for-loops
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE, TARGET, ureg
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
+
+__all__ = ['mceq_barr_red', 'spectral_index_scale', 'apply_sys_loop', 'init_test']
 
 
 class mceq_barr_red(Stage):  # pylint: disable=invalid-name
@@ -65,6 +68,14 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
                 * from w to z
                 Uncertainty on K- and K+ production is assumed to be
                 uncorrelated as the ratio is badly determined.
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
+            "nu_flux_nominal"
+            "nubar_flux_nominal"
+            "nubar"
 
     Notes
     -----
@@ -150,6 +161,14 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
             "energy_pivot",
         )
 
+        expected_container_keys = (
+            "true_energy",
+            "true_coszen",
+            "nu_flux_nominal",
+            "nubar_flux_nominal",
+            "nubar"
+        )
+
         # Using Honda for nominal flux. Keys should already exist
         # what are keys added or altered in the calculation used during apply
         # what keys are added or altered for the outputs during apply
@@ -158,8 +177,9 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
         self.table_file = table_file
 
         # init base class
-        super(mceq_barr_red, self).__init__(
+        super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -464,3 +484,29 @@ def apply_sys_loop(
             out[event, flav] = nu_flux_nominal[event, flav] * spec_scale
             for i in range(len(gradient_params)):
                 out[event, flav] += gradients[event, flav, i] * gradient_params[i]
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name="pion_ratio", value=0.0, **param_kwargs),
+        Param(name="barr_af_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_g_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_h_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_i_Pi", value=0.0, **param_kwargs),
+        Param(name="barr_w_K", value=0.0, **param_kwargs),
+        Param(name="barr_x_K", value=0.0, **param_kwargs),
+        Param(name="barr_y_K", value=0.0, **param_kwargs),
+        Param(name="barr_z_K", value=0.0, **param_kwargs),
+        Param(name="barr_w_antiK", value=0.0, **param_kwargs),
+        Param(name="barr_x_antiK", value=0.0, **param_kwargs),
+        Param(name="barr_y_antiK", value=0.0, **param_kwargs),
+        Param(name="barr_z_antiK", value=0.0, **param_kwargs),
+        Param(name="delta_index", value=0.0, **param_kwargs),
+        Param(name="energy_pivot", value=25*ureg.GeV, **param_kwargs),
+    ])
+
+    return mceq_barr_red(
+        table_file="flux/MCEq_flux_gradient_splines_2212_GlobalSplineFitBeta_SIBYLL23C_reduced_scheme.pckl.bz2",
+        params=param_set
+    )

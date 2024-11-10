@@ -6,10 +6,13 @@ Stage to evaluate the Hillas-Gaisser expectations from precalculated fluxes
 import numpy as np
 
 from pisa import FTYPE
+from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
+
+__all__ = ['hillasg', 'init_test']
 
 
 class hillasg(Stage):  # pylint: disable=invalid-name
@@ -20,17 +23,31 @@ class hillasg(Stage):  # pylint: disable=invalid-name
     ----------
     params
         Expected params .. ::
+
             flux_table : str
+
+        Expected container keys are .. ::
+
+            "true_energy"
+            "true_coszen"
 
     """
 
     def __init__(self, **std_kwargs):
 
-        expected_params = ("flux_table",)
+        expected_params = (
+            "flux_table",
+        )
+
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+        )
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
@@ -113,3 +130,47 @@ class hillasg(Stage):  # pylint: disable=invalid-name
 
         # don't forget to un-link everything again
         self.data.unlink_containers()
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    import os
+    from pisa import CACHE_DIR
+    
+    fpath = os.path.join(CACHE_DIR, 'dummy_hillas_test_flux-aa.d')
+    if not os.path.isfile(fpath):
+        def form(val:float)->str:
+            return '%1.4E'%abs(val)
+
+        costh_nodes = np.linspace(-1,1,20)
+        energy_nodes = np.logspace(-1.05, 10.95, 121)
+
+        hundred_e = np.linspace(np.log10(min(energy_nodes)), np.log10(max(energy_nodes)), 100)
+        hundred_ct = np.linspace(-1, 1, 101)[::-1]
+
+        outfile = open(fpath, 'wt', encoding='utf-8', buffering=1)
+        for _i_theta in range(len(hundred_ct)):
+            i_theta = len(hundred_ct) - _i_theta - 1
+            if i_theta==0:
+                continue
+
+            sp1 = " " if hundred_ct[i_theta]>=0 else ""
+            sp2 = " " if hundred_ct[i_theta-1]>=0 else ""
+            outfile.write("average flux in [cosZ ={}{:.2f} -- {}{:.2f}, phi_Az =   0 -- 360]\n".format(sp1,hundred_ct[i_theta], sp2,hundred_ct[i_theta-1]))
+            outfile.write(" Enu(GeV)   NuMu       NuMubar    NuE        NuEbar     NuTau      NuTauBar   (m^2 sec sr GeV)^-1\n")
+
+            for i_e in range(len(hundred_e)):
+                outfile.write(" "+form(10**hundred_e[i_e]))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write(" "+form(np.random.rand()))
+                outfile.write("\n")
+        outfile.close()
+
+    param_set = ParamSet([
+        Param(name='flux_table', value=fpath, **param_kwargs),
+    ])
+    return hillasg(params=param_set)

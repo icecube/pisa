@@ -8,12 +8,17 @@ from __future__ import absolute_import, print_function, division
 __author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 
 import numpy as np
-from pisa import FTYPE
-from pisa.core.container import Container
-from pisa.core.stage import Stage
+from scipy.stats import norm
 
+from pisa import FTYPE
 # Load the modified index lookup function
 from pisa.core.bin_indexing import lookup_indices
+from pisa.core.binning import MultiDimBinning
+from pisa.core.container import Container
+from pisa.core.param import Param, ParamSet
+from pisa.core.stage import Stage
+
+__all__ = ['simple_signal', 'init_test']
 
 
 class simple_signal(Stage):  # pylint: disable=invalid-name
@@ -48,11 +53,18 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
 
             # fitted parameters
             'mu',
-            'sigma')
+            'sigma'
+        )
+
+        supported_reps = {
+            'apply_mode': [MultiDimBinning]
+        }
 
         # init base class
         super().__init__(
             expected_params=expected_params,
+            expected_container_keys=(),
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
@@ -87,9 +99,10 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
         signal_container = Container('signal')
         signal_container.representation = 'events'
         # Populate the signal physics quantity over a uniform range
-        signal_initial  = np.random.uniform(low=self.params.bkg_min.value.m,
-                                               high=self.params.bkg_max.value.m,
-                                               size=self.nsig)
+        signal_initial  = np.random.uniform(
+            low=self.params.bkg_min.value.m, high=self.params.bkg_max.value.m,
+            size=self.nsig
+        )
 
         # guys, seriouslsy....?! "stuff"??
         signal_container['stuff'] = signal_initial
@@ -170,7 +183,6 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
         # Make sure we are in events mode
         #
         self.data.representation = 'events'
-        from scipy.stats import norm
 
         for container in self.data:
 
@@ -204,3 +216,26 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
                 container.array_to_binned('errors',
                     self.data.representation, self.apply_mode, averaged=False
                 )
+
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    from pisa.core.binning import OneDimBinning
+    bkg_min, bkg_max = 50., 100.
+    param_set = ParamSet([
+        Param(name='n_events_data', value=5512, **param_kwargs),
+        Param(name='stats_factor', value=1.0, **param_kwargs),
+        Param(name='signal_fraction', value=0.05, **param_kwargs),
+        Param(name='bkg_min', value=bkg_min, **param_kwargs),
+        Param(name='bkg_max', value=bkg_max, **param_kwargs),
+        Param(name='mu', value=75., **param_kwargs),
+        Param(name='sigma', value=8.5, **param_kwargs),
+    ])
+    test_binning = MultiDimBinning(
+        name='simple_signal_test_binning',
+        dimensions=[OneDimBinning(
+            name='stuff', bin_edges=[bkg_min, bkg_max],
+            is_lin=True)
+        ]
+    )
+    return simple_signal(params=param_set, apply_mode=test_binning)

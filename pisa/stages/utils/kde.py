@@ -5,12 +5,14 @@ that represent event counts
 from copy import deepcopy
 
 import numpy as np
+from time import time
 
 from pisa.core.stage import Stage
 from pisa.core.binning import MultiDimBinning, OneDimBinning
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils import kde_hist
+from pisa_tests.test_services import TEST_BINNING
 
 
 class kde(Stage):  # pylint: disable=invalid-name
@@ -84,24 +86,25 @@ class kde(Stage):  # pylint: disable=invalid-name
             if self.bootstrap:
                 self.stashed_errors = None
 
+        supported_reps = {
+            'calc_mode': ['events'],
+            'apply_mode': [MultiDimBinning],
+        }
+
         # init base class
         super().__init__(
             expected_params=(),
+            expected_container_keys=(),
+            supported_reps=supported_reps,
             **std_kargs,
         )
 
-        assert self.calc_mode == "events"
         self.regularized_apply_mode = None
 
     def setup_function(self):
 
-        assert isinstance(
-            self.apply_mode, MultiDimBinning
-        ), f"KDE stage needs a binning as `apply_mode`, but is {self.apply_mode}"
-
         # For dimensions that are logarithmic, we add a linear binning in
         # the logarithm (but only if this feature is enabled)
-
         if not self.linearize_log_dims:
             self.regularized_apply_mode = self.apply_mode
             return
@@ -132,11 +135,21 @@ class kde(Stage):  # pylint: disable=invalid-name
 
     @profile
     def apply(self):
-        # this is special, we want the actual event weights in the kde
-        # therefor we're overwritting the apply function
-        # normally in a stage you would implement the `apply_function` method
-        # and not the `apply` method!
+        """This is special, we want the actual event weights in the kde
+        therefor we're overwritting the apply function
+        normally in a stage you would implement the `apply_function` method
+        and not the `apply` method! We also have to reimplement the profiling
+        functionality in apply of the Base class"""
 
+        if self.profile:
+            start_t = time()
+            self.apply_function()
+            end_t = time()
+            self.apply_times.append(end_t - start_t)
+        else:
+            self.apply_function()
+
+    def apply_function(self):
         for container in self.data:
 
             if self.stash_valid:
@@ -283,3 +296,7 @@ class kde(Stage):  # pylint: disable=invalid-name
 # into the main scope and thus overshadow `kde` (the module).
 # The unit test for this stage is therefore instead placed in
 # pisa/pisa_tests/test_kde_stage.py
+
+def init_test(**param_kwargs):
+    """Initialisation example"""
+    return kde(calc_mode='events', apply_mode=TEST_BINNING)
