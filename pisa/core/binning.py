@@ -3389,7 +3389,7 @@ class VarMultiDimBinning(object):
                     raise ValueError(
                         "Dimension '%s': bin index %s is invalid. Bin index"
                         " must be >= %+d and <= %+d"
-                        %(self.name, bin_index, -mylen, mylen-1)
+                        %(self.name, sp_index, -mylen, mylen-1)
                     )
                 new_species.append(deepcopy(self._species[sp_index]))
         else:
