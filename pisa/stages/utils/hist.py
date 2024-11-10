@@ -124,8 +124,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                         dimensions.append(dim)
                 # simplify the code by making it a VarMultiDimBinning ...
                 # self.regularized_apply_mode = MultiDimBinning(dimensions)
-                self.regularized_apply_mode = VarMultiDimBinning([EventSpecie(
-                    binning=MultiDimBinning(dimensions))])
+                self.regularized_apply_mode = MultiDimBinning(dimensions)
                 logging.debug(
                     "Using regularized binning:\n" + str(self.regularized_apply_mode)
                 )
@@ -200,53 +199,37 @@ class hist(Stage):  # pylint: disable=invalid-name
                     container["bin_unc2"] = bin_unc2
 
         elif self.calc_mode == "events":
-            for container in self.data:
-                container.representation = self.calc_mode
-                hists = []
-                errors = []
-                bin_unc2s = []
-                for specie, reg_specie in zip(self.apply_mode.species,
-                                              self.regularized_apply_mode):
-                    selection = specie.selection
-                    if selection is None:
-                        sel_mask = np.ones_like(container["weights"])
-                    for var_name in container.keys: #TODO add check that masks don't overlap
-                        # using word boundary \b to replace whole words only
-                        selection = re.sub(
-                            r'\b{}\b'.format(var_name),
-                            'container["%s"]' % (var_name),
-                            selection
-                        )
-                    sel_mask = eval(selection)  # pylint: disable=eval-used
-                    
+            if not self.variable_binning:
+                for container in self.data:
+                    container.representation = self.calc_mode
+
                     sample = []
-                    dims_log = [d.is_log for d in specie.binning]
-                    dims_ire = [d.is_irregular for d in specie.binning]
+                    dims_log = [d.is_log for d in self.apply_mode]
+                    dims_ire = [d.is_irregular for d in self.apply_mode]
                     for dim, is_log, is_ire in zip(
-                        reg_specie.binning, dims_log, dims_ire
+                        self.regularized_apply_mode, dims_log, dims_ire
                     ):
-                        
                         if is_log and not is_ire:
                             container.representation = "log_events"
-                            sample.append(container[dim.name][sel_mask])
+                            sample.append(container[dim.name])
                         else:
                             container.representation = "events"
-                            sample.append(container[dim.name][sel_mask])
+                            sample.append(container[dim.name])
 
                     if self.unweighted:
                         if "astro_weights" in container.keys:
                             weights = np.ones_like(
-                                container["weights"][sel_mask] + container["astro_weights"][sel_mask]
+                                container["weights"] + container["astro_weights"]
                             )
                         else:
-                            weights = np.ones_like(container["weights"][sel_mask])
+                            weights = np.ones_like(container["weights"])
                     else:
                         if "astro_weights" in container.keys:
-                            weights = container["weights"][sel_mask] + container["astro_weights"][sel_mask]
+                            weights = container["weights"] + container["astro_weights"]
                         else:
-                            weights = container["weights"][sel_mask]
+                            weights = container["weights"]
                     if self.apply_unc_weights:
-                        unc_weights = container["unc_weights"][sel_mask]
+                        unc_weights = container["unc_weights"]
                     else:
                         unc_weights = np.ones(weights.shape)
 
@@ -254,21 +237,95 @@ class hist(Stage):  # pylint: disable=invalid-name
                     # and regular
                     hist = histogram(
                         sample,
-                        (unc_weights*weights),
-                        MultiDimBinning(reg_specie.binning),
+                        unc_weights*weights,
+                        self.regularized_apply_mode,
                         averaged=False
                     )
-                    hists.append(hist)
 
                     if self.error_method == "sumw2":
-                        errors.append( np.sqrt(histogram(sample, np.square(unc_weights*weights),
-                            reg_specie.binning, averaged=False)) )
-                        bin_unc2s.append( histogram(sample, np.square(unc_weights)*weights,
-                            reg_specie.binning, averaged=False) )
+                        sumw2 = histogram(sample, np.square(unc_weights*weights),
+                            self.regularized_apply_mode, averaged=False)
+                        bin_unc2 = histogram(sample, np.square(unc_weights)*weights,
+                            self.regularized_apply_mode, averaged=False)
 
-                container.representation = self.apply_mode
-                container["weights"] = self.apply_mode, hists
+                    container.representation = self.apply_mode
+                    container["weights"] = hist
 
-                if self.error_method == "sumw2":
-                    container["errors"] = self.apply_mode, errors
-                    container["bin_unc2"] = self.apply_mode, bin_unc2s
+                    if self.error_method == "sumw2":
+                        container["errors"] = np.sqrt(sumw2)
+                        container["bin_unc2"] = bin_unc2
+            else:
+                for container in self.data:
+                    container.representation = self.calc_mode
+                    hists = []
+                    errors = []
+                    bin_unc2s = []
+                    for specie, reg_specie in zip(self.apply_mode.species,
+                                                  self.regularized_apply_mode):
+                        selection = specie.selection
+
+                        if selection is None:
+                            sel_mask = np.full(container["weights"].shape, True)
+                        else:
+                            for var_name in container.keys: #TODO add check that masks don't overlap
+                                # using word boundary \b to replace whole words only
+                                selection = re.sub(
+                                    r'\b{}\b'.format(var_name),
+                                    'container["%s"]' % (var_name),
+                                    selection
+                                )
+                            sel_mask = eval(selection)  # pylint: disable=eval-used
+
+                        sample = []
+                        dims_log = [d.is_log for d in specie.binning]
+                        dims_ire = [d.is_irregular for d in specie.binning]
+                        for dim, is_log, is_ire in zip(
+                            reg_specie.binning, dims_log, dims_ire
+                        ):
+
+                            if is_log and not is_ire:
+                                container.representation = "log_events"
+                                sample.append(container[dim.name][sel_mask])
+                            else:
+                                container.representation = "events"
+                                sample.append(container[dim.name][sel_mask])
+
+                        if self.unweighted:
+                            if "astro_weights" in container.keys:
+                                weights = np.ones_like(
+                                    container["weights"][sel_mask] + container["astro_weights"][sel_mask]
+                                )
+                            else:
+                                weights = np.ones_like(container["weights"][sel_mask])
+                        else:
+                            if "astro_weights" in container.keys:
+                                weights = container["weights"][sel_mask] + container["astro_weights"][sel_mask]
+                            else:
+                                weights = container["weights"][sel_mask]
+                        if self.apply_unc_weights:
+                            unc_weights = container["unc_weights"][sel_mask]
+                        else:
+                            unc_weights = np.ones(weights.shape)
+
+                        # The hist is now computed using a binning that is completely linear
+                        # and regular
+                        hist = histogram(
+                            sample,
+                            (unc_weights*weights),
+                            MultiDimBinning(reg_specie.binning),
+                            averaged=False
+                        )
+                        hists.append(hist)
+
+                        if self.error_method == "sumw2":
+                            errors.append( np.sqrt(histogram(sample, np.square(unc_weights*weights),
+                                reg_specie.binning, averaged=False)) )
+                            bin_unc2s.append( histogram(sample, np.square(unc_weights)*weights,
+                                reg_specie.binning, averaged=False) )
+
+                    container.representation = self.apply_mode
+                    container["weights"] = self.apply_mode, hists
+
+                    if self.error_method == "sumw2":
+                        container["errors"] = self.apply_mode, errors
+                        container["bin_unc2"] = self.apply_mode, bin_unc2s

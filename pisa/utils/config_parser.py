@@ -608,7 +608,6 @@ def parse_pipeline_config(config):
             "Could not find 'binning'. Only found sections: %s"
             % config.sections()
         )
-
     # Create binning objects
     binning_dict = {}
     # Loop over binning lines
@@ -683,6 +682,8 @@ def parse_pipeline_config(config):
                         "should be defined after MultiDimBinnings used in their definition.",
                         binning
                     )
+                if sel.strip() == 'None':
+                    sel = None
                 species.append(EventSpecie(name=specie_name, selection=sel, 
                                            binning=binning_dict[bin_def]))
             binning_dict[binning] = VarMultiDimBinning(name=binning, event_species=species)
