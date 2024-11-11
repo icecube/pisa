@@ -5,27 +5,27 @@
 
 The following commands are intended for execution in a terminal. If you encounter any problems with the installation, please create an issue and/or ask on the IceCube slack (if possible).
 
-1. Install the essential dependencies
+**1.** Install the essential dependencies
    
    Choose either Anaconda (~4.4 GB) OR Miniconda (~480 MB)
 
    **Anaconda** (https://docs.anaconda.com/anaconda/), e.g.
    ```bash
    mkdir -p PATH_TO_ANACONDA/anaconda3
-   wget https://repo.anaconda.com/archive/Anaconda3-<INSTALLER_VERSION>-Linux-x86_64.sh -O PATH_TO_ANACONDA/anaconda3/anaconda.sh
+   wget https://repo.anaconda.com/archive/Anaconda3-INSTALLER_VERSION-Linux-x86_64.sh -O PATH_TO_ANACONDA/anaconda3/anaconda.sh
    bash PATH_TO_ANACONDA/anaconda3/anaconda.sh -b -u -p PATH_TO_ANACONDA/anaconda3
    rm PATH_TO_ANACONDA/anaconda3/anaconda.sh
    ```
-   You can view a list of available installer versions at https://repo.anaconda.com/archive/.
+   You can find a list of available INSTALLER_VERSIONs at https://repo.anaconda.com/archive/.
    
    **Miniconda** (https://docs.anaconda.com/miniconda/), e.g.
    ```bash
    mkdir -p PATH_TO_ANACONDA/miniconda3
-   wget https://repo.anaconda.com/miniconda/Miniconda3-<INSTALLER_VERSION>-Linux-x86_64.sh -O PATH_TO_ANACONDA/miniconda3/miniconda.sh
+   wget https://repo.anaconda.com/miniconda/Miniconda3-INSTALLER_VERSION-Linux-x86_64.sh -O PATH_TO_ANACONDA/miniconda3/miniconda.sh
    bash PATH_TO_ANACONDA/miniconda3/miniconda.sh -b -u -p PATH_TO_ANACONDA/miniconda3
    rm PATH_TO_ANACONDA/miniconda3/miniconda.sh
    ```
-   You can view a list of available installer versions at https://repo.anaconda.com/miniconda/.
+   You can find a list of available INSTALLER_VERSIONs at https://repo.anaconda.com/miniconda/.
    
    **If you install on the cobalts, rather use /data/user/YOURNAME/ than $HOME/ for PATH_TO_ANACONDA**
    
@@ -33,39 +33,39 @@ The following commands are intended for execution in a terminal. If you encounte
 
    Other required libraries will be installed automatically during the setup (listed in https://github.com/icecube/pisa/blob/master/setup.py). If something is missing, you can install it via pip afterwards.
 
-2. Create an environment for the installation of PISA (after activating anaconda). You can choose your preferred version of python >= 3.10. E.g. for miniconda with python 3.10 use:
+**2.** Create an environment for the installation of PISA (after activating anaconda). E.g. for miniconda with python 3.10 use:
 
-```bash
-source PATH_TO_ANACONDA/miniconda3/bin/activate
-conda create -n NAME_OF_YOUR_PISA_ENV python=3.10
-```
+   ```bash
+   source PATH_TO_ANACONDA/miniconda3/bin/activate
+   conda create -n NAME_OF_YOUR_PISA_ENV python=3.10
+   ```
 
-3. Activate the newly created environment
+**3.** Activate the newly created environment
 
-```bash
-conda activate NAME_OF_YOUR_PISA_ENV
-```
+   ```bash
+   conda activate NAME_OF_YOUR_PISA_ENV
+   ```
 
-4. Clone the PISA repository from github (https://github.com/icecube/pisa.git). You can also create your own fork first. For more information on how to obtain the pisa source code see [obtain-pisa-sourcecode](https://github.com/icecube/pisa/blob/master/INSTALL.md#obtain-pisa-sourcecode)
+**4.** Clone the PISA repository from github (https://github.com/icecube/pisa.git). You can also create your own fork first. For more information on how to obtain the pisa source code see [obtain-pisa-sourcecode](https://github.com/icecube/pisa/blob/master/INSTALL.md#obtain-pisa-sourcecode)
 
-Define a directory for PISA sourcecode to live in.
-```bash
-export PISA="PATH_WHERE_PISA_SHOULD_LIVE/pisa
-```
-Add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this everytime. 
-PATH_WHERE_PISA_SHOULD_LIVE could for example be the same as PATH_TO_ANACONDA.
+   Define a directory for PISA sourcecode to live in.
+   ```bash
+   export PISA="PATH_WHERE_PISA_SHOULD_LIVE/pisa"
+   ```
+   Add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this everytime. 
+   PATH_WHERE_PISA_SHOULD_LIVE could for example be the same as PATH_TO_ANACONDA.
 
-Then clone the source code
-```bash
-mkdir -p $PISA
-git clone https://github.com/icecube/pisa.git $PISA
-```
+   Then clone the source code
+   ```bash
+   mkdir -p $PISA
+   git clone https://github.com/icecube/pisa.git $PISA
+   ```
 
-5. Install PISA with the following command
+**5.** Install PISA with the following command
 
-```bash
-pip install -e $PISA[develop] -vvv
-```
+   ```bash
+   pip install -e $PISA[develop] -vvv
+   ```
 
 **Explanation:**
    * First, note that this is ***not run as administrator***. It is discouraged to do so (and has not been tested this way).
@@ -112,11 +112,6 @@ $PISA/pisa/core/distribution_maker.py --pipeline settings/pipeline/IceCube_3y_ne
 
 Throughout the codebase there are `test_*.py` files and `test_*` functions within various `*.py` files that represent unit tests.
 Unit tests are designed to ensure that the basic mechanisms of objects' functionality work.
-
-These are all run, plus additional tests (takes about 15-20 minutes on a laptop) with the command
-```bash
-$PISA/pisa_tests/test_command_lines.sh
-```
 
 
 ## Instructions to install PISA using cvmfs and virtual environment
