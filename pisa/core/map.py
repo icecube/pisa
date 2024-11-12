@@ -1681,7 +1681,7 @@ class Map(object):
                                  expected_values=exp_val_hi)\
                         for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        if is_not_vb:
+        if not self.variable_binning:
             return np.sum(stats.llh(actual_values=self.hist,
                                     expected_values=expected_values))
         return np.sum([np.sum(stats.llh(actual_values=hi, expected_values=exp_val_hi))\
@@ -1715,7 +1715,7 @@ class Map(object):
                                  expected_values=exp_val_hi)\
                         for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        if is_not_vb:
+        if not self.variable_binning:
             return np.sum(stats.mcllh_mean(actual_values=self.hist,
                                     expected_values=expected_values))
         return np.sum([np.sum(stats.mcllh_mean(actual_values=hi, expected_values=exp_val_hi))\
@@ -1750,7 +1750,7 @@ class Map(object):
                                  expected_values=exp_val_hi)\
                         for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        if is_not_vb:
+        if not self.variable_binning:
             return np.sum(stats.mcllh_eff(actual_values=self.hist,
                                     expected_values=expected_values))
         return np.sum([np.sum(stats.mcllh_eff(actual_values=hi, expected_values=exp_val_hi))\
@@ -1784,7 +1784,7 @@ class Map(object):
                                  expected_values=exp_val_hi)\
                         for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        if is_not_vb:
+        if not self.variable_binning:
             return np.sum(stats.conv_llh(actual_values=self.hist,
                                     expected_values=expected_values))
         return np.sum([np.sum(stats.conv_llh(actual_values=hi, expected_values=exp_val_hi))\
@@ -1824,7 +1824,7 @@ class Map(object):
                                  expected_values=exp_val_hi)\
                         for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        if is_not_vb:
+        if not self.variable_binning:
             return np.sum(stats.barlow_llh(actual_values=self.hist,
                                     expected_values=expected_values))
         return np.sum([np.sum(stats.barlow_llh(actual_values=hi, expected_values=exp_val_hi))\
@@ -1859,7 +1859,7 @@ class Map(object):
                                  expected_values=exp_val_hi)\
                         for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        if is_not_vb:
+        if not self.variable_binning:
             return np.sum(stats.mod_chi2(actual_values=self.hist,
                                     expected_values=expected_values))
         return np.sum([np.sum(stats.mod_chi2(actual_values=hi, expected_values=exp_val_hi))\
@@ -1893,7 +1893,7 @@ class Map(object):
                                  expected_values=exp_val_hi)\
                         for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        if is_not_vb:
+        if not self.variable_binning:
             return np.sum(stats.correct_chi2(actual_values=self.hist,
                                     expected_values=expected_values))
         return np.sum([np.sum(stats.correct_chi2(actual_values=hi, expected_values=exp_val_hi))\
@@ -1927,7 +1927,7 @@ class Map(object):
                                  expected_values=exp_val_hi)\
                         for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        if is_not_vb:
+        if not self.variable_binning:
             return np.sum(stats.chi2(actual_values=self.hist,
                                     expected_values=expected_values))
         return np.sum([np.sum(stats.chi2(actual_values=hi, expected_values=exp_val_hi))\
