@@ -1,5 +1,45 @@
 # Installation Guide
 
+## Quickstart
+
+_Note that terminal commands below are intended for the bash shell. You'll have to translate if you use a different shell._
+
+1. _(optional)_ Obtain a github user ID if you don’t have one already. (Otherwise, you will only have read access.)<br>
+    https://github.com
+    * Sign up for Github education pack for many features for free, too<br>
+        https://education.github.com/pack
+1. _(optional)_ Fork PISA on github so you have your own copy to work from<br>
+    https://github.com/icecube/pisa/fork
+1. _(optional)_ Set up passwordless ssh access to github<br>
+    https://help.github.com/articles/connecting-to-github-with-ssh
+1. In your terminal, define a directory for PISA source code to live in. For example:<br>
+    `export PISA="~/src/pisa"`
+    * Add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this every time.
+1. Create the directory<br>
+    `mkdir -p $PISA`
+1. Clone the PISA repository to your local computer (on the command line)
+    * If you forked PISA above<br>
+      * If you set up ssh authentication above<br>
+         `git clone git@github.com:<YOUR GITHUB USER ID HERE>/pisa.git $PISA`
+      * Otherwise<br>
+         `git clone https://github.com/<YOUR GITHUB USER ID HERE>/pisa.git $PISA`
+    * Otherwise<br>
+      * If you set up ssh authentication above<br>
+         `git clone git@github.com:icecube/pisa.git $PISA`
+      * Otherwise<br>
+         `git clone https://github.com/icecube/pisa.git $PISA`
+1. Install the latest Miniforge python distribution for either Mac or Linux (as your user, _not_ as root), if you don’t have it already
+    https://github.com/conda-forge/miniforge/releases/latest
+1. Create a new conda environment, with a python version compatible with the python requirements below.
+1. Active your new conda environment.
+1. Install PISA including optional packages and development tools (`develop`), if desired<br>
+    `pip install -e $PISA[develop] -vvv`
+1. Run a quick test<br>
+   ```bash
+   pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir /tmp/pipeline_output --pdf
+   ```
+   This command should have created the folder `/tmp/pipeline_output` containing a pdf with output maps for different neutrino types and interactions.
+
 
 ## Instruction to install PISA using Anaconda or Miniconda
 
