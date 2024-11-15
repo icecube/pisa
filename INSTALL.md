@@ -5,10 +5,13 @@ _Note that all terminal commands below are intended for the bash shell. You'll h
 This guide will enable you to _use_ PISA within about five minutes. If you are more interested in contributing to PISA's development, please refer to the [advanced installation guide](#advanced-installation-guide) instead.
 
 1. Install [git](https://git-scm.com) if you don't have it already
-    * In Ubuntu,<br>
-       ```bash
-      sudo apt install git
-       ```
+   <details>
+     <summary>in Ubuntu</summary>
+     
+     ```bash
+     sudo apt install git
+     ```
+   </details>
 1. In your terminal, define a directory for PISA source code to live in, and create the directory. For example:<br>
     ```bash
     export PISA=~/src/pisa
@@ -18,13 +21,13 @@ This guide will enable you to _use_ PISA within about five minutes. If you are m
     ```bash
     git clone https://github.com/icecube/pisa.git $PISA
     ```
-1. Install the latest Miniforge python distribution for either Mac or Linux (as your user, _not_ as root)<br>
+1. Install the latest Miniforge Python distribution for either Mac or Linux (as your user, _not_ as root)<br>
     https://conda-forge.org/download/<br>
     * In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.
-1. Create and activate a new conda environment, with a python version compatible with the python requirements below. Using mamba as a drop-in replacement for conda:<br>
+1. Create and activate a new conda environment, with a Python version compatible with the Python requirements below. Using mamba as a drop-in replacement for conda:<br>
     ```bash
-    mamba create -n <ENV NAME HERE> python=3.10
-    mamba activate <ENV NAME HERE>
+    mamba create -n <ENV NAME> python=3.10
+    mamba activate <ENV NAME>
     ```
 1. Install PISA with default packages only and without development tools<br>
      ```bash
@@ -32,9 +35,9 @@ This guide will enable you to _use_ PISA within about five minutes. If you are m
      ```
 1. Run a quick test<br>
    ```bash
-   pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH HERE> --pdf
+   pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH> --pdf
    ```
-   This command should have created the folder `<OUTPUT PATH HERE>` containing a pdf with output maps for different neutrino types and interactions.
+   This command should have created the folder `<OUTPUT PATH>` containing a pdf with output maps for different neutrino types and interactions.
 
 ## Advanced installation guide
 
@@ -61,19 +64,36 @@ Create the above directory:<br>
 mkdir -p $PISA
 ```
 
-Install [git](https://git-scm.com) if you don't have it already. On, e.g., Ubuntu: `sudo apt install git`.
+Install [git](https://git-scm.com) if you don't have it already.
+<details>
+  <summary>in Ubuntu</summary>  
+   
+  ```bash
+  sudo apt install git
+  ```
+</details>
+
+
 
 Next, clone the PISA repository to your local computer. On the command line,
-  * if you set up ssh authentication above<br>
-      ```bash
-       git clone git@github.com:<YOUR GITHUB USER ID HERE>/pisa.git $PISA
-      ```
-  * otherwise<br>
-      ```bash
-      git clone https://github.com/<YOUR GITHUB USER ID HERE>/pisa.git $PISA
-      ```
+<details>
+  <summary>with ssh authentication</summary>
+   
+  ```bash
+  git clone git@github.com:<YOUR GITHUB USER ID>/pisa.git $PISA
+  ```
+</details>
 
-Below we describe two different sets of pre-installation steps:<br>
+<details>
+  <summary>without</summary>
+   
+   ```bash
+   git clone https://github.com/<YOUR GITHUB USER ID>/pisa.git $PISA
+   ```
+</details>
+
+
+Below we describe two different ways of setting up the PISA Python environment:<br>
 
 The [first (default)](#default-miniforge-distribution) obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the Miniforge distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br>
 
@@ -81,17 +101,38 @@ The [second (alternative)](#alternative-cvmfs-and-virtualenv) assumes you have a
 
 ### Default: Miniforge distribution
 
-Install the latest Miniforge python distribution for either Mac or Linux (as your user, _not_ as root) from https://conda-forge.org/download/.
-1. _(optional)_ If you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end
-1. Create and activate a new conda environment, with a python version compatible with the python requirements below. We suggest using mamba as a drop-in replacement for conda, for example<br>
-    ```bash
-    mamba create -n <YOUR ENV NAME HERE> python=3.10
-    mamba activate <YOUR ENV NAME HERE>
-    ```
+Install the latest Miniforge Python distribution for either Mac or Linux (as your user, _not_ as root) from https://conda-forge.org/download/.
+<details>
+  <summary>command suggestions</summary>
+   
+   ```bash
+   mkdir -p <PATH TO MINIFORGE>/miniforge3
+   wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname}-$(uname -m).sh -O <PATH TO MINIFORGE>/miniforge3/miniforge.sh
+   bash <PATH TO MINIFORGE>/miniforge3/miniforge.sh -b -u -p <PATH TO MINIFORGE>/miniforge3
+   rm <PATH TO MINIFORGE>/miniforge3/miniforge.sh
+   ```
+   If you are installing on the cobalt machines of the IceCube collaboration, consider using `/data/user/<USERNAME>` instead of `$HOME` for `<PATH TO MINIFORGE>`.
+</details>
+
+<details>
+  <summary>if you declined to update your shell profile to automatically initialize conda</summary>
+   
+  ```bash
+   eval "$(<PATH TO MINIFORGE>/miniforge3/bin/conda shell.bash hook)"
+  ```
+   will activate the base environment as prompted at the end of the Miniforge installation script
+
+</details>
+
+Create and activate a new conda environment, with a Python version compatible with the Python requirements below. We suggest using mamba as a drop-in replacement for conda:<br>
+ ```bash
+ mamba create -n <ENV NAME> python=3.10
+ mamba activate <ENV NAME>
+ ```
 
 ### Alternative: CVMFS and virtualenv
 
-Switch to the directory where you want to install PISA and create a virtual python environment (`virtualenv`).<br>
+Switch to the directory where you want to install PISA and create a virtual Python environment (`virtualenv`).<br>
 Load the CVMFS environment:<br>
 ```bash
 unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
@@ -100,30 +141,41 @@ On the cobalt machines of the IceCube collaboration, make sure that `which pytho
 
 Create the virtual environment:<br>
 ```bash
-python -m venv ./<YOUR VENV NAME>
+python -m venv ./<VENV NAME>
 ```
 
 Load the virtual environment:<br>
 ```bash
-source ./<YOUR VENV NAME>/bin/activate
+source ./<VENV NAME>/bin/activate
 ```
 The shell should now indicate that you are in the environment.
  
 ### Final step: install and test PISA
-You can now proceed to install PISA either with default packages only and without development tools<br>
-```bash
-pip install -e $PISA -vvv
-```
-or, if desired, including optional packages and development tools<br>
-```bash
-pip install -e $PISA[develop] -vvv
-```
+You can now proceed to install PISA, either
+
+<details>
+  <summary>with default packages only and without development tools</summary>
+   
+  ```bash
+  pip install -e $PISA -vvv
+  ```
+</details>
+
+or, if desired,
+
+<details>
+  <summary>including optional packages and development tools</summary>
+   
+  ```bash
+  pip install -e $PISA[develop] -vvv
+  ```
+</details>
 
 If the installation went smoothly, you are now ready to run a quick test<br>
 ```bash
-pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <TEST OUTPUT PATH HERE> --pdf
+pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH> --pdf
 ```
-This command should have created the folder `<TEST OUTPUT PATH HERE>` containing a pdf with output maps for different neutrino types and interactions.
+This command should have created the folder `<OUTPUT PATH>` containing a pdf with output maps for different neutrino types and interactions.
 
 ## Additional information
 
