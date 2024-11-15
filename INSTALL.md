@@ -1,56 +1,129 @@
 # Installation Guide
 
+_Note that all terminal commands below are intended for the bash shell. You'll have to translate if you use a different shell._
 ## Quick start
+This guide will enable you to _use_ PISA within about five minutes. If you are more interested in contributing to PISA's development, please refer to the [advanced installation guide](#advanced-installation-guide) instead.
 
-_Note that terminal commands below are intended for the bash shell. You'll have to translate if you use a different shell._
+1. Install [git](https://git-scm.com) if you don't have it already
+    * In Ubuntu,<br>
+       ```bash
+      sudo apt install git
+       ```
+1. In your terminal, define a directory for PISA source code to live in, and create the directory. For example:<br>
+    ```bash
+    export PISA=~/src/pisa
+    mkdir -p $PISA
+    ```
+1. Clone the PISA repository to your local computer<br>
+    ```bash
+    git clone https://github.com/icecube/pisa.git $PISA
+    ```
+1. Install the latest Miniforge python distribution for either Mac or Linux (as your user, _not_ as root)<br>
+    https://conda-forge.org/download/<br>
+    * In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.
+1. Create and activate a new conda environment, with a python version compatible with the python requirements below. Using mamba as a drop-in replacement for conda:<br>
+    ```bash
+    mamba create -n <ENV NAME HERE> python=3.10
+    mamba activate <ENV NAME HERE>
+    ```
+1. Install PISA with default packages only and without development tools<br>
+     ```bash
+     pip install -e $PISA -vvv
+     ```
+1. Run a quick test<br>
+   ```bash
+   pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH HERE> --pdf
+   ```
+   This command should have created the folder `<OUTPUT PATH HERE>` containing a pdf with output maps for different neutrino types and interactions.
 
-1. _(optional)_ Obtain a github user ID if you don’t have one already. (Otherwise, you will only have read access.)<br>
-    https://github.com
-    * Sign up for Github education pack for many features for free, too<br>
-        https://education.github.com/pack
-1. _(optional)_ Fork PISA on github so you have your own copy to work from<br>
-    https://github.com/icecube/pisa/fork
-1. _(optional)_ Set up passwordless ssh access to github<br>
-    https://help.github.com/articles/connecting-to-github-with-ssh
-1. In your terminal, define a directory for PISA source code to live in. For example:<br>
-    `export PISA=~/src/pisa`
-    * Add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this every time.
-1. Create the directory<br>
-    `mkdir -p $PISA`
-1. Clone the PISA repository to your local computer (on the command line)
-    * If you forked PISA above<br>
-      * If you set up ssh authentication above<br>
-         `git clone git@github.com:<YOUR GITHUB USER ID HERE>/pisa.git $PISA`
-      * Otherwise<br>
-         `git clone https://github.com/<YOUR GITHUB USER ID HERE>/pisa.git $PISA`
-    * If you didn't fork PISA<br>
-      * If you set up ssh authentication above<br>
-         `git clone git@github.com:icecube/pisa.git $PISA`
-      * Otherwise<br>
-         `git clone https://github.com/icecube/pisa.git $PISA`
-1. Install the latest Miniforge python distribution for either Mac or Linux (as your user, _not_ as root), if you don’t have it already
-    https://conda-forge.org/download/
+## Advanced installation guide
+
+### Preparation
+
+To ensure that you can contribute to PISA's development, first obtain a GitHub user ID if you don’t have one already, and optionally sign up for GitHub education pack for many features for free, too:<br>
+https://education.github.com/pack
+
+Fork PISA on GitHub so you have your own copy of the repository to work on, from which you can create pull requests:<br>
+https://github.com/icecube/pisa/fork
+
+If you like, set up passwordless ssh access to github:<br>
+https://help.github.com/articles/connecting-to-github-with-ssh
+
+In your terminal, define a directory for PISA source code to live in, e.g.,<br>
+```bash
+export PISA=~/src/pisa
+```
+
+Also add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this every time.
+
+Create the above directory:<br>
+```bash
+mkdir -p $PISA
+```
+
+Install [git](https://git-scm.com) if you don't have it already. On, e.g., Ubuntu: `sudo apt install git`.
+
+Next, clone the PISA repository to your local computer. On the command line,
+  * if you set up ssh authentication above<br>
+      ```bash
+       git clone git@github.com:<YOUR GITHUB USER ID HERE>/pisa.git $PISA
+      ```
+  * otherwise<br>
+      ```bash
+      git clone https://github.com/<YOUR GITHUB USER ID HERE>/pisa.git $PISA
+      ```
+
+Below we describe two different sets of pre-installation steps:<br>
+
+The [first (default)](#default-miniforge-distribution) obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the Miniforge distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br>
+
+The [second (alternative)](#alternative-cvmfs-and-virtualenv) assumes you have access to IceCube's cvmfs repository and would like to use one of its Python and software distributions. Our instructions have only been tested for the [`py3-v4.2.1` distribution](https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-2). 
+
+### Default: Miniforge distribution
+
+Install the latest Miniforge python distribution for either Mac or Linux (as your user, _not_ as root) from https://conda-forge.org/download/.
 1. _(optional)_ If you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end
 1. Create and activate a new conda environment, with a python version compatible with the python requirements below. We suggest using mamba as a drop-in replacement for conda, for example<br>
     ```bash
     mamba create -n <YOUR ENV NAME HERE> python=3.10
     mamba activate <YOUR ENV NAME HERE>
     ```
-1. Install PISA
-    * either with default packages only and without development tools<br>
-     `pip install -e $PISA -vvv`
-    * or, if desired, including optional packages and development tools<br>
-     `pip install -e $PISA[develop] -vvv`
-1. Run a quick test<br>
-   ```bash
-   pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <TEST OUTPUT PATH HERE> --pdf
-   ```
-   This command should have created the folder `<TEST OUTPUT PATH HERE>` containing a pdf with output maps for different neutrino types and interactions.
 
+### Alternative: CVMFS and virtualenv
 
+Switch to the directory where you want to install PISA and create a virtual python environment (`virtualenv`).<br>
+Load the CVMFS environment:<br>
+```bash
+unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
+```
+On the cobalt machines of the IceCube collaboration, make sure that `which python` now outputs `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`.
 
+Create the virtual environment:<br>
+```bash
+python -m venv ./<YOUR VENV NAME>
+```
+
+Load the virtual environment:<br>
+```bash
+source ./<YOUR VENV NAME>/bin/activate
+```
+The shell should now indicate that you are in the environment.
  
+### Final step: install and test PISA
+You can now proceed to install PISA either with default packages only and without development tools<br>
+```bash
+pip install -e $PISA -vvv
+```
+or, if desired, including optional packages and development tools<br>
+```bash
+pip install -e $PISA[develop] -vvv
+```
 
+If the installation went smoothly, you are now ready to run a quick test<br>
+```bash
+pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <TEST OUTPUT PATH HERE> --pdf
+```
+This command should have created the folder `<TEST OUTPUT PATH HERE>` containing a pdf with output maps for different neutrino types and interactions.
 
 ## Additional information
 
