@@ -95,9 +95,16 @@ Next, clone the PISA repository to your local computer. On the command line,
 
 Below we describe two different ways of setting up the PISA Python environment:<br>
 
-The [first (default)](#default-miniforge-distribution) obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the Miniforge distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br>
+The [first (default)](#default-miniforge-distribution) obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the [Miniforge](https://conda-forge.org/docs/user/introduction/) distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br>
 
-The [second (alternative)](#alternative-cvmfs-and-virtualenv) assumes you have access to IceCube's cvmfs repository and would like to use one of its Python and software distributions. Our instructions have only been tested for the [`py3-v4.2.1` distribution](https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-2). 
+The [second (alternative)](#alternative-cvmfs-and-virtualenv) assumes you have access to IceCube's CernVM-FS (CVMFS) repository and would like to use one of its Python and software distributions. Our instructions have only been tested for the [`py3-v4.2.1` distribution](https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-2).
+
+<details>
+  <summary>In case you are installing one of IceCube's Cobalt nodes</summary>
+   
+   Consider using `/data/user/<USERNAME>` instead of e.g. `$HOME` as installation location below.
+</details>
+
 
 ### Default: Miniforge distribution
 
@@ -107,48 +114,49 @@ Install the latest Miniforge Python distribution for either Mac or Linux (as you
    
    ```bash
    mkdir -p <PATH TO MINIFORGE>/miniforge3
-   wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname}-$(uname -m).sh -O <PATH TO MINIFORGE>/miniforge3/miniforge.sh
-   bash <PATH TO MINIFORGE>/miniforge3/miniforge.sh -b -u -p <PATH TO MINIFORGE>/miniforge3
-   rm <PATH TO MINIFORGE>/miniforge3/miniforge.sh
+   wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+   bash "Miniforge3-$(uname)-$(uname -m).sh" -p <PATH TO MINIFORGE>/miniforge3 -u
+   rm "Miniforge3-$(uname)-$(uname -m).sh"
    ```
-   If you are installing on the cobalt machines of the IceCube collaboration, consider using `/data/user/<USERNAME>` instead of `$HOME` for `<PATH TO MINIFORGE>`.
-</details>
 
-<details>
-  <summary>if you declined to update your shell profile to automatically initialize conda</summary>
-   
+   **Notes:**
+   * To perform SHA-256 checksum verification of the Miniforge installer, download the installer (`.sh`) for your platform whose name contains the release version and the corresponding `.sha256` checksum file from https://github.com/conda-forge/miniforge/releases/latest, then execute ```sha256sum -c "Miniforge3-<RELEASE VERSION>-$(uname)-$(uname -m).sh.sha256"```.
+   * You can decline having your shell profile updated to automatically initialize conda. In this case
   ```bash
    eval "$(<PATH TO MINIFORGE>/miniforge3/bin/conda shell.bash hook)"
   ```
-   will activate the base environment as prompted at the end of the Miniforge installation script
-
+   will activate the base environment as prompted at the end of the Miniforge installation script. Doing so is required to proceed with this installation and whenever PISA is used again. The successful activation is indicated by the shell prompt `(base)`. An overview of the packages in the base environment can be gained via `mamba/conda list`.
 </details>
 
-Create and activate a new conda environment, with a Python version compatible with the Python requirements below. We suggest using mamba as a drop-in replacement for conda:<br>
+It is recommended to keep the base environment stable. Therefore, create and activate a new conda environment, with a Python version compatible with the Python requirements below.<br>
  ```bash
- mamba create -n <ENV NAME> python=3.10
- mamba activate <ENV NAME>
+ conda create -n <ENV NAME> python=3.10
+ conda activate <ENV NAME>
  ```
+A shell prompt with `<ENV NAME>` name in parentheses should now confirm the successful activation.
 
 ### Alternative: CVMFS and virtualenv
 
-Switch to the directory where you want to install PISA and create a virtual Python environment (`virtualenv`).<br>
 Load the CVMFS environment:<br>
 ```bash
 unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
 ```
-On the cobalt machines of the IceCube collaboration, make sure that `which python` now outputs `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`.
+<details>
+  <summary>On one of IceCube's Cobalt nodes</summary>
+   
+   Verify that `which python` outputs `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`.
+</details>
 
-Create the virtual environment:<br>
+After switching to the directory where you want to install PISA, create the virtual environment:<br>
 ```bash
-python -m venv ./<VENV NAME>
+python -m venv ./<VENV DIRECTORY NAME>
 ```
 
-Load the virtual environment:<br>
+Activate the virtual environment:<br>
 ```bash
-source ./<VENV NAME>/bin/activate
+source ./<VENV DIRECTORY NAME>/bin/activate
 ```
-The shell should now indicate that you are in the environment.
+A shell prompt with the virtual environment's directory name in parentheses should now confirm the successful activation.
  
 ### Final step: install and test PISA
 You can now proceed to install PISA, either
