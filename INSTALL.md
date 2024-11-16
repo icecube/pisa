@@ -193,6 +193,8 @@ Support for all of these comes pre-packaged or as `conda`/`mamba`-installable pa
     `sudo apt install git`
   * it is already installed on IceCube's Cobalt nodes
 
+Required Python modules whose installation is taken care of by pip are specified in [setup.py](setup.py).
+
 ### Installation
 * First, note that the installation is ***not run as administrator***. It is discouraged to do so (and has not been tested this way).
 * `-e $PISA` (or equivalently, `--editable $PISA`): Installs from source located at `$PISA` and  allows for changes to the source code within to be immediately propagated to your Python installation.
