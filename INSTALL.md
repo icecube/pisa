@@ -220,31 +220,45 @@ In this case, the old files have to be removed manually (along with any associat
 Some of the following optional dependencies must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, or conda/mamba to install the below before running the PISA installation.
 
 * [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for `data.licloader_weighter` service.
-* [MCEq](https://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
+* [MCEq](https://github.com/afedynitch/MCEq) Required for `create_barr_sys_tables_mceq.py` script.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
 * [OpenMP](https://openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
 * [Photospline](https://github.com/icecube/photospline) Required for `flux.airs` service.
-* [Pylint](https://pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
+* [Pylint](https://pylint.org) Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [Pytest](https://docs.pytest.org/) Python testing framework. Used by a couple unit tests.
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Required for `absorption.earth_absorption` service, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's Python support (documented here https://github.com/IceCubeOpenSource/pisa/issues/430), you need at least version 6.12.04 of ROOT.
-* [Sphinx](https://www.sphinx-doc.org) version >= 1.3
+* [Sphinx >= 1.3](https://www.sphinx-doc.org)
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [Read the Docs Sphinx Theme](https://github.com/readthedocs/sphinx_rtd_theme)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [versioneer](https://github.com/python-versioneer/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [black](https://github.com/psf/black) Format your Python code, _automatically_, with typically very nice results!
 
+### Ensure a clean install using virtualenv or conda env
+
+It is absolutely discouraged to install PISA as a root (privileged) user.
+PISA is not vetted for security vulnerabilities, so should always be installed and run as a regular (unprivileged) user.
+
+It is suggested (but not required) that you install PISA within a virtual environment (or in a conda env if you're using Anaconda, Miniconda, or Miniforge Python distributions).
+This minimizes cross-contamination by PISA of a system-wide (or other) Python installation with conflicting required package versions, guarantees that you can install PISA as an unprivileged user, that PISA's dependencies are met, and allows for multiple versions of PISA to be installed simultaneously (each in a different virtualenv / conda env).
+
+Note that it is also discouraged, but you _can_ install PISA as an unprivileged user using your system-wide Python install with the `--user` option to `pip`.
+This is not quite as clean as a virtual environment, and the issue with coflicting package dependency versions remains.
 
 ### Compile the documentation
 
-In case you installed the optional "develop" dependencies: compile a new version of the documentation to html via
+In case you installed the optional "develop" dependencies, you can compile a (new) version of the documentation to html via
 ```bash
 cd $PISA && sphinx-apidoc -f -o docs/source pisa
 ```
 
-In case code structure has changed, rebuild the apidoc by executing
+In case code structure has changed, rebuild the API documentation by executing
 ```bash
 cd $PISA/docs && make html
 ```
