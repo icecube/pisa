@@ -4,15 +4,19 @@ _Note that all terminal commands below are intended for the bash shell. You'll h
 ## Quick start
 This guide will enable you to _use_ PISA within about five minutes. If you are more interested in contributing to PISA's development, please refer to the [advanced installation guide](#advanced-installation-guide) instead.
 
-1. Install [git](https://git-scm.com) if you don't have it already
-   <details>
-     <summary>in Ubuntu</summary>
-     
+1. Install the latest Miniforge Python distribution for either Mac or Linux (as your user, _not_ as root)<br>
+    https://conda-forge.org/download/<br>
+    * In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.
+1. In your terminal, create and activate a new conda environment, with a Python version compatible with the Python requirements below<br>
+    ```bash
+    conda create -n <ENV NAME> python=3.10
+    conda activate <ENV NAME>
+    ```
+1. If your system doesn't already have it, install [git](https://git-scm.com) into this environment. (We use `mamba` as a drop-in replacement for the `conda` package manager.)
      ```bash
-     sudo apt install git
+     mamba install git
      ```
-   </details>
-1. In your terminal, define a directory for PISA source code to live in, and create the directory. For example:<br>
+1. Define a directory for PISA source code to live in, and create the directory. For example:<br>
     ```bash
     export PISA=~/src/pisa
     mkdir -p $PISA
@@ -20,14 +24,6 @@ This guide will enable you to _use_ PISA within about five minutes. If you are m
 1. Clone the PISA repository to your local computer<br>
     ```bash
     git clone https://github.com/icecube/pisa.git $PISA
-    ```
-1. Install the latest Miniforge Python distribution for either Mac or Linux (as your user, _not_ as root)<br>
-    https://conda-forge.org/download/<br>
-    * In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.
-1. Create and activate a new conda environment, with a Python version compatible with the Python requirements below. Using mamba as a drop-in replacement for conda:<br>
-    ```bash
-    mamba create -n <ENV NAME> python=3.10
-    mamba activate <ENV NAME>
     ```
 1. Install PISA with default packages only and without development tools<br>
      ```bash
@@ -43,8 +39,11 @@ This guide will enable you to _use_ PISA within about five minutes. If you are m
 
 ### Preparation
 
-To ensure that you can contribute to PISA's development, first obtain a GitHub user ID if you don’t have one already, and optionally sign up for GitHub education pack for many features for free, too:<br>
-https://education.github.com/pack
+To ensure that you can contribute to PISA's development, first obtain a GitHub user ID if you don’t have one already.<br>
+<details>
+  <summary>optional sign up for GitHub education pack for many features for free</summary>
+  https://education.github.com/pack
+</details>
 
 Fork PISA on GitHub so you have your own copy of the repository to work on, from which you can create pull requests:<br>
 https://github.com/icecube/pisa/fork
@@ -64,35 +63,6 @@ Create the above directory:<br>
 mkdir -p $PISA
 ```
 
-Install [git](https://git-scm.com) if you don't have it already.
-<details>
-  <summary>in Ubuntu</summary>  
-   
-  ```bash
-  sudo apt install git
-  ```
-</details>
-
-
-
-Next, clone the PISA repository to your local computer. On the command line,
-<details>
-  <summary>with ssh authentication</summary>
-   
-  ```bash
-  git clone git@github.com:<YOUR GITHUB USER ID>/pisa.git $PISA
-  ```
-</details>
-
-<details>
-  <summary>without</summary>
-   
-   ```bash
-   git clone https://github.com/<YOUR GITHUB USER ID>/pisa.git $PISA
-   ```
-</details>
-
-
 Below we describe two different ways of setting up the PISA Python environment:<br>
 
 The [first (default)](#default-miniforge-distribution) obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the [Miniforge](https://conda-forge.org/docs/user/introduction/) distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br>
@@ -100,7 +70,7 @@ The [first (default)](#default-miniforge-distribution) obtains Python and Python
 The [second (alternative)](#alternative-cvmfs-and-virtualenv) assumes you have access to IceCube's CernVM-FS (CVMFS) repository and would like to use one of its Python and software distributions. Our instructions have only been tested for the [`py3-v4.2.1` distribution](https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-2).
 
 <details>
-  <summary>In case you are installing one of IceCube's Cobalt nodes</summary>
+  <summary>in case of installation one of IceCube's Cobalt nodes</summary>
    
    Consider using `/data/user/<USERNAME>` instead of e.g. `$HOME` as installation location below.
 </details>
@@ -128,7 +98,7 @@ Install the latest Miniforge Python distribution for either Mac or Linux (as you
    will activate the base environment as prompted at the end of the Miniforge installation script. Doing so is required to proceed with this installation and whenever PISA is used again. The successful activation is indicated by the shell prompt `(base)`. An overview of the packages in the base environment can be gained via `mamba/conda list`.
 </details>
 
-It is recommended to keep the base environment stable. Therefore, create and activate a new conda environment, with a Python version compatible with the Python requirements below.<br>
+It is recommended to keep the base environment stable. Therefore, create and activate a new conda environment, with a Python version compatible with the Python requirements below:<br>
  ```bash
  conda create -n <ENV NAME> python=3.10
  conda activate <ENV NAME>
@@ -142,7 +112,7 @@ Load the CVMFS environment:<br>
 unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
 ```
 <details>
-  <summary>On one of IceCube's Cobalt nodes</summary>
+  <summary>on one of IceCube's Cobalt nodes</summary>
    
    Verify that `which python` outputs `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`.
 </details>
@@ -158,7 +128,29 @@ source ./<VENV DIRECTORY NAME>/bin/activate
 ```
 A shell prompt with the virtual environment's directory name in parentheses should now confirm the successful activation.
  
-### Final step: install and test PISA
+### Common final steps: clone, install and test PISA
+
+Install [git](https://git-scm.com) if you [don't have it](#required-dependencies) already.
+
+Next, clone the PISA repository to your local computer. On the command line,
+<details>
+  <summary>with ssh authentication</summary>
+   
+  ```bash
+  git clone git@github.com:<YOUR GITHUB USER ID>/pisa.git $PISA
+  ```
+</details>
+
+<details>
+  <summary>without</summary>
+   
+   ```bash
+   git clone https://github.com/<YOUR GITHUB USER ID>/pisa.git $PISA
+   ```
+   See https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls if you have issues authenticating in this case.
+</details>
+
+
 You can now proceed to install PISA, either
 
 <details>
@@ -186,6 +178,20 @@ pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --
 This command should have created the folder `<OUTPUT PATH>` containing a pdf with output maps for different neutrino types and interactions.
 
 ## Additional information
+
+### Required Dependencies
+
+With the exception of `Python` itself (and possibly `git`), the installation methods outlined above should not demand the _manual_ prior installation of any Python or non-Python requirements for PISA.
+Support for all of these comes pre-packaged or as `conda`/`mamba`-installable packages in the Miniforge Python distribution.
+* [python](http://www.python.org) — version >= 3.6 and <= 3.10 required
+  * Miniforge & CVMFS: built in
+* [pip](https://pip.pypa.io) version >= 1.8 and <= 25 required
+  * Miniforge & CVMFS: built in
+* [git](https://git-scm.com)
+  * Miniforge: `mamba install git`
+  * or system wide, e.g. in Ubuntu<br>
+    `sudo apt install git`
+  * it is already installed on IceCube's Cobalt nodes
 
 ### Installation
 * First, note that the installation is ***not run as administrator***. It is discouraged to do so (and has not been tested this way).
