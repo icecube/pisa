@@ -183,7 +183,7 @@ This command should have created the folder `<OUTPUT PATH>` containing a pdf wit
 
 With the exception of `Python` itself (and possibly `git`), the installation methods outlined above should not demand the _manual_ prior installation of any Python or non-Python requirements for PISA.
 Support for all of these comes pre-packaged or as `conda`/`mamba`-installable packages in the Miniforge Python distribution.
-* [python](http://www.python.org) — version >= 3.6 and <= 3.10 required
+* [python](http://www.python.org) — version >= 3.8 and <= 3.10 required
   * Miniforge & CVMFS: built in
 * [pip](https://pip.pypa.io) version >= 1.8 and <= 25 required
   * Miniforge & CVMFS: built in
@@ -214,6 +214,27 @@ pip install -e $PISA[develop] --force-reinstall -vvv
 
 **Note** that if files change names or locations, though, the above can still not be enough.
 In this case, the old files have to be removed manually (along with any associated `.pyc` files, as Python will use these even if the `.py` files have been removed).
+
+### Optional Dependencies
+
+Some of the following optional dependencies must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, or conda/mamba to install the below before running the PISA installation.
+
+* [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for `data.licloader_weighter` service.
+* [MCEq](https://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
+* [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
+* [OpenMP](https://openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
+  * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
+* [Photospline](https://github.com/icecube/photospline) Required for `flux.airs` service.
+* [Pylint](https://pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Required for `absorption.earth_absorption` service, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's Python support (documented here https://github.com/IceCubeOpenSource/pisa/issues/430), you need at least version 6.12.04 of ROOT.
+* [Sphinx](https://www.sphinx-doc.org) version >= 1.3
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [versioneer](https://github.com/python-versioneer/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [black](https://github.com/psf/black) Format your Python code, _automatically_, with typically very nice results!
 
 
 ### Compile the documentation
