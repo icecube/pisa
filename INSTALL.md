@@ -48,7 +48,7 @@ To ensure that you can contribute to PISA's development, first obtain a GitHub u
 Fork PISA on GitHub so you have your own copy of the repository to work on, from which you can create pull requests:<br>
 https://github.com/icecube/pisa/fork
 
-If you like, set up passwordless ssh access to github:<br>
+If you like, set up passwordless ssh access to GitHub:<br>
 https://help.github.com/articles/connecting-to-github-with-ssh
 
 In your terminal, define a directory for PISA source code to live in, e.g.,<br>
@@ -84,7 +84,7 @@ Install the latest Miniforge Python distribution for either Mac or Linux (as you
    
    ```bash
    mkdir -p <PATH TO MINIFORGE>/miniforge3
-   wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+   wget "https://.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
    bash "Miniforge3-$(uname)-$(uname -m).sh" -p <PATH TO MINIFORGE>/miniforge3 -u
    rm "Miniforge3-$(uname)-$(uname -m).sh"
    ```
@@ -221,6 +221,8 @@ In this case, the old files have to be removed manually (along with any associat
 
 Some of the following optional dependencies must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, or conda/mamba to install the below before running the PISA installation.
 
+* [emcee](https://github.com/dfm/emcee) Required for MCMC sampling functionality in the `llh_client`& `llh_server` utils modules and the `analysis` module.
+* [GLoBES wrapper](https://github.com/atrettin/GLoBES_wrapper) Required for `osc.globes` service.
 * [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for `data.licloader_weighter` service.
 * [MCEq](https://github.com/afedynitch/MCEq) Required for `create_barr_sys_tables_mceq.py` script.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
