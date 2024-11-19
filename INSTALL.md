@@ -1,84 +1,212 @@
 # Installation Guide
 
+_Note that all terminal commands below are intended for the bash shell. You'll have to translate if you use a different shell._
+## Quick start
+This guide will enable you to _use_ PISA within about five minutes. If you are more interested in contributing to PISA's development, please refer to the [advanced installation guide](#advanced-installation-guide) instead.
 
-## Instruction to install PISA using Anaconda or Miniconda
+1. Install the latest Miniforge Python distribution for either Mac or Linux (as your user, _not_ as root)<br>
+    https://conda-forge.org/download/<br>
+    * In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.
+1. In your terminal, create and activate a new conda environment, with a Python version compatible with the Python requirements below<br>
+    ```bash
+    conda create -n <ENV NAME> python=3.10
+    conda activate <ENV NAME>
+    ```
+1. If your system doesn't already have it, install [git](https://git-scm.com) into this environment. (We use `mamba` as a drop-in replacement for the `conda` package manager.)
+     ```bash
+     mamba install git
+     ```
+1. Define a directory for PISA source code to live in, and create the directory. For example:<br>
+    ```bash
+    export PISA=~/src/pisa
+    mkdir -p $PISA
+    ```
+1. Clone the PISA repository to your local computer<br>
+    ```bash
+    git clone https://github.com/icecube/pisa.git $PISA
+    ```
+1. Install PISA with default packages only and without development tools<br>
+     ```bash
+     pip install -e $PISA -vvv
+     ```
+1. Run a quick test<br>
+   ```bash
+   pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH> --pdf
+   ```
+   This command should have created the folder `<OUTPUT PATH>` containing a pdf with output maps for different neutrino types and interactions.
 
-The following commands are intended for execution in a terminal. If you encounter any problems with the installation, please create an issue and/or ask on the IceCube slack (if possible).
+## Advanced installation guide
 
-**1.** Install the essential dependencies
+### Preparation
+
+To ensure that you can contribute to PISA's development, first obtain a GitHub user ID if you don’t have one already.<br>
+<details>
+  <summary>optional sign up for GitHub education pack for many features for free</summary>
+  https://education.github.com/pack
+</details>
+
+Fork PISA on GitHub so you have your own copy of the repository to work on, from which you can create pull requests:<br>
+https://github.com/icecube/pisa/fork
+
+If you like, set up passwordless ssh access to GitHub:<br>
+https://help.github.com/articles/connecting-to-github-with-ssh
+
+In your terminal, define a directory for PISA source code to live in, e.g.,<br>
+```bash
+export PISA=~/src/pisa
+```
+
+Also add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this every time.
+
+Create the above directory:<br>
+```bash
+mkdir -p $PISA
+```
+
+Below we describe two different ways of setting up the PISA Python environment:<br>
+
+The [first (default)](#default-miniforge-distribution) obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the [Miniforge](https://conda-forge.org/docs/user/introduction/) distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br>
+
+The [second (alternative)](#alternative-cvmfs-and-venv) assumes you have access to IceCube's CernVM-FS (CVMFS) repository and would like to use one of the Python installations it provides as the "base" of a [venv](https://docs.python.org/3/library/venv.html). Our instructions have only been tested for the [`py3-v4.2.1` distribution](https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-2).
+
+<details>
+  <summary>in case of installation one of IceCube's Cobalt nodes</summary>
    
-   Choose either Anaconda (~4.4 GB) OR Miniconda (~480 MB)
+   Consider using `/data/user/<USERNAME>` instead of e.g. `$HOME` as installation location below.
+</details>
 
-   **Anaconda** (https://docs.anaconda.com/anaconda/), e.g.
-   ```bash
-   mkdir -p PATH_TO_ANACONDA/anaconda3
-   wget https://repo.anaconda.com/archive/Anaconda3-INSTALLER_VERSION-Linux-x86_64.sh -O PATH_TO_ANACONDA/anaconda3/anaconda.sh
-   bash PATH_TO_ANACONDA/anaconda3/anaconda.sh -b -u -p PATH_TO_ANACONDA/anaconda3
-   rm PATH_TO_ANACONDA/anaconda3/anaconda.sh
-   ```
-   You can find a list of available INSTALLER_VERSIONs at https://repo.anaconda.com/archive/.
+
+### Default: Miniforge distribution
+
+Install the latest Miniforge Python distribution for either Mac or Linux (as your user, _not_ as root) from https://conda-forge.org/download/.
+<details>
+  <summary>command suggestions</summary>
    
-   **Miniconda** (https://docs.anaconda.com/miniconda/), e.g.
    ```bash
-   mkdir -p PATH_TO_ANACONDA/miniconda3
-   wget https://repo.anaconda.com/miniconda/Miniconda3-INSTALLER_VERSION-Linux-x86_64.sh -O PATH_TO_ANACONDA/miniconda3/miniconda.sh
-   bash PATH_TO_ANACONDA/miniconda3/miniconda.sh -b -u -p PATH_TO_ANACONDA/miniconda3
-   rm PATH_TO_ANACONDA/miniconda3/miniconda.sh
+   mkdir -p <PATH TO MINIFORGE>/miniforge3
+   wget "https://.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+   bash "Miniforge3-$(uname)-$(uname -m).sh" -p <PATH TO MINIFORGE>/miniforge3 -u
+   rm "Miniforge3-$(uname)-$(uname -m).sh"
    ```
-   You can find a list of available INSTALLER_VERSIONs at https://repo.anaconda.com/miniconda/.
+
+   **Notes:**
+   * To perform SHA-256 checksum verification of the Miniforge installer, download the installer (`.sh`) for your platform whose name contains the release version and the corresponding `.sha256` checksum file from https://github.com/conda-forge/miniforge/releases/latest, then execute ```sha256sum -c "Miniforge3-<RELEASE VERSION>-$(uname)-$(uname -m).sh.sha256"```.
+   * You can decline having your shell profile updated to automatically initialize conda. In this case
+  ```bash
+   eval "$(<PATH TO MINIFORGE>/miniforge3/bin/conda shell.bash hook)"
+  ```
+   will activate the base environment as prompted at the end of the Miniforge installation script. Doing so is required to proceed with this installation and whenever PISA is used again. The successful activation is indicated by the shell prompt `(base)`. An overview of the packages in the base environment can be gained via `mamba/conda list`.
+</details>
+
+It is recommended to keep the base environment stable. Therefore, create and activate a new conda environment, with a Python version compatible with the Python requirements below:<br>
+ ```bash
+ conda create -n <ENV NAME> python=3.10
+ conda activate <ENV NAME>
+ ```
+A shell prompt with `<ENV NAME>` name in parentheses should now confirm the successful activation.
+
+### Alternative: CVMFS and venv
+
+Load the CVMFS environment:<br>
+```bash
+unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
+```
+<details>
+  <summary>on one of IceCube's Cobalt nodes</summary>
    
-   **If you install on the cobalts, rather use /data/user/YOURNAME/ than $HOME/ for PATH_TO_ANACONDA**
+   Verify that `which python` outputs `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`.
+</details>
+
+Create a virtual environment folder into which all Python packages will be installed, which can be placed wherever you please. (Note that there are [disadvantages](https://pybit.es/articles/a-better-place-to-put-your-python-virtual-environments/) to putting it in your local PISA repository's top-level directory `$PISA`.)
+```bash
+python -m venv /PATH/TO/<VENV NAME>
+```
+
+Activate the virtual environment:<br>
+```bash
+source /PATH/TO/<VENV NAME>/bin/activate
+```
+A shell prompt with the virtual environment's name in parentheses should now confirm the successful activation.
+ 
+### Common final steps: clone, install and test PISA
+
+Install [git](https://git-scm.com) if you [don't have it](#required-dependencies) already.
+
+Next, clone the PISA repository to your local computer. On the command line,
+<details>
+  <summary>with ssh authentication</summary>
    
-   **Note** that you will also need git. It is already installed on the cobalts, ask your local system administrator if it is not on your local machine. The other non-python requirements are listed [here](https://github.com/icecube/pisa/blob/master/INSTALL.md#required-dependencies) and should already come with the conda environment.
+  ```bash
+  git clone git@github.com:<YOUR GITHUB USER ID>/pisa.git $PISA
+  ```
+</details>
 
-   Other required libraries will be installed automatically during the setup (listed in https://github.com/icecube/pisa/blob/master/setup.py). If something is missing, you can install it via pip afterwards.
-
-**2.** Create an environment for the installation of PISA (after activating anaconda). E.g. for miniconda with python 3.10 use:
-
+<details>
+  <summary>without</summary>
+   
    ```bash
-   source PATH_TO_ANACONDA/miniconda3/bin/activate
-   conda create -n NAME_OF_YOUR_PISA_ENV python=3.10
+   git clone https://github.com/<YOUR GITHUB USER ID>/pisa.git $PISA
    ```
+   See https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls if you have issues authenticating in this case.
+</details>
 
-**3.** Activate the newly created environment
 
-   ```bash
-   conda activate NAME_OF_YOUR_PISA_ENV
-   ```
+You can now proceed to install PISA, either
 
-**4.** Clone the PISA repository from github (https://github.com/icecube/pisa.git). You can also create your own fork first. For more information on how to obtain the pisa source code see [obtain-pisa-sourcecode](https://github.com/icecube/pisa/blob/master/INSTALL.md#obtain-pisa-sourcecode)
+<details>
+  <summary>with default packages only and without development tools</summary>
+   
+  ```bash
+  pip install -e $PISA -vvv
+  ```
+</details>
 
-   Define a directory for PISA sourcecode to live in.
-   ```bash
-   export PISA="PATH_WHERE_PISA_SHOULD_LIVE/pisa"
-   ```
-   Add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this everytime. 
-   PATH_WHERE_PISA_SHOULD_LIVE could for example be the same as PATH_TO_ANACONDA.
+or, if desired,
 
-   Then clone the source code
-   ```bash
-   mkdir -p $PISA
-   git clone https://github.com/icecube/pisa.git $PISA
-   ```
+<details>
+  <summary>including optional packages and development tools</summary>
+   
+  ```bash
+  pip install -e $PISA[develop] -vvv
+  ```
+</details>
 
-**5.** Install PISA with the following command
+If the installation went smoothly, you are now ready to run a quick test<br>
+```bash
+pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH> --pdf
+```
+This command should have created the folder `<OUTPUT PATH>` containing a pdf with output maps for different neutrino types and interactions.
 
-   ```bash
-   pip install -e $PISA[develop] -vvv
-   ```
+## Additional information
 
-**Explanation:**
-   * First, note that this is ***not run as administrator***. It is discouraged to do so (and has not been tested this way).
-   * `-e $PISA` (or equivalently, `--editable $PISA`): Installs from source located at `$PISA` and  allows for changes to the source code within to be immediately propagated to your Python installation.
+### Required Dependencies
+
+With the exception of `Python` itself (and possibly `git`), the installation methods outlined above should not demand the _manual_ prior installation of any Python or non-Python requirements for PISA.
+Support for all of these comes pre-packaged or as `conda`/`mamba`-installable packages in the Miniforge Python distribution.
+* [python](http://www.python.org) — version >= 3.8 and <= 3.10 required
+  * Miniforge & CVMFS: built in
+* [pip](https://pip.pypa.io) version >= 1.8 and <= 25 required
+  * Miniforge & CVMFS: built in
+* [git](https://git-scm.com)
+  * Miniforge: `mamba install git`
+  * or system wide, e.g. in Ubuntu<br>
+    `sudo apt install git`
+  * it is already installed on IceCube's Cobalt nodes
+
+Required Python modules whose installation is taken care of by pip are specified in [setup.py](setup.py).
+
+### Installation
+* First, note that the installation is ***not run as administrator***. It is discouraged to do so (and has not been tested this way).
+* `-e $PISA` (or equivalently, `--editable $PISA`): Installs from source located at `$PISA` and  allows for changes to the source code within to be immediately propagated to your Python installation.
    Within the Python library tree, all files under `pisa` are links to your source code, so changes within your source are seen directly by the Python installation. Note that major changes to your source code (file names or directory structure changing) will require re-installation, though, for the links to be updated (see below for the command for re-installing).
-   * `[develop]` Specify optional dependency groups. You can omit any or all of these if your system does not support them or if you do not need them.
-   * `-vvv` Be maximally verbose during the install. You'll see lots of messages, including warnings that are irrelevant, but if your installation fails, it's easiest to debug if you use `-vvv`.
-   * If a specific compiler is set by the `CC` environment variable (`export CC=<path>`), it will be used; otherwise, the `cc` command will be run on the system for compiling C-code.
+* `[develop]` Specify optional dependency groups. You can omit any or all of these if your system does not support them or if you do not need them.
+* `-vvv` Be maximally verbose during the install. You'll see lots of messages, including warnings that are irrelevant, but if your installation fails, it's easiest to debug if you use `-vvv`.
+* If a specific compiler is set by the `CC` environment variable (`export CC=<path>`), it will be used; otherwise, the `cc` command will be run on the system for compiling C-code.
 
 **Note** that you can work with your installation using the usual git commands (pull, push, etc.). However, these ***won't recompile*** any of the extension (i.e. pyx, _C/C++_) libraries. See below for how to reinstall PISA when you need these to recompile.
 
 
-### Reinstall PISA
+### Re-installation
 
 Sometimes a change within PISA requires re-installation (particularly if a compiled module changes, the below forces re-compilation).
 
@@ -88,220 +216,54 @@ pip install -e $PISA[develop] --force-reinstall -vvv
 
 **Note** that if files change names or locations, though, the above can still not be enough.
 In this case, the old files have to be removed manually (along with any associated `.pyc` files, as Python will use these even if the `.py` files have been removed).
-them.
-
-
-### Test PISA
-
- First activate your python environment (if not already active). Assuming you used Miniconda, you can do that with:
-
-  ```bash
-  source PATH_TO_ANACONDA/miniconda3/bin/activate
-  conda activate NAME_OF_YOUR_PISA_ENV
-  ```
-
-#### Running a simple script
-
-Running the following command should create a folder in `/tmp` containing a pdf with output maps for different neutrino types and interactions.
-
-```bash
-$PISA/pisa/core/distribution_maker.py --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir /tmp/pipeline_output --pdf
-```
-
-#### Unit Tests
-
-Throughout the codebase there are `test_*.py` files and `test_*` functions within various `*.py` files that represent unit tests.
-Unit tests are designed to ensure that the basic mechanisms of objects' functionality work.
-
-
-## Instructions to install PISA using cvmfs and virtual environment
-
-Assuming you already are in the directory where you want to store fridge/pisa source files and the python virtualenv and build pisa. You also need access to github through your account.
-
-
-#### Clone into the fridge and pisa (ideally your own fork):
-
-```
-git clone git@github.com:icecube/wg-oscillations-fridge.git ./fridge
-
-git clone git@github.com:USERNAME/pisa.git ./pisa
-```
-
-
-#### Load cvmfs environment:
-
-```
-unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
-```
-
-`which python` should now point to `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`
-
-**Note:** It's not tested whether this works with a cvmfs version newer than `py3-v4.2.1`.
-
-
-#### Create virtual environment:
-
-```
-python -m venv ./YOUR_PISA_PY3_VENV
-```
-
-
-#### Start the virtual environment and install pisa from source:
-
-```
-source ./YOUR_PISA_PY3_VENV/bin/activate
-```
-
-(should now show that you are in the environment)
-
-```
-pip install -e pisa
-```
-
-
-#### Modify your environment by adding lines to `./YOUR_PISA_PY3_VENV/bin/activate`
-
-Every time you want to use pisa now, you need to activate your virtual environment by running `source ./YOUR_PISA_PY3_VENV/bin/activate`. In order to set some useful environment variables you might want to add the following lines (or more if needed) to the end of the `./YOUR_PISA_PY3_VENV/bin/activate` script:
-
-```
-# PISA source
-export PISA="/data/user/USERNAME/PATH_TO_PISA"
-
-# set some custom environment variables and load fridge
-export PISA_RESOURCES="/data/user/USERNAME/PATH_TO_FRIDGE/analysis/common"
-export PISA_RESOURCES=$PISA_RESOURCES:"/data/user/USERNAME/PATH_TO_FRIDGE/analysis"
-
-source "/data/user/USERNAME/PATH_TO_FRIDGE/setup_fridge.sh"
-
-# Add this project to the python path
-export PYTHONPATH=$FRIDGE_DIR:$PYTHONPATH
-
-# Madison
-export PISA_RESOURCES=/data/ana/LE:$PISA_RESOURCES
-export PISA_RESOURCES=/data/ana/BSM/HNL/:$PISA_RESOURCES
-
-export PISA_RESOURCES=$FRIDGE_DIR:$FRIDGE_DIR/analysis:$FRIDGE_DIR/analysis/YOUR_ANALYSIS/settings:$FRIDGE_DIR/analysis/YOUR_ANALYSIS/analysis:$FRIDGE_DIR/analysis/common:$PISA_RESOURCES
-
-export PISA_CACHE=~/cache/
-export PISA_FTYPE=fp64
-export HDF5_USE_FILE_LOCKING='FALSE'
-```
-
-
-#### Install any additional packages that you might want
-
-`pip install PACKAGE` (for example `jupyter`)
-
-
-## Additional information
-
-
-### Python Distributions
-
-Obtaining Python and Python packages, and handling interdependencies in those packages tends to be easiest if you use a Python distribution, such as [Anaconda](https://www.continuum.io/downloads) or [Canopy](https://www.enthought.com/products/canopy).
-Although the selection of maintained packages is smaller than if you use the `pip` command to obtain packages from the Python Package Index (PyPi), you can still use `pip` with these distributions.
-
-The other advantage to these distributions is that they easily install without system administrative privileges (and install in a user directory) and come with the non-Python binary libraries upon which many Python modules rely, making them ideal for setup on e.g. clusters.
-
-**Note**: Make sure that your `PATH` variable points to e.g. `<anaconda_install_dr>/bin` and *not* your system Python directory. To check this, type: `echo $PATH`; to udpate it, add `export PATH=<anaconda_install_dir>/bin:$PATH` to your .bashrc file.
-
-
-### Required Dependencies
-
-To install PISA, you'll need to have the following non-python requirements.
-Note that these are not installed automatically, and you must install them yourself prior to installing PISA.
-Also note that Python, HDF5, and pip support come pre-packaged or as `conda`-installable packages in the Anaconda Python distribution.
-* [python](http://www.python.org) — version 3.x
-  * Anaconda: built in
-* [pip](https://pip.pypa.io) version >= 1.8 required
-  * Anaconda:<br>
-    `conda install pip`
-* [git](https://git-scm.com)
-  * In Ubuntu,<br>
-    `sudo apt install git`
-* [hdf5](http://www.hdfgroup.org/HDF5) — install with `--enable-cxx` option
-  * In Ubuntu,<br>
-    `sudo apt install libhdf5-10`
-* [llvm](http://llvm.org) Compiler needed by Numba. This is automatically installed in Anaconda alongside `numba`.
-  * Anaconda<br>
-    `conda install numba`
-
 
 ### Optional Dependencies
 
-Optional dependencies. Some of these must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, and/or conda to install the below before running the PISA installation.
+Some of the following optional dependencies must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, or conda/mamba to install the below before running the PISA installation.
 
-* [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for the `data.licloader_weighter` service. 
-* [MCEq](http://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
-* [daemonflux](https://github.com/mceq-project/daemonflux) Recuired for `flux.daemon_flux` service.
+* [emcee](https://github.com/dfm/emcee) Required for MCMC sampling functionality in the `llh_client`& `llh_server` utils modules and the `analysis` module.
+* [GLoBES wrapper](https://github.com/atrettin/GLoBES_wrapper) Required for `osc.globes` service.
+* [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for `data.licloader_weighter` service.
+* [MCEq](https://github.com/afedynitch/MCEq) Required for `create_barr_sys_tables_mceq.py` script.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
-* [pandas](https://pandas.pydata.org/) Required for datarelease (csv) stages.
-* [OpenMP](http://www.openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
+* [OpenMP](https://openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
-* [Photospline](https://github.com/icecube/photospline) Required for the `flux.airs` service. 
-* [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
+* [Photospline](https://github.com/icecube/photospline) Required for `flux.airs` service.
+* [Pylint](https://pylint.org) Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [Pytest](https://docs.pytest.org/) Python testing framework. Used by a couple unit tests.
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
-* [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Necessary for `xsec.genie`, `unfold.roounfold` and `absorption.pi_earth_absorption` services, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's python support (documented here https://github.com/IceCubeOpenSource/pisa/issues/430), you need at least version 6.12.04 of ROOT.
-* [Sphinx](http://www.sphinx-doc.org/en/stable/) version >= 1.3
+* [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Required for `absorption.earth_absorption` service, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's Python support (documented here https://github.com/IceCubeOpenSource/pisa/issues/430), you need at least version 6.12.04 of ROOT.
+* [Sphinx >= 1.3](https://www.sphinx-doc.org)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
-* [versioneer](https://github.com/warner/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
+* [Read the Docs Sphinx Theme](https://github.com/readthedocs/sphinx_rtd_theme)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
-* [black](https://github.com/ambv/black) Format your Python code, _automatically_, with typically very nice results!
-  * Note this only works in Python3
+* [versioneer](https://github.com/python-versioneer/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [black](https://github.com/psf/black) Format your Python code, _automatically_, with typically very nice results!
 
-
-### Obtain PISA sourcecode
-
-#### Develop PISA: Fork then clone
-
-If you wish to modify PISA and contribute your code changes back to the PISA project (*highly recommended!*), fork `IceCubeOpenSource/pisa` from Github.
-
-Forking creates your own version of PISA within your Github account.
-You can freely create your own *branch*, modify the code, and then *add* and *commit* changes to that branch within your fork of PISA.
-When you want to share your changes with `IceCubeOpenSource/pisa`, you can then submit a *pull request* to `IceCubeOpenSource/pisa` which can be merged by the PISA administrator (after the code is reviewed and tested, of course).
-
-* Navigate to the [PISA github page](https://github.com/IceCubeOpenSource/pisa) and fork the repository by clicking on the ![fork](images/ForkButton.png) button.
-* Clone the repository into the `$PISA` directory via one of the following commands (`<github username>` is your Github username):
-  * either SSH access to repo:<br>
-`git clone git@github.com:<github username>/pisa.git $PISA
-`
-  * or HTTPS access to repo:<br>
-`git clone https://github.com/<github username>/pisa.git $PISA`
-
-
-#### Using but not developing PISA: Just clone
-
-If you just wish to pull changes from github (and not submit any changes back), you can just clone the sourcecode without creating a fork of the project.
-
-* Clone the repository into the `$PISA` directory via one of the following commands:
-  * either SSH access to repo:<br>
-`git clone git@github.com:IceCubeOpenSource/pisa.git $PISA`
-  * or HTTPS access to repo:<br>
-`git clone https://github.com/IceCubeOpenSource/pisa.git $PISA`
-
-
-### Ensure a clean install using virtualenv or conda env
+### Ensure a clean install using venv or conda env
 
 It is absolutely discouraged to install PISA as a root (privileged) user.
 PISA is not vetted for security vulnerabilities, so should always be installed and run as a regular (unprivileged) user.
 
-It is suggested (but not required) that you install PISA within a virtual environment (or in a conda env if you're using Anaconda or Miniconda Python distributions).
-This minimizes cross-contamination by PISA of a system-wide (or other) Python installation with conflicting required package versions, guarantees that you can install PISA as an unprivileged user, guarantees that PISA's dependencies are met, and allows for multiple versions of PISA to be installed simultaneously (each in a different virtualenv / conda env).
+It is suggested (but not required) that you install PISA within a virtual environment (or in a conda env if you're using Anaconda, Miniconda, or Miniforge Python distributions).
+This minimizes cross-contamination by PISA of a system-wide (or other) Python installation with conflicting required package versions, guarantees that you can install PISA as an unprivileged user, that PISA's dependencies are met, and allows for multiple versions of PISA to be installed simultaneously (each in a different venv / conda env).
 
 Note that it is also discouraged, but you _can_ install PISA as an unprivileged user using your system-wide Python install with the `--user` option to `pip`.
-This is not quite as clean as a virtual environment, and the issue with coflicting package dependency versions remains.
-
+This is not quite as clean as a virtual environment, and the issue with conflicting package dependency versions remains.
 
 ### Compile the documentation
 
-To compile a new version of the documentation to html (pdf and other formats are available by replacing `html` with `pdf`, etc.):
+In case you installed the optional "develop" dependencies, you can compile a (new) version of the documentation to html via
 ```bash
 cd $PISA && sphinx-apidoc -f -o docs/source pisa
 ```
 
-In case code structure has changed, rebuild the apidoc by executing
+In case code structure has changed, rebuild the API documentation by executing
 ```bash
 cd $PISA/docs && make html
 ```
+(Run `make help`  to check which other documentation formats are available.)
