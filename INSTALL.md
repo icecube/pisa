@@ -16,9 +16,9 @@ This guide will enable you to _use_ PISA within about five minutes. If you are m
      ```bash
      mamba install git
      ```
-1. Define a directory for PISA source code to live in, and create the directory. For example:<br>
+1. Define a directory for the PISA source code (~ 500 MB) to live in, and create the directory. For example:<br>
     ```bash
-    export PISA=~/src/pisa
+    export PISA=<PATH TO PISA>/pisa
     mkdir -p $PISA
     ```
 1. Clone the PISA repository to your local computer<br>
@@ -53,9 +53,14 @@ https://help.github.com/articles/connecting-to-github-with-ssh
 
 In your terminal, define a directory for PISA source code to live in, e.g.,<br>
 ```bash
-export PISA=~/src/pisa
+export PISA=<PATH TO PISA>/pisa
 ```
+<details>
+  <summary>suggested paths</summary>
 
+
+   Since the PISA source occupies several hundreds of MB of drive space: on one of IceCube's Cobalt nodes, consider setting `<PATH_TO_PISA>` to `/data/user/<USERNAME>` instead of e.g. `$HOME`.
+</details>
 Also add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this every time.
 
 Create the above directory:<br>
@@ -69,12 +74,8 @@ The [first (default)](#default-miniforge-distribution) obtains Python and Python
 
 The [second (alternative)](#alternative-cvmfs-and-venv) assumes you have access to IceCube's CernVM-FS (CVMFS) repository and would like to use one of the Python installations it provides as the "base" of a [venv](https://docs.python.org/3/library/venv.html). Our instructions have only been tested for the [`py3-v4.2.1` distribution](https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-2).
 
-<details>
-  <summary>in case of installation one of IceCube's Cobalt nodes</summary>
-   
-   Consider using `/data/user/<USERNAME>` instead of e.g. `$HOME` as installation location below.
-</details>
-
+> [!NOTE]
+> Miniforge or the venv virtual environment folder into which all Python packages will be installed can be placed wherever you please. (Note that there are [disadvantages](https://pybit.es/articles/a-better-place-to-put-your-python-virtual-environments/) to putting either in your local PISA repository's top-level directory `$PISA`.) However, on one of IceCube's Cobalt nodes, again consider `/data/user/<USERNAME>` instead of e.g. `$HOME`.
 
 ### Default: Miniforge distribution
 
@@ -117,7 +118,6 @@ unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
    Verify that `which python` outputs `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`.
 </details>
 
-Create a virtual environment folder into which all Python packages will be installed, which can be placed wherever you please. (Note that there are [disadvantages](https://pybit.es/articles/a-better-place-to-put-your-python-virtual-environments/) to putting it in your local PISA repository's top-level directory `$PISA`.)
 ```bash
 python -m venv /PATH/TO/<VENV NAME>
 ```
@@ -153,23 +153,23 @@ Next, clone the PISA repository to your local computer. On the command line,
 
 You can now proceed to install PISA, either
 
-<details>
-  <summary>with default packages only and without development tools</summary>
-   
-  ```bash
-  pip install -e $PISA -vvv
-  ```
-</details>
+with default packages only and without development tools
+```bash
+pip install -e $PISA -vvv
+```
+or, if desired, including optional packages and development tools
+```bash
+pip install -e $PISA[develop] -vvv
+```
 
-or, if desired,
-
-<details>
-  <summary>including optional packages and development tools</summary>
-   
-  ```bash
-  pip install -e $PISA[develop] -vvv
-  ```
-</details>
+> [!NOTE]
+>  * The installation is ***not run as administrator***. It is discouraged to do so (and has not been tested this way).
+>  * `-e $PISA` (or equivalently, `--editable $PISA`): Installs from source located at `$PISA` and  allows for changes to the source code within to be immediately propagated to your Python installation.
+>   Within the Python library tree, all files under `pisa` are links to your source code, so changes within your source are seen directly by the Python installation. Major changes to your source code (file names or directory structure changing) will require re-installation, though, for the links to be updated (see below for the command for re-installing).
+> * `[develop]` Specify optional dependency groups. You can omit any or all of these if your system does not support them or if you do not need them.
+> * `-vvv` Be maximally verbose during the install. You'll see lots of messages, including warnings that are irrelevant, but if your installation fails, it's easiest to debug if you use `-vvv`.
+> * If a specific compiler is set by the `CC` environment variable (`export CC=<path>`), it will be used; otherwise, the `cc` command will be run on the system for compiling C-code.
+>  You can work with your installation using the usual git commands (pull, push, etc.). However, these ***won't recompile*** any of the extension (i.e. pyx, _C/C++_) libraries. See below for how to re-install PISA when you need these to recompile.
 
 If the installation went smoothly, you are now ready to run a quick test<br>
 ```bash
@@ -178,6 +178,28 @@ pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --
 This command should have created the folder `<OUTPUT PATH>` containing a pdf with output maps for different neutrino types and interactions.
 
 ## Additional information
+
+### Ensure a clean install using venv or conda env
+
+It is absolutely discouraged to install PISA as a root (privileged) user.
+PISA is not vetted for security vulnerabilities, so should always be installed and run as a regular (unprivileged) user.
+
+It is suggested (but not required) that you install PISA within a virtual environment (or in a conda env if you're using Anaconda, Miniconda, or Miniforge Python distributions).
+This minimizes cross-contamination by PISA of a system-wide (or other) Python installation with conflicting required package versions, guarantees that you can install PISA as an unprivileged user, that PISA's dependencies are met, and allows for multiple versions of PISA to be installed simultaneously (each in a different venv / conda env).
+
+Note that it is also discouraged, but you _can_ install PISA as an unprivileged user using your system-wide Python install with the `--user` option to `pip`.
+This is not quite as clean as a virtual environment, and the issue with conflicting package dependency versions remains.
+
+### Re-installation
+
+Sometimes a change within PISA requires re-installation (particularly if a compiled module changes, the below forces re-compilation).
+
+```bash
+pip install -e $PISA[develop] --force-reinstall -vvv
+```
+
+**Note** that if files change names or locations, though, the above can still not be enough.
+In this case, the old files have to be removed manually (along with any associated `.pyc` files, as Python will use these even if the `.py` files have been removed).
 
 ### Required Dependencies
 
@@ -194,28 +216,6 @@ Support for all of these comes pre-packaged or as `conda`/`mamba`-installable pa
   * it is already installed on IceCube's Cobalt nodes
 
 Required Python modules whose installation is taken care of by pip are specified in [setup.py](setup.py).
-
-### Installation
-* First, note that the installation is ***not run as administrator***. It is discouraged to do so (and has not been tested this way).
-* `-e $PISA` (or equivalently, `--editable $PISA`): Installs from source located at `$PISA` and  allows for changes to the source code within to be immediately propagated to your Python installation.
-   Within the Python library tree, all files under `pisa` are links to your source code, so changes within your source are seen directly by the Python installation. Note that major changes to your source code (file names or directory structure changing) will require re-installation, though, for the links to be updated (see below for the command for re-installing).
-* `[develop]` Specify optional dependency groups. You can omit any or all of these if your system does not support them or if you do not need them.
-* `-vvv` Be maximally verbose during the install. You'll see lots of messages, including warnings that are irrelevant, but if your installation fails, it's easiest to debug if you use `-vvv`.
-* If a specific compiler is set by the `CC` environment variable (`export CC=<path>`), it will be used; otherwise, the `cc` command will be run on the system for compiling C-code.
-
-**Note** that you can work with your installation using the usual git commands (pull, push, etc.). However, these ***won't recompile*** any of the extension (i.e. pyx, _C/C++_) libraries. See below for how to reinstall PISA when you need these to recompile.
-
-
-### Re-installation
-
-Sometimes a change within PISA requires re-installation (particularly if a compiled module changes, the below forces re-compilation).
-
-```bash
-pip install -e $PISA[develop] --force-reinstall -vvv
-```
-
-**Note** that if files change names or locations, though, the above can still not be enough.
-In this case, the old files have to be removed manually (along with any associated `.pyc` files, as Python will use these even if the `.py` files have been removed).
 
 ### Optional Dependencies
 
@@ -243,17 +243,6 @@ Some of the following optional dependencies must be installed manually prior to 
 * [versioneer](https://github.com/python-versioneer/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [black](https://github.com/psf/black) Format your Python code, _automatically_, with typically very nice results!
-
-### Ensure a clean install using venv or conda env
-
-It is absolutely discouraged to install PISA as a root (privileged) user.
-PISA is not vetted for security vulnerabilities, so should always be installed and run as a regular (unprivileged) user.
-
-It is suggested (but not required) that you install PISA within a virtual environment (or in a conda env if you're using Anaconda, Miniconda, or Miniforge Python distributions).
-This minimizes cross-contamination by PISA of a system-wide (or other) Python installation with conflicting required package versions, guarantees that you can install PISA as an unprivileged user, that PISA's dependencies are met, and allows for multiple versions of PISA to be installed simultaneously (each in a different venv / conda env).
-
-Note that it is also discouraged, but you _can_ install PISA as an unprivileged user using your system-wide Python install with the `--user` option to `pip`.
-This is not quite as clean as a virtual environment, and the issue with conflicting package dependency versions remains.
 
 ### Compile the documentation
 
