@@ -13,14 +13,14 @@
 [Conventions](pisa/general_conventions.md) |
 [License](LICENSE)
 
-PISA is a software written to analyze the results (or expected results) of an experiment based on Monte Carlo simulation.
+PISA is a software written to analyze the results (or expected results) of an experiment based on Monte Carlo (MC) simulation.
 
-In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](https://icecube.wisc.edu/), including the [DeepCore](https://arxiv.org/abs/1109.6096) and the planned [Upgrade]([https://arxiv.org/abs/2307.15295](https://arxiv.org/pdf/1908.09441.pdf)) low-energy in-fill arrays.
+In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](https://icecube.wisc.edu/), including the [DeepCore](https://arxiv.org/abs/1109.6096) and the planned [Upgrade](https://arxiv.org/abs/2307.15295) low-energy in-fill arrays.
 
 > [!NOTE]
 > However, any experiment can make use of PISA for analyzing expected and actual results.
 
-PISA was originally developed to cope with low-statistics Monte Carlo (MC) by using parameterizations of the MC and operate on histograms of the data rather than directly reweighting the MC. However, PISA's methods apply equally well to high-MC situations, and PISA also performs traditional reweighted-MC analysis as well.
+PISA was originally developed to cope with low-statistics MC by using parameterizations of the MC and operate on histograms of the data rather than directly reweighting the MC. However, PISA's methods apply equally well to high-MC situations, and PISA also performs traditional reweighted-MC analysis as well.
 
 If you use PISA, please cite our publication ([e-Print available here](https://arxiv.org/abs/1803.05390)):
 ```
@@ -36,13 +36,7 @@ Published in: Nucl.Instrum.Meth.A 977 (2020) 164332
 
 ## Installation
 
-```shell
-git clone git@github.com:icecube/pisa.git
-cd pisa
-pip install -e .
-```
-
-For detailed installation instructions and common issues see [Installation](INSTALL.md)
+For quick-start and detailed installation instructions see [Installation](INSTALL.md).
 
 ## Minimal Example
 
@@ -64,14 +58,14 @@ Instantiate a `Pipeline` or multiple pipelines in a `DistributionMaker` using PI
 template_maker = Pipeline("settings/pipeline/osc_example.cfg")
 ```
 
-Run the pipleine with nominal settings
+Run the pipeline with nominal settings
 
 
 ```python
 template_maker.run()
 ```
 
-Get the oscillation probabilities <img src="https://render.githubusercontent.com/render/math?math=P_{\nu_\mu\to\nu_\mu}">
+Get the oscillation probabilities $P_{\nu_\mu\to\nu_\beta}$
 
 
 ```python
