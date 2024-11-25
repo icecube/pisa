@@ -70,12 +70,12 @@ mkdir -p $PISA
 
 Below we describe two different ways of setting up the PISA Python environment:<br>
 
+> [!NOTE]
+> Miniforge or the venv virtual environment folder into which all Python packages will be installed can be placed wherever you please. (Note that there are [disadvantages](https://pybit.es/articles/a-better-place-to-put-your-python-virtual-environments/) to putting either in your local PISA repository's top-level directory `$PISA`.) However, on one of IceCube's Cobalt nodes, again consider `/data/user/<USERNAME>` instead of e.g. `$HOME`.
+
 The [first (default)](#default-miniforge-distribution) obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the [Miniforge](https://conda-forge.org/docs/user/introduction/) distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br>
 
 The [second (alternative)](#alternative-cvmfs-and-venv) assumes you have access to IceCube's CernVM-FS (CVMFS) repository and would like to use one of the Python installations it provides as the "base" of a [venv](https://docs.python.org/3/library/venv.html). Our instructions have only been tested for the [`py3-v4.2.1` distribution](https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-2).
-
-> [!NOTE]
-> Miniforge or the venv virtual environment folder into which all Python packages will be installed can be placed wherever you please. (Note that there are [disadvantages](https://pybit.es/articles/a-better-place-to-put-your-python-virtual-environments/) to putting either in your local PISA repository's top-level directory `$PISA`.) However, on one of IceCube's Cobalt nodes, again consider `/data/user/<USERNAME>` instead of e.g. `$HOME`.
 
 ### Default: Miniforge distribution
 
@@ -85,7 +85,7 @@ Install the latest Miniforge Python distribution for either Mac or Linux (as you
    
    ```bash
    mkdir -p <PATH TO MINIFORGE>/miniforge3
-   wget "https://.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+   wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
    bash "Miniforge3-$(uname)-$(uname -m).sh" -p <PATH TO MINIFORGE>/miniforge3 -u
    rm "Miniforge3-$(uname)-$(uname -m).sh"
    ```
