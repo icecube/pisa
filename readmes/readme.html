@@ -80,11 +80,11 @@
 [Terminology](pisa/glossary.md) |
 [Conventions](pisa/general_conventions.md) |
 [License](LICENSE)</p>
-<p>PISA is a software written to analyze the results (or expected results) of an experiment based on Monte Carlo simulation.</p>
-<p>In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](<a class="reference external" href="https://icecube.wisc.edu/">https://icecube.wisc.edu/</a>), including the [DeepCore](<a class="reference external" href="https://arxiv.org/abs/1109.6096">https://arxiv.org/abs/1109.6096</a>) and the planned [Upgrade]([<a class="reference external" href="https://arxiv.org/abs/2307.15295](https://arxiv.org/pdf/1908.09441.pdf">https://arxiv.org/abs/2307.15295](https://arxiv.org/pdf/1908.09441.pdf</a>)) low-energy in-fill arrays.</p>
+<p>PISA is a software written to analyze the results (or expected results) of an experiment based on Monte Carlo (MC) simulation.</p>
+<p>In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](<a class="reference external" href="https://icecube.wisc.edu/">https://icecube.wisc.edu/</a>), including the [DeepCore](<a class="reference external" href="https://arxiv.org/abs/1109.6096">https://arxiv.org/abs/1109.6096</a>) and the planned [Upgrade](<a class="reference external" href="https://arxiv.org/abs/2307.15295">https://arxiv.org/abs/2307.15295</a>) low-energy in-fill arrays.</p>
 <p>&gt; [!NOTE]
 &gt; However, any experiment can make use of PISA for analyzing expected and actual results.</p>
-<p>PISA was originally developed to cope with low-statistics Monte Carlo (MC) by using parameterizations of the MC and operate on histograms of the data rather than directly reweighting the MC. However, PISA’s methods apply equally well to high-MC situations, and PISA also performs traditional reweighted-MC analysis as well.</p>
+<p>PISA was originally developed to cope with low-statistics MC by using parameterizations of the MC and operate on histograms of the data rather than directly reweighting the MC. However, PISA’s methods apply equally well to high-MC situations, and PISA also performs traditional reweighted-MC analysis as well.</p>
 <p>If you use PISA, please cite our publication ([e-Print available here](<a class="reference external" href="https://arxiv.org/abs/1803.05390">https://arxiv.org/abs/1803.05390</a>)):
 <code class="docutils literal notranslate"><span class="pre">`</span>
 <span class="pre">Computational</span> <span class="pre">Techniques</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">Analysis</span> <span class="pre">of</span> <span class="pre">Small</span> <span class="pre">Signals</span>
@@ -95,12 +95,7 @@
 <span class="pre">`</span></code></p>
 <p># Quick start</p>
 <p>## Installation</p>
-<p><code class="docutils literal notranslate"><span class="pre">`shell</span>
-<span class="pre">git</span> <span class="pre">clone</span> <span class="pre">git&#64;github.com:icecube/pisa.git</span>
-<span class="pre">cd</span> <span class="pre">pisa</span>
-<span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span>
-<span class="pre">`</span></code></p>
-<p>For detailed installation instructions and common issues see [Installation](INSTALL.md)</p>
+<p>For quick-start and detailed installation instructions see [Installation](INSTALL.md).</p>
 <p>## Minimal Example</p>
 <p>Producing some oscillograms</p>
 <p><code class="docutils literal notranslate"><span class="pre">`python</span>
@@ -114,11 +109,11 @@
 <p><code class="docutils literal notranslate"><span class="pre">`python</span>
 <span class="pre">template_maker</span> <span class="pre">=</span> <span class="pre">Pipeline(&quot;settings/pipeline/osc_example.cfg&quot;)</span>
 <span class="pre">`</span></code></p>
-<p>Run the pipleine with nominal settings</p>
+<p>Run the pipeline with nominal settings</p>
 <p><code class="docutils literal notranslate"><span class="pre">`python</span>
 <span class="pre">template_maker.run()</span>
 <span class="pre">`</span></code></p>
-<p>Get the oscillation probabilities &lt;img src=”<a class="reference external" href="https://render.githubusercontent.com/render/math">https://render.githubusercontent.com/render/math</a>?math=P_{nu_mutonu_mu}”&gt;</p>
+<p>Get the oscillation probabilities $P_{nu_mutonu_beta}$</p>
 <p><code class="docutils literal notranslate"><span class="pre">`python</span>
 <span class="pre">outputs</span> <span class="pre">=</span> <span class="pre">template_maker.data.get_mapset('prob_mu')</span>
 <span class="pre">`</span></code></p>
