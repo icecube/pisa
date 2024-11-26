@@ -229,6 +229,10 @@ def do_setup():
     #        ' installing PISA without OpenMP support.\n'
     #    )
 
+    this_directory = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+        long_description = f.read()
+
     # Collect (build-able) external modules and package_data
     ext_modules = [Extension('pisa.utils.llh_defs.poisson_gamma_mixtures', 
                                 sources = ['pisa/utils/llh_defs/poisson_gamma_mixtures.pyx',
@@ -287,6 +291,8 @@ def do_setup():
         name='pisa',
         version=versioneer.get_version(),
         description='Tools for analyzing and drawing statistical conclusions from experimental data',
+        long_description=long_description,
+        long_description_content_type='text/markdown',
         license='Apache 2.0',
         author='The IceCube Collaboration',
         author_email='analysis@icecube.wisc.edu',
