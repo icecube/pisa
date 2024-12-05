@@ -3831,7 +3831,7 @@ def test_constrained_minimization(pprint=False):
     data_dist = dm.get_outputs(return_sum=True)
 
     ### slsqp test with constraints ###
-    def test_slsqp_constr():
+    def slsqp_constr():
         ana = BasicAnalysis()
         ana.pprint = pprint
         min_sett = {
@@ -3871,7 +3871,7 @@ def test_constrained_minimization(pprint=False):
         assert bf.params.aeff_scale.m_as('dimensionless') <= max_aeff_scale + tol
 
     ### cobyla test with inequality constraints (doesn't support equalities) ###
-    def test_cobyla_constr():
+    def cobyla_constr():
         ana = BasicAnalysis()
         ana.pprint = pprint
 
@@ -3905,7 +3905,7 @@ def test_constrained_minimization(pprint=False):
         assert bf.params.aeff_scale.m_as('dimensionless') >= min_aeff_scale - tol
 
     ### trust-constr test with constraints ###
-    def test_trust_constr_constr():
+    def trust_constr_constr():
         ana = BasicAnalysis()
         ana.pprint = pprint
 
@@ -3942,7 +3942,7 @@ def test_constrained_minimization(pprint=False):
         assert bf.params.aeff_scale.m_as('dimensionless') <= max_aeff_scale + tol
 
     ### Nelder-Mead test (no constraints supported) ###
-    def test_nm_unconstr():
+    def nm_unconstr():
         ana = BasicAnalysis()
         ana.pprint = pprint
 
@@ -3963,7 +3963,7 @@ def test_constrained_minimization(pprint=False):
         assert bf.minimizer_metadata['success']
 
     ### finally an nlopt solver with constraints ###
-    def test_some_nlopt_constr():
+    def some_nlopt_constr():
         ana = BasicAnalysis()
         ana.pprint = pprint
 
@@ -3999,14 +3999,14 @@ def test_constrained_minimization(pprint=False):
         [dm.params.unfix(p) for p in fix_params] # pylint: disable=expression-not-assigned
 
     # now run them all
-    test_slsqp_constr()
+    slsqp_constr()
     try:
-        test_cobyla_constr()
+        cobyla_constr()
     except Exception as e:
         logging.error("Cobyla test with constraints failed: '%s'. This is under investigation..." % str(e))
-    test_trust_constr_constr()
-    test_nm_unconstr()
-    test_some_nlopt_constr()
+    trust_constr_constr()
+    nm_unconstr()
+    some_nlopt_constr()
 
 if __name__ == "__main__":
     set_verbosity(1)
