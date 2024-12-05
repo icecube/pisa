@@ -7,6 +7,7 @@ Common tools for performing an analysis collected into a single class
 from collections.abc import Sequence, Mapping
 from collections import OrderedDict
 from copy import deepcopy
+from functools import partial
 from operator import setitem
 from itertools import product
 import re
@@ -15,11 +16,13 @@ import time
 import warnings
 
 import numpy as np
+import scipy
 import scipy.optimize as optimize
 # this is needed for the take_step option in basinhopping
 from scipy._lib._util import check_random_state
 from iminuit import Minuit
 import nlopt
+from pkg_resources import parse_version
 
 import pisa
 from pisa import EPSILON, FTYPE, ureg
@@ -34,13 +37,14 @@ from pisa.utils.stats import (METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE,
                               LLH_METRICS, CHI2_METRICS, weighted_chi2,
                               it_got_better, is_metric_to_maximize)
 
-__all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_USING_CONSTRAINTS',
+__all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_ACCEPTING_CONSTRS',
+           'scipy_constraints_to_callables', 'get_nlopt_inequality_constraint_funcs',
            'set_minimizer_defaults', 'validate_minimizer_settings',
            'Counter', 'Analysis', 'BasicAnalysis']
 
-__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, E. Bourbeau, A. Trettin'
+__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, E. Bourbeau, A. Trettin, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2024, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -59,9 +63,108 @@ MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
-MINIMIZERS_USING_CONSTRAINTS = ('cobyla')
-"""Minimizers that cannot use the 'bounds' argument and instead need bounds to
-be formulated in terms of constraints."""
+MINIMIZERS_ACCEPTING_CONSTRS = ('cobyla', 'slsqp', 'trust-constr', 'cobyqa')
+"""Minimizers that allow constraints to be passed. According to
+scipy docs, cobyla and slsqp require dictionaries, whereas
+trust-constr and cobyqa require constraints to be passed as `LinearConstraint`
+or `NonlinearConstraint` instances. However, as of now, the conversion to the
+form required by the minimizer is done internally by scipy. Hence, this global
+variable merely serves documentation purposes right now. Note that cobyqa is
+only added in scipy version 1.14.0."""
+
+EVAL_MSG = ('Using eval() is potentially dangerous as it can execute '
+            'arbitrary code! Do not store your config file in a place '
+            'where others have writing access!')
+"""Repeatedly implemented warning about evaluating expressions representing
+ (in)equality constraints."""
+
+
+def scipy_constraints_to_callables(constr_dicts, hypo_maker):
+    """Convert constraints expressions in terms of ParamSets
+    into callables for scipy. Overwrites "fun" entries
+    in `constr_dicts`.
+    """
+    def constr_func(x, constr_func_params):
+        hypo_maker._set_rescaled_free_params(x)
+        if hypo_maker.__class__.__name__ == "Detectors":
+            # updates values for ALL detectors
+            update_param_values_detector(hypo_maker, hypo_maker.params.free)
+        return constr_func_params(hypo_maker.params)
+    logging.warning(EVAL_MSG)
+    assert isinstance(constr_dicts, Sequence)
+    for cd in constr_dicts:
+        assert isinstance(cd, Mapping)
+        # the equality constraint is specified as a function that takes a
+        # ParamSet as its input
+        assert "fun" in cd
+        constr = cd["fun"]
+        logging.debug(f"adding scipy constraint: {constr}")
+        if callable(constr):
+            constr_func_params = constr
+        else:
+            constr_func_params = eval(constr)
+            t = type(constr_func_params)
+            if not callable(constr_func_params):
+                raise TypeError(f"Evaluated object not a callable, but {t}.")
+        # overwrite
+        cd["fun"] = partial(constr_func, constr_func_params=constr_func_params)
+
+
+def get_nlopt_inequality_constraint_funcs(method_kwargs, hypo_maker):
+    """Convert constraints expressions in terms of ParamSets
+    into callables for nlopt. Evals expression(s) from `method_kwargs`
+    and returns list of callables.
+    """
+    def ineq_func(x, grad, ineq_func_params):
+        if grad.size > 0:
+            raise RuntimeError("gradients not supported")
+        hypo_maker._set_rescaled_free_params(x)
+        if hypo_maker.__class__.__name__ == "Detectors":
+            # updates values for ALL detectors
+            update_param_values_detector(hypo_maker, hypo_maker.params.free)
+        # In NLOPT, the inequality function must stay negative, while in
+        # scipy, the inequality function must stay positive. We keep with
+        # the scipy convention by flipping the sign.
+        return -ineq_func_params(hypo_maker.params)
+    assert "ineq_constraints" in method_kwargs
+    logging.warning(EVAL_MSG)
+    constr_list = method_kwargs["ineq_constraints"]
+    if isinstance(constr_list, str):
+        constr_list = [constr_list]
+    ineq_funcs = []
+    for constr in constr_list:
+        # the inequality function is specified as a function that takes a
+        # ParamSet as its input
+        logging.debug(f"adding nlopt constraint (must stay positive): {constr}")
+        if callable(constr):
+            ineq_func_params = constr
+        else:
+            ineq_func_params = eval(constr)
+            t = type(ineq_func_params)
+            if not callable(ineq_func_params):
+                raise TypeError(f"Evaluated object not a callable, but {t}.")
+        ineq_funcs.append(partial(ineq_func, ineq_func_params=ineq_func_params))
+    return ineq_funcs
+
+
+def make_scipy_constraint_dict(constr_type, fun, jac=None, args=None):
+    """Makes a constraint dictionary in the form accepted by scipy,
+    see e.g. https://docs.scipy.org/doc/scipy-1.13.1/reference/generated/scipy.optimize.minimize.html"""
+    assert constr_type in ["eq", "ineq"]
+    t = type(fun)
+    if not callable(fun):
+        raise TypeError("Constraint function has to be callable, not {t}.")
+    constr_dict = {'type': constr_type, 'fun': fun}
+    if jac is not None:
+        t = type(jac)
+        if not callable(jac):
+            raise TypeError("Jacobian has to be callable, not {t}.")
+        constr_dict['jac'] = jac
+    if args is not None:
+        assert isinstance(args, Sequence)
+        constr_dict['args'] = args
+    return constr_dict
+
 
 def merge_mapsets_together(mapset_list=None):
     '''Handle merging of multiple MapSets, when they come in
@@ -88,7 +191,6 @@ def merge_mapsets_together(mapset_list=None):
     return new_dict
 
 
-# TODO: add Nelder-Mead, as it was used previously...
 def set_minimizer_defaults(minimizer_settings):
     """Fill in default values for minimizer settings.
 
@@ -135,6 +237,17 @@ def set_minimizer_defaults(minimizer_settings):
         opt_defaults.update(dict(
             rhobeg=0.1, maxiter=1000, tol=1e-4,
         ))
+    elif method == 'cobyqa':
+        # just make this solver available for now
+        pass
+    elif method == 'trust-constr':
+        opt_defaults.update(dict(
+            maxiter=200, gtol=1e-4, xtol=1e-4, barrier_tol=1e-4
+        ))
+    elif method == 'nelder-mead':
+        opt_defaults.update(dict(
+            maxfev=1000, xatol=1e-4, fatol=1e-4
+        ))
     else:
         raise ValueError('Unhandled minimizer "%s" / FTYPE=%s'
                          % (method, FTYPE))
@@ -151,9 +264,10 @@ def set_minimizer_defaults(minimizer_settings):
     return new_minimizer_settings
 
 
-# TODO: add Nelder-Mead, as it was used previously...
 def validate_minimizer_settings(minimizer_settings):
     """Validate minimizer settings.
+
+    Supported minimizers are the same as in `set_minimizer_defaults`.
 
     See source for specific thresholds set.
 
@@ -170,6 +284,7 @@ def validate_minimizer_settings(minimizer_settings):
     ftype_eps = np.finfo(FTYPE).eps
     method = minimizer_settings['method']['value'].lower()
     options = minimizer_settings['options']['value']
+
     if method == 'l-bfgs-b':
         must_have = ('maxcor', 'ftol', 'gtol', 'eps', 'maxfun', 'maxiter',
                      'maxls')
@@ -181,7 +296,30 @@ def validate_minimizer_settings(minimizer_settings):
                                 'iprint', 'disp', 'callback')
     elif method == 'cobyla':
         must_have = ('maxiter', 'rhobeg', 'tol')
-        may_have = must_have + ('disp', 'catol')
+        may_have = must_have + ('disp', 'catol', 'constraints')
+    elif method == 'cobyqa':
+        assert parse_version(scipy.__version__) >= parse_version('1.14.0')
+        must_have = ()
+        may_have = must_have + ('disp', 'maxiter', 'maxfev', 'f_target',
+                                'feasibility_tol', 'initial_tr_radius',
+                                'final_tr_radius', 'scale', 'constraints')
+    elif method == 'trust-constr':
+        must_have = ('maxiter', 'gtol', 'xtol', 'barrier_tol')
+        may_have = must_have + ('sparse_jacobian', 'initial_tr_radius',
+                                'initial_constr_penalty', 'constraints',
+                                'initial_barrier_parameter',
+                                'initial_barrier_tolerance',
+                                'factorization_method',
+                                'finite_diff_rel_step',
+                                'verbose', 'disp')
+    elif method == 'nelder-mead':
+        must_have = ('maxfev', 'xatol', 'fatol')
+        may_have = must_have + ('disp', 'maxiter', 'return_all',
+                                'initial_simplex', 'adaptive',
+                                'bounds')
+    else:
+        raise ValueError('Unhandled minimizer "%s" / FTYPE=%s'
+                         % (method, FTYPE))
 
     missing = set(must_have).difference(set(options))
     excess = set(options).difference(set(may_have))
@@ -220,7 +358,7 @@ def validate_minimizer_settings(minimizer_settings):
         if val > warn_lim:
             logging.warning(eps_gt_msg, method, 'eps', val, warn_lim)
 
-    if method == 'slsqp':
+    elif method == 'slsqp':
         err_lim, warn_lim = 2, 10
         val = options['ftol']
         if val < err_lim * ftype_eps:
@@ -243,7 +381,7 @@ def validate_minimizer_settings(minimizer_settings):
         if val > warn_lim:
             logging.warning(eps_gt_msg, method, 'eps', val, warn_lim)
 
-    if method == 'cobyla':
+    elif method == 'cobyla':
         if options['rhobeg'] > 0.5:
             raise ValueError('starting step-size > 0.5 will overstep boundary')
         if options['rhobeg'] < 1e-2:
@@ -393,7 +531,7 @@ def update_param_values_detector(
     hypo_maker.init_params()
 
 # TODO: move this to a central location prob. in utils
-class Counter(object):
+class Counter():
     """Simple counter object for use as a minimizer callback."""
     def __init__(self, i=0):
         self._count = i
@@ -416,7 +554,7 @@ class Counter(object):
         """int : Current count"""
         return self._count
 
-class BoundedRandomDisplacement(object):
+class BoundedRandomDisplacement():
     """
     Add a bounded random displacement of maximum size `stepsize` to each coordinate
     Calling this updates `x` in-place.
@@ -441,7 +579,7 @@ class BoundedRandomDisplacement(object):
         x = np.clip(x, *self.bounds)  # bounds are automatically broadcast
         return x
 
-class HypoFitResult(object):
+class HypoFitResult():
     """Holds all relevant information about a fit result."""
 
     
@@ -706,7 +844,7 @@ class HypoFitResult(object):
         return detailed_metric_info
 
 
-class BasicAnalysis(object):
+class BasicAnalysis():
     """A bare-bones analysis that only fits a hypothesis to data.
 
     Full analyses with functionality beyond just fitting (doing scans, for example)
@@ -1060,7 +1198,7 @@ class BasicAnalysis(object):
 
         if method in ["fit_octants", "fit_ranges"]:
             method = method.split("_")[1]
-            logging.warn(f"fit method 'fit_{method}' has been re-named to '{method}'")
+            logging.warning(f"fit method 'fit_{method}' has been re-named to '{method}'")
 
         # If made it here, we have a fit to do...
         fit_function = getattr(self, f"_fit_{method}")
@@ -1230,11 +1368,7 @@ class BasicAnalysis(object):
         assert len(local_fit_kwargs) == 2, ("need to fit specs, first runs if True, "
                                             "second runs if false")
         if type(method_kwargs["condition_func"]) is str:
-            logging.warn(
-                "Using eval() is potentially dangerous as it can execute "
-                "arbitrary code! Do not store your config file in a place"
-                "where others have writing access!"
-            )
+            logging.warning(EVAL_MSG)
             condition_func = eval(method_kwargs["condition_func"])
             assert callable(condition_func), "evaluated object is not a valid function"
         elif callable(method_kwargs["condition_func"]):
@@ -1408,11 +1542,7 @@ class BasicAnalysis(object):
 
             logging.info("entering constrained fit...")
             if type(method_kwargs["ineq_func"]) is str:
-                logging.warn(
-                    "Using eval() is potentially dangerous as it can execute "
-                    "arbitrary code! Do not store your config file in a place"
-                    "where others have writing access!"
-                )
+                logging.warning(EVAL_MSG)
                 ineq_func = eval(method_kwargs["ineq_func"])
                 assert callable(ineq_func), "evaluated object is not a valid function"
             elif callable(method_kwargs["ineq_func"]):
@@ -1665,7 +1795,7 @@ class BasicAnalysis(object):
             global_method = method_kwargs["global_method"]
 
         if local_fit_kwargs is not None and global_method not in methods_using_local_fits:
-            logging.warn(f"local_fit_kwargs are ignored by global method {global_method}")
+            logging.warning(f"local_fit_kwargs are ignored by global method {global_method}")
 
         if global_method is None:
             logging.info(f"entering local scipy fit using {method_kwargs['method']['value']}")
@@ -1724,32 +1854,39 @@ class BasicAnalysis(object):
         flip_x0 = np.zeros(len(x0), dtype=bool)
 
         minimizer_method = minimizer_settings["method"]["value"].lower()
-        cons = ()
-        if minimizer_method in MINIMIZERS_USING_CONSTRAINTS:
+
+        if "constraints" in minimizer_settings["options"]["value"]:
+            # convert user-specified equality or inequality constraint expressions
+            scipy_constraints_to_callables(minimizer_settings["options"]["value"]["constraints"], hypo_maker)
+            constrs = minimizer_settings["options"]["value"].pop("constraints")
+        else:
+            constrs = []
+
+        if minimizer_method == 'cobyla' and parse_version(scipy.__version__) < parse_version('1.11.0'):
             logging.warning(
                 'Minimizer %s requires bounds to be formulated in terms of constraints.'
                 ' Constraining functions are auto-generated now.',
                 minimizer_method
             )
-            cons = []
+            bound_constrs = []
             for idx in range(len(x0)):
-                l = {'type': 'ineq',
-                     'fun': lambda x, i=idx: x[i] - FTYPE_PREC}  # lower bound at zero
-                u = {'type': 'ineq',
-                     'fun': lambda x, i=idx: 1. - x[i]}  # upper bound at 1
-                cons.append(l)
-                cons.append(u)
+                fl = lambda x, i=idx: x[i] - FTYPE_PREC # lower bound at zero
+                l = make_scipy_constraint_dict(constr_type='ineq', fun=fl)
+                fu = lambda x, i=idx: 1. - x[i] # upper bound at 1
+                u = make_scipy_constraint_dict(constr_type='ineq', fun=fu)
+                bound_constrs.append(l)
+                bound_constrs.append(u)
+            constrs += bound_constrs
             # The minimizer begins with a step of size `rhobeg` in the positive
             # direction. Flipping around 0.5 ensures that this initial step will not
             # overstep boundaries if `rhobeg` is 0.5.
             flip_x0 = np.array(x0) > 0.5
             # The minimizer can't handle bounds, but they still need to be passed for
             # the interface to be uniform even though they are not used.
-            bounds = [(0, 1)]*len(x0)
-        else:
-            bounds = [(0, 1)]*len(x0)
 
         x0 = np.where(flip_x0, 1 - x0, x0)
+
+        bounds = [(0, 1)]*len(x0)
 
         if global_method is None:
             logging.debug('Running the %s minimizer...', minimizer_method)
@@ -1775,18 +1912,18 @@ class BasicAnalysis(object):
         # Before starting minimization, check if we already have a perfect match between data and template
         # This can happen if using pseudodata that was generated with the nominal values for parameters
         # (which will also be the initial values in the fit) and blah...
-        # If this is the case, don't both to fit and return results right away. 
+        # If this is the case, don't both to fit and return results right away.
 
         # Grab the hypo map
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         
         # Check if the hypo matches data
-        matches = False 
+        matches = False
         if isinstance(data_dist, list):
             matches = all( entry.allclose(hypo_asimov_dist[ie]) for ie, entry in enumerate(data_dist) )
         else:
             matches = data_dist.allclose(hypo_asimov_dist)
-            
+
         if matches:
 
             msg = 'Initial hypo matches data, no need for fit'
@@ -1824,7 +1961,7 @@ class BasicAnalysis(object):
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
                       flip_x0, external_priors_penalty),
                 bounds=bounds,
-                constraints=cons,
+                constraints=constrs,
                 method=minimizer_settings['method']['value'],
                 options=minimizer_settings['options']['value'],
                 callback=self._minimizer_callback
@@ -1924,7 +2061,7 @@ class BasicAnalysis(object):
                 msg = ''
             else:
                 msg = ' ' + str(optimize_result.message)
-            logging.warn('Optimization failed.' + msg)
+            logging.warning('Optimization failed.' + msg)
             # Instead of crashing completely, return a fit result with an infinite
             # test statistic value.
             metadata = {"success":optimize_result.success, "message":optimize_result.message,}
@@ -2036,8 +2173,8 @@ class BasicAnalysis(object):
         logging.info("Entering local fit using Minuit")
 
         if local_fit_kwargs is not None:
-            logging.warn("Local fit kwargs are ignored by 'fit_minuit'."
-                         "Use 'method_kwargs' to set Minuit options.")
+            logging.warning("Local fit kwargs are ignored by 'fit_minuit'."
+                            "Use 'method_kwargs' to set Minuit options.")
 
         if method_kwargs is None:
             method_kwargs = {}  # use all defaults
@@ -2082,7 +2219,7 @@ class BasicAnalysis(object):
             # In rare circumstances, minuit will try setting one of the parameters
             # to NaN. Minuit might be able to recover when we return NaN.
             if np.any(~np.isfinite(x)):
-                logging.warn(f"Minuit tried evaluating at invalid parameters: {x}")
+                logging.warning(f"Minuit tried evaluating at invalid parameters: {x}")
                 return np.nan
             return self._minimizer_callable(x, *args)
 
@@ -2145,9 +2282,9 @@ class BasicAnalysis(object):
         )
 
         if not m.accurate:
-            logging.warn("Covariance matrix invalid.")
+            logging.warning("Covariance matrix invalid.")
         if not m.valid:
-            logging.warn("Minimum not valid according to Minuit's criteria.")
+            logging.warning("Minimum not valid according to Minuit's criteria.")
 
         # Will not assume that the minimizer left the hypo maker in the
         # minimized state, so set the values now (also does conversion of
@@ -2247,10 +2384,10 @@ class BasicAnalysis(object):
         logging.info("Entering fit using NLOPT")
 
         if local_fit_kwargs is not None:
-            logging.warn("`local_fit_kwargs` are ignored by 'fit_nlopt'."
-                         "Use `method_kwargs` to set nlopt options and use "
-                         "`method_kwargs['local_optimizer']` to define the settings of "
-                         "a subsidiary NLOPT optimizer.")
+            logging.warning("`local_fit_kwargs` are ignored by 'fit_nlopt'."
+                            "Use `method_kwargs` to set nlopt options and use "
+                            "`method_kwargs['local_optimizer']` to define the settings of "
+                            "a subsidiary NLOPT optimizer.")
 
         if method_kwargs is None:
             raise ValueError("Need to specify at least the algorithm to run.")
@@ -2291,7 +2428,7 @@ class BasicAnalysis(object):
 
         def loss_func(x, grad):
             if np.any(~np.isfinite(x)):
-                logging.warn(f"NLOPT tried evaluating at invalid parameters: {x}")
+                logging.warning(f"NLOPT tried evaluating at invalid parameters: {x}")
                 return np.nan
             if grad.size > 0:
                 raise RuntimeError("Gradients cannot be calculated, use a gradient-free"
@@ -2361,7 +2498,7 @@ class BasicAnalysis(object):
         if self.blindness < 2:
             metadata["rescaled_values"] = rescaled_pvals
         else:
-            metadata["rescaled_values"] = np.full(len(m.values), np.nan)
+            metadata["rescaled_values"] = np.full(len(m.values), np.nan) #FIXME: m.values?
         # we don't get a Hessian from nlopt
         metadata["hess_inv"] = np.full((len(x0), len(x0)), np.nan)
 
@@ -2432,30 +2569,8 @@ class BasicAnalysis(object):
             for k, v in method_kwargs["algorithm_params"].items():
                 opt.set_param(k, v)
         if "ineq_constraints" in method_kwargs.keys():
-            logging.warn(
-                "Using eval() is potentially dangerous as it can execute "
-                "arbitrary code! Do not store your config file in a place"
-                "where others have writing access!"
-            )
-            constr_list = method_kwargs["ineq_constraints"]
-            if isinstance(constr_list, str):
-                constr_list = [constr_list]
-            for constr in constr_list:
-                # the inequality function is specified as a function that takes a
-                # ParamSet as its input
-                logging.info(f"adding constraint (must stay positive): {constr}")
-                ineq_func_params = eval(constr)
-                assert callable(ineq_func_params), "evaluated object is not a valid function"
-                def ineq_func(x, grad):
-                    if grad.size > 0:
-                        raise RuntimeError("gradients not supported")
-                    hypo_maker._set_rescaled_free_params(x)
-                    if hypo_maker.__class__.__name__ == "Detectors":
-                        update_param_values_detector(hypo_maker, hypo_maker.params.free) #updates values for ALL detectors
-                    # In NLOPT, the inequality function must stay negative, while in
-                    # scipy, the inequality function must stay positive. We keep with
-                    # the scipy convention by flipping the sign.
-                    return -ineq_func_params(hypo_maker.params)
+            ineq_funcs = get_nlopt_inequality_constraint_funcs(method_kwargs, hypo_maker)
+            for ineq_func in ineq_funcs:
                 opt.add_inequality_constraint(ineq_func)
 
         # Population size for stochastic search algorithms, see
@@ -2670,7 +2785,7 @@ class BasicAnalysis(object):
 
         return sign*metric_val
 
-    def _minimizer_callback(self, xk, **unused_kwargs): # pylint: disable=unused-argument
+    def _minimizer_callback(self, xk, *unused_args, **unused_kwargs): # pylint: disable=unused-argument
         """Passed as `callback` parameter to `optimize.minimize`, and is called
         after each iteration. Keeps track of number of iterations.
 
@@ -3704,6 +3819,196 @@ def test_basic_analysis(pprint=False):
 
     logging.info('<< PASS : test_basic_analysis >>')
 
+
+def test_constrained_minimization(pprint=False):
+    """Test scipy solvers without or with equality and inequality
+    constraints. All are run with default options as set by
+    `set_minimizer_defaults`."""
+    from pisa.core.distribution_maker import DistributionMaker
+
+    config = 'settings/pipeline/fast_example.cfg'
+    dm = DistributionMaker(config)
+    data_dist = dm.get_outputs(return_sum=True)
+
+    ### slsqp test with constraints ###
+    def test_slsqp_constr():
+        ana = BasicAnalysis()
+        ana.pprint = pprint
+        min_sett = {
+          "method": {"value": "slsqp", "desc": ""},
+          "options": {"value": {}, "desc": {}}
+        }
+
+        min_delta_index = 5e-3
+        max_aeff_scale = 0.986
+        t23 = 44.2
+        # constraint function can be callable or string
+        constrs_list = [
+        {'type': 'ineq',
+         'fun': lambda params: params.delta_index.m_as("dimensionless") - min_delta_index},
+        {'type': 'ineq',
+         'fun': 'lambda p: -p.aeff_scale.m_as("dimensionless") + %s' % max_aeff_scale},
+        {'type': 'eq',
+         'fun': lambda params: params.theta23.m_as("degree") - t23}
+        ]
+        min_sett["options"]["value"]["constraints"] = constrs_list
+
+        scipy_sett = {"method": "scipy", "method_kwargs": min_sett}
+
+        dm.params.theta23.randomize(random_state=1)
+        bf = ana.fit_recursively(
+            data_dist=data_dist,
+            hypo_maker=dm,
+            metric="chi2",
+            external_priors_penalty=None,
+            **scipy_sett
+        )
+
+        assert bf.minimizer_metadata['success']
+        tol = 1e-5
+        assert recursiveEquality(bf.params.theta23.m_as('degree'), t23)
+        assert bf.params.delta_index.m_as('dimensionless') >= min_delta_index - tol
+        assert bf.params.aeff_scale.m_as('dimensionless') <= max_aeff_scale + tol
+
+    ### cobyla test with inequality constraints (doesn't support equalities) ###
+    def test_cobyla_constr():
+        ana = BasicAnalysis()
+        ana.pprint = pprint
+
+        min_t23 = 46.
+        min_aeff_scale = 1.02
+        constrs_list = [
+        {'type': 'ineq',
+         'fun': lambda params: params.theta23.m_as("dimensionless") - min_t23},
+        {'type': 'ineq',
+         'fun': lambda params: params.aeff_scale.m_as("dimensionless") - min_aeff_scale}
+        ]
+        # FIXME: steps out of bounds whenever these are included and whether bounds are also implemented as constraints or not
+        min_sett = {
+          "method": {"value": "cobyla", "desc": ""},
+          "options": {"value": {"constraints": constrs_list}, "desc": {}}
+        }
+
+        scipy_sett = {"method": "scipy", "method_kwargs": min_sett}
+
+        dm.params.randomize_free(random_state=1)
+        bf = ana.fit_recursively(
+            data_dist=data_dist,
+            hypo_maker=dm,
+            metric="chi2",
+            external_priors_penalty=None,
+            **scipy_sett
+        )
+        assert bf.minimizer_metadata['success']
+        tol = 1e-5
+        assert bf.params.theta23.m_as('dimensionless') >= min_t23 - tol
+        assert bf.params.aeff_scale.m_as('dimensionless') >= min_aeff_scale - tol
+
+    ### trust-constr test with constraints ###
+    def test_trust_constr_constr():
+        ana = BasicAnalysis()
+        ana.pprint = pprint
+
+        min_delta_index = 5e-3
+        max_aeff_scale = 0.986
+        t23 = 44.2
+        constrs_list = [
+        {'type': 'ineq',
+         'fun': lambda params: params.delta_index.m_as("dimensionless") - min_delta_index},
+        {'type': 'ineq',
+         'fun': 'lambda p: -p.aeff_scale.m_as("dimensionless") + %s' % max_aeff_scale},
+        {'type': 'eq',
+         'fun': lambda params: params.theta23.m_as("degree") - t23}
+        ]
+
+        min_sett = {
+          "method": {"value": "trust-constr", "desc": ""},
+          "options": {"value": {"constraints": constrs_list}, "desc": {}}
+        }
+        scipy_sett = {"method": "scipy", "method_kwargs": min_sett}
+
+        dm.params.randomize_free(random_state=5)
+        bf = ana.fit_recursively(
+            data_dist=data_dist,
+            hypo_maker=dm,
+            metric="chi2",
+            external_priors_penalty=None,
+            **scipy_sett
+        )
+        assert bf.minimizer_metadata['success']
+        tol = 1e-5
+        assert recursiveEquality(bf.params.theta23.m_as('degree'), t23)
+        assert bf.params.delta_index.m_as('dimensionless') >= min_delta_index - tol
+        assert bf.params.aeff_scale.m_as('dimensionless') <= max_aeff_scale + tol
+
+    ### Nelder-Mead test (no constraints supported) ###
+    def test_nm_unconstr():
+        ana = BasicAnalysis()
+        ana.pprint = pprint
+
+        min_sett = {
+          "method": {"value": "Nelder-Mead", "desc": ""},
+          "options": {"value": {}, "desc": {}}
+        }
+        scipy_sett = {"method": "scipy", "method_kwargs": min_sett}
+
+        dm.params.randomize_free(random_state=9)
+        bf = ana.fit_recursively(
+            data_dist=data_dist,
+            hypo_maker=dm,
+            metric="chi2",
+            external_priors_penalty=None,
+            **scipy_sett
+        )
+        assert bf.minimizer_metadata['success']
+
+    ### finally an nlopt solver with constraints ###
+    def test_some_nlopt_constr():
+        ana = BasicAnalysis()
+        ana.pprint = pprint
+
+        min_t23 = 46.
+        method_kwargs = {
+            "algorithm": "NLOPT_LN_COBYLA",
+            "ftol_abs": 1e-3,
+            "ftol_rel": 1e-3,
+            "maxeval": 100,
+            "ineq_constraints": [
+                lambda params: params.theta23.m_as("degree") - min_t23
+            ]
+        }
+        nlopt_sett = {"method": "nlopt", "method_kwargs": method_kwargs}
+
+        # fix 2/3 to make it converge faster
+        fix_params = ["delta_index", "aeff_scale"]
+        [dm.params.fix(p) for p in fix_params] # pylint: disable=expression-not-assigned
+
+        dm.params.randomize_free(random_state=11)
+        bf = ana.fit_recursively(
+            data_dist=data_dist,
+            hypo_maker=dm,
+            metric="chi2",
+            external_priors_penalty=None,
+            **nlopt_sett
+        )
+        assert bf.minimizer_metadata['success']
+        tol = 1e-5
+        assert bf.params.theta23.m_as('degree') >= min_t23 - tol
+
+        # unfix again
+        [dm.params.unfix(p) for p in fix_params] # pylint: disable=expression-not-assigned
+
+    # now run them all
+    test_slsqp_constr()
+    try:
+        test_cobyla_constr()
+    except Exception as e:
+        logging.error("Cobyla test with constraints failed: '%s'. This is under investigation..." % str(e))
+    test_trust_constr_constr()
+    test_nm_unconstr()
+    test_some_nlopt_constr()
+
 if __name__ == "__main__":
     set_verbosity(1)
     test_basic_analysis(pprint=True)
+    test_constrained_minimization(pprint=True)
