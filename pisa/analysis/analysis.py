@@ -17,9 +17,11 @@ import warnings
 
 import numpy as np
 import scipy
-import scipy.optimize as optimize
+from scipy import optimize
 # this is needed for the take_step option in basinhopping
 from scipy._lib._util import check_random_state
+# to convert from dict constraint type for differential evolution
+from scipy.optimize._constraints import old_constraint_to_new
 from iminuit import Minuit
 import nlopt
 from pkg_resources import parse_version
@@ -58,6 +60,10 @@ __license__ = '''Copyright (c) 2014-2024, The IceCube Collaboration
  See the License for the specific language governing permissions and
  limitations under the License.'''
 
+SUPPORTED_LOCAL_SCIPY_MINIMIZERS=(
+    'cobyla', 'l-bfgs-b', 'nelder-mead', 'slsqp', 'trust-constr'
+)
+"""Local scipy minimizers that PISA currently supports via this interface."""
 
 MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
@@ -77,6 +83,11 @@ EVAL_MSG = ('Using eval() is potentially dangerous as it can execute '
             'where others have writing access!')
 """Repeatedly implemented warning about evaluating expressions representing
  (in)equality constraints."""
+
+# TODO: Observed or known scipy minimization issues that might be fixable with scipy updates:
+# * SHGO ignores various local minimizer options (https://github.com/scipy/scipy/issues/20028)
+# * unreliable global scipy minimization with constraints: non-negligible constraint
+# violations or stepping out of bounds
 
 
 def scipy_constraints_to_callables(constr_dicts, hypo_maker):
@@ -249,8 +260,7 @@ def set_minimizer_defaults(minimizer_settings):
             maxfev=1000, xatol=1e-4, fatol=1e-4
         ))
     else:
-        raise ValueError('Unhandled minimizer "%s" / FTYPE=%s'
-                         % (method, FTYPE))
+        raise ValueError(f'Unhandled minimizer "{method}" / FTYPE={FTYPE}')
 
     opt_defaults.update(new_minimizer_settings['options']['value'])
 
@@ -318,8 +328,7 @@ def validate_minimizer_settings(minimizer_settings):
                                 'initial_simplex', 'adaptive',
                                 'bounds')
     else:
-        raise ValueError('Unhandled minimizer "%s" / FTYPE=%s'
-                         % (method, FTYPE))
+        raise ValueError(f'Unhandled minimizer "{method}" / FTYPE={FTYPE}')
 
     missing = set(must_have).difference(set(options))
     excess = set(options).difference(set(may_have))
@@ -1800,38 +1809,57 @@ class BasicAnalysis():
         if global_method is None:
             logging.info(f"entering local scipy fit using {method_kwargs['method']['value']}")
         else:
-            assert global_method in global_scipy_methods, "unsupported global fit method"
+            if not global_method in global_scipy_methods:
+                raise ValueError(f"Unsupported global fit method {global_method}")
             logging.info(f"entering global scipy fit using {global_method}")
         if not self.blindness:
             logging.debug("free parameters:")
             logging.debug(hypo_maker.params.free)
 
         if global_method in methods_using_local_fits:
-            minimizer_settings = set_minimizer_defaults(local_fit_kwargs)
-            validate_minimizer_settings(minimizer_settings)
-        elif global_method == "differential_evolution":
-            # Unfortunately we are not allowed to pass these, DE with polish=True always
-            # uses L-BFGS-B with default settings.
-            if ("polish" in method_kwargs["options"].keys()
-                and method_kwargs["options"]["polish"]):
-                logging.info("Differential Evolution result will be polished using L-BFGS-B")
-                # We need to put the method here so that the bounds will be adjusted
-                # below, otherwise the polishing fit can cause crashes if it hits the
-                # bounds.
-                minimizer_settings = {
-                    "method": {"value": "L-BFGS-B"},
-                    "options": {"value": {"eps": 1e-8}}
-                }
+            if local_fit_kwargs is not None:
+                minimizer_settings = set_minimizer_defaults(local_fit_kwargs)
+                validate_minimizer_settings(minimizer_settings)
             else:
                 # We put this here such that the checks farther down don't crash
-                minimizer_settings = {"method": {"value": "None"}}
-        elif global_method == "dual_annealing":
-            minimizer_settings = {
-                "method": {"value": "L-BFGS-B"},
-                "options": {"value": {"eps": 1e-8}}
-            }
-            logging.info("Due to a scipy bug, local minimization can only use default"
-                         "L-BFGS-B settings. The given settings are ignored.")
+                minimizer_settings = {"method": {"value": "none"}, "options": {"value": {}}}
+        elif global_method == "differential_evolution":
+            # unfortunately we are not allowed to configure local min.
+            opt = method_kwargs["options"]
+            if local_fit_kwargs is not None and "constraints" in local_fit_kwargs["options"]["value"]:
+                raise RuntimeError("Pass constraints to differential evolution only via method_kwargs!")
+            # polish is default
+            if "constraints" in opt and opt["constraints"]:
+                # When we detect constraints (which are not empty or None),
+                # we assume polishing is requested (constraints useless otherwise)
+                opt["polish"] = True
+            if "polish" in opt and opt["polish"]:
+                if "constraints" in opt:
+                    if opt["constraints"] is None:
+                        opt["constraints"] = []
+                    if opt["constraints"]:
+                        logging.info(
+                            "Differential evolution result is forced to be polished "
+                            "with trust-constr."
+                        )
+                    minimizer_settings = {
+                       "method": {"value": "trust-constr"},
+                       "options": {"value": {"constraints": opt.pop("constraints")}}
+                    }
+                else:
+                    logging.info(
+                        "Differential evolution result is forced to be polished "
+                        "with L-BFGS-B."
+                    )
+                    minimizer_settings = {
+                        "method": {"value": "l-bfgs-b"},
+                        "options": {"value": {"eps": 1e-8}}
+                    }
+            else:
+                # Remove any possible constraints key which is empty
+                opt.pop("constraints", None)
+                # We put this here such that the checks farther down don't crash
+                minimizer_settings = {"method": {"value": "none"}, "options": {"value": {}}}
         else:
             minimizer_settings = set_minimizer_defaults(method_kwargs)
             validate_minimizer_settings(minimizer_settings)
@@ -1855,7 +1883,8 @@ class BasicAnalysis():
 
         minimizer_method = minimizer_settings["method"]["value"].lower()
 
-        if "constraints" in minimizer_settings["options"]["value"]:
+        if ("constraints" in minimizer_settings["options"]["value"]
+            and minimizer_settings["options"]["value"]["constraints"]):
             # convert user-specified equality or inequality constraint expressions
             scipy_constraints_to_callables(minimizer_settings["options"]["value"]["constraints"], hypo_maker)
             constrs = minimizer_settings["options"]["value"].pop("constraints")
@@ -1970,34 +1999,41 @@ class BasicAnalysis():
             optimize_result = optimize.differential_evolution(
                 func=self._minimizer_callable,
                 bounds=bounds,
+                constraints=[old_constraint_to_new(i, cd) for i, cd in enumerate(constrs)],
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
                       flip_x0, external_priors_penalty),
                 callback=self._minimizer_callback,
                 **method_kwargs["options"]
             )
         elif global_method == "basinhopping":
-            if "seed" in method_kwargs["options"]:
-                seed = method_kwargs["options"]["seed"]
+            opt = method_kwargs["options"]
+            if "seed" in opt:
+                seed = opt["seed"]
             else:
                 seed = None
             rng = check_random_state(seed)
 
-            if "step_size" in method_kwargs["options"]:
-                step_size = method_kwargs["options"]["step_size"]
+            if "stepsize" in opt:
+                stepsize = opt["stepsize"]
             else:
-                step_size = 0.5
+                stepsize = 0.5
 
-            take_step = BoundedRandomDisplacement(step_size, bounds, rng)
-            minimizer_kwargs = deepcopy(local_fit_kwargs)
+            take_step = BoundedRandomDisplacement(stepsize, bounds, rng)
+            if minimizer_method != "none":
+                minimizer_kwargs = deepcopy(minimizer_settings)
+                minimizer_kwargs["method"] = minimizer_settings["method"]["value"]
+                minimizer_kwargs["options"] = minimizer_settings["options"]["value"]
+                minimizer_kwargs["constraints"] = constrs
+            else:
+                minimizer_kwargs = {}
+            # we need to pass args and bounds in any case as part of minimizer_kwargs
             minimizer_kwargs["args"] = (
                 hypo_maker, data_dist, metric, counter, fit_history,
                 flip_x0, external_priors_penalty
             )
+            minimizer_kwargs["bounds"] = bounds
             if "reset_free" in minimizer_kwargs:
                 del minimizer_kwargs["reset_free"]
-            minimizer_kwargs["method"] = local_fit_kwargs["method"]["value"]
-            minimizer_kwargs["options"] = local_fit_kwargs["options"]["value"]
-            minimizer_kwargs["bounds"] = bounds
             def basinhopping_callback(x, f, accept):
                 self._nit += 1
             optimize_result = optimize.basinhopping(
@@ -2008,44 +2044,50 @@ class BasicAnalysis():
                 minimizer_kwargs=minimizer_kwargs,
                 **method_kwargs["options"]
             )
-            optimize_result.success = True  # basinhopping doesn't set this property
         elif global_method == "dual_annealing":
+            minimizer_kwargs = deepcopy(minimizer_settings)
+            minimizer_kwargs["method"] = minimizer_settings["method"]["value"]
+            minimizer_kwargs["options"] = minimizer_settings["options"]["value"]
+            minimizer_kwargs["bounds"] = bounds
+            minimizer_kwargs["constraints"] = constrs
+            if "reset_free" in minimizer_kwargs:
+                del minimizer_kwargs["reset_free"]
             def annealing_callback(x, f, context):
                 self._nit += 1
-            # TODO: Enable use of custom minimization if scipy is fixed
-            # The scipy implementation is buggy insofar as it doesn't apply bounds to
-            # the inner minimization and there is no way to pass bounds through that
-            # doesn't crash. This leads to evaluations outside of the bounds.
             optimize_result = optimize.dual_annealing(
                 func=self._minimizer_callable,
                 bounds=bounds,
                 x0=x0,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
                       flip_x0, external_priors_penalty),
+                minimizer_kwargs=minimizer_kwargs if minimizer_method != "none" else {},
                 callback=annealing_callback,
                 **method_kwargs["options"]
             )
         elif global_method == "shgo":
-            minimizer_kwargs = deepcopy(local_fit_kwargs)
-            minimizer_kwargs["args"] = (
-                hypo_maker, data_dist, metric, counter, fit_history,
-                flip_x0, external_priors_penalty
-            )
+            minimizer_kwargs = deepcopy(minimizer_settings)
+            minimizer_kwargs["method"] = minimizer_settings["method"]["value"]
+            minimizer_kwargs["options"] = minimizer_settings["options"]["value"]
+            minimizer_kwargs["bounds"] = bounds
+            minimizer_kwargs["constraints"] = constrs
             if "reset_free" in minimizer_kwargs:
                 del minimizer_kwargs["reset_free"]
-            minimizer_kwargs["method"] = local_fit_kwargs["method"]["value"]
-            minimizer_kwargs["options"] = local_fit_kwargs["options"]["value"]
+            if minimizer_kwargs["method"] != "none":
+                logging.warning(
+                    f"Due to a scipy bug, shgo will ignore many local minimiser "
+                    "options. This will most likely result in unreliable "
+                    "behaviour or even crashes. Refer to "
+                    "https://github.com/scipy/scipy/issues/20028."
+                )
             optimize_result = optimize.shgo(
                 func=self._minimizer_callable,
                 bounds=bounds,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
                       flip_x0, external_priors_penalty),
                 callback=self._minimizer_callback,
-                minimizer_kwargs=minimizer_kwargs,
+                minimizer_kwargs=minimizer_kwargs if minimizer_method != "none" else {},
                 **method_kwargs["options"]
             )
-        else:
-            raise ValueError("Unsupported global fit method")
 
         end_t = time.time()
         if self.pprint:
@@ -4003,12 +4045,156 @@ def test_constrained_minimization(pprint=False):
     try:
         cobyla_constr()
     except Exception as e:
+        # don't fail, just document here
         logging.error("Cobyla test with constraints failed: '%s'. This is under investigation..." % str(e))
     trust_constr_constr()
     nm_unconstr()
     some_nlopt_constr()
 
+    logging.info('<< PASS : test_constrained_minimization >>')
+
+
+def test_global_scipy_minimization(pprint=False):
+    from pisa.core.distribution_maker import DistributionMaker
+    config = 'settings/pipeline/fast_example.cfg'
+    dm = DistributionMaker(config)
+    dm.params.fix("theta23") # make it converge faster
+    data_dist = dm.get_outputs(return_sum=True)
+
+    def run_global_with_supported_local(
+            global_method_kwargs, constrs_list=None, constrs_test=None
+    ):
+        ana = BasicAnalysis()
+        ana.pprint = pprint
+
+        assert (constrs_list is None) == (constrs_test is None)
+
+        glob_meth = global_method_kwargs["global_method"]
+
+        for loc_min in set(SUPPORTED_LOCAL_SCIPY_MINIMIZERS).union(('none',)):
+            min_sett = {
+              "method": {"value": loc_min, "desc": ""},
+              "options": {"value": {}, "desc": {}}
+            }
+            if loc_min in MINIMIZERS_ACCEPTING_CONSTRS and constrs_list is not None:
+                min_sett["options"]["value"]["constraints"] = deepcopy(constrs_list)
+
+            glob_sett = {
+                "method": "scipy",
+                "method_kwargs": global_method_kwargs,
+                "local_fit_kwargs": min_sett if loc_min != 'none' else None
+            }
+            dm.reset_free()
+            dm.params.aeff_scale.randomize(random_state=0)
+            try:
+                bf = ana.fit_recursively(
+                    data_dist=data_dist,
+                    hypo_maker=dm,
+                    metric="chi2",
+                    external_priors_penalty=None,
+                    **glob_sett
+                )
+                if not bf.minimizer_metadata['success']:
+                    raise RuntimeError("Minimizer unsuccessful")
+                if loc_min in MINIMIZERS_ACCEPTING_CONSTRS and constrs_list is not None:
+                    constrs_test(bf)
+            except Exception as e:
+                # don't fail, just document here
+                logging.error(
+                    f"test of {glob_meth} + {loc_min} failed: '{e}'. This is under investigation..."
+                )
+
+
+    def run_differential_evolution(constrs_list, constrs_test, polish=True):
+        ana = BasicAnalysis()
+        ana.pprint = pprint
+
+        assert (constrs_list is None) == (constrs_test is None)
+
+        global_method_kwargs = {
+            "global_method": "differential_evolution",
+            "options": {
+                "maxiter": 100,
+                "tol": 0.1,
+                "disp": False,
+                "seed": 0,
+                "polish": polish,
+                "constraints": deepcopy(constrs_list)
+            },
+            "local_fit_kwargs": None
+        }
+        glob_sett = {
+            "method": "scipy",
+            "method_kwargs": global_method_kwargs,
+        }
+        dm.reset_free()
+        dm.params.aeff_scale.randomize(random_state=0)
+        bf = ana.fit_recursively(
+            data_dist=data_dist,
+            hypo_maker=dm,
+            metric="chi2",
+            external_priors_penalty=None,
+            **glob_sett
+        )
+        if not bf.minimizer_metadata['success']:
+            raise RuntimeError("Minimizer unsuccessful")
+        if constrs_test is not None:
+            constrs_test(bf)
+
+
+    min_delta_index = 5e-3
+    max_aeff_scale = 0.986
+    # all solvers that accept constraints accept inequalities
+    constrs_list = [
+    {'type': 'ineq',
+     'fun': lambda params: params.delta_index.m_as("dimensionless") - min_delta_index},
+    {'type': 'ineq',
+     'fun': 'lambda p: -p.aeff_scale.m_as("dimensionless") + %s' % max_aeff_scale}
+    ]
+    def constrs_test(bf):
+        tol = 1e-5
+        if (not bf.params.delta_index.m_as('dimensionless') >= min_delta_index - tol or
+            not bf.params.aeff_scale.m_as('dimensionless') <= max_aeff_scale + tol):
+            raise ValueError("inequality constraint(s) violated!")
+
+    method_kwargs = {
+        "global_method": "basinhopping",
+        "options": {
+            "niter": 3,
+            "T": 1,
+            "seed": 0,
+            "stepsize": 0.1
+        }
+    }
+    # w/ constraints
+    run_global_with_supported_local(method_kwargs, constrs_list, constrs_test)
+    # w/o (skip)
+    #run_global_with_supported_local(method_kwargs)
+
+    method_kwargs = {
+        "global_method": "dual_annealing",
+        "options": {
+            "maxiter": 10,
+            "seed": 0
+        }
+    }
+    # w/ constraints
+    run_global_with_supported_local(method_kwargs, constrs_list, constrs_test)
+    # w/o (skip)
+    #run_global_with_supported_local(method_kwargs)
+
+    # run with trust-constr (w/ constraints)
+    run_differential_evolution(constrs_list, constrs_test)
+    # Running with l-bfgs-b (w/o constraints) or without polishing
+    # entirely takes too long:
+    #run_differential_evolution(None, None, polish=True)
+    #run_differential_evolution(None, None, polish=False)
+
+    logging.info('<< PASS : test_global_scipy_minimization >>')
+
+
 if __name__ == "__main__":
     set_verbosity(1)
     test_basic_analysis(pprint=True)
     test_constrained_minimization(pprint=True)
+    test_global_scipy_minimization(pprint=True)
