@@ -4166,9 +4166,9 @@ def test_global_scipy_minimization(pprint=False):
             "stepsize": 0.1
         }
     }
-    # w/ constraints
+    # basinhopping w/ constraints
     run_global_with_supported_local(method_kwargs, constrs_list, constrs_test)
-    # w/o (skip)
+    # basinhopping w/o (skip)
     #run_global_with_supported_local(method_kwargs)
 
     method_kwargs = {
@@ -4178,17 +4178,39 @@ def test_global_scipy_minimization(pprint=False):
             "seed": 0
         }
     }
-    # w/ constraints
+    # dual annealing w/ constraints
     run_global_with_supported_local(method_kwargs, constrs_list, constrs_test)
-    # w/o (skip)
+    # dual annealing w/o (skip)
     #run_global_with_supported_local(method_kwargs)
 
-    # run with trust-constr (w/ constraints)
+    # DE with trust-constr (w/ constraints)
     run_differential_evolution(constrs_list, constrs_test)
-    # Running with l-bfgs-b (w/o constraints) or without polishing
+    # DE with l-bfgs-b (w/o constraints) or without polishing
     # entirely takes too long:
     #run_differential_evolution(None, None, polish=True)
     #run_differential_evolution(None, None, polish=False)
+
+    def run_global_min_with_constraints_from_file(fit_sett):
+        from pisa.utils.fileio import from_file
+        ana = BasicAnalysis()
+        ana.pprint = pprint
+
+        fit_sett = from_file(fit_sett)
+
+        dm.params.unfix("theta23")
+        dm.reset_free()
+        dm.params.randomize_free(random_state=0)
+        bf = ana.fit_recursively(
+            data_dist=data_dist,
+            hypo_maker=dm,
+            metric="chi2",
+            external_priors_penalty=None,
+            **fit_sett
+        )
+        if not bf.minimizer_metadata['success']:
+            raise RuntimeError("Minimizer unsuccessful")
+
+    #run_global_min_with_constraints_from_file('settings/minimizer/de_2nd_octant_popsize_10_init_sobol_polish_tol1e-1_maxiter1000.json')
 
     logging.info('<< PASS : test_global_scipy_minimization >>')
 
