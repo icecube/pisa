@@ -121,6 +121,20 @@ def scipy_constraints_to_callables(constr_dicts, hypo_maker):
         cd["fun"] = partial(constr_func, constr_func_params=constr_func_params)
 
 
+def make_scipy_local_minimizer_kwargs(minimizer_settings, constrs=None, bounds=None):
+    """Small helper function containing common logic for
+    creating minimizer keyword args in calls to global
+    routines via their scipy interface."""
+    minimizer_kwargs = deepcopy(minimizer_settings)
+    minimizer_kwargs["method"] = minimizer_settings["method"]["value"]
+    minimizer_kwargs["options"] = minimizer_settings["options"]["value"]
+    if constrs is not None:
+        minimizer_kwargs["constraints"] = constrs
+    if bounds is not None:
+        minimizer_kwargs["bounds"] = bounds
+    return minimizer_kwargs
+
+
 def get_nlopt_inequality_constraint_funcs(method_kwargs, hypo_maker):
     """Convert constraints expressions in terms of ParamSets
     into callables for nlopt. Evals expression(s) from `method_kwargs`
@@ -1913,9 +1927,8 @@ class BasicAnalysis():
             # The minimizer can't handle bounds, but they still need to be passed for
             # the interface to be uniform even though they are not used.
 
-        x0 = np.where(flip_x0, 1 - x0, x0)
-
         bounds = [(0, 1)]*len(x0)
+        x0 = np.where(flip_x0, 1 - x0, x0)
 
         if global_method is None:
             logging.debug('Running the %s minimizer...', minimizer_method)
@@ -2020,18 +2033,18 @@ class BasicAnalysis():
 
             take_step = BoundedRandomDisplacement(stepsize, bounds, rng)
             if minimizer_method != "none":
-                minimizer_kwargs = deepcopy(minimizer_settings)
-                minimizer_kwargs["method"] = minimizer_settings["method"]["value"]
-                minimizer_kwargs["options"] = minimizer_settings["options"]["value"]
-                minimizer_kwargs["constraints"] = constrs
+                minimizer_kwargs = make_scipy_local_minimizer_kwargs(
+                    minimizer_settings=minimizer_settings,
+                    constrs=constrs,
+                    bounds=bounds
+                )
             else:
-                minimizer_kwargs = {}
+                minimizer_kwargs = {"bounds": bounds}
             # we need to pass args and bounds in any case as part of minimizer_kwargs
             minimizer_kwargs["args"] = (
                 hypo_maker, data_dist, metric, counter, fit_history,
                 flip_x0, external_priors_penalty
             )
-            minimizer_kwargs["bounds"] = bounds
             if "reset_free" in minimizer_kwargs:
                 del minimizer_kwargs["reset_free"]
             def basinhopping_callback(x, f, accept):
@@ -2045,11 +2058,11 @@ class BasicAnalysis():
                 **method_kwargs["options"]
             )
         elif global_method == "dual_annealing":
-            minimizer_kwargs = deepcopy(minimizer_settings)
-            minimizer_kwargs["method"] = minimizer_settings["method"]["value"]
-            minimizer_kwargs["options"] = minimizer_settings["options"]["value"]
-            minimizer_kwargs["bounds"] = bounds
-            minimizer_kwargs["constraints"] = constrs
+            minimizer_kwargs = make_scipy_local_minimizer_kwargs(
+                minimizer_settings=minimizer_settings,
+                constrs=constrs,
+                bounds=bounds
+            )
             if "reset_free" in minimizer_kwargs:
                 del minimizer_kwargs["reset_free"]
             def annealing_callback(x, f, context):
@@ -2065,11 +2078,11 @@ class BasicAnalysis():
                 **method_kwargs["options"]
             )
         elif global_method == "shgo":
-            minimizer_kwargs = deepcopy(minimizer_settings)
-            minimizer_kwargs["method"] = minimizer_settings["method"]["value"]
-            minimizer_kwargs["options"] = minimizer_settings["options"]["value"]
-            minimizer_kwargs["bounds"] = bounds
-            minimizer_kwargs["constraints"] = constrs
+            minimizer_kwargs = make_scipy_local_minimizer_kwargs(
+                minimizer_settings=minimizer_settings,
+                constrs=constrs,
+                bounds=bounds
+            )
             if "reset_free" in minimizer_kwargs:
                 del minimizer_kwargs["reset_free"]
             if minimizer_kwargs["method"] != "none":
