@@ -13,6 +13,7 @@ from __future__ import absolute_import, print_function, division
 from bz2 import BZ2File
 import collections
 import pickle
+import copy
 
 import numpy as np
 
@@ -300,37 +301,35 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             # Nominal flux
             #
 
-            if not self.use_honda_nominal_flux :
+            # Evaluate splines to get nominal flux
+            # Need to correctly map nu/nubar and flavor to the output arrays
 
-                # Evaluate splines to get nominal flux
-                # Need to correctly map nu/nubar and flavor to the output arrays
+            # Note that nominal flux is stored multiple times (once per Barr parameter)
+            # Choose an arbitrary one to get the nominal fluxes
+            arb_gradient_param_key = self.gradient_param_names[0]
 
-                # Note that nominal flux is stored multiple times (once per Barr parameter)
-                # Choose an arbitrary one to get the nominal fluxes
-                arb_gradient_param_key = self.gradient_param_names[0]
+            # nue(bar)
+            nu_flux_mceq[:, 0] = self.spline_tables_dict[arb_gradient_param_key]["nue" if nubar > 0 else "nuebar"](
+                true_abs_coszen,
+                true_log_energy,
+                grid=False,
+            )
 
-                # nue(bar)
-                nu_flux_mceq[:, 0] = self.spline_tables_dict[arb_gradient_param_key]["nue" if nubar > 0 else "nuebar"](
+            # numu(bar)
+            nu_flux_mceq[:, 1] = self.spline_tables_dict[arb_gradient_param_key]["numu" if nubar > 0 else "numubar"](
+                true_abs_coszen,
+                true_log_energy,
+                grid=False,
+            )
+
+            # nutau(bar)
+            # Currently setting to 0 #TODO include nutau flux (e.g. prompt) in splines
+            if self.include_nutau_flux :
+                nu_flux_mceq[:, 2] = self.spline_tables_dict[arb_gradient_param_key]["nutau" if nubar > 0 else "nutaubar"](
                     true_abs_coszen,
                     true_log_energy,
                     grid=False,
                 )
-
-                # numu(bar)
-                nu_flux_mceq[:, 1] = self.spline_tables_dict[arb_gradient_param_key]["numu" if nubar > 0 else "numubar"](
-                    true_abs_coszen,
-                    true_log_energy,
-                    grid=False,
-                )
-
-                # nutau(bar)
-                # Currently setting to 0 #TODO include nutau flux (e.g. prompt) in splines
-                if self.include_nutau_flux :
-                    nu_flux_mceq[:, 2] = self.spline_tables_dict[arb_gradient_param_key]["nutau" if nubar > 0 else "nutaubar"](
-                        true_abs_coszen,
-                        true_log_energy,
-                        grid=False,
-                    )
 
             # Tell the smart arrays we've changed the nominal flux values on the host
             container.mark_changed("nu_flux_mceq")
