@@ -3043,6 +3043,50 @@ class MultiDimBinning(object):
         return not self.__eq__(other)
 
 
+class VarBinning(object):
+    # pylint: disable=line-too-long
+    r"""
+    Variable binning.
+
+    """
+    # pylint: enable=line-too-long
+    def __init__(self, binnings, cut_var, name=None, mask=None):
+        
+        assert isinstance(cut_var, OneDimBinning)
+        assert isinstance(binnings, list) and len(binnings) == cut_var.size
+        for b in binnings:
+            assert isinstance(b, MultiDimBinning)
+
+        self._binnings = binnings
+        self._cut_var = cut_var
+        self._name = name
+        self._names = None
+
+    @property
+    def binnings(self):
+        """list of MultiDimBinning : each binning in a list"""
+        return self._binnings
+
+    @property
+    def cut_var(self):
+        """OneDimBinning : variable for which to use different binnings"""
+        return self._cut_var
+
+    @property
+    def name(self):
+        """Name of the dimension"""
+        return self._name
+
+    @property
+    def names(self):
+        """list of strings : names of each dimension contained plus cut var"""
+        if self._names is None:
+            self._names = [self.cut_var.name]
+            for b in self.binnings:
+                self._names.extend([n for n in b.names if n not in self._names])
+        return self._names
+
+
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""
     # pylint: disable=line-too-long, wrong-import-position

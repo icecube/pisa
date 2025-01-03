@@ -28,8 +28,8 @@ from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet, DerivedParam
 from pisa.core.stage import Stage
-from pisa.core.container import ContainerSet
-from pisa.core.binning import MultiDimBinning
+from pisa.core.container import Container, ContainerSet
+from pisa.core.binning import MultiDimBinning, VarBinning
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.format import format_times
@@ -373,25 +373,54 @@ class Pipeline(object):
     def _get_outputs(self, output_binning=None, output_key=None):
         """Get MapSet output"""
 
-
-
         self.run()
 
         if output_binning is None:
             output_binning = self.output_binning
+        if output_key is None:
             output_key = self.output_key
+
+        assert(isinstance(output_binning, (MultiDimBinning, VarBinning)))
+
+        if isinstance(output_binning, MultiDimBinning):
+            self.data.representation = output_binning
+
+            if isinstance(output_key, tuple):
+                assert len(output_key) == 2
+                outputs = self.data.get_mapset(output_key[0], error=output_key[1])
+            else:
+                outputs = self.data.get_mapset(output_key)
+                
         else:
-            assert(isinstance(output_binning, MultiDimBinning))
+            outputs = []
+            self.data.representation = "events"
 
-        assert output_binning is not None
+            cut_var_name, bin_edges = output_binning.cut_var.name, output_binning.cut_var.edge_magnitudes
+            for i in range(len(output_binning.binnings)):
+                containers = []
+                for c in self.data.containers:
+                    cc = Container(name=c.name)
+                    cut_var = c[cut_var_name]
+                    cut_idcs = (cut_var >= bin_edges[i]) & (cut_var < bin_edges[i+1])
+                    for var_name in output_binning.binnings[i].names:
+                        cc[var_name] = c[var_name][cut_idcs]
+                    if isinstance(output_key, tuple):
+                        assert len(output_key) == 2
+                        cc[output_key[0]] = c[output_key[0]][cut_idcs]
+                        cc[output_key[1]] = c[output_key[1]][cut_idcs]
+                    else:
+                        cc[output_key] = c[output_key][cut_idcs]
+                    containers.append(cc)
+                
+                dat = ContainerSet(name=self.data.name,
+                                   containers=containers,
+                                   representation=output_binning.binnings[i],
+                                  )
 
-        self.data.representation = output_binning
-
-        if isinstance(output_key, tuple):
-            assert len(output_key) == 2
-            outputs = self.data.get_mapset(output_key[0], error=output_key[1])
-        else:
-            outputs = self.data.get_mapset(output_key)
+                if isinstance(output_key, tuple):
+                    outputs.append(dat.get_mapset(output_key[0], error=output_key[1]))
+                else:
+                    outputs.append(dat.get_mapset(output_key))
 
         return outputs
 

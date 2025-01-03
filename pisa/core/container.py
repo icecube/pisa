@@ -611,13 +611,13 @@ class Container():
 
         precedence = np.inf
         representation = None
-        
+
         for h in validity.keys():
             if validity[h]:
                 if self.precedence[h] < precedence:
                     precedence = self.precedence[h]
                     representation = self._representations[h]
-                    
+
         return representation
         
     def resample(self, key, src_representation, dest_representation):
