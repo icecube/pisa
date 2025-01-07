@@ -391,9 +391,9 @@ class Pipeline(object):
             else:
                 outputs = self.data.get_mapset(output_key)
                 
-        else:
+        else: #VarBinning
             outputs = []
-            self.data.representation = "events"
+            assert self.data.representation == "events"
 
             cut_var_name, bin_edges = output_binning.cut_var.name, output_binning.cut_var.edge_magnitudes
             for i in range(len(output_binning.binnings)):
@@ -404,12 +404,17 @@ class Pipeline(object):
                     cut_idcs = (cut_var >= bin_edges[i]) & (cut_var < bin_edges[i+1])
                     for var_name in output_binning.binnings[i].names:
                         cc[var_name] = c[var_name][cut_idcs]
+
                     if isinstance(output_key, tuple):
                         assert len(output_key) == 2
                         cc[output_key[0]] = c[output_key[0]][cut_idcs]
-                        cc[output_key[1]] = c[output_key[1]][cut_idcs]
+                        cc.tranlation_modes[output_key[0]] = 'sum'
+                        cc[output_key[1]] = np.square(c[output_key[1]][cut_idcs])
+                        cc.tranlation_modes[output_key[1]] = 'sum'
                     else:
                         cc[output_key] = c[output_key][cut_idcs]
+                        cc.tranlation_modes[output_key] = 'sum'
+
                     containers.append(cc)
                 
                 dat = ContainerSet(name=self.data.name,
@@ -418,6 +423,8 @@ class Pipeline(object):
                                   )
 
                 if isinstance(output_key, tuple):
+                    for c in dat.containers:
+                        c[output_key[1]] = np.sqrt(c[output_key[1]])
                     outputs.append(dat.get_mapset(output_key[0], error=output_key[1]))
                 else:
                     outputs.append(dat.get_mapset(output_key))

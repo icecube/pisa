@@ -3056,6 +3056,7 @@ class VarBinning(object):
         assert isinstance(binnings, list) and len(binnings) == cut_var.size
         for b in binnings:
             assert isinstance(b, MultiDimBinning)
+            assert cut_var.name not in b.names
 
         self._binnings = binnings
         self._cut_var = cut_var

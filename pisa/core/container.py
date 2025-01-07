@@ -590,6 +590,18 @@ class Container():
             else:
                 raise NotImplementedError(f"translating {src_representation} to {dest_representation}")
                 
+        elif self.tranlation_modes[key] == 'sum':
+            if from_map and to_map:
+                raise NotImplementedError()
+
+            elif to_map:
+                out = self.array_to_binned(key, src_representation, dest_representation, averaged=False)
+                self.representation = dest_representation
+                self[key] = out
+
+            else:
+                raise NotImplementedError()
+
         else:
             raise NotImplementedError()
             
