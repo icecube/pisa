@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.core package &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
@@ -170,8 +170,8 @@ object follows the order in which dimensions are provided.</p>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ebins</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="gp">... </span>                      <span class="n">num_bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">czbins</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;coszen&#39;</span><span class="p">,</span>
@@ -624,8 +624,8 @@ that dimension. See examples below for details.</p>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ebins</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="gp">... </span>                      <span class="n">num_bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">czbins</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;coszen&#39;</span><span class="p">,</span>
@@ -1263,8 +1263,8 @@ behavior is the default).</p>
 <p>Be careful, though, since bin edges will be defined slightly differently
 depending on the <code class="docutils literal notranslate"><span class="pre">pisa.FTYPE</span></code> defined (PISA_FTYPE environment variable).</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ebins</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="gp">... </span>                      <span class="n">num_bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ebins</span><span class="p">)</span>
@@ -2856,7 +2856,7 @@ flavint_groups. Calls the corresponding inherited function.</p>
 <dd><p>Bases: <a class="reference internal" href="pisa.utils.html#pisa.utils.flavInt.FlavIntData" title="pisa.utils.flavInt.FlavIntData"><code class="xref py py-class docutils literal notranslate"><span class="pre">FlavIntData</span></code></a></p>
 <p>Container for storing events, including metadata about the events.</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
 </pre></div>
 </div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Load events from a PISA HDF5 file</span>
@@ -3184,7 +3184,7 @@ equality of this map with another. See <cite>__eq__</cite> method.</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <span class="gp">... </span>                                <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">80</span><span class="p">],</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;GeV&#39;</span><span class="p">),</span>
 <span class="gp">... </span>                           <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;coszen&#39;</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
@@ -4833,8 +4833,8 @@ several orders of magnitude.</p></li>
 parameter should be spicfied and a prior must be assigned to compute llh
 and chi2 values.</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa.core.prior</span> <span class="kn">import</span> <span class="n">Prior</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">Prior</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">gaussian</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mi">10</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">meter</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">stddev</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">meter</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.5</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">foot</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">gaussian</span><span class="p">,</span>
@@ -5128,8 +5128,8 @@ See ..</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pisa.core.prior</span> <span class="kn">import</span> <span class="n">Prior</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">Prior</span>
 </pre></div>
 </div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">e_prior</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mi">10</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">)</span>
@@ -5883,7 +5883,7 @@ minimizer.</p>
 scipy.interpolate.splrep; evaluation of spline priors is carried out
 internally by scipy.interpolate.splev, so an exact match to the output of
 the spline prior can be produced as follows:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">splrep</span><span class="p">,</span> <span class="n">splev</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">splrep</span><span class="p">,</span> <span class="n">splev</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Generate sample points</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">param_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">llh_vals</span> <span class="o">=</span> <span class="n">param_vals</span><span class="o">**</span><span class="mi">2</span>

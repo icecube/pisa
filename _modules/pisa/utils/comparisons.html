@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.comparisons &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -90,22 +90,22 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">numbers</span> <span class="kn">import</span> <span class="n">Number</span>
-<span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Number</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">six</span><span class="w"> </span><span class="kn">import</span> <span class="n">string_types</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pint</span>
-<span class="kn">from</span> <span class="nn">uncertainties.core</span> <span class="kn">import</span> <span class="n">AffineScalarFunc</span><span class="p">,</span> <span class="n">Variable</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">ufloat</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">AffineScalarFunc</span><span class="p">,</span> <span class="n">Variable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">ufloat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span><span class="p">,</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">HASH_SIGFIGS</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span><span class="p">,</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">HASH_SIGFIGS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -181,7 +181,7 @@
 
 <div class="viewcode-block" id="isvalidname">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.isvalidname">[docs]</a>
-<span class="k">def</span> <span class="nf">isvalidname</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">isvalidname</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Name that is valid to use for a Python variable&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\W|^(?=\d)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span></div>
 
@@ -189,7 +189,7 @@
 
 <div class="viewcode-block" id="isscalar">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.isscalar">[docs]</a>
-<span class="k">def</span> <span class="nf">isscalar</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">isscalar</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if input is a scalar object.</span>
 
 <span class="sd">    Best check found for now as to scalar-ness (works for pint,</span>
@@ -210,7 +210,7 @@
 
 <div class="viewcode-block" id="isbarenumeric">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.isbarenumeric">[docs]</a>
-<span class="k">def</span> <span class="nf">isbarenumeric</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">isbarenumeric</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if input is a numerical datatype (including arrays of numbers) but</span>
 <span class="sd">    without units. Note that for these purposes, booleans are *not* considered</span>
 <span class="sd">    numerical datatypes.</span>
@@ -232,7 +232,7 @@
 
 <div class="viewcode-block" id="isunitless">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.isunitless">[docs]</a>
-<span class="k">def</span> <span class="nf">isunitless</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">isunitless</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if input is unitless. Only the first scalar element of an Iterable</span>
 <span class="sd">    (or arbitrarily nested Iterables) is checked if it has units.</span>
 
@@ -266,7 +266,7 @@
 
 <div class="viewcode-block" id="recursiveEquality">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.recursiveEquality">[docs]</a>
-<span class="k">def</span> <span class="nf">recursiveEquality</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">allclose_kw</span><span class="o">=</span><span class="n">ALLCLOSE_KW</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursiveEquality</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">allclose_kw</span><span class="o">=</span><span class="n">ALLCLOSE_KW</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively verify equality between two objects `x` and `y`.</span>
 
 <span class="sd">    Parameters</span>
@@ -442,7 +442,7 @@
 
 <div class="viewcode-block" id="recursiveAllclose">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.recursiveAllclose">[docs]</a>
-<span class="k">def</span> <span class="nf">recursiveAllclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursiveAllclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively verify close-equality between two objects x and y. If</span>
 <span class="sd">    structure is different between the two objects, returns False</span>
 
@@ -518,7 +518,7 @@
 <span class="c1"># (even more critical) FP16?</span>
 <div class="viewcode-block" id="normQuant">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.normQuant">[docs]</a>
-<span class="k">def</span> <span class="nf">normQuant</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">full_norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">normQuant</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">full_norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize quantities such that two things that *should* be equal are</span>
 <span class="sd">    returned as identical objects.</span>
 
@@ -798,7 +798,7 @@
 
 <div class="viewcode-block" id="interpret_quantity">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.interpret_quantity">[docs]</a>
-<span class="k">def</span> <span class="nf">interpret_quantity</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">interpret_quantity</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpret a value as a pint Quantity via pisa.ureg</span>
 
 <span class="sd">    Parameters</span>
@@ -852,7 +852,7 @@
 
 <div class="viewcode-block" id="test_isscalar">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.test_isscalar">[docs]</a>
-<span class="k">def</span> <span class="nf">test_isscalar</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_isscalar</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for isscalar function&quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">isscalar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">isscalar</span><span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">)</span>
@@ -884,7 +884,7 @@
 
 <div class="viewcode-block" id="test_isunitless">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.test_isunitless">[docs]</a>
-<span class="k">def</span> <span class="nf">test_isunitless</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_isunitless</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `isunitless` function&quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">isunitless</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">isunitless</span><span class="p">(</span><span class="s2">&quot;xyz&quot;</span><span class="p">)</span>
@@ -907,7 +907,7 @@
 
 <div class="viewcode-block" id="test_recursiveEquality">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.test_recursiveEquality">[docs]</a>
-<span class="k">def</span> <span class="nf">test_recursiveEquality</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_recursiveEquality</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for recursiveEquality function&quot;&quot;&quot;</span>
     <span class="c1"># pylint: disable=unused-variable</span>
     <span class="n">d1</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;one&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;two&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;three&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;four&#39;</span><span class="p">:</span> <span class="s1">&#39;four&#39;</span><span class="p">}</span>
@@ -973,7 +973,7 @@
 
 <div class="viewcode-block" id="test_normQuant">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.test_normQuant">[docs]</a>
-<span class="k">def</span> <span class="nf">test_normQuant</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_normQuant</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for normQuant function&quot;&quot;&quot;</span>
     <span class="c1"># pylint: disable=unused-variable</span>
     <span class="c1"># TODO: test:</span>
@@ -1031,7 +1031,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">test_interpret_quantity</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_interpret_quantity</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for function `interpret_quantity`&quot;&quot;&quot;</span>
 
     <span class="c1"># -- Scalars and vectors that should be interpreted as vectors -- #</span>

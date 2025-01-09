@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.hdfchain &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -71,13 +71,13 @@
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">class to access hdf5 files chained together.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">print_function</span>
 
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">n</span>
-<span class="kn">import</span> <span class="nn">tables</span>
-<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">n</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tables</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">glob</span><span class="w"> </span><span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HDFTableProxy&#39;</span><span class="p">,</span> <span class="s1">&#39;TableAccessor&#39;</span><span class="p">,</span> <span class="s1">&#39;HDFChain&#39;</span><span class="p">]</span>
@@ -85,15 +85,15 @@
 
 <div class="viewcode-block" id="HDFTableProxy">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdfchain.HDFTableProxy">[docs]</a>
-<span class="k">class</span> <span class="nc">HDFTableProxy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HDFTableProxy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_v_dtype</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">files</span> <span class="o">=</span> <span class="n">files</span>
 
 <div class="viewcode-block" id="HDFTableProxy.read">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdfchain.HDFTableProxy.read">[docs]</a>
-    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># first loop to calculate number of rows</span>
         <span class="n">lengths</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">):</span>
@@ -117,21 +117,21 @@
 
 <div class="viewcode-block" id="HDFTableProxy.read_iter">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdfchain.HDFTableProxy.read_iter">[docs]</a>
-    <span class="k">def</span> <span class="nf">read_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">):</span>
             <span class="k">yield</span> <span class="n">file</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span></div>
 
     
 <div class="viewcode-block" id="HDFTableProxy.col_iter">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdfchain.HDFTableProxy.col_iter">[docs]</a>
-    <span class="k">def</span> <span class="nf">col_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">col_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">):</span>
             <span class="k">yield</span> <span class="n">file</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HDFTableProxy.col">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdfchain.HDFTableProxy.col">[docs]</a>
-    <span class="k">def</span> <span class="nf">col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">):</span>
         <span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span>
         <span class="c1"># first loop to calculate number of rows</span>
         <span class="n">lengths</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -156,31 +156,31 @@
         <span class="k">return</span> <span class="n">result</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">length</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">):</span>
             <span class="n">length</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">length</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;chained table with </span><span class="si">%d</span><span class="s2"> files:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">))</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="TableAccessor">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdfchain.TableAccessor">[docs]</a>
-<span class="k">class</span> <span class="nc">TableAccessor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tabledict</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TableAccessor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tabledict</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">tabname</span><span class="p">,</span> <span class="n">proxy</span> <span class="ow">in</span> <span class="n">tabledict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">tabname</span><span class="p">]</span> <span class="o">=</span> <span class="n">proxy</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">key</span> <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="n">HDFTableProxy</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="HDFChain">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdfchain.HDFChain">[docs]</a>
-<span class="k">class</span> <span class="nc">HDFChain</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">maxdepth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HDFChain</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">maxdepth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">            setup a chain of hdf files. </span>
 <span class="sd">            files is either a list of filenames or a glob string</span>
@@ -223,7 +223,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">TableAccessor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tables</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">tabname</span><span class="p">,</span> <span class="n">tabproxy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">tabproxy</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -233,7 +233,7 @@
 
 <div class="viewcode-block" id="HDFChain.getNode">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdfchain.HDFChain.getNode">[docs]</a>
-    <span class="k">def</span> <span class="nf">getNode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getNode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pathes</span><span class="p">[</span><span class="n">path</span><span class="p">]</span></div>
 </div>
 

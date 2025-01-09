@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.hdf &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -71,20 +71,20 @@
 <span></span><span class="sd">&quot;&quot;&quot;Set of utilities for handling HDF5 file I/O&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">h5py</span>
-<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">six</span><span class="w"> </span><span class="kn">import</span> <span class="n">string_types</span>
 
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.hash</span><span class="w"> </span><span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursiveEquality</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HDF5_EXTS&#39;</span><span class="p">,</span> <span class="s1">&#39;from_hdf&#39;</span><span class="p">,</span> <span class="s1">&#39;to_hdf&#39;</span><span class="p">,</span> <span class="s1">&#39;test_hdf&#39;</span><span class="p">]</span>
@@ -114,7 +114,7 @@
 
 <div class="viewcode-block" id="from_hdf">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdf.from_hdf">[docs]</a>
-<span class="k">def</span> <span class="nf">from_hdf</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">return_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">choose</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_hdf</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">return_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">choose</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the contents of an HDF5 file or node as a nested dict; optionally</span>
 <span class="sd">    return a second dict containing any HDF5 attributes attached to the</span>
 <span class="sd">    entry-level HDF5 entity.</span>
@@ -146,7 +146,7 @@
     <span class="k">if</span> <span class="n">return_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;`return_node` is not yet implemented.&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">visit_group</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sdict</span><span class="p">,</span> <span class="n">choose</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">visit_group</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sdict</span><span class="p">,</span> <span class="n">choose</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iteratively parse `obj` to create the dictionary `sdict`&quot;&quot;&quot;</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
@@ -191,7 +191,7 @@
 
 <div class="viewcode-block" id="to_hdf">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdf.to_hdf">[docs]</a>
-<span class="k">def</span> <span class="nf">to_hdf</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_hdf</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Store a (possibly nested) dictionary to an HDF5 file or branch node</span>
 <span class="sd">    within an HDF5 file (an h5py Group).</span>
 
@@ -233,7 +233,7 @@
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;`data_dict` only accepts top-level&#39;</span>
                         <span class="s1">&#39; dict/OrderedDict/etc.&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">store_recursively</span><span class="p">(</span><span class="n">fhandle</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">store_recursively</span><span class="p">(</span><span class="n">fhandle</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                           <span class="n">node_hashes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Function for iteratively doing the work&quot;&quot;&quot;</span>
         <span class="n">path</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">path</span>
@@ -358,7 +358,7 @@
 
     <span class="c1"># Perform the actual operation using the dict passed in by user</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">check_file_exists</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_file_exists</span>
         <span class="n">fpath</span> <span class="o">=</span> <span class="n">check_file_exists</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="n">tgt</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">)</span>
         <span class="n">h5file</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -378,10 +378,10 @@
 
 <div class="viewcode-block" id="test_hdf">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.hdf.test_hdf">[docs]</a>
-<span class="k">def</span> <span class="nf">test_hdf</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_hdf</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for hdf module&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">rmtree</span>
-    <span class="kn">from</span> <span class="nn">tempfile</span> <span class="kn">import</span> <span class="n">mkdtemp</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">shutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">rmtree</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">tempfile</span><span class="w"> </span><span class="kn">import</span> <span class="n">mkdtemp</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([</span>
         <span class="p">(</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">([</span>

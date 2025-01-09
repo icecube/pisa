@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.scripts.fit_hypersurfaces &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -201,28 +201,28 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
-<span class="kn">from</span> <span class="nn">ast</span> <span class="kn">import</span> <span class="n">literal_eval</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
-<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">join</span>
-<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ast</span><span class="w"> </span><span class="kn">import</span> <span class="n">literal_eval</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">join</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">curve_fit</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">ufloat</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">curve_fit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">ufloat</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.distribution_maker</span> <span class="kn">import</span> <span class="n">DistributionMaker</span>
-<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">mkdir</span><span class="p">,</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.hypersurface</span> <span class="kn">import</span> <span class="n">Hypersurface</span><span class="p">,</span> <span class="n">HypersurfaceParam</span><span class="p">,</span> <span class="n">get_hypersurface_file_name</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.distribution_maker</span><span class="w"> </span><span class="kn">import</span> <span class="n">DistributionMaker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">mkdir</span><span class="p">,</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.hypersurface</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hypersurface</span><span class="p">,</span> <span class="n">HypersurfaceParam</span><span class="p">,</span> <span class="n">get_hypersurface_file_name</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -302,7 +302,7 @@
 
 <div class="viewcode-block" id="parse_args">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.parse_args">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse arguments from command line.</span>
 
 <span class="sd">    Returns</span>
@@ -333,7 +333,7 @@
 
 <div class="viewcode-block" id="parse_fit_config">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.parse_fit_config">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_fit_config</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_fit_config</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform sanity checks on and parse fit configuration file.</span>
 
 <span class="sd">    Parameters</span>
@@ -452,7 +452,7 @@
 
 <div class="viewcode-block" id="load_and_modify_pipeline_cfg">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.load_and_modify_pipeline_cfg">[docs]</a>
-<span class="k">def</span> <span class="nf">load_and_modify_pipeline_cfg</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_and_modify_pipeline_cfg</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load and modify the pipeline config file as specified in that section of the fit</span>
 <span class="sd">    config.</span>
 
@@ -548,7 +548,7 @@
 
 <div class="viewcode-block" id="create_hypersurfaces">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.create_hypersurfaces">[docs]</a>
-<span class="k">def</span> <span class="nf">create_hypersurfaces</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_hypersurfaces</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate and store mapsets for different discrete systematics sets</span>
 <span class="sd">    (with a single set characterised by a dedicated pipeline configuration)</span>
 
@@ -709,7 +709,7 @@
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform a hypersurface fit to discrete systematics sets.&quot;&quot;&quot;</span>
 
     <span class="c1"># Get args</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.aeff.param &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -78,17 +78,17 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;load_aeff_param&#39;</span><span class="p">,</span> <span class="s1">&#39;param&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
@@ -109,7 +109,7 @@
 
 <div class="viewcode-block" id="load_aeff_param">
 <a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.param.load_aeff_param">[docs]</a>
-<span class="k">def</span> <span class="nf">load_aeff_param</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_aeff_param</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load aeff parameterisation (energy- or coszen-dependent) from file</span>
 <span class="sd">    or dictionary.</span>
 
@@ -202,7 +202,7 @@
 
 <div class="viewcode-block" id="param">
 <a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.param.param">[docs]</a>
-<span class="k">class</span> <span class="nc">param</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">param</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Effective area service based on parameterisation functions stored in a</span>
 <span class="sd">    .json file.</span>
 <span class="sd">    Transforms an input map of a flux of a given flavour (and interaction)</span>
@@ -227,7 +227,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
@@ -255,7 +255,7 @@
 
 <div class="viewcode-block" id="param.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.param.param.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">aeff_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">aeff_scale</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
         <span class="n">livetime_s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">livetime</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;sec&#39;</span><span class="p">)</span>
 
@@ -276,7 +276,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.param.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;aeff_energy_paramfile&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;aeff/vlvnt_aeff_energy_param.json&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>

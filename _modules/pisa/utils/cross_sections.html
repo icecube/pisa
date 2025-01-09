@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.cross_sections &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -76,19 +76,19 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
 
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">recursiveEquality</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.flavInt</span> <span class="kn">import</span> <span class="n">ALL_NUFLAVINTS</span><span class="p">,</span> <span class="n">FlavIntData</span><span class="p">,</span> <span class="n">NuFlavIntGroup</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.flavInt</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALL_NUFLAVINTS</span><span class="p">,</span> <span class="n">FlavIntData</span><span class="p">,</span> <span class="n">NuFlavIntGroup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;CrossSections&#39;</span><span class="p">,</span> <span class="s1">&#39;manual_test_CrossSections&#39;</span><span class="p">]</span>
@@ -117,7 +117,7 @@
 
 <div class="viewcode-block" id="CrossSections">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections">[docs]</a>
-<span class="k">class</span> <span class="nc">CrossSections</span><span class="p">(</span><span class="n">FlavIntData</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CrossSections</span><span class="p">(</span><span class="n">FlavIntData</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Cross sections for each neutrino flavor &amp; interaction type (&quot;flavint&quot;).</span>
 <span class="sd">    What is stored are *PER-H2O-MOLECULE* cross sections, in units of [m^2].</span>
 
@@ -135,7 +135,7 @@
 <span class="sd">        If dict or CrossSections object: construct cross sections from a</span>
 <span class="sd">            deepcopy of that object</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">xsec</span><span class="o">=</span><span class="s1">&#39;cross_sections/cross_sections.json&#39;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span>
@@ -160,7 +160,7 @@
 <div class="viewcode-block" id="CrossSections.load">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.load">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">ver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">ver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load cross sections from a file locatable and readable by the PISA</span>
 <span class="sd">        from_file command. If `ver` is provided, it is used to index into the</span>
 <span class="sd">        top level of the loaded dictionary&quot;&quot;&quot;</span>
@@ -174,7 +174,7 @@
 <div class="viewcode-block" id="CrossSections.load_root_file">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.load_root_file">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">load_root_file</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">ver</span><span class="p">,</span> <span class="n">tot_sfx</span><span class="o">=</span><span class="s1">&#39;_tot&#39;</span><span class="p">,</span> <span class="n">o_sfx</span><span class="o">=</span><span class="s1">&#39;_o16&#39;</span><span class="p">,</span> <span class="n">h_sfx</span><span class="o">=</span><span class="s1">&#39;_h1&#39;</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_root_file</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">ver</span><span class="p">,</span> <span class="n">tot_sfx</span><span class="o">=</span><span class="s1">&#39;_tot&#39;</span><span class="p">,</span> <span class="n">o_sfx</span><span class="o">=</span><span class="s1">&#39;_o16&#39;</span><span class="p">,</span> <span class="n">h_sfx</span><span class="o">=</span><span class="s1">&#39;_h1&#39;</span><span class="p">,</span>
                        <span class="n">plt_sfx</span><span class="o">=</span><span class="s1">&#39;_plot&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load cross sections from root file, where graphs are first-level in</span>
 <span class="sd">        hierarchy. This is yet crude and not very flexible, but at least it&#39;s</span>
@@ -204,9 +204,9 @@
 <span class="sd">        xsec : :class:`pisa.utils.flavInt.FlavIntData`</span>
 <span class="sd">            Object containing the loaded cross sections</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span> <span class="nn">ROOT</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">ROOT</span>
 
-        <span class="k">def</span> <span class="nf">extractData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">extractData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Extract x and y info from (already-opened) ROOT TFile.&quot;&quot;&quot;</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">g</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">.</span><span class="n">gDirectory</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
@@ -268,7 +268,7 @@
 <div class="viewcode-block" id="CrossSections.new_from_root">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.new_from_root">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">new_from_root</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fpath</span><span class="p">,</span> <span class="n">ver</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_from_root</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fpath</span><span class="p">,</span> <span class="n">ver</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a new CrossSections object from ROOT file.</span>
 
 <span class="sd">        Parameters</span>
@@ -291,7 +291,7 @@
 <div class="viewcode-block" id="CrossSections.validate_xsec">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.validate_xsec">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">validate_xsec</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">xsec</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_xsec</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">xsec</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate cross sections&quot;&quot;&quot;</span>
         <span class="c1"># TODO: different validation based on cross sections version string</span>
 
@@ -318,21 +318,21 @@
 
 <div class="viewcode-block" id="CrossSections.set_version">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.set_version">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ver</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ver</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the cross sections version to the string `ver`.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ver</span> <span class="o">=</span> <span class="n">ver</span></div>
 
 
 <div class="viewcode-block" id="CrossSections.get_version">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.get_version">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the cross sections version string&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ver</span></div>
 
 
 <div class="viewcode-block" id="CrossSections.save">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.save">[docs]</a>
-    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fpath</span><span class="p">,</span> <span class="n">ver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint: disable=arguments-differ</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fpath</span><span class="p">,</span> <span class="n">ver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint: disable=arguments-differ</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save cross sections (and the energy specification) to a file at</span>
 <span class="sd">        `fpath`.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">ver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -366,7 +366,7 @@
 
 <div class="viewcode-block" id="CrossSections.get_xs_value">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.get_xs_value">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_xs_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup</span><span class="p">,</span> <span class="n">energy</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_xs_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup</span><span class="p">,</span> <span class="n">energy</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get (combined) cross section value (in units of m^2) for</span>
 <span class="sd">        `flavintgroup` at `energy` (in units of GeV).</span>
 
@@ -391,7 +391,7 @@
 
 <div class="viewcode-block" id="CrossSections.get_xs_ratio_value">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.get_xs_ratio_value">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_xs_ratio_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup0</span><span class="p">,</span> <span class="n">flavintgroup1</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_xs_ratio_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup0</span><span class="p">,</span> <span class="n">flavintgroup1</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span>
                            <span class="n">gamma</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ratio of combined cross sections for `flavintgroup0` to combined</span>
 <span class="sd">        cross sections for `flavintgroup1`, weighted by E^{-`gamma`}.</span>
@@ -423,7 +423,7 @@
         <span class="k">return</span> <span class="n">xs_ratio_vals</span> <span class="o">*</span> <span class="n">energy</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">gamma</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_define_interpolant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_define_interpolant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;If `flavintgroup` is None, compute all (separate) flavint</span>
 <span class="sd">        interpolants; otherwise, compute interpolant for specified</span>
 <span class="sd">        `flavintgroup`. Do not re-compute if already present.</span>
@@ -442,7 +442,7 @@
                 <span class="n">bounds_error</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_combine_xs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_combine_xs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Combine all cross sections specified by the flavints in</span>
 <span class="sd">        `flavintgroup`. All CC and NC interactions are separately grouped</span>
 <span class="sd">        together and averaged, then the average of each interaction type</span>
@@ -486,7 +486,7 @@
 
 <div class="viewcode-block" id="CrossSections.get_xs_ratio_integral">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.get_xs_ratio_integral">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_xs_ratio_integral</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup0</span><span class="p">,</span> <span class="n">flavintgroup1</span><span class="p">,</span> <span class="n">e_range</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_xs_ratio_integral</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavintgroup0</span><span class="p">,</span> <span class="n">flavintgroup1</span><span class="p">,</span> <span class="n">e_range</span><span class="p">,</span>
                               <span class="n">gamma</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Energy-spectrum-weighted integral of (possibly a ratio of)</span>
 <span class="sd">        (possibly-combined) flavor/interaction type cross sections.</span>
@@ -620,7 +620,7 @@
 
 <div class="viewcode-block" id="CrossSections.plot">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.CrossSections.plot">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot cross sections per GeV; optionally, save plot to file. Requires</span>
 <span class="sd">        matplotlib and optionally uses seaborn to set &quot;pretty&quot; defaults.</span>
 
@@ -630,7 +630,7 @@
 <span class="sd">            If a dict, calls pyplot.savefig(**save) (i.e., save contains</span>
 <span class="sd">            keyword args to savefig)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">leg_ver</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
@@ -699,10 +699,10 @@
 
 <div class="viewcode-block" id="manual_test_CrossSections">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.cross_sections.manual_test_CrossSections">[docs]</a>
-<span class="k">def</span> <span class="nf">manual_test_CrossSections</span><span class="p">(</span><span class="n">outdir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">manual_test_CrossSections</span><span class="p">(</span><span class="n">outdir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for CrossSections class&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">rmtree</span>
-    <span class="kn">from</span> <span class="nn">tempfile</span> <span class="kn">import</span> <span class="n">mkdtemp</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">shutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">rmtree</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">tempfile</span><span class="w"> </span><span class="kn">import</span> <span class="n">mkdtemp</span>
 
     <span class="n">remove_dir</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.utils.kfold &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -78,12 +78,12 @@
 <span class="sd">renormalize the total rates.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
 
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;A. Trettin&quot;</span>
@@ -108,7 +108,7 @@
 
 <div class="viewcode-block" id="kfold">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kfold.kfold">[docs]</a>
-<span class="k">class</span> <span class="nc">kfold</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">kfold</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage to make splits of the MC set and select one split to make histograms.</span>
 <span class="sd">    The weight of all indeces not belonging to the selected split are set to</span>
@@ -125,7 +125,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">n_splits</span><span class="p">,</span>
         <span class="n">select_split</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -162,8 +162,8 @@
 
 <div class="viewcode-block" id="kfold.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kfold.kfold.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">KFold</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">KFold</span>
 
         <span class="n">kf</span> <span class="o">=</span> <span class="n">KFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_splits</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
@@ -188,7 +188,7 @@
 
 <div class="viewcode-block" id="kfold.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kfold.kfold.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;fold_weight&quot;</span><span class="p">]</span></div>
 </div>
@@ -197,7 +197,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kfold.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">kfold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">)</span></div>
 

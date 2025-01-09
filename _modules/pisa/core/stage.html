@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.core.stage &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -73,20 +73,20 @@
 <span class="sd">functionality is built-in.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">time</span>
 
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span><span class="p">,</span> <span class="n">ContainerSet</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">format_times</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">ParamSelector</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">arg_str_seq_none</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.container</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span><span class="p">,</span> <span class="n">ContainerSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_times</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParamSelector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">arg_str_seq_none</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.hash</span><span class="w"> </span><span class="kn">import</span> <span class="n">hash_obj</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Stage&quot;</span><span class="p">]</span>
@@ -95,7 +95,7 @@
 
 <div class="viewcode-block" id="Stage">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage">[docs]</a>
-<span class="k">class</span> <span class="nc">Stage</span><span class="p">():</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Stage</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    PISA stage base class.</span>
 
@@ -149,7 +149,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -257,12 +257,12 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Data based on which stage may make computations and which it may</span>
 <span class="sd">        modify&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;Stage &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Stage.report_profile">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.report_profile">[docs]</a>
-    <span class="k">def</span> <span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">format_num_kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Report timing information on calls to setup, compute, and apply</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stage_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">service_name</span><span class="p">)</span>
@@ -280,7 +280,7 @@
 
 <div class="viewcode-block" id="Stage.select_params">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.select_params">[docs]</a>
-    <span class="k">def</span> <span class="nf">select_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply the `selections` to contained ParamSet.</span>
 
 <span class="sd">        Parameters</span>
@@ -303,7 +303,7 @@
             <span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_check_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">ignore_excess</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">ignore_excess</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make sure that `expected_params` is defined and that exactly the</span>
 <span class="sd">        params specified in self.expected_params are present.</span>
 
@@ -334,22 +334,22 @@
         <span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Params&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">param_selections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">param_selections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Param selections&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_selector</span><span class="o">.</span><span class="n">param_selections</span><span class="p">))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">calc_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;calc_mode&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_mode</span>
 
     <span class="nd">@calc_mode</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">calc_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set `calc_mode` after checking the validity of `value`, and,</span>
 <span class="sd">        in standalone mode, rerun `setup()` if has already been executed at</span>
 <span class="sd">        least once.&quot;&quot;&quot;</span>
@@ -366,12 +366,12 @@
             <span class="c1"># they setup the pipeline again</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;data&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
 
     <span class="nd">@data</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Keep a copy of any possible pre-setup `data` around whenever</span>
 <span class="sd">        we are in standalone mode, and update it whenever `data`</span>
 <span class="sd">        is updated before any call to `setup()`.&quot;&quot;&quot;</span>
@@ -380,18 +380,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">apply_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;apply_mode&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_mode</span>
 
     <span class="nd">@apply_mode</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">apply_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set `apply_mode` after checking the validity of `value`&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_apply_mode</span> <span class="o">=</span> <span class="n">value</span>
 
-    <span class="k">def</span> <span class="nf">_check_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rep</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">allow_None</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rep</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">allow_None</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rep</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">rep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_reps</span><span class="p">[</span><span class="n">mode</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">rep</span><span class="si">}</span><span class="s2"> is not supported by </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -404,7 +404,7 @@
                 <span class="sa">f</span><span class="s2">&quot;.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_check_exp_keys_in_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_exp_keys_in_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make sure that `expected_container_keys` is defined and that</span>
 <span class="sd">        they are present in all containers among `self.data`, independent of</span>
 <span class="sd">        representation.</span>
@@ -443,7 +443,7 @@
         <span class="k">return</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">source_code_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">source_code_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash for the source code of this object&#39;s class.</span>
 
 <span class="sd">        Not meant to be perfect, but should suffice for tracking provenance of</span>
@@ -456,7 +456,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Combines source_code_hash and params.hash for checking/tagging</span>
 <span class="sd">        provenance of persisted (on-disk) objects.&quot;&quot;&quot;</span>
         <span class="n">objects_to_hash</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_code_hash</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">hash</span><span class="p">]</span>
@@ -466,13 +466,13 @@
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">objects_to_hash</span><span class="p">,</span> <span class="n">full_hash</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">full_hash</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
 
 
 <div class="viewcode-block" id="Stage.include_attrs_for_hashes">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.include_attrs_for_hashes">[docs]</a>
-    <span class="k">def</span> <span class="nf">include_attrs_for_hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">include_attrs_for_hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Include a class attribute or attributes in the hash</span>
 <span class="sd">        computation.</span>
 
@@ -507,7 +507,7 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">debug_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">debug_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read-only attribute indicating whether or not the stage is being run</span>
 <span class="sd">        in debug mode. None indicates non-debug mode, while non-none value</span>
 <span class="sd">        indicates a debug mode.&quot;&quot;&quot;</span>
@@ -515,7 +515,7 @@
 
 <div class="viewcode-block" id="Stage.validate_params">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.validate_params">[docs]</a>
-    <span class="k">def</span> <span class="nf">validate_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>  <span class="c1"># pylint: disable=unused-argument, no-self-use</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>  <span class="c1"># pylint: disable=unused-argument, no-self-use</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Override this method to test if params are valid; e.g., check range</span>
 <span class="sd">        and dimensionality. Invalid params should be indicated by raising an</span>
 <span class="sd">        exception; no value should be returned.&quot;&quot;&quot;</span>
@@ -523,20 +523,20 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">error_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">error_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read-only attribute indicating whether or not the stage will compute</span>
 <span class="sd">        errors for its transforms and outputs (whichever is applicable). Errors</span>
 <span class="sd">        on inputs are propagated regardless of this setting.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_error_method</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;See ContainerSet.is_map for documentation&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span>
 
 <div class="viewcode-block" id="Stage.setup">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.setup">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># check that data is a ContainerSet (downstream modules assume this)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -563,14 +563,14 @@
 
 <div class="viewcode-block" id="Stage.setup_function">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Implement in services (subclasses of Stage)&quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="Stage.compute">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.compute">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># simplest caching algorithm: don&#39;t compute if params didn&#39;t change</span>
         <span class="n">new_param_hash</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">values_hash</span>
@@ -593,14 +593,14 @@
 
 <div class="viewcode-block" id="Stage.compute_function">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.compute_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Implement in services (subclasses of Stage)&quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="Stage.apply">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.apply">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
@@ -617,14 +617,14 @@
 
 <div class="viewcode-block" id="Stage.apply_function">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Implement in services (subclasses of Stage)&quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="Stage.run">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.run">[docs]</a>
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">()</span></div>
 </div>

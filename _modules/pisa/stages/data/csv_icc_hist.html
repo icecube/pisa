@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.data.csv_icc_hist &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,23 +72,23 @@
 <span class="sd">A Stage to load data from a CSV datarelease format file into a PISA pi ContainerSet</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
-<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.container</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;csv_icc_hist&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="csv_icc_hist">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_icc_hist.csv_icc_hist">[docs]</a>
-<span class="k">class</span> <span class="nc">csv_icc_hist</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">csv_icc_hist</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    CSV file loader PISA class</span>
 
@@ -97,7 +97,7 @@
 <span class="sd">    events_file : csv file path</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">events_file</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
@@ -116,7 +116,7 @@
 
 <div class="viewcode-block" id="csv_icc_hist.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_icc_hist.csv_icc_hist.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">events</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">)</span>
 
         <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="s1">&#39;icc&#39;</span><span class="p">)</span>
@@ -141,7 +141,7 @@
 
 <div class="viewcode-block" id="csv_icc_hist.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_icc_hist.csv_icc_hist.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">atm_muon_scale</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
@@ -152,7 +152,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_icc_hist.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">csv_icc_hist</span><span class="p">(</span>
         <span class="n">events_file</span><span class="o">=</span><span class="s2">&quot;events/IceCube_3y_oscillations/muons.csv.bz2&quot;</span><span class="p">,</span>

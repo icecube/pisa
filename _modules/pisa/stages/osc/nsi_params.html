@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.osc.nsi_params &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -78,13 +78,13 @@
 <span class="sd">original version can be found in thehrh/pisa nsi_reparameterisation branch</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">CTYPE</span><span class="p">,</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span><span class="p">,</span> <span class="n">isscalar</span><span class="p">,</span> <span class="n">recursiveEquality</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">CTYPE</span><span class="p">,</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span><span class="p">,</span> <span class="n">isscalar</span><span class="p">,</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;NSIParams&#39;</span><span class="p">,</span> <span class="s1">&#39;StdNSIParams&#39;</span><span class="p">,</span> <span class="s1">&#39;VacuumLikeNSIParams&#39;</span><span class="p">]</span>
 
@@ -98,7 +98,7 @@
 <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_set_magnitude_phase</span><span class="p">(</span><span class="n">magn_phase_tuple</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_set_magnitude_phase</span><span class="p">(</span><span class="n">magn_phase_tuple</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">magnitude</span><span class="p">,</span> <span class="n">phase</span> <span class="o">=</span> <span class="n">magn_phase_tuple</span>
     <span class="k">except</span><span class="p">:</span>
@@ -118,7 +118,7 @@
 
 <div class="viewcode-block" id="NSIParams">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.nsi_params.NSIParams">[docs]</a>
-<span class="k">class</span> <span class="nc">NSIParams</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NSIParams</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Holds non-standard neutrino interaction parameters of neutral current type</span>
 <span class="sd">    for propagating neutrinos, interacting with 1st generation Standard Model</span>
@@ -141,7 +141,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set NSI parameters.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CTYPE</span><span class="p">)</span></div>
 
@@ -149,7 +149,7 @@
 
 <div class="viewcode-block" id="StdNSIParams">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.nsi_params.StdNSIParams">[docs]</a>
-<span class="k">class</span> <span class="nc">StdNSIParams</span><span class="p">(</span><span class="n">NSIParams</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">StdNSIParams</span><span class="p">(</span><span class="n">NSIParams</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    NSI parameters in the standard parameterization.</span>
 
@@ -163,7 +163,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_ee</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_emu</span> <span class="o">=</span> <span class="mf">0.</span>
@@ -174,73 +174,73 @@
 
     <span class="c1"># --- NSI epsilons ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_ee</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_ee</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective nue-nue NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">real</span>
 
     <span class="nd">@eps_ee</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">eps_ee</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_ee</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;eps_ee must be a real number!&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">+</span> <span class="mf">1.</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_emu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_emu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective nue-numu NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 
     <span class="nd">@eps_emu</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">eps_emu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_emu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">magnitude</span><span class="p">,</span> <span class="n">phase</span> <span class="o">=</span> <span class="n">_set_magnitude_phase</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">magnitude</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phase</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_etau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_etau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective nue-nutau NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
 
     <span class="nd">@eps_etau</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">eps_etau</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_etau</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">magnitude</span><span class="p">,</span> <span class="n">phase</span> <span class="o">=</span> <span class="n">_set_magnitude_phase</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">magnitude</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phase</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_mumu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_mumu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective numu-numu NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">real</span>
 
     <span class="nd">@eps_mumu</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">eps_mumu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_mumu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;eps_mumu must be a real number!&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">+</span> <span class="mf">1.</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_mutau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_mutau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective numu-nutau NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
 
     <span class="nd">@eps_mutau</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">eps_mutau</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_mutau</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">magnitude</span><span class="p">,</span> <span class="n">phase</span> <span class="o">=</span> <span class="n">_set_magnitude_phase</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">magnitude</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phase</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_tautau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_tautau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective nutau-nutau NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">real</span>
 
     <span class="nd">@eps_tautau</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">eps_tautau</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_tautau</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;eps_tautau must be a real number!&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">+</span> <span class="mf">1.</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">nsi_eps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eps_matrix</span>
         <span class="c1"># subtract mumu entry from diagonal entries (trace irrelevant)</span>
         <span class="n">nsi_eps</span> <span class="o">=</span> <span class="n">nsi_eps</span> <span class="o">-</span> <span class="n">nsi_eps</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
@@ -259,13 +259,13 @@
 
 <div class="viewcode-block" id="VacuumLikeNSIParams">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.nsi_params.VacuumLikeNSIParams">[docs]</a>
-<span class="k">class</span> <span class="nc">VacuumLikeNSIParams</span><span class="p">(</span><span class="n">NSIParams</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VacuumLikeNSIParams</span><span class="p">(</span><span class="n">NSIParams</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    NSI parameters using a vacuum Hamiltonian-like parameterization.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># pylint: disable=invalid-name</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_scale</span> <span class="o">=</span> <span class="mf">1.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_prime</span> <span class="o">=</span> <span class="mf">0.</span>
@@ -278,23 +278,23 @@
 
     <span class="c1"># --- overall matter potential strength ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generalised matter potential strength scale&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eps_scale</span>
 
     <span class="nd">@eps_scale</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">eps_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;eps_scale must be a real number!&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_scale</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_prime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_prime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Second Hmat eigenvalue (beside eps_scale)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eps_prime</span>
 
     <span class="nd">@eps_prime</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">eps_prime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_prime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;eps_prime must be a real number!&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eps_prime</span> <span class="o">=</span> <span class="n">value</span>
@@ -302,106 +302,106 @@
     <span class="c1"># --- projection phases ---</span>
     <span class="c1"># --- phi12 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">phi12</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">phi12</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;1-2 angle&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phi12</span>
 
     <span class="nd">@phi12</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">phi12</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">phi12</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_phi12</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># --- phi13 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">phi13</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">phi13</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;1-3 angle&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phi13</span>
 
     <span class="nd">@phi13</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">phi13</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">phi13</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_phi13</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># --- phi23 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">phi23</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">phi23</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;2-3 angle&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phi23</span>
 
     <span class="nd">@phi23</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">phi23</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">phi23</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_phi23</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># --- vacuum-matter relative phases ---</span>
     <span class="c1"># --- alpha1 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">alpha1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">alpha1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;1-phase&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha1</span>
 
     <span class="nd">@alpha1</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">alpha1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">alpha1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="mf">0.</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alpha1</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># --- alpha2 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">alpha2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">alpha2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;2-phase&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha2</span>
 
     <span class="nd">@alpha2</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">alpha2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">alpha2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="mf">0.</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alpha2</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># --- nsi phase ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">deltansi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">deltansi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;NSI phase&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deltansi</span>
 
     <span class="nd">@deltansi</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">deltansi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">deltansi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="mf">0.</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_deltansi</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># getters for the std. coupling parameters</span>
     <span class="c1"># which are just the coupling matrix entries</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_ee</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_ee</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective nue-nue NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">real</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_emu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_emu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective nue-numu NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_etau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_etau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective nue-nutau NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_mumu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_mumu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective numu-numu NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">real</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_mutau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_mutau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective numu-nutau NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_tautau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_tautau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;effective nutau-nutau NSI coupling parameter&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">real</span>
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">eps_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Effective NSI coupling matrix.&quot;&quot;&quot;</span>
         <span class="c1"># numerical calculation for now...</span>
         <span class="c1"># relative matter-nsi phases</span>
@@ -463,7 +463,7 @@
         <span class="k">return</span> <span class="n">nsi_eps</span></div>
 
 
-<span class="k">def</span> <span class="nf">test_nsi_params</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_nsi_params</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for subclasses of `NSIParams`.&quot;&quot;&quot;</span>
     <span class="c1"># TODO: these have to be extended</span>
     <span class="n">rand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -498,7 +498,7 @@
     <span class="n">vac_like_nsi</span><span class="o">.</span><span class="n">eps_scale</span> <span class="o">=</span> <span class="n">rand</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">*</span> <span class="mf">10.</span>
     <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">vac_like_nsi</span><span class="o">.</span><span class="n">eps_ee</span><span class="p">,</span> <span class="n">vac_like_nsi</span><span class="o">.</span><span class="n">eps_scale</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">test_nsi_parameterization</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_nsi_parameterization</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for Hvac-like NSI parameterization.&quot;&quot;&quot;</span>
     <span class="n">rand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">alpha1</span><span class="p">,</span> <span class="n">alpha2</span><span class="p">,</span> <span class="n">deltansi</span> <span class="o">=</span> <span class="n">rand</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
@@ -545,7 +545,7 @@
             <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">close</span>
         <span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">nsi_sympy_mat_mult</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">nsi_sympy_mat_mult</span><span class="p">(</span>
     <span class="n">eps_scale_val</span><span class="p">,</span>
     <span class="n">eps_prime_val</span><span class="p">,</span>
     <span class="n">phi12_val</span><span class="p">,</span>
@@ -557,7 +557,7 @@
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sympy calculation of generalised matter Hamiltonian.&quot;&quot;&quot;</span>
     <span class="c1"># pylint: disable=invalid-name</span>
-    <span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
         <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span>
         <span class="n">Matrix</span><span class="p">,</span> <span class="n">eye</span><span class="p">,</span>
         <span class="n">I</span><span class="p">,</span> <span class="n">re</span><span class="p">,</span> <span class="n">im</span><span class="p">,</span>
@@ -565,7 +565,7 @@
         <span class="n">simplify</span><span class="p">,</span>
         <span class="n">init_printing</span>
     <span class="p">)</span>
-    <span class="kn">from</span> <span class="nn">sympy.physics.quantum.dagger</span> <span class="kn">import</span> <span class="n">Dagger</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sympy.physics.quantum.dagger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dagger</span>
     <span class="n">init_printing</span><span class="p">(</span><span class="n">use_unicode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">phi12</span><span class="p">,</span> <span class="n">phi13</span><span class="p">,</span> <span class="n">phi23</span> <span class="o">=</span> <span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;phi12 phi13 phi23&#39;</span><span class="p">,</span> <span class="n">real</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">alpha1</span><span class="p">,</span> <span class="n">alpha2</span> <span class="o">=</span> <span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;alpha1 alpha2&#39;</span><span class="p">,</span> <span class="n">real</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>

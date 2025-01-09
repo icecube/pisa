@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.xsec.genie_sys &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,21 +72,21 @@
 <span class="sd">Stage to apply pre-calculated Genie uncertainties</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;genie_sys&quot;</span><span class="p">,</span> <span class="s2">&quot;apply_genie_sys&quot;</span><span class="p">,</span> <span class="s2">&quot;init_test&quot;</span><span class="p">]</span> <span class="c1">#, &quot;SIGNATURE&quot;</span>
 
 
 <div class="viewcode-block" id="genie_sys">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.genie_sys.genie_sys">[docs]</a>
-<span class="k">class</span> <span class="nc">genie_sys</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">genie_sys</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage to apply pre-calculated Genie systematics.</span>
 
@@ -107,7 +107,7 @@
 <span class="sd">            Genie quadratic coefficient for interaction {name}</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">interactions</span><span class="o">=</span><span class="s2">&quot;Genie_Ma_QE, Genie_Ma_RES&quot;</span><span class="p">,</span>
         <span class="n">names</span><span class="o">=</span><span class="s2">&quot;maccqe, maccres&quot;</span><span class="p">,</span>
@@ -135,7 +135,7 @@
 
 <div class="viewcode-block" id="genie_sys.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.genie_sys.genie_sys.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Check the range of the parameter in the analysis. Send a warning if these are beyond +- 2sigma</span>
 <span class="sd">        &#39;&#39;&#39;</span>
@@ -147,7 +147,7 @@
 
 <div class="viewcode-block" id="genie_sys.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.genie_sys.genie_sys.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">genie_params</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">I</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">:</span>
             <span class="n">exec</span><span class="p">(</span><span class="s2">&quot;genie_params.append(self.params.</span><span class="si">%s</span><span class="s2">.m_as(&#39;dimensionless&#39;))&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">I</span><span class="p">))</span>
@@ -183,7 +183,7 @@
 <span class="c1">#@guvectorize([SIGNATURE], &#39;(),(),()-&gt;()&#39;, target=TARGET)</span>
 <div class="viewcode-block" id="apply_genie_sys">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.genie_sys.apply_genie_sys">[docs]</a>
-<span class="k">def</span> <span class="nf">apply_genie_sys</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_genie_sys</span><span class="p">(</span>
     <span class="n">genie_params</span><span class="p">,</span>
     <span class="n">linear_fits</span><span class="p">,</span>
     <span class="n">quad_fits</span><span class="p">,</span>
@@ -198,7 +198,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.genie_sys.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="n">param_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;range&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>

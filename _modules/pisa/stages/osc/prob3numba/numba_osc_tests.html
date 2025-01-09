@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.osc.prob3numba.numba_osc_tests &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -77,7 +77,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -101,22 +101,22 @@
 <span class="p">]</span>
 
 
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">getmodule</span><span class="p">,</span> <span class="n">signature</span>
-<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">join</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">inspect</span><span class="w"> </span><span class="kn">import</span> <span class="n">getmodule</span><span class="p">,</span> <span class="n">signature</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">join</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="c1"># os.environ[&#39;PISA_FTYPE&#39;] = &#39;single&#39; # for checking unit test on single precision</span>
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">CX</span><span class="p">,</span>
     <span class="n">FX</span><span class="p">,</span>
     <span class="n">IX</span><span class="p">,</span>
@@ -133,13 +133,13 @@
     <span class="n">get_product_hostfunc</span><span class="p">,</span>
     <span class="n">convert_from_mass_eigenstate_hostfunc</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.nsi_params</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.nsi_params</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">StdNSIParams</span><span class="p">,</span>
     <span class="n">VacuumLikeNSIParams</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.lri_params</span> <span class="kn">import</span> <span class="n">LRIParams</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.scaling_params</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.lri_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">LRIParams</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.scaling_params</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Mass_scaling</span><span class="p">,</span>
     <span class="n">Core_scaling_w_constrain</span><span class="p">,</span>
     <span class="n">Core_scaling_wo_constrain</span><span class="p">,</span>
@@ -281,7 +281,7 @@
 
 <div class="viewcode-block" id="auto_populate_test_case">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.auto_populate_test_case">[docs]</a>
-<span class="k">def</span> <span class="nf">auto_populate_test_case</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">defaults</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">auto_populate_test_case</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">defaults</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Populate defaults and construct dm / PMNS matrices if they aren&#39;t</span>
 <span class="sd">    present in a test case.</span>
 
@@ -335,7 +335,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">test_prob3numba</span><span class="p">(</span><span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_prob3numba</span><span class="p">(</span><span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run all unit test cases for prob3numba code&quot;&quot;&quot;</span>
 
     <span class="c1"># Pull first test case to test calling `propagate_array`</span>
@@ -396,7 +396,7 @@
 
 <div class="viewcode-block" id="run_test_case">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.run_test_case">[docs]</a>
-<span class="k">def</span> <span class="nf">run_test_case</span><span class="p">(</span><span class="n">tc_name</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_test_case</span><span class="p">(</span><span class="n">tc_name</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run one test case&quot;&quot;&quot;</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;== TEST CASE : </span><span class="si">%s</span><span class="s2"> ==&quot;</span><span class="p">,</span> <span class="n">tc_name</span><span class="p">)</span>
 
@@ -714,7 +714,7 @@
 
 <div class="viewcode-block" id="stability_test">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.stability_test">[docs]</a>
-<span class="k">def</span> <span class="nf">stability_test</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">func_kw</span><span class="p">,</span> <span class="n">ref_path</span><span class="p">,</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">stability_test</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">func_kw</span><span class="p">,</span> <span class="n">ref_path</span><span class="p">,</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">define_as_ref</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;basic stability test of a Numba CPUDispatcher function (i.e., function</span>
 <span class="sd">    compiled via @jit / @njit)&quot;&quot;&quot;</span>
     <span class="n">func_name</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">py_func</span><span class="o">.</span><span class="vm">__name__</span>
@@ -738,7 +738,7 @@
 
 <div class="viewcode-block" id="execute_func">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.execute_func">[docs]</a>
-<span class="k">def</span> <span class="nf">execute_func</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">func_kw</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">execute_func</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">func_kw</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run `func` with *func_kw.values() where `outputs` specify names in</span>
 <span class="sd">    `func_kw` taken to be outputs of the function; for these, mark changed.</span>
 <span class="sd">    Retrieve both input and output values as Numpy arrays on the host and</span>
@@ -803,7 +803,7 @@
 
 <div class="viewcode-block" id="compare_numeric">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.compare_numeric">[docs]</a>
-<span class="k">def</span> <span class="nf">compare_numeric</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ac_kw</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">AC_KW</span><span class="p">),</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compare_numeric</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ac_kw</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">AC_KW</span><span class="p">),</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare scalars or numpy ndarrays.</span>
 
 <span class="sd">    Parameters</span>
@@ -859,7 +859,7 @@
 
 <div class="viewcode-block" id="check">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.check">[docs]</a>
-<span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ac_kw</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">AC_KW</span><span class="p">),</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ac_kw</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">AC_KW</span><span class="p">),</span> <span class="n">ignore_fails</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that `test` matches `ref` (closely enough).</span>
 
 <span class="sd">    Parameters</span>
@@ -906,7 +906,7 @@
 
 <div class="viewcode-block" id="ary2str">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.ary2str">[docs]</a>
-<span class="k">def</span> <span class="nf">ary2str</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ary2str</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a numpy ndarray to string easy to copy back into code&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="s2">&quot;np.array(&quot;</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array2string</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="o">**</span><span class="n">A2S_KW</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span></div>
 
@@ -919,7 +919,7 @@
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.numba_osc_tests.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Script interface for `test_prob3numba` function&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--ignore-fails&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>

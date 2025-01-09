@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.scripts.make_nufit_theta23_spline_priors &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -76,15 +76,15 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span><span class="n">ArgumentDefaultsHelpFormatter</span>
-<span class="kn">import</span> <span class="nn">gzip</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span><span class="n">ArgumentDefaultsHelpFormatter</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gzip</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy.interpolate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.interpolate</span>
 
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_file</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;extract_vals&#39;</span><span class="p">,</span> <span class="s1">&#39;make_prior_dict&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">]</span>
@@ -108,7 +108,7 @@
 
 <div class="viewcode-block" id="extract_vals">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.make_nufit_theta23_spline_priors.extract_vals">[docs]</a>
-<span class="k">def</span> <span class="nf">extract_vals</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span> <span class="n">string_of_interest</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_vals</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span> <span class="n">string_of_interest</span><span class="p">):</span>
     <span class="n">readout</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
@@ -131,7 +131,7 @@
 
 <div class="viewcode-block" id="make_prior_dict">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.make_nufit_theta23_spline_priors.make_prior_dict">[docs]</a>
-<span class="k">def</span> <span class="nf">make_prior_dict</span><span class="p">(</span><span class="n">f_io</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f_no</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_prior_dict</span><span class="p">(</span><span class="n">f_io</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f_no</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">priors</span> <span class="o">=</span> <span class="p">{}</span>
@@ -166,7 +166,7 @@
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.make_nufit_theta23_spline_priors.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">,</span>
                             <span class="n">formatter_class</span><span class="o">=</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-io&#39;</span><span class="p">,</span><span class="s1">&#39;--io_chi2_file&#39;</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span><span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>

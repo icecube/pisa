@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.flux.mceq_barr &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -78,28 +78,28 @@
 <span class="sd">Tom Stuttard, Ida Storehaug, Philipp Eller, Summer Blot</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">bz2</span> <span class="kn">import</span> <span class="n">BZ2File</span>
-<span class="kn">import</span> <span class="nn">collections</span>
-<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bz2</span><span class="w"> </span><span class="kn">import</span> <span class="n">BZ2File</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">myjit</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.numba_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">myjit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mceq_barr&#39;</span><span class="p">,</span> <span class="s1">&#39;spectral_index_scale&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_sys_loop&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="mceq_barr">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.mceq_barr.mceq_barr">[docs]</a>
-<span class="k">class</span> <span class="nc">mceq_barr</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">mceq_barr</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage that uses gradients calculated with MCEq to handle flux uncertainties.</span>
 <span class="sd">    This stage calculates flux variations relative to a nominal flux that must</span>
@@ -161,7 +161,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">table_file</span><span class="p">,</span>
         <span class="n">include_nutau_flux</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -263,7 +263,7 @@
 
 <div class="viewcode-block" id="mceq_barr.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.mceq_barr.mceq_barr.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
 
@@ -448,7 +448,7 @@
 
 <div class="viewcode-block" id="mceq_barr.antipion_production">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.mceq_barr.mceq_barr.antipion_production">[docs]</a>
-    <span class="k">def</span> <span class="nf">antipion_production</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">barr_var</span><span class="p">,</span> <span class="n">pion_ratio</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">antipion_production</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">barr_var</span><span class="p">,</span> <span class="n">pion_ratio</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Combine pi+ barr param and pi+/pi- ratio to get pi- barr param</span>
 <span class="sd">        Definitions: </span>
@@ -463,7 +463,7 @@
 <div class="viewcode-block" id="mceq_barr.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.mceq_barr.mceq_barr.compute_function">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
 
@@ -570,7 +570,7 @@
 
 
 <span class="nd">@myjit</span>
-<span class="k">def</span> <span class="nf">spectral_index_scale</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">energy_pivot</span><span class="p">,</span> <span class="n">delta_index</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">spectral_index_scale</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">energy_pivot</span><span class="p">,</span> <span class="n">delta_index</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate spectral index scale.</span>
 <span class="sd">    Adjusts the weights for events in an energy dependent way according to a</span>
@@ -579,7 +579,7 @@
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">((</span><span class="n">true_energy</span> <span class="o">/</span> <span class="n">energy_pivot</span><span class="p">),</span> <span class="n">delta_index</span><span class="p">)</span>
 
 <span class="nd">@myjit</span>
-<span class="k">def</span> <span class="nf">apply_sys_loop</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_sys_loop</span><span class="p">(</span>
     <span class="n">true_energy</span><span class="p">,</span>
     <span class="n">true_coszen</span><span class="p">,</span>
     <span class="n">delta_index</span><span class="p">,</span>
@@ -623,7 +623,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.mceq_barr.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pion_ratio&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>

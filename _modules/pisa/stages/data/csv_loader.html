@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.data.csv_loader &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,20 +72,20 @@
 <span class="sd">A Stage to load data from a CSV datarelease format file into a PISA pi ContainerSet</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
-<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.container</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span>
 
 
 <div class="viewcode-block" id="csv_loader">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_loader.csv_loader">[docs]</a>
-<span class="k">class</span> <span class="nc">csv_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">csv_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    CSV file loader PISA Pi class</span>
 
@@ -96,7 +96,7 @@
 <span class="sd">        Passed to Stage</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">events_file</span><span class="p">,</span>
         <span class="n">output_names</span><span class="p">,</span>
@@ -118,7 +118,7 @@
 
 <div class="viewcode-block" id="csv_loader.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_loader.csv_loader.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="n">raw_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">)</span>
 
@@ -169,7 +169,7 @@
 
 <div class="viewcode-block" id="csv_loader.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_loader.csv_loader.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
 </div>
@@ -178,7 +178,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_loader.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">csv_loader</span><span class="p">(</span><span class="n">events_file</span><span class="o">=</span><span class="s1">&#39;events/IceCube_3y_oscillations/neutrino_mc.csv.bz2&#39;</span><span class="p">,</span>
                       <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">],</span>

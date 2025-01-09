@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.scripts.make_events_file &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -77,24 +77,24 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ArgumentDefaultsHelpFormatter</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ArgumentDefaultsHelpFormatter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa.core.events</span> <span class="kn">import</span> <span class="n">Events</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.data_proc_params</span> <span class="kn">import</span> <span class="n">DataProcParams</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">list2hrlist</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">mkdir</span><span class="p">,</span> <span class="n">to_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.flavInt</span> <span class="kn">import</span> <span class="p">(</span><span class="n">FlavIntData</span><span class="p">,</span> <span class="n">NuFlav</span><span class="p">,</span> <span class="n">NuFlavIntGroup</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Events</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.data_proc_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataProcParams</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">list2hrlist</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">mkdir</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.flavInt</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">FlavIntData</span><span class="p">,</span> <span class="n">NuFlav</span><span class="p">,</span> <span class="n">NuFlavIntGroup</span><span class="p">,</span>
                                 <span class="n">ALL_NUFLAVINTS</span><span class="p">,</span> <span class="n">ALL_NUINT_TYPES</span><span class="p">,</span> <span class="n">xlateGroupsStr</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.mcSimRunSettings</span> <span class="kn">import</span> <span class="n">DetMCSimRunsSettings</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.mcSimRunSettings</span><span class="w"> </span><span class="kn">import</span> <span class="n">DetMCSimRunsSettings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;EXAMPLE&#39;</span><span class="p">,</span> <span class="s1">&#39;CMSQ_TO_MSQ&#39;</span><span class="p">,</span> <span class="s1">&#39;EXTRACT_FIELDS&#39;</span><span class="p">,</span> <span class="s1">&#39;OUTPUT_FIELDS&#39;</span><span class="p">,</span>
@@ -162,8 +162,8 @@
 
 <div class="viewcode-block" id="powerLawIntegral">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.make_events_file.powerLawIntegral">[docs]</a>
-<span class="k">def</span> <span class="nf">powerLawIntegral</span><span class="p">(</span><span class="n">E0</span><span class="p">,</span> <span class="n">E1</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
-    <span class="kn">import</span> <span class="nn">sympy</span> <span class="k">as</span> <span class="nn">sym</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">powerLawIntegral</span><span class="p">(</span><span class="n">E0</span><span class="p">,</span> <span class="n">E1</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sym</span>
     <span class="n">E</span> <span class="o">=</span> <span class="n">sym</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;E&#39;</span><span class="p">)</span>
     <span class="n">I</span> <span class="o">=</span> <span class="n">sym</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">E</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">gamma</span><span class="p">),</span> <span class="n">E</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">I</span><span class="o">.</span><span class="n">evalf</span><span class="p">(</span><span class="n">subs</span><span class="o">=</span><span class="p">{</span><span class="n">E</span><span class="p">:</span> <span class="n">E1</span><span class="p">})</span> <span class="o">-</span> <span class="n">I</span><span class="o">.</span><span class="n">evalf</span><span class="p">(</span><span class="n">subs</span><span class="o">=</span><span class="p">{</span><span class="n">E</span><span class="p">:</span> <span class="n">E0</span><span class="p">})</span></div>
@@ -172,7 +172,7 @@
 
 <div class="viewcode-block" id="makeEventsFile">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.make_events_file.makeEventsFile">[docs]</a>
-<span class="k">def</span> <span class="nf">makeEventsFile</span><span class="p">(</span><span class="n">data_files</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">proc_ver</span><span class="p">,</span> <span class="n">cut</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">makeEventsFile</span><span class="p">(</span><span class="n">data_files</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">proc_ver</span><span class="p">,</span> <span class="n">cut</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span>
                    <span class="n">run_settings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_proc_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                    <span class="n">cust_cuts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extract_fields</span><span class="o">=</span><span class="n">EXTRACT_FIELDS</span><span class="p">,</span>
                    <span class="n">output_fields</span><span class="o">=</span><span class="n">OUTPUT_FIELDS</span><span class="p">):</span>
@@ -622,7 +622,7 @@
 
 <div class="viewcode-block" id="parse_args">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.make_events_file.parse_args">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get command line arguments&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span> <span class="o">+</span> <span class="n">EXAMPLE</span><span class="p">,</span>
@@ -778,7 +778,7 @@
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.make_events_file.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
     <span class="n">set_verbosity</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
 

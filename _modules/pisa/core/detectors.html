@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.core.detectors &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -78,26 +78,26 @@
 <span class="sd">Detectors: A sequence of detectors</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
 
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ArgumentDefaultsHelpFormatter</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ArgumentDefaultsHelpFormatter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tabulate</span><span class="w"> </span><span class="kn">import</span> <span class="n">tabulate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
-<span class="kn">from</span> <span class="nn">pisa.core.distribution_maker</span> <span class="kn">import</span> <span class="n">DistributionMaker</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">ParamSet</span><span class="p">,</span> <span class="n">Param</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">PISAConfigParser</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">mkdir</span><span class="p">,</span> <span class="n">to_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">Levels</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.distribution_maker</span><span class="w"> </span><span class="kn">import</span> <span class="n">DistributionMaker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParamSet</span><span class="p">,</span> <span class="n">Param</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.config_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">PISAConfigParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">expand</span><span class="p">,</span> <span class="n">mkdir</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.hash</span><span class="w"> </span><span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">Levels</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.random_numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_random_state</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Detectors&#39;</span><span class="p">,</span> <span class="s1">&#39;test_Detectors&#39;</span><span class="p">,</span> <span class="s1">&#39;parse_args&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">]</span>
@@ -105,7 +105,7 @@
 
 <div class="viewcode-block" id="Detectors">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors">[docs]</a>
-<span class="k">class</span> <span class="nc">Detectors</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Detectors</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for one or more distribution makers, that represent different detectors.</span>
 <span class="sd">    </span>
 <span class="sd">    Parameters</span>
@@ -118,7 +118,7 @@
 <span class="sd">    shared_params : Parameter to be treated the same way in all the</span>
 <span class="sd">        distribution_makers that contain them.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pipelines</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">set_livetime_from_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">shared_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pipelines</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">set_livetime_from_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">shared_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span> <span class="o">=</span> <span class="kc">None</span>
         
@@ -168,15 +168,15 @@
         
         <span class="bp">self</span><span class="o">.</span><span class="n">init_params</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;presto&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Detectors.tabulate">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.tabulate">[docs]</a>
-    <span class="k">def</span> <span class="nf">tabulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tabulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">):</span>
         <span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DistributionMaker number&#39;</span><span class="p">,</span> <span class="s1">&#39;detector name&#39;</span><span class="p">,</span> <span class="s1">&#39;output_binning&#39;</span><span class="p">,</span> <span class="s1">&#39;output_key&#39;</span><span class="p">,</span> <span class="s1">&#39;profile&#39;</span><span class="p">]</span>
         <span class="n">colalign</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;center&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span> <span class="p">)</span>
         <span class="n">table</span> <span class="o">=</span> <span class="p">[]</span>
@@ -186,12 +186,12 @@
         <span class="k">return</span> <span class="n">tabulate</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">tablefmt</span><span class="p">,</span> <span class="n">colalign</span><span class="o">=</span><span class="n">colalign</span><span class="p">)</span></div>
 
             
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_distribution_makers</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Detectors.report_profile">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.report_profile">[docs]</a>
-    <span class="k">def</span> <span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">format_num_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">report_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">format_num_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Report timing information on contained distribution makers.</span>
 <span class="sd">        See `Pipeline.report_profile` for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -203,11 +203,11 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span>
 
     <span class="nd">@profile</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">:</span>
             <span class="n">d</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_profile</span> <span class="o">=</span> <span class="n">value</span>
@@ -215,14 +215,14 @@
 
 <div class="viewcode-block" id="Detectors.run">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.run">[docs]</a>
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">distribution_maker</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">distribution_maker</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Detectors.setup">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.setup">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup (reset) all distribution makers&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">d</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span></div>
@@ -230,7 +230,7 @@
 
 <div class="viewcode-block" id="Detectors.get_outputs">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.get_outputs">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute and return the outputs.</span>
 
 <span class="sd">        Parameters</span>
@@ -249,7 +249,7 @@
 
 <div class="viewcode-block" id="Detectors.update_params">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.update_params">[docs]</a>
-    <span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">Param</span><span class="p">):</span> <span class="n">params</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
             
         <span class="k">for</span> <span class="n">distribution_maker</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">:</span>
@@ -266,23 +266,23 @@
 
 <div class="viewcode-block" id="Detectors.select_params">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.select_params">[docs]</a>
-    <span class="k">def</span> <span class="nf">select_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">distribution_maker</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">distribution_maker</span><span class="o">.</span><span class="n">select_params</span><span class="p">(</span><span class="n">selections</span><span class="o">=</span><span class="n">selections</span><span class="p">,</span> <span class="n">error_on_missing</span><span class="o">=</span><span class="n">error_on_missing</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_params</span><span class="p">()</span></div>
 
             
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">distribution_makers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">distribution_makers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distribution_makers</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span>
     
 <div class="viewcode-block" id="Detectors.init_params">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.init_params">[docs]</a>
-    <span class="k">def</span> <span class="nf">init_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a ParamSet including all params of all detectors. First the shared params</span>
 <span class="sd">        (if there are some), then all the &quot;single detector&quot; params. If two detectors use a</span>
 <span class="sd">        parameter with the same name (but not shared), the name of the detector is added to the</span>
@@ -312,7 +312,7 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shared_param_ind_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shared_param_ind_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; A list of lists (one for each detector) containing the position of the shared </span>
 <span class="sd">        params in the free params of the DistributionMaker (that belongs to the detector)</span>
 <span class="sd">        together with their position in the shared parameter list.</span>
@@ -330,7 +330,7 @@
         <span class="k">return</span> <span class="n">shared_param_ind_list</span>
             
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">param_selections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">param_selections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">selections</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">distribution_maker</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">selections</span> <span class="o">!=</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">distribution_maker</span><span class="o">.</span><span class="n">param_selections</span><span class="p">)</span> <span class="o">!=</span> <span class="n">selections</span><span class="p">:</span>
@@ -339,7 +339,7 @@
         <span class="k">return</span> <span class="n">selections</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">source_code_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">source_code_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash for the source code of this object&#39;s class.</span>
 
 <span class="sd">        Not meant to be perfect, but should suffice for tracking provenance of</span>
@@ -350,11 +350,11 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_code_hash</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">hash_obj</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">source_code_hash</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">hash</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_events_per_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_events_per_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        returns list of arrays of bin indices where none of the </span>
 <span class="sd">        pipelines in the respective distribution maker have MC events</span>
@@ -367,7 +367,7 @@
     
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">empty_bin_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">empty_bin_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Find indices where there are no events present</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">num_events_per_bin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_events_per_bin</span>
@@ -381,7 +381,7 @@
 
 <div class="viewcode-block" id="Detectors.set_free_params">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.set_free_params">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_free_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_free_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set free parameters&#39; values.</span>
 
 <span class="sd">        Parameters</span>
@@ -403,7 +403,7 @@
 
 <div class="viewcode-block" id="Detectors.randomize_free_params">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.randomize_free_params">[docs]</a>
-    <span class="k">def</span> <span class="nf">randomize_free_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">randomize_free_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">random_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">random</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span>
         <span class="k">else</span><span class="p">:</span>
@@ -415,7 +415,7 @@
 
 <div class="viewcode-block" id="Detectors.reset_all">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.reset_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">reset_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset both free and fixed parameters to their nominal values.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">d</span><span class="o">.</span><span class="n">reset_all</span><span class="p">()</span></div>
@@ -423,7 +423,7 @@
 
 <div class="viewcode-block" id="Detectors.reset_free">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.reset_free">[docs]</a>
-    <span class="k">def</span> <span class="nf">reset_free</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset_free</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset only free parameters to their nominal values.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">d</span><span class="o">.</span><span class="n">reset_free</span><span class="p">()</span></div>
@@ -431,13 +431,13 @@
 
 <div class="viewcode-block" id="Detectors.set_nominal_by_current_values">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.Detectors.set_nominal_by_current_values">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_nominal_by_current_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_nominal_by_current_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Define the nominal values as the parameters&#39; current values.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">d</span><span class="o">.</span><span class="n">set_nominal_by_current_values</span><span class="p">()</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_set_rescaled_free_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rvalues</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_rescaled_free_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rvalues</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set free param values given a simple list of [0,1]-rescaled,</span>
 <span class="sd">        dimensionless values</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -469,8 +469,8 @@
 
 <div class="viewcode-block" id="test_Detectors">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.test_Detectors">[docs]</a>
-<span class="k">def</span> <span class="nf">test_Detectors</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="n">Levels</span><span class="o">.</span><span class="n">WARN</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">pisa.analysis.analysis</span> <span class="kn">import</span> <span class="n">update_param_values_detector</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_Detectors</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="n">Levels</span><span class="o">.</span><span class="n">WARN</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.analysis.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">update_param_values_detector</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a combination of two DeepCore detectors.&quot;&quot;&quot;</span>
     <span class="n">p1_nu</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">)</span>
@@ -607,7 +607,7 @@
 
 <div class="viewcode-block" id="parse_args">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.parse_args">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get command line arguments&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Generate, store, and plot distributions from different</span>
@@ -658,10 +658,10 @@
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.detectors.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">return_outputs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">return_outputs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Main; call as script with `return_outputs=False` or interactively with</span>
 <span class="sd">    `return_outputs=True`&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.plotter</span> <span class="kn">import</span> <span class="n">Plotter</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.plotter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Plotter</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
     <span class="n">set_verbosity</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
     <span class="n">plot_formats</span> <span class="o">=</span> <span class="p">[]</span>

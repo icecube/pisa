@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.tests &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -73,18 +73,18 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">get_valid_filename</span><span class="p">,</span> <span class="n">mkdir</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">Map</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_valid_filename</span><span class="p">,</span> <span class="n">mkdir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">,</span> <span class="s1">&#39;order_str&#39;</span><span class="p">,</span> <span class="s1">&#39;check_agreement&#39;</span><span class="p">,</span> <span class="s1">&#39;print_agreement&#39;</span><span class="p">,</span>
@@ -119,7 +119,7 @@
 
 <div class="viewcode-block" id="order">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.order">[docs]</a>
-<span class="k">def</span> <span class="nf">order</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">order</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
         <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
     <span class="k">return</span> <span class="n">o</span></div>
@@ -128,7 +128,7 @@
 
 <div class="viewcode-block" id="order_str">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.order_str">[docs]</a>
-<span class="k">def</span> <span class="nf">order_str</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">order_str</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="n">order_float</span> <span class="o">=</span> <span class="n">order</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">order_float</span><span class="p">))</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
@@ -140,7 +140,7 @@
 
 <div class="viewcode-block" id="check_agreement">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.check_agreement">[docs]</a>
-<span class="k">def</span> <span class="nf">check_agreement</span><span class="p">(</span><span class="n">testname</span><span class="p">,</span> <span class="n">thresh_ratio</span><span class="p">,</span> <span class="n">ratio</span><span class="p">,</span> <span class="n">thresh_diff</span><span class="p">,</span> <span class="n">diff</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_agreement</span><span class="p">(</span><span class="n">testname</span><span class="p">,</span> <span class="n">thresh_ratio</span><span class="p">,</span> <span class="n">ratio</span><span class="p">,</span> <span class="n">thresh_diff</span><span class="p">,</span> <span class="n">diff</span><span class="p">):</span>
     <span class="n">ratio_pass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">thresh_ratio</span><span class="p">)</span>
     <span class="n">diff_pass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">thresh_diff</span><span class="p">)</span>
 
@@ -192,7 +192,7 @@
 
 <div class="viewcode-block" id="print_agreement">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.print_agreement">[docs]</a>
-<span class="k">def</span> <span class="nf">print_agreement</span><span class="p">(</span><span class="n">testname</span><span class="p">,</span> <span class="n">ratio</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">print_agreement</span><span class="p">(</span><span class="n">testname</span><span class="p">,</span> <span class="n">ratio</span><span class="p">):</span>
     <span class="n">ratio_ord_str</span> <span class="o">=</span> <span class="n">order_str</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span>
     <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;&lt;&lt; </span><span class="si">{testname:s}</span><span class="s1">, </span><span class="si">{kind:s}</span><span class="s1"> &gt;&gt;</span><span class="se">\n</span><span class="s1">&#39;</span> \
         <span class="s1">&#39; agreement to 10^</span><span class="si">{level:s}</span><span class="s1">&#39;</span>
@@ -207,7 +207,7 @@
 
 <div class="viewcode-block" id="print_event_rates">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.print_event_rates">[docs]</a>
-<span class="k">def</span> <span class="nf">print_event_rates</span><span class="p">(</span><span class="n">testname1</span><span class="p">,</span> <span class="n">testname2</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">map1_events</span><span class="p">,</span> <span class="n">map2_events</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">print_event_rates</span><span class="p">(</span><span class="n">testname1</span><span class="p">,</span> <span class="n">testname2</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">map1_events</span><span class="p">,</span> <span class="n">map2_events</span><span class="p">):</span>
     <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;&lt;&lt; </span><span class="si">{testname:s}</span><span class="s1"> total </span><span class="si">{kind:s}</span><span class="s1"> events &gt;&gt;&#39;</span> \
         <span class="s1">&#39; </span><span class="si">{events:s}</span><span class="s1">&#39;</span>
 
@@ -226,7 +226,7 @@
 <span class="c1"># TODO: specify `allclose` parameters `rtol` and `atol` excplicitly</span>
 <div class="viewcode-block" id="validate_maps">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.validate_maps">[docs]</a>
-<span class="k">def</span> <span class="nf">validate_maps</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_maps</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that two PISA 2 style maps are compatible binning.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">amap</span><span class="p">[</span><span class="s1">&#39;ebins&#39;</span><span class="p">],</span> <span class="n">bmap</span><span class="p">[</span><span class="s1">&#39;ebins&#39;</span><span class="p">])</span> <span class="ow">and</span>
             <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">amap</span><span class="p">[</span><span class="s1">&#39;czbins&#39;</span><span class="p">],</span> <span class="n">bmap</span><span class="p">[</span><span class="s1">&#39;czbins&#39;</span><span class="p">])):</span>
@@ -237,7 +237,7 @@
 <span class="c1"># TODO: specify `allclose` parameters `rtol` and `atol` excplicitly</span>
 <div class="viewcode-block" id="validate_map_objs">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.validate_map_objs">[docs]</a>
-<span class="k">def</span> <span class="nf">validate_map_objs</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_map_objs</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that two PISA 3 style maps are compatible binning.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">ae</span><span class="p">,</span> <span class="n">be</span><span class="p">)</span> <span class="k">for</span> <span class="n">ae</span><span class="p">,</span> <span class="n">be</span>
                 <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">amap</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">bmap</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">)]):</span>
@@ -251,7 +251,7 @@
 
 <div class="viewcode-block" id="make_delta_map">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.make_delta_map">[docs]</a>
-<span class="k">def</span> <span class="nf">make_delta_map</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_delta_map</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the difference between two PISA 2 style maps (amap-bmap) and return</span>
 <span class="sd">    as another PISA 2 style map.&quot;&quot;&quot;</span>
     <span class="n">validate_maps</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">)</span>
@@ -263,7 +263,7 @@
 
 <div class="viewcode-block" id="make_ratio_map">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.make_ratio_map">[docs]</a>
-<span class="k">def</span> <span class="nf">make_ratio_map</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_ratio_map</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the ratio of two PISA 2 style maps (amap/bmap) and return as another</span>
 <span class="sd">    PISA 2 style map.&quot;&quot;&quot;</span>
     <span class="n">validate_maps</span><span class="p">(</span><span class="n">amap</span><span class="p">,</span> <span class="n">bmap</span><span class="p">)</span>
@@ -277,7 +277,7 @@
 
 <div class="viewcode-block" id="baseplot">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.baseplot">[docs]</a>
-<span class="k">def</span> <span class="nf">baseplot</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">clabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">symm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">evtrate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">baseplot</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">clabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">symm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">evtrate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
              <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">afmhot</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple plotting of a 2D histogram (map)&quot;&quot;&quot;</span>
     <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">])</span>
@@ -321,7 +321,7 @@
 
 <div class="viewcode-block" id="baseplot2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.baseplot2">[docs]</a>
-<span class="k">def</span> <span class="nf">baseplot2</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">symm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">evtrate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">baseplot2</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">symm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">evtrate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple plotting of a 2D map.</span>
 
 <span class="sd">    Parameters</span>
@@ -389,7 +389,7 @@
 
 <div class="viewcode-block" id="plot_comparisons">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.plot_comparisons">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_comparisons</span><span class="p">(</span><span class="n">ref_map</span><span class="p">,</span> <span class="n">new_map</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">,</span> <span class="n">new_abv</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">subdir</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_comparisons</span><span class="p">(</span><span class="n">ref_map</span><span class="p">,</span> <span class="n">new_map</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">,</span> <span class="n">new_abv</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">subdir</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                      <span class="n">texname</span><span class="p">,</span> <span class="n">stagename</span><span class="p">,</span> <span class="n">servicename</span><span class="p">,</span> <span class="n">shorttitles</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                      <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot comparisons between two identically-binned PISA 2 style maps&quot;&quot;&quot;</span>
@@ -501,7 +501,7 @@
 
 <div class="viewcode-block" id="plot_map_comparisons">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.plot_map_comparisons">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_map_comparisons</span><span class="p">(</span><span class="n">ref_map</span><span class="p">,</span> <span class="n">new_map</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">,</span> <span class="n">new_abv</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">subdir</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_map_comparisons</span><span class="p">(</span><span class="n">ref_map</span><span class="p">,</span> <span class="n">new_map</span><span class="p">,</span> <span class="n">ref_abv</span><span class="p">,</span> <span class="n">new_abv</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">subdir</span><span class="p">,</span>
                          <span class="n">name</span><span class="p">,</span> <span class="n">texname</span><span class="p">,</span> <span class="n">stagename</span><span class="p">,</span> <span class="n">servicename</span><span class="p">,</span>
                          <span class="n">shorttitles</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot comparisons between two identically-binned PISA 3 style maps&quot;&quot;&quot;</span>
@@ -644,7 +644,7 @@
 
 <div class="viewcode-block" id="plot_cmp">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.plot_cmp">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_cmp</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">new_label</span><span class="p">,</span> <span class="n">ref_label</span><span class="p">,</span> <span class="n">plot_label</span><span class="p">,</span> <span class="n">file_label</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_cmp</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">new_label</span><span class="p">,</span> <span class="n">ref_label</span><span class="p">,</span> <span class="n">plot_label</span><span class="p">,</span> <span class="n">file_label</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span>
              <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot comparisons between two (identically-binned) maps or map sets.</span>
 
@@ -829,7 +829,7 @@
 
 <div class="viewcode-block" id="pisa2_map_to_pisa3_map">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.tests.pisa2_map_to_pisa3_map">[docs]</a>
-<span class="k">def</span> <span class="nf">pisa2_map_to_pisa3_map</span><span class="p">(</span><span class="n">pisa2_map</span><span class="p">,</span> <span class="n">ebins_name</span><span class="o">=</span><span class="s1">&#39;ebins&#39;</span><span class="p">,</span> <span class="n">czbins_name</span><span class="o">=</span><span class="s1">&#39;czbins&#39;</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pisa2_map_to_pisa3_map</span><span class="p">(</span><span class="n">pisa2_map</span><span class="p">,</span> <span class="n">ebins_name</span><span class="o">=</span><span class="s1">&#39;ebins&#39;</span><span class="p">,</span> <span class="n">czbins_name</span><span class="o">=</span><span class="s1">&#39;czbins&#39;</span><span class="p">,</span>
                            <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">expected_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="s1">&#39;ebins&#39;</span><span class="p">,</span> <span class="s1">&#39;czbins&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pisa2_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">expected_keys</span><span class="p">):</span>

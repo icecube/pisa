@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.osc.prob3numba.test_numba &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,15 +72,15 @@
 <span class="sd">Test functions used during developpement of the osc. code</span>
 <span class="sd">Please ignore unless you are the author</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">print_function</span>
 
-<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">TARGET</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">TARGET</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.numba_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">cuda</span><span class="p">,</span>
     <span class="n">myjit</span><span class="p">,</span>
     <span class="n">ftype</span><span class="p">,</span>
@@ -91,7 +91,7 @@
 
 
 <span class="nd">@myjit</span>
-<span class="k">def</span> <span class="nf">sum_row_kernel</span><span class="p">(</span><span class="n">mix</span><span class="p">,</span> <span class="n">bla</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sum_row_kernel</span><span class="p">(</span><span class="n">mix</span><span class="p">,</span> <span class="n">bla</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">C</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">local</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ftype</span><span class="p">)</span>
     <span class="n">D</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">local</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ctype</span><span class="p">)</span>
     <span class="n">E</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">local</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ctype</span><span class="p">)</span>
@@ -109,13 +109,13 @@
     <span class="s2">&quot;(a,b),(),(f)-&gt;()&quot;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">sum_row</span><span class="p">(</span><span class="n">mix</span><span class="p">,</span> <span class="n">bla</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sum_row</span><span class="p">(</span><span class="n">mix</span><span class="p">,</span> <span class="n">bla</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">sum_row_kernel</span><span class="p">(</span><span class="n">mix</span><span class="p">,</span> <span class="n">bla</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.test_numba.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ftype=&quot;</span><span class="p">,</span> <span class="n">ftype</span><span class="p">)</span>
 
     <span class="c1"># hist arrays</span>

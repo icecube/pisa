@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.core.map &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -77,40 +77,40 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span><span class="p">,</span> <span class="n">copy</span>
-<span class="kn">from</span> <span class="nn">fnmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span>
-<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">add</span><span class="p">,</span> <span class="n">getitem</span><span class="p">,</span> <span class="n">setitem</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">shutil</span>
-<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span><span class="p">,</span> <span class="n">copy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fnmatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">fnmatch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">permutations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">add</span><span class="p">,</span> <span class="n">getitem</span><span class="p">,</span> <span class="n">setitem</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 
-<span class="kn">from</span> <span class="nn">decorator</span> <span class="kn">import</span> <span class="n">decorate</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">poisson</span><span class="p">,</span> <span class="n">norm</span>
-<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span>
-<span class="kn">import</span> <span class="nn">uncertainties</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">ufloat</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decorator</span><span class="w"> </span><span class="kn">import</span> <span class="n">decorate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">poisson</span><span class="p">,</span> <span class="n">norm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">six</span><span class="w"> </span><span class="kn">import</span> <span class="n">string_types</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uncertainties</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">ufloat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span><span class="p">,</span> <span class="n">HASH_SIGFIGS</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">normQuant</span><span class="p">,</span> <span class="n">recursiveEquality</span><span class="p">,</span> <span class="n">ALLCLOSE_KW</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.flavInt</span> <span class="kn">import</span> <span class="n">NuFlavIntGroup</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">jsons</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">get_valid_filename</span><span class="p">,</span> <span class="n">mkdir</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="p">(</span><span class="n">make_valid_python_name</span><span class="p">,</span> <span class="n">strip_outer_dollars</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span><span class="p">,</span> <span class="n">HASH_SIGFIGS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">normQuant</span><span class="p">,</span> <span class="n">recursiveEquality</span><span class="p">,</span> <span class="n">ALLCLOSE_KW</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.flavInt</span><span class="w"> </span><span class="kn">import</span> <span class="n">NuFlavIntGroup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.hash</span><span class="w"> </span><span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">jsons</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_valid_filename</span><span class="p">,</span> <span class="n">mkdir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">make_valid_python_name</span><span class="p">,</span> <span class="n">strip_outer_dollars</span><span class="p">,</span>
                                <span class="n">text2tex</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.random_numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_random_state</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;FLUCTUATE_METHODS&#39;</span><span class="p">,</span> <span class="s1">&#39;type_error&#39;</span><span class="p">,</span> <span class="s1">&#39;reduceToHist&#39;</span><span class="p">,</span> <span class="s1">&#39;rebin&#39;</span><span class="p">,</span>
@@ -147,7 +147,7 @@
 
 <div class="viewcode-block" id="type_error">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.type_error">[docs]</a>
-<span class="k">def</span> <span class="nf">type_error</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">type_error</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic formulation of a TypeError that can be called throughout the</span>
 <span class="sd">    code&quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Type of argument not supported: &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
@@ -157,7 +157,7 @@
 
 <div class="viewcode-block" id="reduceToHist">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.reduceToHist">[docs]</a>
-<span class="k">def</span> <span class="nf">reduceToHist</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reduceToHist</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively sum to reduce an object to a single histogram.</span>
 
 <span class="sd">    Parameters</span>
@@ -190,7 +190,7 @@
 
 <div class="viewcode-block" id="rebin">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.rebin">[docs]</a>
-<span class="k">def</span> <span class="nf">rebin</span><span class="p">(</span><span class="n">hist</span><span class="p">,</span> <span class="n">orig_binning</span><span class="p">,</span> <span class="n">new_binning</span><span class="p">,</span> <span class="n">normalize_values</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="n">hist</span><span class="p">,</span> <span class="n">orig_binning</span><span class="p">,</span> <span class="n">new_binning</span><span class="p">,</span> <span class="n">normalize_values</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Rebin a histogram.</span>
 
 <span class="sd">    Note that the new binning&#39;s edges must be a subset of the original</span>
@@ -263,9 +263,9 @@
 
 
 
-<span class="k">def</span> <span class="nf">_new_obj</span><span class="p">(</span><span class="n">original_function</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_new_obj</span><span class="p">(</span><span class="n">original_function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to deepcopy unaltered states into new Map object.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">new_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Augmented function to replace `original_function`. Note that this</span>
 <span class="sd">        docstring and the function signature will be overwritten by those from</span>
 <span class="sd">        `original_function` upon the call to `decorate` below.&quot;&quot;&quot;</span>
@@ -288,7 +288,7 @@
 
 <div class="viewcode-block" id="valid_nominal_values">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.valid_nominal_values">[docs]</a>
-<span class="k">def</span> <span class="nf">valid_nominal_values</span><span class="p">(</span><span class="n">data_array</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">valid_nominal_values</span><span class="p">(</span><span class="n">data_array</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the the nominal values that are valid for an array&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">data_array</span><span class="p">))</span></div>
 
@@ -302,7 +302,7 @@
 
 <div class="viewcode-block" id="Map">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map">[docs]</a>
-<span class="k">class</span> <span class="nc">Map</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Map</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to contain a multi-dimensional histogram, error, and metadata</span>
 <span class="sd">    about the histogram. Also provides basic mathematical operations for the</span>
 <span class="sd">    contained data. See Examples below for how to use a Map object.</span>
@@ -384,7 +384,7 @@
     <span class="n">_state_attrs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;hist&#39;</span><span class="p">,</span> <span class="s1">&#39;binning&#39;</span><span class="p">,</span> <span class="s1">&#39;hash&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;full_comparison&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">hist</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">error_hist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">hash</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">hist</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">error_hist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">hash</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">full_comparison</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="c1"># Set Read/write attributes via their defined setters</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
@@ -412,7 +412,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">set_errors</span><span class="p">(</span><span class="n">error_hist</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_values</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">previous_precision</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">get_printoptions</span><span class="p">()[</span><span class="s1">&#39;precision&#39;</span><span class="p">]</span>
         <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -427,7 +427,7 @@
             <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="n">previous_precision</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">r</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">attrs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span> <span class="s1">&#39;full_comparison&#39;</span><span class="p">,</span> <span class="s1">&#39;hash&#39;</span><span class="p">,</span> <span class="s1">&#39;parent_indexer&#39;</span><span class="p">,</span>
                  <span class="s1">&#39;binning&#39;</span><span class="p">,</span> <span class="s1">&#39;hist&#39;</span><span class="p">]</span>
         <span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">}</span>
@@ -438,7 +438,7 @@
         <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;,</span><span class="se">\n</span><span class="s1">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">argstrs</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">s</span>
 
-    <span class="k">def</span> <span class="nf">__pretty__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__pretty__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by the `pretty` library for formatting&quot;&quot;&quot;</span>
         <span class="n">myname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="k">if</span> <span class="n">cycle</span><span class="p">:</span>
@@ -455,13 +455,13 @@
                     <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
             <span class="n">p</span><span class="o">.</span><span class="n">end_group</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;)&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by e.g. ipython/Jupyter for formatting&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pretty__</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Map.item">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.item">[docs]</a>
-    <span class="k">def</span> <span class="nf">item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Call ``item(*args)`` method on the contained `hist`, returning a</span>
 <span class="sd">        single Python scalar corresponding to `*args`. See help for</span>
 <span class="sd">        :method:`numpy.ndarray.item` for more info.</span>
@@ -483,7 +483,7 @@
 
 <div class="viewcode-block" id="Map.slice">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.slice">[docs]</a>
-    <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Slice the map, where each argument is the name of a dimension.</span>
 <span class="sd">        Dimensions not named are included in full (i.e., via `np.slice(None)`).</span>
 
@@ -555,7 +555,7 @@
 
 <div class="viewcode-block" id="Map.set_poisson_errors">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.set_poisson_errors">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_poisson_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_poisson_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Approximate poisson errors using sqrt(n).&quot;&quot;&quot;</span>
         <span class="n">nom_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nominal_values</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span>
@@ -566,7 +566,7 @@
 
 <div class="viewcode-block" id="Map.set_errors">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.set_errors">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_hist</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_hist</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Manually define the error with an array the same shape as the</span>
 <span class="sd">        contained histogram. Can also remove errors by passing None.</span>
 
@@ -594,7 +594,7 @@
     <span class="c1"># objects</span>
 <div class="viewcode-block" id="Map.compare">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.compare">[docs]</a>
-    <span class="k">def</span> <span class="nf">compare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare this map with another, where the other map is taken to be</span>
 <span class="sd">        the &quot;reference&quot; against which this is compared.</span>
 
@@ -671,7 +671,7 @@
 
 <div class="viewcode-block" id="Map.plot">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.plot">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">logz</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">logz</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clabelsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">xlabelsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ylabelsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">pcolormesh_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">colorbar_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">colorbar_label_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -788,9 +788,9 @@
 <span class="sd">        colorbar : :class:`matplotlib.colorbar.Colorbar`</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
-        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-        <span class="kn">from</span> <span class="nn">mpl_toolkits.axes_grid1</span> <span class="kn">import</span> <span class="n">make_axes_locatable</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.axes_grid1</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_axes_locatable</span>
 
         <span class="n">cmap_seq</span> <span class="o">=</span> <span class="n">mpl</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s2">&quot;Spectral_r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">cmap_seq</span><span class="o">.</span><span class="n">set_bad</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -1004,14 +1004,14 @@
 
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Hook for deepcopy to correctly handle hists &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{}</span>
 
 <div class="viewcode-block" id="Map.reorder_dimensions">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.reorder_dimensions">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">reorder_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reorder_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Rearrange the dimensions in the map. This affects both the binning</span>
 <span class="sd">        and the contained histogram.</span>
 
@@ -1049,7 +1049,7 @@
 <div class="viewcode-block" id="Map.squeeze">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.squeeze">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove any singleton dimensions (i.e. that have only a single bin).</span>
 <span class="sd">        Analagous to `numpy.squeeze`.</span>
 
@@ -1066,7 +1066,7 @@
 <div class="viewcode-block" id="Map.round2int">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.round2int">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">round2int</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">round2int</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">binning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binning</span>
         <span class="n">nominal_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">)</span>
         <span class="n">std_devs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">std_devs</span>
@@ -1076,7 +1076,7 @@
 <div class="viewcode-block" id="Map.sum">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.sum">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sum over dimensions corresponding to `axis` specification. Similar</span>
 <span class="sd">        in behavior to `numpy.sum` method.</span>
 
@@ -1123,7 +1123,7 @@
 
 <div class="viewcode-block" id="Map.project">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.project">[docs]</a>
-    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Project all dimensions onto a single `axis`.</span>
 
 <span class="sd">        Parameters</span>
@@ -1153,7 +1153,7 @@
 <div class="viewcode-block" id="Map.rebin">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.rebin">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_binning</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_binning</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Rebin the map with bin edge locations and names according to those</span>
 <span class="sd">        specified in `new_binning`.</span>
 
@@ -1186,7 +1186,7 @@
 
 <div class="viewcode-block" id="Map.downsample">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.downsample">[docs]</a>
-    <span class="k">def</span> <span class="nf">downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Downsample by integer factor(s), summing together merged bins&#39;</span>
 <span class="sd">        values.</span>
 
@@ -1201,7 +1201,7 @@
 <div class="viewcode-block" id="Map.fluctuate">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.fluctuate">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">fluctuate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">jumpahead</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fluctuate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">jumpahead</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply fluctuations to the map&#39;s values.</span>
 
 <span class="sd">        Parameters</span>
@@ -1340,22 +1340,22 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;tuple : shape of the map, akin to `nump.ndarray.shape`&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : total number of elements&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">size</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_entries</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_entries</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : total number of weighted entries in all bins&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">valid_nominal_values</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="n">state</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
         <span class="n">state</span><span class="p">[</span><span class="s1">&#39;hist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nominal_values</span>
@@ -1369,7 +1369,7 @@
         <span class="k">return</span> <span class="n">state</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hashable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hashable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="n">state</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_values</span><span class="p">:</span>
@@ -1392,23 +1392,23 @@
         <span class="k">return</span> <span class="n">state</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_values</span>
 
     <span class="nd">@normalize_values</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_values</span> <span class="o">=</span> <span class="n">b</span>
 
-    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializable_state</span>
 
-    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">state</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Map.to_json">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.to_json">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the state to a JSON file that can be instantiated as a new</span>
 <span class="sd">        object later.</span>
 
@@ -1432,7 +1432,7 @@
 <div class="viewcode-block" id="Map.from_json">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.from_json">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a new Map object from a JSON file.</span>
 
 <span class="sd">        The format of the JSON is generated by the `Map.to_json` method, which</span>
@@ -1458,7 +1458,7 @@
 
 <div class="viewcode-block" id="Map.assert_compat">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.assert_compat">[docs]</a>
-    <span class="k">def</span> <span class="nf">assert_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assert_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">uncertainties</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Variable</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -1471,7 +1471,7 @@
 
 <div class="viewcode-block" id="Map.iterbins">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.iterbins">[docs]</a>
-    <span class="k">def</span> <span class="nf">iterbins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iterbins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a bin iterator which yields a map containing a single bin</span>
 <span class="sd">        each time. Note that modifications to that single-bin map will be</span>
 <span class="sd">        reflected in this (the parent) map.</span>
@@ -1502,26 +1502,26 @@
     <span class="c1"># TODO : example!</span>
 <div class="viewcode-block" id="Map.itercoords">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.itercoords">[docs]</a>
-    <span class="k">def</span> <span class="nf">itercoords</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">itercoords</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterator that yields the coordinate of each bin in the map.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">itercoords</span><span class="p">()</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No hash defined.&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Only allow setting attributes defined in slots&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slots</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Attribute &quot;</span><span class="si">%s</span><span class="s1">&quot; not allowed to be set.&#39;</span> <span class="o">%</span> <span class="n">attr</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_slice_or_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_slice_or_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Slice or index into the map. Indexing single element in self.hist</span>
 <span class="sd">        e.g. hist[1,3] returns a 0D array while hist[1,3:8] returns a 1D array,</span>
 <span class="sd">        but we need 2D (in his example)... so reshape after indexing (the</span>
@@ -1540,7 +1540,7 @@
         <span class="n">new_map</span><span class="o">.</span><span class="n">parent_indexer</span> <span class="o">=</span> <span class="n">idx</span>
         <span class="k">return</span> <span class="n">new_map</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slice_or_index</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
 
     <span class="c1"># TODO: if no bin name is given (i.e., 1D indexing), then split into maps</span>
@@ -1549,7 +1549,7 @@
     <span class="c1"># are given, use str(int(ind)) instead for bin_name.</span>
 <div class="viewcode-block" id="Map.split">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.split">[docs]</a>
-    <span class="k">def</span> <span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="nb">bin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_basenames</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">pure_bin_names</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="nb">bin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_basenames</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">pure_bin_names</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Split this map into one or more maps by selecting the `dim`</span>
 <span class="sd">        dimension and optionally the specific bin(s) within that dimension</span>
 <span class="sd">        specified by `bin`.</span>
@@ -1675,7 +1675,7 @@
 
 <div class="viewcode-block" id="Map.llh">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.llh">[docs]</a>
-    <span class="k">def</span> <span class="nf">llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total log-likelihood value between this map and the</span>
 <span class="sd">        map described by `expected_values`; self is taken to be the &quot;actual</span>
 <span class="sd">        values&quot; (or (pseudo)data), and `expected_values` are the expectation</span>
@@ -1704,7 +1704,7 @@
 
 <div class="viewcode-block" id="Map.mcllh_mean">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.mcllh_mean">[docs]</a>
-    <span class="k">def</span> <span class="nf">mcllh_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mcllh_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total LMean log-likelihood value between this map and the</span>
 <span class="sd">        map described by `expected_values`; self is taken to be the &quot;actual</span>
 <span class="sd">        values&quot; (or (pseudo)data), and `expected_values` are the expectation</span>
@@ -1734,7 +1734,7 @@
 
 <div class="viewcode-block" id="Map.mcllh_eff">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.mcllh_eff">[docs]</a>
-    <span class="k">def</span> <span class="nf">mcllh_eff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mcllh_eff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total LEff log-likelihood value between this map and the</span>
 <span class="sd">        map described by `expected_values`; self is taken to be the &quot;actual</span>
 <span class="sd">        values&quot; (or (pseudo)data), and `expected_values` are the expectation</span>
@@ -1763,7 +1763,7 @@
 
 <div class="viewcode-block" id="Map.conv_llh">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.conv_llh">[docs]</a>
-    <span class="k">def</span> <span class="nf">conv_llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">conv_llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total convoluted log-likelihood value between this map</span>
 <span class="sd">        and the map described by `expected_values`; self is taken to be the</span>
 <span class="sd">        &quot;actual values&quot; (or (pseudo)data), and `expected_values` are the</span>
@@ -1792,7 +1792,7 @@
 
 <div class="viewcode-block" id="Map.barlow_llh">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.barlow_llh">[docs]</a>
-    <span class="k">def</span> <span class="nf">barlow_llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">barlow_llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total barlow log-likelihood value between this map and</span>
 <span class="sd">        the map described by `expected_values`; self is taken to be the &quot;actual</span>
 <span class="sd">        values&quot; (or (pseudo)data), and `expected_values` are the expectation</span>
@@ -1827,7 +1827,7 @@
 
 <div class="viewcode-block" id="Map.mod_chi2">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.mod_chi2">[docs]</a>
-    <span class="k">def</span> <span class="nf">mod_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mod_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total modified chi2 value between this map and the map</span>
 <span class="sd">        described by `expected_values`; self is taken to be the &quot;actual values&quot;</span>
 <span class="sd">        (or (pseudo)data), and `expected_values` are the expectation values for</span>
@@ -1856,7 +1856,7 @@
 
 <div class="viewcode-block" id="Map.correct_chi2">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.correct_chi2">[docs]</a>
-    <span class="k">def</span> <span class="nf">correct_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">correct_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total correct chi2 value between this map and the map</span>
 <span class="sd">        described by `expected_values`; self is taken to be the &quot;actual values&quot;</span>
 <span class="sd">        (or (pseudo)data), and `expected_values` are the expectation values for</span>
@@ -1885,7 +1885,7 @@
 
 <div class="viewcode-block" id="Map.chi2">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.chi2">[docs]</a>
-    <span class="k">def</span> <span class="nf">chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total chi-squared value between this map and the map</span>
 <span class="sd">        described by `expected_values`; self is taken to be the &quot;actual values&quot;</span>
 <span class="sd">        (or (pseudo)data), and `expected_values` are the expectation values for</span>
@@ -1914,7 +1914,7 @@
 
 <div class="viewcode-block" id="Map.signed_sqrt_mod_chi2">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.signed_sqrt_mod_chi2">[docs]</a>
-    <span class="k">def</span> <span class="nf">signed_sqrt_mod_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">signed_sqrt_mod_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the binwise (signed) square-root of the modified chi2 value</span>
 <span class="sd">        between this map and the map described by `expected_values`; self is</span>
 <span class="sd">        taken to be the &quot;actual values&quot; (or (pseudo)data), and `expected_values`</span>
@@ -1938,7 +1938,7 @@
 
 <div class="viewcode-block" id="Map.generalized_poisson_llh">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.generalized_poisson_llh">[docs]</a>
-    <span class="k">def</span> <span class="nf">generalized_poisson_llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">empty_bins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generalized_poisson_llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">empty_bins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;compute the likelihood of this map&#39;s count to originate from</span>
 
 <span class="sd">        Note that unlike the other likelihood functions, expected_values</span>
@@ -1968,7 +1968,7 @@
 
 <div class="viewcode-block" id="Map.metric_total">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.metric_total">[docs]</a>
-    <span class="k">def</span> <span class="nf">metric_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">metric_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">metric_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39; Compute the optimization metric on the bins of a Map</span>
 
 <span class="sd">        Inputs</span>
@@ -1997,47 +1997,47 @@
                              <span class="o">%</span> <span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">stats</span><span class="o">.</span><span class="n">ALL_METRICS</span><span class="p">))</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">setitem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;string : Map&#39;s name&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
 
     <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;map name&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">string_types</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;string : TeX label&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">text2tex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tex</span>
 
     <span class="nd">@tex</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">string_types</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">strip_outer_dollars</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="s1">&#39;_tex&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int or None : Hash value&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span>
 
     <span class="nd">@hash</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash must be an immutable type (i.e., have a __hash__ method)&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;__hash__&#39;</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="s1">&#39;_hash&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;numpy.ndarray : Histogram array underlying the Map&quot;&quot;&quot;</span>
 
         <span class="c1"># Get the hist</span>
@@ -2052,34 +2052,34 @@
         <span class="k">return</span> <span class="n">hist</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">nominal_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nominal_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;numpy.ndarray : Bin values stripped of uncertainties&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">std_devs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">std_devs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;numpy.ndarray : Uncertainties (standard deviations) per bin&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;pisa.core.binning.MultiDimBinning : Map&#39;s binning&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_binning</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">full_comparison</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">full_comparison</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare element-by-element instead of just comparing hashes.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_full_comparison</span>
 
     <span class="nd">@full_comparison</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">full_comparison</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">full_comparison</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="s1">&#39;_full_comparison&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="c1"># Common mathematical operators</span>
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="fm">__abs__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__abs__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">state_updates</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1">#&#39;name&#39;: &quot;|%s|&quot; % (self.name,),</span>
             <span class="c1">#&#39;tex&#39;: r&quot;{\left| %s \right|}&quot; % strip_outer_parens(self.tex),</span>
@@ -2088,7 +2088,7 @@
         <span class="k">return</span> <span class="n">state_updates</span>
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add `other` to self&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">uncertainties</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Variable</span><span class="p">:</span>
             <span class="n">state_updates</span> <span class="o">=</span> <span class="p">{</span>
@@ -2117,7 +2117,7 @@
     <span class="c1">#def __cmp__(self, other):</span>
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">uncertainties</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Variable</span><span class="p">:</span>
             <span class="n">state_updates</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="c1">#&#39;name&#39;: &quot;(%s / %s)&quot; % (self.name, other),</span>
@@ -2142,16 +2142,16 @@
             <span class="n">type_error</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">state_updates</span>
 
-    <span class="k">def</span> <span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__div__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__floordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__floordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;floordiv not implemented for type Map&#39;</span><span class="p">)</span>
 
     <span class="c1"># TODO: figure out what we actually want to overload &quot;==&quot; with, and how</span>
     <span class="c1"># to implement all the possible kinds of &quot;==&quot; that might be useful for the</span>
     <span class="c1"># user, possibly with different methods altogether</span>
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if full state of maps are equal. *Not* element-by-element</span>
 <span class="sd">        equality as for a numpy array. Call this.hist == other.hist for the</span>
 <span class="sd">        element-by-element nominal value and the error.</span>
@@ -2184,7 +2184,7 @@
 <div class="viewcode-block" id="Map.log">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.log">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Take natural logarithm of map&#39;s values, returning a new map.</span>
 
 <span class="sd">        Returns</span>
@@ -2203,7 +2203,7 @@
 <div class="viewcode-block" id="Map.log10">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.log10">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">log10</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log10</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Take base-10 logarithm of map&#39;s values, returning a new map.</span>
 
 <span class="sd">        Returns</span>
@@ -2220,7 +2220,7 @@
 
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">uncertainties</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Variable</span><span class="p">:</span>
             <span class="n">state_updates</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="c1">#&#39;name&#39;: &quot;%s * %s&quot; % (other, self.name),</span>
@@ -2245,11 +2245,11 @@
             <span class="n">type_error</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">state_updates</span>
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">state_updates</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1">#&#39;name&#39;: &quot;-%s&quot; % self.name,</span>
             <span class="c1">#&#39;tex&#39;: r&quot;-%s&quot; % self.tex,</span>
@@ -2258,7 +2258,7 @@
         <span class="k">return</span> <span class="n">state_updates</span>
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">uncertainties</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Variable</span><span class="p">:</span>
             <span class="n">state_updates</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="c1">#&#39;name&#39;: &quot;%s**%s&quot; % (self.name, other),</span>
@@ -2284,16 +2284,16 @@
             <span class="n">type_error</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">state_updates</span>
 
-    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span> <span class="o">+</span> <span class="n">other</span>
 
-    <span class="k">def</span> <span class="nf">__rdiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__rdiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Map</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">other</span> <span class="o">/</span> <span class="bp">self</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__rdiv</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">__rdiv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__rdiv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">uncertainties</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Variable</span><span class="p">:</span>
             <span class="n">state_updates</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="c1">#&#39;name&#39;: &quot;(%s / %s)&quot; % (other, self.name),</span>
@@ -2310,16 +2310,16 @@
             <span class="n">type_error</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">state_updates</span>
 
-    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span> <span class="o">*</span> <span class="n">other</span>
 
-    <span class="k">def</span> <span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Map</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">other</span> <span class="o">-</span> <span class="bp">self</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__rsub</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">__rsub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__rsub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">uncertainties</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Variable</span><span class="p">:</span>
             <span class="n">state_updates</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="c1">#&#39;name&#39;: &quot;(%s - %s)&quot; % (other, self.name),</span>
@@ -2339,7 +2339,7 @@
 <div class="viewcode-block" id="Map.sqrt">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.sqrt">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Take square root of map&#39;s values, returning a new map.</span>
 
 <span class="sd">        Returns</span>
@@ -2357,7 +2357,7 @@
 
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">uncertainties</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Variable</span><span class="p">:</span>
             <span class="n">state_updates</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="c1">#&#39;name&#39;: &quot;(%s - %s)&quot; % (self.name, other),</span>
@@ -2384,7 +2384,7 @@
 
 <div class="viewcode-block" id="Map.allclose">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.allclose">[docs]</a>
-    <span class="k">def</span> <span class="nf">allclose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">allclose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Check if this map and another have the same (within machine precision) bin counts&#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assert_compat</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">)</span></div>
@@ -2400,7 +2400,7 @@
 
 <div class="viewcode-block" id="MapSet">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet">[docs]</a>
-<span class="k">class</span> <span class="nc">MapSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MapSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Ordered set of event rate maps (aka histograms) defined over an arbitrary</span>
 <span class="sd">    regluar hyper-rectangular binning.</span>
@@ -2431,7 +2431,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">__slots</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="s1">&#39;_hash&#39;</span><span class="p">,</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span>
     <span class="n">__state_attrs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;maps&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span> <span class="s1">&#39;hash&#39;</span><span class="p">,</span> <span class="s1">&#39;collate_by_name&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maps</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">hash</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maps</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">hash</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">collate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maps</span><span class="p">,</span> <span class="n">Map</span><span class="p">):</span>
             <span class="n">maps</span> <span class="o">=</span> <span class="p">[</span><span class="n">maps</span><span class="p">]</span>
@@ -2454,7 +2454,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="s1">&#39;collate_by_num&#39;</span><span class="p">,</span> <span class="ow">not</span> <span class="n">collate_by_name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hash</span> <span class="o">=</span> <span class="nb">hash</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">previous_precision</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">get_printoptions</span><span class="p">()[</span><span class="s1">&#39;precision&#39;</span><span class="p">]</span>
         <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -2465,7 +2465,7 @@
             <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="n">previous_precision</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">r</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="n">attrs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span> <span class="s1">&#39;hash&#39;</span><span class="p">,</span> <span class="s1">&#39;maps&#39;</span><span class="p">]</span>
         <span class="n">state</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -2477,7 +2477,7 @@
         <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;,</span><span class="se">\n</span><span class="s1">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">argstrs</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">s</span>
 
-    <span class="k">def</span> <span class="nf">__pretty__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__pretty__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by the `pretty` library for formatting&quot;&quot;&quot;</span>
         <span class="n">myname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="k">if</span> <span class="n">cycle</span><span class="p">:</span>
@@ -2493,12 +2493,12 @@
                     <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
             <span class="n">p</span><span class="o">.</span><span class="n">end_group</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;)&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by e.g. ipython/Jupyter for formatting&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pretty__</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;OrderedDict : all state needed to reconstruct object&quot;&quot;&quot;</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="n">state</span><span class="p">[</span><span class="s1">&#39;maps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">serializable_state</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
@@ -2507,15 +2507,15 @@
         <span class="n">state</span><span class="p">[</span><span class="s1">&#39;collate_by_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collate_by_name</span>
         <span class="k">return</span> <span class="n">state</span>
 
-    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializable_state</span>
 
-    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">state</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MapSet.to_json">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.to_json">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the state to a JSON file that can be instantiated as a new</span>
 <span class="sd">        object later.</span>
 
@@ -2539,7 +2539,7 @@
 <div class="viewcode-block" id="MapSet.from_json">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.from_json">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a new MapSet object from a JSON file.</span>
 
 <span class="sd">        The format of the JSON is generated by the `MapSet.to_json` method,</span>
@@ -2564,7 +2564,7 @@
 
 <div class="viewcode-block" id="MapSet.index">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.index">[docs]</a>
-    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find map corresponding to `x` and return its index. Accepts either</span>
 <span class="sd">        an integer index or a map name to make interface consistent.</span>
 
@@ -2599,7 +2599,7 @@
 
 <div class="viewcode-block" id="MapSet.pop">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.pop">[docs]</a>
-    <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span> <span class="c1">#x=None):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span> <span class="c1">#x=None):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a map and return it. If a value is passed, the map</span>
 <span class="sd">        corresponding to `index(value)` is removed and returned instead.</span>
 
@@ -2632,7 +2632,7 @@
     <span class="c1"># TODO: add different aggregation options OR rename to sum_{wildcard|re}</span>
 <div class="viewcode-block" id="MapSet.combine_re">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.combine_re">[docs]</a>
-    <span class="k">def</span> <span class="nf">combine_re</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regexes</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">combine_re</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regexes</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;For each regex passed, add together contained maps whose names</span>
 <span class="sd">        match.</span>
 
@@ -2755,7 +2755,7 @@
 
 <div class="viewcode-block" id="MapSet.combine_wildcard">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.combine_wildcard">[docs]</a>
-    <span class="k">def</span> <span class="nf">combine_wildcard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expressions</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">combine_wildcard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expressions</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;For each expression passed, add together contained maps whose names</span>
 <span class="sd">        match.</span>
 
@@ -2855,7 +2855,7 @@
 
 <div class="viewcode-block" id="MapSet.compare">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.compare">[docs]</a>
-    <span class="k">def</span> <span class="nf">compare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare maps in this MapSet against a reference MapSet.</span>
 
 <span class="sd">        Parameters</span>
@@ -2883,25 +2883,25 @@
         <span class="k">return</span> <span class="n">rslt</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">)</span>
     
-    <span class="k">def</span> <span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">MapSet</span><span class="p">([</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">memo</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">],</span>
                       <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tex</span><span class="p">,</span> <span class="nb">hash</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">,</span>
                       <span class="n">collate_by_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">collate_by_num</span><span class="p">)</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;string : name of the map (legal Python name)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">)</span>
 
     <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;string : name of the map (legal Python name)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash value of the map set is based upon the contained maps.</span>
 <span class="sd">            * If all maps have the same hash value, this value is returned as</span>
 <span class="sd">              the map set&#39;s hash</span>
@@ -2919,7 +2919,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@hash</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Setting a hash to `val` for the map set sets the hash values of all</span>
 <span class="sd">        contained maps to `val`.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -2927,18 +2927,18 @@
                 <span class="nb">setattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;hash&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;list of strings : name of each map&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">mp</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;list of int : hash of each map&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">mp</span><span class="o">.</span><span class="n">hash</span> <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
 
 <div class="viewcode-block" id="MapSet.hash_maps">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.hash_maps">[docs]</a>
-    <span class="k">def</span> <span class="nf">hash_maps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash_maps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a hash on the contained maps (i.e. exclude state pertaining</span>
 <span class="sd">        only to the MapSet itself, but include all state pertaining to the</span>
 <span class="sd">        contained Maps).</span>
@@ -2966,7 +2966,7 @@
 
 <div class="viewcode-block" id="MapSet.collate_with_names">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.collate_with_names">[docs]</a>
-    <span class="k">def</span> <span class="nf">collate_with_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">collate_with_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
         <span class="n">ret_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
             <span class="n">setitem</span><span class="p">(</span><span class="n">ret_dict</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
@@ -2975,7 +2975,7 @@
 
 <div class="viewcode-block" id="MapSet.find_map">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.find_map">[docs]</a>
-    <span class="k">def</span> <span class="nf">find_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">idx</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Map</span><span class="p">):</span>
             <span class="k">pass</span>
@@ -2992,14 +2992,14 @@
 
 <div class="viewcode-block" id="MapSet.plot">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.plot">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="p">:</span>
             <span class="n">m</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MapSet.apply_to_maps">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.apply_to_maps">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_to_maps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_to_maps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Keyword arguments are not handled&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">):</span>
@@ -3085,7 +3085,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">collate_with_names</span><span class="p">(</span><span class="n">returned_vals</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
 
     <span class="c1">#def __setattr__(self, attr, val):</span>
@@ -3099,18 +3099,18 @@
     <span class="c1">#            return</span>
     <span class="c1">#        return self.collate_with_names(returned_vals)</span>
 
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve a map by name or retrieve maps&#39; histogram values by index</span>
 <span class="sd">        or slice.</span>
 
@@ -3148,63 +3148,63 @@
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;getitem does not support `item` of type </span><span class="si">%s</span><span class="s1">&#39;</span>
                         <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="fm">__abs__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__abs__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__abs__&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__add__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__truediv__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__div__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MapSet.log">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MapSet.log10">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.log10">[docs]</a>
-    <span class="k">def</span> <span class="nf">log10</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log10</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;log10&#39;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__mul__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__neg__&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__pow__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__radd__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__rdiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__rdiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__rdiv__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__rmul__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__rsub__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MapSet.sqrt">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.sqrt">[docs]</a>
-    <span class="k">def</span> <span class="nf">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;sqrt&#39;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;__sub__&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MapSet.sum">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.sum">[docs]</a>
-    <span class="k">def</span> <span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">maps</span><span class="o">=</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">],</span>
                       <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tex</span><span class="p">,</span>
                       <span class="n">collate_by_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">collate_by_name</span><span class="p">)</span></div>
@@ -3212,7 +3212,7 @@
 
 <div class="viewcode-block" id="MapSet.project">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.project">[docs]</a>
-    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-map projections onto single axis. See Map.project for more</span>
 <span class="sd">        detailed help.</span>
 
@@ -3244,7 +3244,7 @@
 
 <div class="viewcode-block" id="MapSet.reorder_dimensions">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.reorder_dimensions">[docs]</a>
-    <span class="k">def</span> <span class="nf">reorder_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reorder_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a new MapSet object with dimensions ordered</span>
 <span class="sd">        according to `order`.</span>
 
@@ -3282,7 +3282,7 @@
 
 <div class="viewcode-block" id="MapSet.squeeze">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.squeeze">[docs]</a>
-    <span class="k">def</span> <span class="nf">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove any singleton dimensions (i.e. that have only a single bin)</span>
 <span class="sd">        from all contained maps. Analagous to `numpy.squeeze`.</span>
 
@@ -3297,7 +3297,7 @@
 
 <div class="viewcode-block" id="MapSet.rebin">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.rebin">[docs]</a>
-    <span class="k">def</span> <span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">maps</span><span class="o">=</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">rebin</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">],</span>
                       <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tex</span><span class="p">,</span>
                       <span class="n">collate_by_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">collate_by_name</span><span class="p">)</span></div>
@@ -3305,7 +3305,7 @@
 
 <div class="viewcode-block" id="MapSet.downsample">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.downsample">[docs]</a>
-    <span class="k">def</span> <span class="nf">downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">maps</span><span class="o">=</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">downsample</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">],</span>
                       <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tex</span><span class="p">,</span>
                       <span class="n">collate_by_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">collate_by_name</span><span class="p">)</span></div>
@@ -3313,7 +3313,7 @@
 
 <div class="viewcode-block" id="MapSet.metric_per_map">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.metric_per_map">[docs]</a>
-    <span class="k">def</span> <span class="nf">metric_per_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_per_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
             <span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
             <span class="k">if</span> <span class="s1">&#39;binned_&#39;</span> <span class="ow">in</span> <span class="n">metric</span><span class="p">:</span>
@@ -3330,7 +3330,7 @@
 
 <div class="viewcode-block" id="MapSet.metric_total">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.metric_total">[docs]</a>
-    <span class="k">def</span> <span class="nf">metric_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">metric_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">metric_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Compute the binned optimization metric on all maps of a mapset,</span>
 <span class="sd">           then sum it up.</span>
 
@@ -3343,19 +3343,19 @@
 
 <div class="viewcode-block" id="MapSet.chi2_per_map">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.chi2_per_map">[docs]</a>
-    <span class="k">def</span> <span class="nf">chi2_per_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chi2_per_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;chi2&#39;</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MapSet.chi2_total">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.chi2_total">[docs]</a>
-    <span class="k">def</span> <span class="nf">chi2_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chi2_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chi2_per_map</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="MapSet.fluctuate">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.fluctuate">[docs]</a>
-    <span class="k">def</span> <span class="nf">fluctuate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">jumpahead</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fluctuate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">jumpahead</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add fluctuations to the maps in the set and return as a new MapSet.</span>
 
 <span class="sd">        Parameters</span>
@@ -3374,25 +3374,25 @@
 
 <div class="viewcode-block" id="MapSet.llh_per_map">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.llh_per_map">[docs]</a>
-    <span class="k">def</span> <span class="nf">llh_per_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>  
+    <span class="k">def</span><span class="w"> </span><span class="nf">llh_per_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>  
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;llh&#39;</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MapSet.llh_total">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.llh_total">[docs]</a>
-    <span class="k">def</span> <span class="nf">llh_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>   
+    <span class="k">def</span><span class="w"> </span><span class="nf">llh_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>   
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">llh</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="MapSet.set_poisson_errors">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.set_poisson_errors">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_poisson_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_poisson_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;set_poisson_errors&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MapSet.allclose">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.allclose">[docs]</a>
-    <span class="k">def</span> <span class="nf">allclose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">allclose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Check if this mapset and another have the same (within machine precision) bin counts&#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;allclose&#39;</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="p">)</span></div>
 </div>
@@ -3426,9 +3426,9 @@
 <span class="c1"># TODO: add tests for llh, chi2 methods</span>
 <div class="viewcode-block" id="test_Map">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.test_Map">[docs]</a>
-<span class="k">def</span> <span class="nf">test_Map</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_Map</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for Map class&quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">pickle</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
     <span class="n">n_ebins</span> <span class="o">=</span> <span class="mi">10</span>
     <span class="n">n_czbins</span> <span class="o">=</span> <span class="mi">5</span>
     <span class="n">n_azbins</span> <span class="o">=</span> <span class="mi">2</span>
@@ -3634,9 +3634,9 @@
 <span class="c1"># TODO: make tests use assert rather than rely on logging.debug(str((!)))</span>
 <div class="viewcode-block" id="test_MapSet">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.test_MapSet">[docs]</a>
-<span class="k">def</span> <span class="nf">test_MapSet</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_MapSet</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for MapSet class&quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">pickle</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
     <span class="n">n_ebins</span> <span class="o">=</span> <span class="mi">6</span>
     <span class="n">n_czbins</span> <span class="o">=</span> <span class="mi">3</span>
     <span class="n">e_binning</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;E_\nu&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="n">n_ebins</span><span class="p">,</span>

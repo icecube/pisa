@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.flavInt &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -104,21 +104,21 @@
 <span class="c1"># don&#39;t think there&#39;s a way to know &quot;this is a simple str&quot; vs not easily.)</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">MutableSequence</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span><span class="p">,</span> <span class="n">total_ordering</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span><span class="p">,</span> <span class="n">combinations</span>
-<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">add</span>
-<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MutableSequence</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span><span class="p">,</span> <span class="n">total_ordering</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">product</span><span class="p">,</span> <span class="n">combinations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">add</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">fileio</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">recursiveAllclose</span><span class="p">,</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">fileio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursiveAllclose</span><span class="p">,</span> <span class="n">recursiveEquality</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -154,7 +154,7 @@
 
 <div class="viewcode-block" id="BarSep">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.BarSep">[docs]</a>
-<span class="k">class</span> <span class="nc">BarSep</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BarSep</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Context manager to make global __BAR_SSEP__ modification slightly less</span>
 <span class="sd">    error-prone.</span>
@@ -183,16 +183,16 @@
 <span class="sd">    nuebar</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">global</span> <span class="n">__BAR_SSEP__</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">old_val</span> <span class="o">=</span> <span class="n">__BAR_SSEP__</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">new_val</span> <span class="o">=</span> <span class="n">val</span>
 
-    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">global</span> <span class="n">__BAR_SSEP__</span>
         <span class="n">__BAR_SSEP__</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_val</span>
 
-    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
         <span class="k">global</span> <span class="n">__BAR_SSEP__</span>
         <span class="n">__BAR_SSEP__</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_val</span></div>
 
@@ -200,7 +200,7 @@
 
 <div class="viewcode-block" id="set_bar_ssep">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.set_bar_ssep">[docs]</a>
-<span class="k">def</span> <span class="nf">set_bar_ssep</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_bar_ssep</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the separator between &quot;base&quot; flavor (&quot;nue&quot;, &quot;numu&quot;, or &quot;nutau&quot;) and</span>
 <span class="sd">    &quot;bar&quot; when converting antineutrino `NuFlav`s or `NuFlavInt`s to strings.</span>
 
@@ -218,7 +218,7 @@
 
 <div class="viewcode-block" id="get_bar_ssep">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.get_bar_ssep">[docs]</a>
-<span class="k">def</span> <span class="nf">get_bar_ssep</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_bar_ssep</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the separator that is set to be used between &quot;base&quot; flavor (&quot;nue&quot;,</span>
 <span class="sd">    &quot;numu&quot;, or &quot;nutau&quot;) and &quot;bar&quot; when converting antineutrino `NuFlav`s or</span>
 <span class="sd">    `NuFlavInt`s to strings.</span>
@@ -237,7 +237,7 @@
 <div class="viewcode-block" id="NuFlav">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlav">[docs]</a>
 <span class="nd">@total_ordering</span>
-<span class="k">class</span> <span class="nc">NuFlav</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NuFlav</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for handling neutrino flavors (and anti-flavors)&quot;&quot;&quot;</span>
     <span class="n">PART_CODE</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">ANTIPART_CODE</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
@@ -251,7 +251,7 @@
     <span class="n">FLAV_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
         <span class="sa">r</span><span class="s1">&#39;^(?P&lt;fullflav&gt;(?:nue|numu|nutau)(?P&lt;barnobar&gt;bar){0,1})$&#39;</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fstr2code</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;nue&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">NUE_CODE</span><span class="p">,</span>
             <span class="s1">&#39;numu&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">NUMU_CODE</span><span class="p">,</span>
@@ -306,7 +306,7 @@
                              <span class="o">%</span> <span class="p">(</span><span class="n">orig_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
                                 <span class="nb">type</span><span class="p">(</span><span class="n">orig_val</span><span class="p">)))</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">global</span> <span class="n">__BAR_SSEP__</span>
         <span class="n">fstr</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">code</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fstr2code</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">code</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flav</span><span class="p">]</span>
         <span class="n">fstr</span> <span class="o">=</span> <span class="n">fstr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -317,13 +317,13 @@
     <span class="c1">#def __copy__(self):</span>
     <span class="c1">#    return self.__str__()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__flav</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -331,10 +331,10 @@
                 <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="n">other</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span>
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -353,40 +353,40 @@
         <span class="c1"># nue or nuebar &lt; numu or numubar &lt; nutau or nutaubar</span>
         <span class="k">return</span> <span class="n">my_abs_code</span> <span class="o">&lt;</span> <span class="n">other_abs_code</span>
 
-    <span class="k">def</span> <span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">NuFlav</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__flav</span><span class="o">*-</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;TeX string&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f2tex</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__flav</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : PDG code&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flav</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">bar_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bar_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return +/-1 for particle/antiparticle&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__barnobar</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">particle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">particle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this a particle (vs. antiparticle) flavor?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__barnobar</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">PART_CODE</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">antiparticle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">antiparticle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this an antiparticle flavor?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__barnobar</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ANTIPART_CODE</span>
 
 <div class="viewcode-block" id="NuFlav.pidx">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlav.pidx">[docs]</a>
-    <span class="k">def</span> <span class="nf">pidx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pidx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract data from a nested dictionary `d` whose format is commonly</span>
 <span class="sd">        found in PISA</span>
 
@@ -403,7 +403,7 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">prob3_codes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prob3_codes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;(int,int) : flavor and particle/antiparticle codes, as used by prob3&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">NUE_CODE</span> <span class="p">:</span> <span class="n">prob3flav</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">NUMU_CODE</span> <span class="p">:</span> <span class="n">prob3flav</span> <span class="o">=</span> <span class="mi">1</span>
@@ -426,42 +426,42 @@
 
 
 <span class="c1"># TODO: are the following two classes redundant now?</span>
-<span class="k">class</span> <span class="nc">AllNu</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AllNu</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__flav</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ALL_NUPARTICLES</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flav</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flav</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flav</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;nuall&#39;</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;{\nu_{\rm all}}&#39;</span>
 
 
-<span class="k">class</span> <span class="nc">AllNuBar</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AllNuBar</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__flav</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ALL_NUANTIPARTICLES</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flav</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flav</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flav</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;nuallbar&#39;</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;{\bar\nu_{\rm all}}&#39;</span>
 
 
 <div class="viewcode-block" id="IntType">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.IntType">[docs]</a>
 <span class="nd">@total_ordering</span>
-<span class="k">class</span> <span class="nc">IntType</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">IntType</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Interaction type object.</span>
 
@@ -498,7 +498,7 @@
     <span class="n">NC_CODE</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">IGNORE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^a-zA-Z]&#39;</span><span class="p">)</span>
     <span class="n">IT_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^(cc|nc)$&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">istr2code</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;cc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">CC_CODE</span><span class="p">,</span>
             <span class="s1">&#39;nc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">NC_CODE</span><span class="p">,</span>
@@ -538,17 +538,17 @@
                              <span class="o">%</span> <span class="p">(</span><span class="n">orig_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
                                 <span class="nb">type</span><span class="p">(</span><span class="n">orig_val</span><span class="p">)))</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">code</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">istr2code</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">code</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -556,10 +556,10 @@
                 <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="n">other</span><span class="o">.</span><span class="n">cc</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span>
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -570,22 +570,22 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">code</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">cc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this interaction type charged current (CC)?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">CC_CODE</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this interaction type neutral current (NC)?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">NC_CODE</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Integer code for this interaction type&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;TeX representation of this interaction type&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">i2tex</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span><span class="p">]</span></div>
 
@@ -599,7 +599,7 @@
 <div class="viewcode-block" id="NuFlavInt">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavInt">[docs]</a>
 <span class="nd">@total_ordering</span>
-<span class="k">class</span> <span class="nc">NuFlavInt</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NuFlavInt</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A neutrino &quot;flavint&quot; encompasses both the neutrino flavor and its</span>
 <span class="sd">    interaction type.</span>
 
@@ -625,7 +625,7 @@
     <span class="n">FINT_SSEP</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span>
     <span class="n">FINT_TEXSEP</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39; \, &#39;</span>
     <span class="c1"># TODO: use multiple inheritance to clean up the below?</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Either positional or keyword args may be&#39;</span>
@@ -674,16 +674,16 @@
                             <span class="s1">&#39;&quot;; class: &quot;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">flavint</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span> <span class="o">+</span>
                             <span class="s1">&#39;; value: &quot;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">flavint</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s%s%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flav</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">FINT_SSEP</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">int_type</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">flav</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">int_type</span><span class="o">.</span><span class="n">code</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -691,10 +691,10 @@
                 <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">flav</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">int_type</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flav</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">int_type</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -711,15 +711,15 @@
                 <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">NuFlavInt</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">__flav</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
 <div class="viewcode-block" id="NuFlavInt.pidx">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavInt.pidx">[docs]</a>
-    <span class="k">def</span> <span class="nf">pidx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pidx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract data from a nested dictionary `d` whose format is commonly</span>
 <span class="sd">        found in PISA</span>
 
@@ -740,37 +740,37 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flav</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flav</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return just the NuFlav part of this NuFlavInt&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flav</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">particle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">particle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this a particle (vs. antiparticle) flavor?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flav</span><span class="o">.</span><span class="n">particle</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">antiparticle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">antiparticle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this an antiparticle flavor?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flav</span><span class="o">.</span><span class="n">antiparticle</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">cc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this interaction type charged current (CC)?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span><span class="o">.</span><span class="n">cc</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this interaction type neutral current (NC)?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span><span class="o">.</span><span class="n">nc</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">int_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">int_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return IntType object that composes this NuFlavInt&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__int_type</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;TeX string representation of this NuFlavInt&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s1">&#39;{</span><span class="si">%s%s%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flav</span><span class="o">.</span><span class="n">tex</span><span class="p">,</span>
                              <span class="bp">self</span><span class="o">.</span><span class="n">FINT_TEXSEP</span><span class="p">,</span>
@@ -796,7 +796,7 @@
 <div class="viewcode-block" id="NuFlavIntGroup">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavIntGroup">[docs]</a>
 <span class="nd">@total_ordering</span>
-<span class="k">class</span> <span class="nc">NuFlavIntGroup</span><span class="p">(</span><span class="n">MutableSequence</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NuFlavIntGroup</span><span class="p">(</span><span class="n">MutableSequence</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Grouping of neutrino flavors+interaction types (flavints)</span>
 
 <span class="sd">    Grouping of neutrino flavints. Specification can be via</span>
@@ -822,7 +822,7 @@
     <span class="p">)</span>
     <span class="n">FLAV_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(?P&lt;fullflav&gt;(?:nue|numu|nutau|nuall)(?:bar){0,1})&#39;</span><span class="p">)</span>
     <span class="n">IT_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(cc|nc)&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flavint_ssep</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Possibly a special case if len(args) == 2, so send as a single entity</span>
@@ -832,20 +832,20 @@
         <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
             <span class="bp">self</span> <span class="o">+=</span> <span class="n">a</span>
 
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="n">flavint_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpret</span><span class="p">(</span><span class="n">val</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">flavint_list</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpret</span><span class="p">(</span><span class="n">val</span><span class="p">)))</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="o">.</span><span class="fm">__delitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
 
 <div class="viewcode-block" id="NuFlavIntGroup.remove">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavIntGroup.remove">[docs]</a>
-    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a flavint from this group.</span>
 
 <span class="sd">        Parameters</span>
@@ -863,26 +863,26 @@
                 <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="n">cp</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">cp</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">cp</span>
 
-    <span class="k">def</span> <span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
 <div class="viewcode-block" id="NuFlavIntGroup.insert">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavIntGroup.insert">[docs]</a>
-    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Insert flavint `value` before `index`&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -890,10 +890,10 @@
                 <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -907,16 +907,16 @@
 
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flavints</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">flavints</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">all</span><span class="p">([(</span><span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpret</span><span class="p">(</span><span class="n">val</span><span class="p">)])</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">allkg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flavints</span><span class="p">)</span>
 
         <span class="c1"># Check if nuall or nuallbar CC, NC, or both</span>
@@ -986,7 +986,7 @@
                     <span class="n">allkg</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">NuFlavInt</span><span class="p">(</span><span class="n">flav</span><span class="p">,</span> <span class="s1">&#39;nc&#39;</span><span class="p">))</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavint_ssep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">strs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
 
     <span class="c1"># TODO:</span>
@@ -994,13 +994,13 @@
     <span class="c1"># be implemented as this will allow for &quot;illegal&quot; behavior, like using</span>
     <span class="c1"># a NuFlavIntGroup as a key in a dict. So this should be fixed, maybe.</span>
     <span class="c1">#__hash__ = None</span>
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="p">))</span>
 
 <div class="viewcode-block" id="NuFlavIntGroup.interpret">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavIntGroup.interpret">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">interpret</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpret</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpret a NuFlavIntGroup arg&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">orig_val</span> <span class="o">=</span> <span class="n">val</span>
@@ -1102,43 +1102,43 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return tuple of all NuFlavInts that make up this group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return tuple of unique flavors that make up this group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">k</span><span class="o">.</span><span class="n">flav</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span><span class="p">])))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">cc_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cc_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return tuple of unique charged-current-interaction NuFlavInts that</span>
 <span class="sd">        make up this group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span>
                       <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">int_type</span> <span class="o">==</span> <span class="n">CC</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">nc_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nc_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return tuple of unique neutral-current-interaction NuFlavInts that</span>
 <span class="sd">        make up this group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span>
                       <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">int_type</span> <span class="o">==</span> <span class="n">NC</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">particles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">particles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return tuple of unique particle (vs antiparticle) NuFlavInts that</span>
 <span class="sd">        make up this group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">particle</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">antiparticles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">antiparticles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return tuple of unique antiparticle NuFlavInts that make up this</span>
 <span class="sd">        group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__flavints</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">antiparticle</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">cc_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cc_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return tuple of unique charged-current-interaction flavors that</span>
 <span class="sd">        make up this group. Note that only the flavors, and not NuFlavInts, are</span>
 <span class="sd">        returned (cf. method `cc_flavints`&quot;&quot;&quot;</span>
@@ -1146,7 +1146,7 @@
                                  <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">int_type</span> <span class="o">==</span> <span class="n">CC</span><span class="p">])))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">nc_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nc_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return tuple of unique neutral-current-interaction flavors that</span>
 <span class="sd">        make up this group. Note that only the flavors, and not NuFlavInts, are</span>
 <span class="sd">        returned (cf. method `nc_flavints`&quot;&quot;&quot;</span>
@@ -1159,7 +1159,7 @@
 
 <div class="viewcode-block" id="NuFlavIntGroup.group_flavs_by_int_type">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavIntGroup.group_flavs_by_int_type">[docs]</a>
-    <span class="k">def</span> <span class="nf">group_flavs_by_int_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">group_flavs_by_int_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a dictionary with flavors grouped by the interaction types</span>
 <span class="sd">        represented in this group.</span>
 
@@ -1192,7 +1192,7 @@
         <span class="k">return</span> <span class="n">grouped</span></div>
 
 
-    <span class="k">def</span> <span class="nf">__simple_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavsep</span><span class="p">,</span> <span class="n">intsep</span><span class="p">,</span> <span class="n">flavintsep</span><span class="p">,</span> <span class="n">addsep</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__simple_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavsep</span><span class="p">,</span> <span class="n">intsep</span><span class="p">,</span> <span class="n">flavintsep</span><span class="p">,</span> <span class="n">addsep</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
         <span class="n">grouped</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_flavs_by_int_type</span><span class="p">()</span>
         <span class="n">all_nu</span> <span class="o">=</span> <span class="n">AllNu</span><span class="p">()</span>
         <span class="n">all_nubar</span> <span class="o">=</span> <span class="n">AllNuBar</span><span class="p">()</span>
@@ -1222,7 +1222,7 @@
 
 <div class="viewcode-block" id="NuFlavIntGroup.simple_str">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavIntGroup.simple_str">[docs]</a>
-    <span class="k">def</span> <span class="nf">simple_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavsep</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">intsep</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">flavintsep</span><span class="o">=</span><span class="s1">&#39;, &#39;</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">simple_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavsep</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">intsep</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">flavintsep</span><span class="o">=</span><span class="s1">&#39;, &#39;</span><span class="p">,</span>
                    <span class="n">addsep</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Simple string representation of this group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__simple_str</span><span class="p">(</span><span class="n">flavsep</span><span class="o">=</span><span class="n">flavsep</span><span class="p">,</span> <span class="n">intsep</span><span class="o">=</span><span class="n">intsep</span><span class="p">,</span>
@@ -1231,7 +1231,7 @@
 
 <div class="viewcode-block" id="NuFlavIntGroup.file_str">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavIntGroup.file_str">[docs]</a>
-    <span class="k">def</span> <span class="nf">file_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavsep</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">intsep</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">flavintsep</span><span class="o">=</span><span class="s1">&#39;__&#39;</span><span class="p">,</span> <span class="n">addsep</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">file_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavsep</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">intsep</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">flavintsep</span><span class="o">=</span><span class="s1">&#39;__&#39;</span><span class="p">,</span> <span class="n">addsep</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation for this group useful for file names&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__simple_str</span><span class="p">(</span><span class="n">flavsep</span><span class="o">=</span><span class="n">flavsep</span><span class="p">,</span> <span class="n">intsep</span><span class="o">=</span><span class="n">intsep</span><span class="p">,</span>
                                  <span class="n">flavintsep</span><span class="o">=</span><span class="n">flavintsep</span><span class="p">,</span> <span class="n">addsep</span><span class="o">=</span><span class="n">addsep</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span></div>
@@ -1239,7 +1239,7 @@
 
 <div class="viewcode-block" id="NuFlavIntGroup.simple_tex">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.NuFlavIntGroup.simple_tex">[docs]</a>
-    <span class="k">def</span> <span class="nf">simple_tex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavsep</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39; + &#39;</span><span class="p">,</span> <span class="n">intsep</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39; \, &#39;</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">simple_tex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavsep</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39; + &#39;</span><span class="p">,</span> <span class="n">intsep</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39; \, &#39;</span><span class="p">,</span>
                    <span class="n">flavintsep</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;; \; &#39;</span><span class="p">,</span> <span class="n">addsep</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;+&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Simplified TeX string reperesentation of this group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__simple_str</span><span class="p">(</span>
@@ -1249,12 +1249,12 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;TeX string representation for this group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simple_tex</span><span class="p">()</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">unique_flavs_tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unique_flavs_tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;TeX string representation of the unique flavors present in this</span>
 <span class="sd">        group&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s1">&#39; + &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">tex</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavs</span><span class="p">])</span></div>
@@ -1268,7 +1268,7 @@
 
 <div class="viewcode-block" id="FlavIntData">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntData">[docs]</a>
-<span class="k">class</span> <span class="nc">FlavIntData</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FlavIntData</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Container class for storing data for each NuFlavInt.</span>
 
 <span class="sd">    Parameters</span>
@@ -1316,7 +1316,7 @@
 <span class="sd">    True</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__load</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
@@ -1333,7 +1333,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_interpret_index</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_interpret_index</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">)</span> \
                 <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1347,7 +1347,7 @@
                 <span class="k">except</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid index: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span>
         <span class="n">key_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpret_index</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="n">tgt_obj</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -1355,7 +1355,7 @@
             <span class="n">tgt_obj</span> <span class="o">=</span> <span class="n">tgt_obj</span><span class="p">[</span><span class="n">key_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
         <span class="k">return</span> <span class="n">tgt_obj</span>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
         <span class="n">item</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">args</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">key_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpret_index</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
@@ -1367,12 +1367,12 @@
             <span class="n">tgt_obj</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">tgt_obj</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
         <span class="nb">dict</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">tgt_obj</span><span class="p">,</span> <span class="n">key_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursive, exact equality&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">__basic_validate</span><span class="p">(</span><span class="n">fi_container</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__basic_validate</span><span class="p">(</span><span class="n">fi_container</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="n">ALL_NUFLAVINTS</span><span class="p">:</span>
             <span class="k">with</span> <span class="n">BarSep</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
                 <span class="n">f</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">flavint</span><span class="o">.</span><span class="n">flav</span><span class="p">)</span>
@@ -1388,7 +1388,7 @@
                     <span class="s2">&quot; types, but missing (at least) int_type &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">it</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">__validate_inttype_dict</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__validate_inttype_dict</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">),</span> \
                 <span class="s2">&quot;Value must be an inttype (sub-) dict if you only specify a&quot;</span> \
                 <span class="s2">&quot; flavor (and not an int type) as key&quot;</span>
@@ -1398,25 +1398,25 @@
                 <span class="s2">&quot;inttype (sub-) dict must contain exactly &#39;cc&#39; and &#39;nc&#39; keys&quot;</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">__translate_inttype_dict</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__translate_inttype_dict</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">key</span><span class="p">:</span>
                 <span class="n">val</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
                 <span class="n">d</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">val</span>
         <span class="k">return</span> <span class="n">d</span>
 
-    <span class="k">def</span> <span class="nf">__load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">fileio</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">d</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;tuple of NuFlav : all flavors present&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([</span><span class="n">NuFlav</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">()]))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;tuple of NuFlavInt : all flavints present&quot;&quot;&quot;</span>
         <span class="n">fis</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">flav</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -1426,7 +1426,7 @@
 
 <div class="viewcode-block" id="FlavIntData.allclose">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntData.allclose">[docs]</a>
-    <span class="k">def</span> <span class="nf">allclose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">allclose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns True if all data structures are equal and all numerical</span>
 <span class="sd">        values contained are within relative (rtol) and/or absolute (atol)</span>
 <span class="sd">        tolerance of one another.</span>
@@ -1436,21 +1436,21 @@
 
 <div class="viewcode-block" id="FlavIntData.validate">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntData.validate">[docs]</a>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fi_container</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fi_container</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform basic validation on the data structure&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__basic_validate</span><span class="p">(</span><span class="n">fi_container</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FlavIntData.save">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntData.save">[docs]</a>
-    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save data structure to a file; see fileio.to_file for details&quot;&quot;&quot;</span>
         <span class="n">fileio</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FlavIntData.id_dupes">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntData.id_dupes">[docs]</a>
-    <span class="k">def</span> <span class="nf">id_dupes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_dupes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Identify flavints with duplicated data (exactly or within a</span>
 <span class="sd">        specified tolerance), convert these NuFlavInt&#39;s into NuFlavIntGroup&#39;s</span>
 <span class="sd">        and returning these along with the data associated with each.</span>
@@ -1515,7 +1515,7 @@
 
 <div class="viewcode-block" id="FlavIntDataGroup">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntDataGroup">[docs]</a>
-<span class="k">class</span> <span class="nc">FlavIntDataGroup</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FlavIntDataGroup</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Container class for storing data for some set(s) of NuFlavIntGroups</span>
 <span class="sd">    (cf. FlavIntData, which stores one datum for each NuFlavInt separately)</span>
 
@@ -1539,7 +1539,7 @@
 <span class="sd">            If val is an iterable, each member of the iterable is</span>
 <span class="sd">            interpreted as a NuFlavIntGroup.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flavint_groups</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">flavint_groups</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1578,11 +1578,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flavint_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flavint_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flavint_groups</span>
 
     <span class="nd">@flavint_groups</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">flavint_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flavint_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="s1">&#39;muons&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">value</span>
         <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_flavint_groups</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="n">all_flavints</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="n">add</span><span class="p">,</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">flavints</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fig</span><span class="p">])</span>
@@ -1596,7 +1596,7 @@
 
 <div class="viewcode-block" id="FlavIntDataGroup.transform_groups">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntDataGroup.transform_groups">[docs]</a>
-    <span class="k">def</span> <span class="nf">transform_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform FlavIntDataGroup into a structure given by the input</span>
 <span class="sd">        flavint_groups.</span>
 
@@ -1645,7 +1645,7 @@
 
 <div class="viewcode-block" id="FlavIntDataGroup.allclose">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntDataGroup.allclose">[docs]</a>
-    <span class="k">def</span> <span class="nf">allclose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">allclose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns True if all data structures are equal and all numerical</span>
 <span class="sd">        values contained are within relative (rtol) and/or absolute (atol)</span>
 <span class="sd">        tolerance of one another.</span>
@@ -1655,20 +1655,20 @@
 
 <div class="viewcode-block" id="FlavIntDataGroup.validate">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntDataGroup.validate">[docs]</a>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fi_container</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fi_container</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform basic validation on the data structure&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__basic_validate</span><span class="p">(</span><span class="n">fi_container</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FlavIntDataGroup.save">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.FlavIntDataGroup.save">[docs]</a>
-    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save data structure to a file; see fileio.to_file for details&quot;&quot;&quot;</span>
         <span class="n">fileio</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_parse_flavint_groups</span><span class="p">(</span><span class="n">flavint_groups</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_flavint_groups</span><span class="p">(</span><span class="n">flavint_groups</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flavint_groups</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">flavintGroupsFromString</span><span class="p">(</span><span class="n">flavint_groups</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flavint_groups</span><span class="p">,</span> <span class="n">NuFlavIntGroup</span><span class="p">):</span>
@@ -1690,7 +1690,7 @@
                             <span class="nb">type</span><span class="p">(</span><span class="n">flavint_groups</span><span class="p">))</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_merge</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_merge</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Merge dictionaries `a` and `b` by recursively iterating down</span>
 <span class="sd">        to the lowest level of the dictionary until coincident numpy</span>
 <span class="sd">        arrays are found, after which the appropriate sub-element is</span>
@@ -1725,14 +1725,14 @@
         <span class="k">return</span> <span class="n">a</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_interpret_index</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_interpret_index</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">nfi</span> <span class="o">=</span> <span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
             <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">nfi</span><span class="p">)</span>
         <span class="k">except</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid index: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">__basic_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fi_container</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__basic_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fi_container</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">:</span>
             <span class="n">f</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fi_container</span><span class="p">,</span> <span class="nb">dict</span><span class="p">),</span> <span class="s2">&quot;container must be of&quot;</span> \
@@ -1741,11 +1741,11 @@
                     <span class="s2">&quot;container missing flavint group &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">f</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">__load</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__load</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">fileio</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">d</span>
 
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
         <span class="n">combined_flavint_groups</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
@@ -1753,18 +1753,18 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">FlavIntDataGroup</span><span class="p">(</span><span class="n">val</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="o">=</span><span class="n">combined_flavint_groups</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpret_index</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
         <span class="n">tgt_obj</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">tgt_obj</span>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpret_index</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavint_groups</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">flavint_groups</span> <span class="o">+=</span> <span class="p">[</span><span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursive, exact equality&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
 
@@ -1772,7 +1772,7 @@
 
 <div class="viewcode-block" id="flavintGroupsFromString">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.flavintGroupsFromString">[docs]</a>
-<span class="k">def</span> <span class="nf">flavintGroupsFromString</span><span class="p">(</span><span class="n">groups</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">flavintGroupsFromString</span><span class="p">(</span><span class="n">groups</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpret `groups` to break into neutrino flavor/interaction type(s)</span>
 <span class="sd">    that are to be grouped together; also form singleton groups as specified</span>
 <span class="sd">    explicitly in `groups` or for any unspecified flavor/interaction type(s).</span>
@@ -1820,7 +1820,7 @@
 
 <div class="viewcode-block" id="xlateGroupsStr">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flavInt.xlateGroupsStr">[docs]</a>
-<span class="k">def</span> <span class="nf">xlateGroupsStr</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">xlateGroupsStr</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Translate a &quot;,&quot;-separated string into separate `NuFlavIntGroup`s.</span>
 
 <span class="sd">    val</span>
@@ -1858,7 +1858,7 @@
 
 
 <span class="c1"># pylint: disable=line-too-long</span>
-<span class="k">def</span> <span class="nf">test_IntType</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_IntType</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;IntType unit tests&quot;&quot;&quot;</span>
     <span class="c1">#==========================================================================</span>
     <span class="c1"># Test IntType</span>
@@ -1882,7 +1882,7 @@
 
 
 <span class="c1"># pylint: disable=line-too-long</span>
-<span class="k">def</span> <span class="nf">test_NuFlav</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_NuFlav</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;NuFlav unit tests&quot;&quot;&quot;</span>
     <span class="n">all_f_codes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="o">-</span><span class="mi">14</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="o">-</span><span class="mi">16</span><span class="p">]</span>
 
@@ -1917,7 +1917,7 @@
 
 
 <span class="c1"># pylint: disable=line-too-long</span>
-<span class="k">def</span> <span class="nf">test_NuFlavInt</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_NuFlavInt</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;NuFlavInt unit tests&quot;&quot;&quot;</span>
     <span class="n">all_f_codes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="o">-</span><span class="mi">14</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="o">-</span><span class="mi">16</span><span class="p">]</span>
     <span class="n">all_i_codes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
@@ -1980,7 +1980,7 @@
 
 
 <span class="c1"># pylint: disable=line-too-long</span>
-<span class="k">def</span> <span class="nf">test_NuFlavIntGroup</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_NuFlavIntGroup</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;NuFlavIntGroup unit tests&quot;&quot;&quot;</span>
     <span class="n">all_f_codes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="o">-</span><span class="mi">14</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="o">-</span><span class="mi">16</span><span class="p">]</span>
     <span class="n">all_i_codes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
@@ -2098,7 +2098,7 @@
 
 
 <span class="c1"># pylint: disable=line-too-long</span>
-<span class="k">def</span> <span class="nf">test_FlavIntData</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_FlavIntData</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;FlavIntData unit tests&quot;&quot;&quot;</span>
     <span class="c1">#==========================================================================</span>
     <span class="c1"># Test FlavIntData</span>
@@ -2201,7 +2201,7 @@
 
 
 <span class="c1"># pylint: disable=line-too-long</span>
-<span class="k">def</span> <span class="nf">test_FlavIntDataGroup</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_FlavIntDataGroup</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;FlavIntDataGroup unit tests&quot;&quot;&quot;</span>
     <span class="n">flavint_group</span> <span class="o">=</span> <span class="s1">&#39;nue, numu_cc+numubar_cc, nutau_cc&#39;</span>
     <span class="n">FlavIntDataGroup</span><span class="p">(</span><span class="n">flavint_groups</span><span class="o">=</span><span class="n">flavint_group</span><span class="p">)</span>

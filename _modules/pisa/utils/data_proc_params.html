@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.data_proc_params &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -76,26 +76,26 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
 <span class="c1"># Note that the form of the numpy import is intentional, so that cuts -- which</span>
 <span class="c1"># are exectuted with `eval` -- will have access to numpy&#39;s namespace without</span>
 <span class="c1"># explicit reference to numpy. It&#39;s a hack, but it works well.</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="o">*</span> <span class="c1"># pylint: disable=wildcard-import, unused-wildcard-import, redefined-builtin</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="c1"># pylint: disable=unused-import</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span> <span class="c1"># pylint: disable=reimported</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span> <span class="c1"># pylint: disable=wildcard-import, unused-wildcard-import, redefined-builtin</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span> <span class="c1"># pylint: disable=unused-import</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span> <span class="c1"># pylint: disable=reimported</span>
 
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">jsons</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.flavInt</span> <span class="kn">import</span> <span class="n">NuFlav</span><span class="p">,</span> <span class="n">IntType</span><span class="p">,</span> <span class="n">FlavIntData</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">resources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">jsons</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.flavInt</span><span class="w"> </span><span class="kn">import</span> <span class="n">NuFlav</span><span class="p">,</span> <span class="n">IntType</span><span class="p">,</span> <span class="n">FlavIntData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MULTI_PART_FIELDS&#39;</span><span class="p">,</span> <span class="s1">&#39;NU_PDG_CODES&#39;</span><span class="p">,</span> <span class="s1">&#39;DataProcParams&#39;</span><span class="p">]</span>
@@ -126,7 +126,7 @@
 
 <div class="viewcode-block" id="DataProcParams">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams">[docs]</a>
-<span class="k">class</span> <span class="nc">DataProcParams</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataProcParams</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for importing, working with, and storing data processing</span>
 <span class="sd">    parameters.</span>
 
@@ -304,7 +304,7 @@
 <span class="sd">        &quot;(reco_zenith &gt; pi/2) &amp; (cuts_step_1 == 1) &amp; (cuts_step_2 == 1)&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">proc_ver</span><span class="p">,</span> <span class="n">data_proc_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">proc_ver</span><span class="p">,</span> <span class="n">data_proc_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">data_proc_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data_proc_params</span> <span class="o">=</span> <span class="s1">&#39;events/data_proc_params.json&#39;</span>
@@ -377,7 +377,7 @@
 <div class="viewcode-block" id="DataProcParams.validate_cut_spec">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.validate_cut_spec">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">validate_cut_spec</span><span class="p">(</span><span class="n">cuts</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_cut_spec</span><span class="p">(</span><span class="n">cuts</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate a cut specification dictionary&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">cutname</span><span class="p">,</span> <span class="n">cutspec</span> <span class="ow">in</span> <span class="n">cuts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="c1"># Cut names are lower-case strings with no surrounding whitespace</span>
@@ -399,7 +399,7 @@
 <div class="viewcode-block" id="DataProcParams.validate_pid_spec">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.validate_pid_spec">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">validate_pid_spec</span><span class="p">(</span><span class="n">pids</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_pid_spec</span><span class="p">(</span><span class="n">pids</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate a PID specification dictionary&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">particle_name</span><span class="p">,</span> <span class="n">pidspec</span> <span class="ow">in</span> <span class="n">pids</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="c1"># Particle names are lower-case strings with no surrounding</span>
@@ -425,7 +425,7 @@
 <div class="viewcode-block" id="DataProcParams.retrieve_expression">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.retrieve_expression">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">retrieve_expression</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">expression</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">retrieve_expression</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">expression</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve data from an HDF5 group `h5group` according to</span>
 <span class="sd">        `expresssion`. This can apply expressions with simple mathematical</span>
 <span class="sd">        operators and numpy functions to multiple fields within the HDF5 file</span>
@@ -500,7 +500,7 @@
 <div class="viewcode-block" id="DataProcParams.retrieve_node_data">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.retrieve_node_data">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">retrieve_node_data</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">allow_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">retrieve_node_data</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">allow_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve data from an HDF5 group `group` at address `address`.</span>
 <span class="sd">        Levels of hierarchy are separated by forward-slashes (&#39;/&#39;).</span>
 
@@ -520,7 +520,7 @@
 <div class="viewcode-block" id="DataProcParams.populate_global_namespace">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.populate_global_namespace">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">populate_global_namespace</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">field_map</span><span class="p">,</span> <span class="n">allow_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">populate_global_namespace</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">field_map</span><span class="p">,</span> <span class="n">allow_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Populate the Python global namespace with variables named as the</span>
 <span class="sd">        keys in `field_map` and values loaded from the `h5group` at addresses</span>
 <span class="sd">        specified by the corresponding values in `field_map`.</span>
@@ -543,7 +543,7 @@
 <div class="viewcode-block" id="DataProcParams.cut_bool_idx">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.cut_bool_idx">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">cut_bool_idx</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">cut_fields</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cut_bool_idx</span><span class="p">(</span><span class="n">h5group</span><span class="p">,</span> <span class="n">cut_fields</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return numpy boolean indexing for data in `h5group` given a cut</span>
 <span class="sd">        specified using `cut_fields` in the `h5group` and evaluation criteria</span>
 <span class="sd">        `keep_criteria`</span>
@@ -566,7 +566,7 @@
 
 <div class="viewcode-block" id="DataProcParams.get_data">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.get_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h5</span><span class="p">,</span> <span class="n">run_settings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h5</span><span class="p">,</span> <span class="n">run_settings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get data attached to an HDF5 node, returned as a dictionary.</span>
 
 <span class="sd">        The returned dictionary&#39;s keys match those in the field_map and the</span>
@@ -649,7 +649,7 @@
 
 <div class="viewcode-block" id="DataProcParams.interpret_data">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.interpret_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">interpret_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpret_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform mappings from non-standard to standard values (such as</span>
 <span class="sd">        translating non-PDG neutrino flavor codes to PDG codes) and add</span>
 <span class="sd">        fields expected to be useful (such as coszen, derived from zen fields).</span>
@@ -676,7 +676,7 @@
 <div class="viewcode-block" id="DataProcParams.subselect">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.subselect">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">subselect</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">subselect</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">FlavIntData</span><span class="p">):</span>
             <span class="n">outdata</span> <span class="o">=</span> <span class="n">FlavIntData</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">flavints</span><span class="p">:</span>
@@ -691,7 +691,7 @@
 
 <div class="viewcode-block" id="DataProcParams.apply_cuts">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.data_proc_params.DataProcParams.apply_cuts">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_cuts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">cuts</span><span class="p">,</span> <span class="n">boolean_op</span><span class="o">=</span><span class="s1">&#39;&amp;&#39;</span><span class="p">,</span> <span class="n">return_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_cuts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">cuts</span><span class="p">,</span> <span class="n">boolean_op</span><span class="o">=</span><span class="s1">&#39;&amp;&#39;</span><span class="p">,</span> <span class="n">return_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform `cuts` on `data` and return a dict containing</span>
 <span class="sd">        `return_fields` from events that pass the cuts.</span>
 

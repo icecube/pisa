@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.flux.barr_simple &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,19 +72,19 @@
 <span class="sd">Stage to implement the old PISA/oscfit flux systematics</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span><span class="p">,</span> <span class="n">cuda</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span><span class="p">,</span> <span class="n">cuda</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">myjit</span><span class="p">,</span> <span class="n">ftype</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.barr_parameterization</span> <span class="kn">import</span> <span class="n">modRatioNuBar</span><span class="p">,</span> <span class="n">modRatioUpHor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.numba_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">myjit</span><span class="p">,</span> <span class="n">ftype</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.barr_parameterization</span><span class="w"> </span><span class="kn">import</span> <span class="n">modRatioNuBar</span><span class="p">,</span> <span class="n">modRatioUpHor</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;barr_simple&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_ratio_scale&#39;</span><span class="p">,</span> <span class="s1">&#39;spectral_index_scale&#39;</span><span class="p">,</span>
             <span class="s1">&#39;apply_sys_kernel&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_sys_vectorized&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
@@ -92,7 +92,7 @@
 
 <div class="viewcode-block" id="barr_simple">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple">[docs]</a>
-<span class="k">class</span> <span class="nc">barr_simple</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">barr_simple</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    stage to apply Barr style flux uncertainties</span>
 <span class="sd">    uses parameterisations of plots from Barr 2006 paper</span>
@@ -117,7 +117,7 @@
 <span class="sd">            &quot;nubar&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
@@ -146,7 +146,7 @@
 
 <div class="viewcode-block" id="barr_simple.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
@@ -155,7 +155,7 @@
 <div class="viewcode-block" id="barr_simple.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple.compute_function">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
 
         <span class="n">nue_numu_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">nue_numu_ratio</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">)</span>
@@ -184,7 +184,7 @@
 
 
 <span class="nd">@myjit</span>
-<span class="k">def</span> <span class="nf">apply_ratio_scale</span><span class="p">(</span><span class="n">ratio_scale</span><span class="p">,</span> <span class="n">sum_constant</span><span class="p">,</span> <span class="n">in1</span><span class="p">,</span> <span class="n">in2</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_ratio_scale</span><span class="p">(</span><span class="n">ratio_scale</span><span class="p">,</span> <span class="n">sum_constant</span><span class="p">,</span> <span class="n">in1</span><span class="p">,</span> <span class="n">in2</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; apply ratio scale to flux values</span>
 
 <span class="sd">    Parameters</span>
@@ -218,13 +218,13 @@
 
 
 <span class="nd">@myjit</span>
-<span class="k">def</span> <span class="nf">spectral_index_scale</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">egy_pivot</span><span class="p">,</span> <span class="n">delta_index</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">spectral_index_scale</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">egy_pivot</span><span class="p">,</span> <span class="n">delta_index</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; calculate spectral index scale &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">true_energy</span> <span class="o">/</span> <span class="n">egy_pivot</span><span class="p">),</span> <span class="n">delta_index</span><span class="p">)</span>
 
 
 <span class="nd">@myjit</span>
-<span class="k">def</span> <span class="nf">apply_sys_kernel</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_sys_kernel</span><span class="p">(</span>
     <span class="n">true_energy</span><span class="p">,</span>
     <span class="n">true_coszen</span><span class="p">,</span>
     <span class="n">nu_flux_nominal</span><span class="p">,</span>
@@ -292,7 +292,7 @@
 
 
 <span class="nd">@guvectorize</span><span class="p">([</span><span class="n">SIGNATURE</span><span class="p">],</span> <span class="s2">&quot;(),(),(d),(d),(),(),(),(),(),()-&gt;(d)&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">apply_sys_vectorized</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_sys_vectorized</span><span class="p">(</span>
     <span class="n">true_energy</span><span class="p">,</span>
     <span class="n">true_coszen</span><span class="p">,</span>
     <span class="n">nu_flux_nominal</span><span class="p">,</span>
@@ -322,7 +322,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.barr_simple.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;nue_numu_ratio&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>

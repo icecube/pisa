@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.utils.add_indices &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -79,22 +79,22 @@
 <span class="sd">module structure imported from bootcamp example</span>
 <span class="sd">&#39;&#39;&#39;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)&quot;</span>
 
 <span class="c1"># Load the modified index lookup function</span>
-<span class="kn">from</span> <span class="nn">pisa.core.bin_indexing</span> <span class="kn">import</span> <span class="n">lookup_indices</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa_tests.test_services</span> <span class="kn">import</span> <span class="n">TEST_BINNING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.bin_indexing</span><span class="w"> </span><span class="kn">import</span> <span class="n">lookup_indices</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa_tests.test_services</span><span class="w"> </span><span class="kn">import</span> <span class="n">TEST_BINNING</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;add_indices&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="add_indices">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.add_indices.add_indices">[docs]</a>
-<span class="k">class</span> <span class="nc">add_indices</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">add_indices</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    PISA Pi stage to map out the index of the analysis</span>
 <span class="sd">    binning where each event falls into.</span>
@@ -118,7 +118,7 @@
 
     <span class="c1"># this is the constructor with default arguments</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                  <span class="p">):</span>
 
@@ -133,7 +133,7 @@
 
 <div class="viewcode-block" id="add_indices.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.add_indices.add_indices.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Calculate the bin index where each event falls into</span>
 
@@ -164,7 +164,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">add_indices</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span>
 </pre></div>

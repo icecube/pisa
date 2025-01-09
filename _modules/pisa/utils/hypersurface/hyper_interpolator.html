@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.hypersurface.hyper_interpolator &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -93,31 +93,31 @@
 <span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
 
 
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">collections</span>
-<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">interpolate</span>
-<span class="kn">from</span> <span class="nn">.hypersurface</span> <span class="kn">import</span> <span class="n">Hypersurface</span><span class="p">,</span> <span class="n">HypersurfaceParam</span><span class="p">,</span> <span class="n">load_hypersurfaces</span>
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">matrix</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.jsons</span> <span class="kn">import</span> <span class="n">from_json</span><span class="p">,</span> <span class="n">to_json</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
-<span class="kn">from</span> <span class="nn">pisa.core.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">is_binning</span>
-<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">mkdir</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">ufloat</span><span class="p">,</span> <span class="n">correlated_values</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">interpolate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.hypersurface</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hypersurface</span><span class="p">,</span> <span class="n">HypersurfaceParam</span><span class="p">,</span> <span class="n">load_hypersurfaces</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">matrix</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.jsons</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_json</span><span class="p">,</span> <span class="n">to_json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">is_binning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">Map</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">mkdir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">ufloat</span><span class="p">,</span> <span class="n">correlated_values</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
 
 <div class="viewcode-block" id="HypersurfaceInterpolator">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator">[docs]</a>
-<span class="k">class</span> <span class="nc">HypersurfaceInterpolator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HypersurfaceInterpolator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory for interpolated hypersurfaces.</span>
 
 <span class="sd">    After being initialized with a set of hypersurface fits produced at different</span>
@@ -158,7 +158,7 @@
 <span class="sd">        class used for interpolation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interpolation_param_spec</span><span class="p">,</span> <span class="n">hs_fits</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interpolation_param_spec</span><span class="p">,</span> <span class="n">hs_fits</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">interpolation_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="c1"># key ordering is important to guarantee that dimensions stay consistent</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;interpolation params must be specified as a dict with ordered keys&quot;</span>
@@ -245,27 +245,27 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ignore_nan</span> <span class="o">=</span> <span class="n">ignore_nan</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">interpolation_param_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolation_param_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">param_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">param_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">binning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s2">&quot;binning&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_binning</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span> <span class="p">:</span>
             <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="o">**</span><span class="n">binning</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">binning</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_interp_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_interp_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_param_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
 <div class="viewcode-block" id="HypersurfaceInterpolator.get_hypersurface">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.get_hypersurface">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_hypersurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kw</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_hypersurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kw</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a Hypersurface object with interpolated coefficients.</span>
 
@@ -339,7 +339,7 @@
         <span class="k">return</span> <span class="n">hypersurface</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_make_slices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">xi</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_slices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">xi</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make slices of hypersurfaces for plotting.</span>
 
 <span class="sd">        In some covariance matrices, the spline fits are corrected to make</span>
@@ -379,7 +379,7 @@
 
 <div class="viewcode-block" id="HypersurfaceInterpolator.plot_fits_in_bin">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.HypersurfaceInterpolator.plot_fits_in_bin">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_fits_in_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kw</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_fits_in_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kw</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Plot the coefficients as well as covariance matrix elements as a function</span>
 <span class="sd">        of the interpolation parameters.</span>
@@ -402,7 +402,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">plot_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_kw</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="k">assert</span> <span class="n">plot_dim</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;plotting only supported in 1D or 2D&quot;</span>
-        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
         <span class="n">n_coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeff_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">hs_param_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reference_state</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="n">hs_param_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;intercept&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2"> p</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">hs_param_names</span>
@@ -568,7 +568,7 @@
 
 <div class="viewcode-block" id="pipeline_cfg_from_states">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.pipeline_cfg_from_states">[docs]</a>
-<span class="k">def</span> <span class="nf">pipeline_cfg_from_states</span><span class="p">(</span><span class="n">state_dict</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pipeline_cfg_from_states</span><span class="p">(</span><span class="n">state_dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Recover a pipeline cfg containing PISA objects from a raw state.</span>
 
 <span class="sd">    When a pipeline configuration is stored to JSON, the PISA objects turn into</span>
@@ -613,7 +613,7 @@
 
 <div class="viewcode-block" id="serialize_pipeline_cfg">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.serialize_pipeline_cfg">[docs]</a>
-<span class="k">def</span> <span class="nf">serialize_pipeline_cfg</span><span class="p">(</span><span class="n">pipeline_cfg</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">serialize_pipeline_cfg</span><span class="p">(</span><span class="n">pipeline_cfg</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Turn a pipeline configuration into something we can store to JSON.</span>
 
 <span class="sd">    It doesn&#39;t work by default because tuples are not allowed as keys when storing to</span>
@@ -633,7 +633,7 @@
 
 <div class="viewcode-block" id="assemble_interpolated_fits">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.assemble_interpolated_fits">[docs]</a>
-<span class="k">def</span> <span class="nf">assemble_interpolated_fits</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">drop_fit_maps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">leftout_param</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">leftout_surface</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assemble_interpolated_fits</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">drop_fit_maps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">leftout_param</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">leftout_surface</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;After all of the fits on the cluster are done, assemble the results to one JSON.</span>
 
 <span class="sd">    The JSON produced by this function is what `load_interpolated_hypersurfaces`</span>
@@ -685,7 +685,7 @@
 
 <div class="viewcode-block" id="get_incomplete_job_idx">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.get_incomplete_job_idx">[docs]</a>
-<span class="k">def</span> <span class="nf">get_incomplete_job_idx</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_incomplete_job_idx</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get job indices of fits that are not flagged as successful.&quot;&quot;&quot;</span>
 
     <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">),</span> <span class="s2">&quot;fit directory does not exist&quot;</span>
@@ -708,7 +708,7 @@
 
 <div class="viewcode-block" id="run_interpolated_fit">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.run_interpolated_fit">[docs]</a>
-<span class="k">def</span> <span class="nf">run_interpolated_fit</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="n">job_idx</span><span class="p">,</span> <span class="n">skip_successful</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_interpolated_fit</span><span class="p">(</span><span class="n">fit_directory</span><span class="p">,</span> <span class="n">job_idx</span><span class="p">,</span> <span class="n">skip_successful</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the hypersurface fit for a grid point.</span>
 
 <span class="sd">    If `skip_successful` is true, do not run if the `fit_successful` flag is already</span>
@@ -770,7 +770,7 @@
     <span class="k">for</span> <span class="n">param_state</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;hypersurface_params&quot;</span><span class="p">]:</span>
         <span class="n">hypersurface_params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HypersurfaceParam</span><span class="o">.</span><span class="n">from_state</span><span class="p">(</span><span class="n">param_state</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">find_hist_stage</span><span class="p">(</span><span class="n">pipeline</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_hist_stage</span><span class="p">(</span><span class="n">pipeline</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Locate the index of the hist stage in a pipeline.&quot;&quot;&quot;</span>
         <span class="n">hist_idx_found</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">):</span>
@@ -854,7 +854,7 @@
 
 <div class="viewcode-block" id="prepare_interpolated_fit">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.prepare_interpolated_fit">[docs]</a>
-<span class="k">def</span> <span class="nf">prepare_interpolated_fit</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_interpolated_fit</span><span class="p">(</span>
     <span class="n">nominal_dataset</span><span class="p">,</span> <span class="n">sys_datasets</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">fit_directory</span><span class="p">,</span> <span class="n">interpolation_param_spec</span><span class="p">,</span>
     <span class="n">combine_regex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">minimum_mc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">hypersurface_fit_kw</span>
 <span class="p">):</span>
@@ -1016,7 +1016,7 @@
 
 <div class="viewcode-block" id="load_interpolated_hypersurfaces">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hyper_interpolator.load_interpolated_hypersurfaces">[docs]</a>
-<span class="k">def</span> <span class="nf">load_interpolated_hypersurfaces</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">expected_binning</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_interpolated_hypersurfaces</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">expected_binning</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Load a set of interpolated hypersurfaces from a file.</span>
 

@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.mcSimRunSettings &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -73,16 +73,16 @@
 <span class="sd">&quot;&quot;&quot;Handle Monte Carlo simulation run settings&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">pisa.utils.fileio</span> <span class="k">as</span> <span class="nn">fileio</span>
-<span class="kn">import</span> <span class="nn">pisa.utils.flavInt</span> <span class="k">as</span> <span class="nn">flavInt</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">resources</span> <span class="k">as</span> <span class="n">resources</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.cross_sections</span> <span class="kn">import</span> <span class="n">CrossSections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">fileio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pisa.utils.flavInt</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">flavInt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span> <span class="k">as</span> <span class="n">resources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.cross_sections</span><span class="w"> </span><span class="kn">import</span> <span class="n">CrossSections</span>
 
 <span class="c1"># Following &quot;import *&quot; is intentionally done so that `eval` called in</span>
 <span class="c1"># translate_source_dict will execute with direct access to numpy namespace</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="o">*</span> <span class="c1"># pylint: disable=wildcard-import, unused-wildcard-import, redefined-builtin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span> <span class="c1"># pylint: disable=wildcard-import, unused-wildcard-import, redefined-builtin</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MCSimRunSettings&#39;</span><span class="p">,</span> <span class="s1">&#39;DetMCSimRunsSettings&#39;</span><span class="p">]</span>
@@ -114,7 +114,7 @@
 
 <div class="viewcode-block" id="MCSimRunSettings">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings">[docs]</a>
-<span class="k">class</span> <span class="nc">MCSimRunSettings</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MCSimRunSettings</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle Monte Carlo run settings</span>
 
 <span class="sd">    Parameters</span>
@@ -195,7 +195,7 @@
 
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_settings</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_settings</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="c1"># TODO: clean up this constructor!</span>
         <span class="c1">#if isinstance(run_settings, str):</span>
@@ -220,7 +220,7 @@
 <div class="viewcode-block" id="MCSimRunSettings.translate_source_dict">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.translate_source_dict">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">translate_source_dict</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">translate_source_dict</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
         <span class="n">d</span><span class="p">[</span><span class="s1">&#39;tot_gen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;num_events_per_file&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;num_i3_files&#39;</span><span class="p">]</span>
 
         <span class="c1"># TODO: does the following logic actually work with both old and new</span>
@@ -256,14 +256,14 @@
 
 <div class="viewcode-block" id="MCSimRunSettings.consistency_checks">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.consistency_checks">[docs]</a>
-    <span class="k">def</span> <span class="nf">consistency_checks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">consistency_checks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># TODO: implement!</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="MCSimRunSettings.barnobarfract">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.barnobarfract">[docs]</a>
-    <span class="k">def</span> <span class="nf">barnobarfract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">barnobarfract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="n">flav_or_flavint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Fraction of events generated (either particles or antiparticles).</span>
 
@@ -303,7 +303,7 @@
 
 <div class="viewcode-block" id="MCSimRunSettings.get_num_gen">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_num_gen">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_num_gen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_num_gen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">flav_or_flavint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_physical_fract</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of events generated.</span>
 
@@ -348,40 +348,40 @@
 
 <div class="viewcode-block" id="MCSimRunSettings.get_flavints">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_flavints">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;flavints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_flavints</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="MCSimRunSettings.get_flavs">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_flavs">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;flavints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_flavs</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="MCSimRunSettings.get_energy_range">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_energy_range">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_energy_range</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_energy_range</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;(min, max) energy in GeV&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;energy_min&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;energy_max&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="MCSimRunSettings.get_spectral_index">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_spectral_index">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_spectral_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_spectral_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Spectral index (positive number for negative powers of energy)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;sim_spectral_index&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="MCSimRunSettings.get_xsec_version">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_xsec_version">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_xsec_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_xsec_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cross sectons version name used in generating the MC&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;xsec_version&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="MCSimRunSettings.get_xsec">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.MCSimRunSettings.get_xsec">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_xsec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xsec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_xsec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xsec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiated CrossSections object&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">xsec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">CrossSections</span><span class="p">(</span><span class="n">ver</span><span class="o">=</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;xsec_version&#39;</span><span class="p">])</span>
@@ -392,7 +392,7 @@
 
 <div class="viewcode-block" id="DetMCSimRunsSettings">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings">[docs]</a>
-<span class="k">class</span> <span class="nc">DetMCSimRunsSettings</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DetMCSimRunsSettings</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle Monte Carlo run settings for a detector (i.e., without specifying</span>
 <span class="sd">    which run as is required for the MCSimRunSettings object)</span>
 
@@ -411,7 +411,7 @@
 <span class="sd">                       JSON file</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_settings</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_settings</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">run_settings</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">rsd</span> <span class="o">=</span> <span class="n">fileio</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">resources</span><span class="o">.</span><span class="n">find_resource</span><span class="p">(</span><span class="n">run_settings</span><span class="p">))</span>
@@ -454,13 +454,13 @@
 
 <div class="viewcode-block" id="DetMCSimRunsSettings.consistency_checks">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.consistency_checks">[docs]</a>
-    <span class="k">def</span> <span class="nf">consistency_checks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">consistency_checks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">flav</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="DetMCSimRunsSettings.barnobarfract">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.barnobarfract">[docs]</a>
-    <span class="k">def</span> <span class="nf">barnobarfract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">barnobarfract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="n">flav_or_flavint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">barnobarfract</span><span class="p">(</span><span class="n">barnobar</span><span class="o">=</span><span class="n">barnobar</span><span class="p">,</span>
                                             <span class="n">is_particle</span><span class="o">=</span><span class="n">is_particle</span><span class="p">,</span>
@@ -469,7 +469,7 @@
 
 <div class="viewcode-block" id="DetMCSimRunsSettings.get_num_gen">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_num_gen">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_num_gen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_num_gen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">barnobar</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_particle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">flav_or_flavint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_physical_fract</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the total number of events generated&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_num_gen</span><span class="p">(</span>
@@ -481,40 +481,40 @@
 
 <div class="viewcode-block" id="DetMCSimRunsSettings.get_flavints">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_flavints">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_flavints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_flavints</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DetMCSimRunsSettings.get_flavs">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_flavs">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_flavs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_flavs</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DetMCSimRunsSettings.get_energy_range">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_energy_range">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_energy_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_energy_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;(min, max) energy in GeV&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_energy_range</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DetMCSimRunsSettings.get_spectral_index">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_spectral_index">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_spectral_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_spectral_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Spectral index (positive number for negative powers of energy)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_spectral_index</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DetMCSimRunsSettings.get_xsec_version">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_xsec_version">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_xsec_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_xsec_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cross sectons version name used in generating the MC&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_xsec_version</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DetMCSimRunsSettings.get_xsec">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.mcSimRunSettings.DetMCSimRunsSettings.get_xsec">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_xsec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">xsec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_xsec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">xsec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiated CrossSections object&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)]</span><span class="o">.</span><span class="n">get_xsec</span><span class="p">(</span><span class="n">xsec</span><span class="p">)</span></div>
 </div>

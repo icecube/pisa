@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.config_parser &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -305,29 +305,29 @@
 <span class="c1">#   re-raise the exception)</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span> <span class="n">ArgumentParser</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
-<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">abspath</span><span class="p">,</span> <span class="n">expanduser</span><span class="p">,</span> <span class="n">expandvars</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">join</span>
-<span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">abspath</span><span class="p">,</span> <span class="n">expanduser</span><span class="p">,</span> <span class="n">expandvars</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">join</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
-<span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">RawConfigParser</span><span class="p">,</span> <span class="n">ExtendedInterpolation</span><span class="p">,</span> <span class="n">DuplicateOptionError</span><span class="p">,</span>
     <span class="n">SectionProxy</span><span class="p">,</span> <span class="n">MissingSectionHeaderError</span><span class="p">,</span> <span class="n">DuplicateSectionError</span><span class="p">,</span>
     <span class="n">NoSectionError</span>
 <span class="p">)</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">ufloat</span><span class="p">,</span> <span class="n">ufloat_fromstr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">ufloat</span><span class="p">,</span> <span class="n">ufloat_fromstr</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">split</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">split</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.hash</span><span class="w"> </span><span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PARAM_RE&#39;</span><span class="p">,</span> <span class="s1">&#39;PARAM_ATTRS&#39;</span><span class="p">,</span> <span class="s1">&#39;STAGE_SEP&#39;</span><span class="p">,</span>
@@ -370,7 +370,7 @@
 
 <div class="viewcode-block" id="parse_quantity">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.parse_quantity">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_quantity</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_quantity</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a string into a pint/uncertainty quantity.</span>
 
 <span class="sd">    Parameters</span>
@@ -420,7 +420,7 @@
 
 <div class="viewcode-block" id="parse_string_literal">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.parse_string_literal">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_string_literal</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_string_literal</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate a string with certain special values, or return the string. Any</span>
 <span class="sd">    further parsing must be done outside this module, as this is as specialized</span>
 <span class="sd">    as we&#39;re willing to be in assuming/interpreting what a string is supposed</span>
@@ -461,7 +461,7 @@
 
 <div class="viewcode-block" id="interpret_param_subfields">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.interpret_param_subfields">[docs]</a>
-<span class="k">def</span> <span class="nf">interpret_param_subfields</span><span class="p">(</span><span class="n">subfields</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">interpret_param_subfields</span><span class="p">(</span><span class="n">subfields</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively interpret and parse parameter subfields.</span>
 
 <span class="sd">    Parameters</span>
@@ -524,7 +524,7 @@
 
 <div class="viewcode-block" id="parse_param">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.parse_param">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_param</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">selector</span><span class="p">,</span> <span class="n">fullname</span><span class="p">,</span> <span class="n">pname</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_param</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">selector</span><span class="p">,</span> <span class="n">fullname</span><span class="p">,</span> <span class="n">pname</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a param specification from a PISA config file.</span>
 
 <span class="sd">    Note that if the param specification does not include ``fixed``,</span>
@@ -553,8 +553,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Note: imports placed here to avoid circular imports</span>
-    <span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">DerivedParam</span>
-    <span class="kn">from</span> <span class="nn">pisa.core.prior</span> <span class="kn">import</span> <span class="n">Prior</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">DerivedParam</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">Prior</span>
     <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">pname</span><span class="p">,</span> <span class="n">is_fixed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">value</span> <span class="o">=</span> <span class="n">parse_quantity</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -657,7 +657,7 @@
 
 <div class="viewcode-block" id="parse_pipeline_config">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.parse_pipeline_config">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_pipeline_config</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_pipeline_config</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse pipeline config.</span>
 
 <span class="sd">    Parameters</span>
@@ -674,8 +674,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Note: imports placed here to avoid circular imports</span>
-    <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
-    <span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">ParamSelector</span><span class="p">,</span> <span class="n">DerivedParam</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParamSelector</span><span class="p">,</span> <span class="n">DerivedParam</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
@@ -955,7 +955,7 @@
 
 <div class="viewcode-block" id="MutableMultiFileIterator">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.MutableMultiFileIterator">[docs]</a>
-<span class="k">class</span> <span class="nc">MutableMultiFileIterator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MutableMultiFileIterator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Iterate through the lines of an already-open file (`fp`) but then can pause</span>
 <span class="sd">    at any point and open and iterate through another file via the</span>
@@ -979,7 +979,7 @@
 <span class="sd">        Identifier for the initially `fp` object</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fpname</span><span class="p">,</span> <span class="n">fpath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fpname</span><span class="p">,</span> <span class="n">fpath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Stack for storing dicts with &#39;fp&#39;, &#39;fpname&#39;, &#39;fpath&#39;, &#39;lineno&#39;, and</span>
 <span class="sd">        &#39;line&#39; for keeping track of the hierarchy of master config &amp; included</span>
@@ -1021,7 +1021,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">file_hierarchy</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">fpname</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">())])</span>
 
-    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate through lines in the file(s).</span>
 
 <span class="sd">        Returns</span>
@@ -1055,7 +1055,7 @@
 
 <div class="viewcode-block" id="MutableMultiFileIterator.switch_to_file">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.MutableMultiFileIterator.switch_to_file">[docs]</a>
-    <span class="k">def</span> <span class="nf">switch_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fpname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">switch_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fpname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Switch iterator to a new resource location to continue processing.</span>
 
 <span class="sd">        Parameters</span>
@@ -1129,7 +1129,7 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">location</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">location</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;string : Full hierarchical location, formatted for display&quot;&quot;&quot;</span>
         <span class="n">info</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;File hierarchy (most recent last):</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">record_num</span><span class="p">,</span> <span class="n">record</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="p">):</span>
@@ -1140,13 +1140,13 @@
             <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">record</span><span class="p">))</span>
         <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Close all file handles opened by this object (i.e. all except the</span>
 <span class="sd">        first file pointer, which is provided as an argument to `__init__`)&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_stack</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
@@ -1156,7 +1156,7 @@
 
 <div class="viewcode-block" id="PISAConfigParser">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser">[docs]</a>
-<span class="k">class</span> <span class="nc">PISAConfigParser</span><span class="p">(</span><span class="n">RawConfigParser</span><span class="p">):</span>  <span class="c1"># pylint: disable=too-many-ancestors</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PISAConfigParser</span><span class="p">(</span><span class="n">RawConfigParser</span><span class="p">):</span>  <span class="c1"># pylint: disable=too-many-ancestors</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parses a PISA config file, extending :class:`configparser.RawConfigParser`</span>
 <span class="sd">    (the backport of RawConfigParser from Python 3.x) by adding the ability to</span>
@@ -1217,7 +1217,7 @@
     <span class="n">INCLUDE_AS_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s*(?P&lt;file&gt;.+)((?:\s+as\s+)(?P&lt;as&gt;\S+))&#39;</span><span class="p">)</span>
     <span class="n">SECTCRE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\[\s*(?P&lt;header&gt;[^]]+?)\s*\]&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1">#self.default_section = None #DEFAULTSECT</span>
         <span class="c1"># Instantiate parent class with PISA-specific options</span>
         <span class="c1">#super().__init__(</span>
@@ -1230,7 +1230,7 @@
 
 <div class="viewcode-block" id="PISAConfigParser.set">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser.set">[docs]</a>
-    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set an option.  Extends RawConfigParser.set by validating type and</span>
 <span class="sd">        interpolation syntax on the value.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_validate_value_types</span><span class="p">(</span><span class="n">option</span><span class="o">=</span><span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
@@ -1239,7 +1239,7 @@
 
 <div class="viewcode-block" id="PISAConfigParser.add_section">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser.add_section">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new section in the configuration.  Extends</span>
 <span class="sd">        RawConfigParser.add_section by validating if the section name is</span>
 <span class="sd">        a string.&quot;&quot;&quot;</span>
@@ -1249,24 +1249,24 @@
 
 <div class="viewcode-block" id="PISAConfigParser.optionxform">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser.optionxform">[docs]</a>
-    <span class="k">def</span> <span class="nf">optionxform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optionstr</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">optionxform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optionstr</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Enable case-sensitive options in .cfg files, and force all values to</span>
 <span class="sd">        be ASCII strings.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">optionstr</span> <span class="c1">#.encode(&#39;ascii&#39;)</span></div>
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : Hash value of the contents (does not depend on order of</span>
 <span class="sd">        sections, but does depend on order of keys within each section)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__hash__</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">hash_obj</span><span class="p">([(</span><span class="n">sec</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">sec</span><span class="p">)))</span>
                          <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">())])</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_get_include_info</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_include_info</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
         <span class="n">match</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="o">.</span><span class="n">INCLUDE_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -1278,7 +1278,7 @@
 
 <div class="viewcode-block" id="PISAConfigParser.read">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser.read">[docs]</a>
-    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Override `read` method to interpret `filenames` as PISA resource</span>
 <span class="sd">        locations, then call overridden `read` method. Also, IOError fails</span>
 <span class="sd">        here, whereas it is ignored in RawConfigParser.</span>
@@ -1322,7 +1322,7 @@
     <span class="c1"># modification.</span>
 
     <span class="c1"># pylint: disable=E,W,C,R</span>
-    <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fpname</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fpname</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a sectioned configuration file.</span>
 
 <span class="sd">        Each section in a configuration file contains a header, indicated by</span>
@@ -1492,7 +1492,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">test_parse_pipeline_config</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_parse_pipeline_config</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for function `parse_pipeline_config`&quot;&quot;&quot;</span>
     <span class="c1"># Load via PISAConfigParser</span>
     <span class="n">config0</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="p">()</span>
@@ -1523,10 +1523,10 @@
             <span class="k">assert</span> <span class="n">vals</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">config1</span><span class="p">[</span><span class="s1">&#39;pipeline&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">suffix</span>
 
 
-<span class="k">def</span> <span class="nf">test_MutableMultiFileIterator</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_MutableMultiFileIterator</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for class `MutableMultiFileIterator`&quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">shutil</span>
-    <span class="kn">import</span> <span class="nn">tempfile</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 
     <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]</span>
     <span class="n">file_len</span> <span class="o">=</span> <span class="mi">4</span>
@@ -1580,7 +1580,7 @@
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_MutableMultiFileIterator &gt;&gt;&#39;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">parse_args</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command line arguments&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Print contents of a parsed config file&#39;</span><span class="p">,</span>

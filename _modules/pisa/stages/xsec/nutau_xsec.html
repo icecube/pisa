@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.xsec.nutau_xsec &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -76,22 +76,22 @@
 <span class="sd">https://arxiv.org/pdf/1008.2984.pdf?fname=cm&amp;font=TypeI</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span><span class="p">,</span> <span class="n">open_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span><span class="p">,</span> <span class="n">open_resource</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nutau_xsec&#39;</span><span class="p">,</span> <span class="s1">&#39;calc_scale_vectorized&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="nutau_xsec">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.nutau_xsec.nutau_xsec">[docs]</a>
-<span class="k">class</span> <span class="nc">nutau_xsec</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">nutau_xsec</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Nu_tau cross-section correction to interpolate between different nutau CC</span>
 <span class="sd">    cross-section models. This requires the interpolated file produced by</span>
@@ -116,7 +116,7 @@
 <span class="sd">            &quot;weights&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">xsec_file</span><span class="o">=</span><span class="s2">&quot;cross_sections/interp_nutau_xsec_protocol2.pckl&quot;</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
@@ -142,7 +142,7 @@
 
 <div class="viewcode-block" id="nutau_xsec.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.nutau_xsec.nutau_xsec.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">open_resource</span><span class="p">(</span><span class="n">find_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xsec_file</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fl</span><span class="p">:</span>
             <span class="n">interp_dict</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fl</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;latin1&#39;</span><span class="p">)</span>
         <span class="n">interp_nutau</span> <span class="o">=</span> <span class="n">interp_dict</span><span class="p">[</span><span class="s2">&quot;NuTau&quot;</span><span class="p">]</span>
@@ -172,7 +172,7 @@
 
 <div class="viewcode-block" id="nutau_xsec.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.nutau_xsec.nutau_xsec.compute_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">nutau_xsec_scale</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;nutau_cc&quot;</span><span class="p">,</span> <span class="s2">&quot;nutaubar_cc&quot;</span><span class="p">]:</span>
@@ -185,7 +185,7 @@
 
 <div class="viewcode-block" id="nutau_xsec.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.nutau_xsec.nutau_xsec.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;nutau_cc&quot;</span><span class="p">,</span> <span class="s2">&quot;nutaubar_cc&quot;</span><span class="p">]:</span>
                 <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nutau_xsec_scale&quot;</span><span class="p">]</span></div>
@@ -202,7 +202,7 @@
     <span class="n">IX</span> <span class="o">=</span> <span class="s1">&#39;i4&#39;</span>
 <span class="n">signature</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span>
 <span class="nd">@guvectorize</span><span class="p">([</span><span class="n">signature</span><span class="p">],</span> <span class="s1">&#39;(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">calc_scale_vectorized</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_scale_vectorized</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="c1"># weights that would come out negative are clamped to zero</span>
     <span class="k">if</span> <span class="n">func</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mf">1.</span><span class="p">:</span>
         <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">+</span> <span class="n">func</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span>
@@ -212,7 +212,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.nutau_xsec.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;nutau_xsec_scale&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>

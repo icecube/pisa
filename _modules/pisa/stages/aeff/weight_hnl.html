@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.aeff.weight_hnl &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,14 +72,14 @@
 <span class="sd">PISA pi stage to apply HNL specific re-weighting</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="c1"># is there a place for constants in PISA, or do they already exist?</span>
 <span class="n">LIGHTSPEED</span> <span class="o">=</span> <span class="mf">299792458.0</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">m</span> <span class="o">/</span> <span class="n">ureg</span><span class="o">.</span><span class="n">s</span>
@@ -88,7 +88,7 @@
 
 <div class="viewcode-block" id="re_weight_hnl">
 <a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.weight_hnl.re_weight_hnl">[docs]</a>
-<span class="k">def</span> <span class="nf">re_weight_hnl</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">re_weight_hnl</span><span class="p">(</span>
     <span class="n">U_tau4_sq</span><span class="p">,</span>
     <span class="n">mass</span><span class="p">,</span>
     <span class="n">energy</span><span class="p">,</span>
@@ -150,7 +150,7 @@
 
 <div class="viewcode-block" id="weight_hnl">
 <a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.weight_hnl.weight_hnl">[docs]</a>
-<span class="k">class</span> <span class="nc">weight_hnl</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">weight_hnl</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    PISA pi stage to apply HNL specific re-weighting.</span>
 
@@ -163,7 +163,7 @@
 <span class="sd">            U_tau4_sq : dimensionless Quantity</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
@@ -189,7 +189,7 @@
 <div class="viewcode-block" id="weight_hnl.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.weight_hnl.weight_hnl.apply_function">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">U_tau4_sq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">U_tau4_sq</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
@@ -211,7 +211,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.aeff.html#pisa.stages.aeff.weight_hnl.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;U_tau4_sq&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>

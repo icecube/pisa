@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.osc.layers &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -73,17 +73,17 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">numba</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">numba</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">numba</span> <span class="o">=</span> <span class="kc">None</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;extCalcLayers&#39;</span><span class="p">,</span> <span class="s1">&#39;Layers&#39;</span><span class="p">]</span>
 
@@ -105,11 +105,11 @@
 
 
 <span class="k">if</span> <span class="n">numba</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">class</span> <span class="nc">jit</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">jit</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Decorator class to mimic Numba&#39;s `jit` when Numba is missing&quot;&quot;&quot;</span>
-        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
             <span class="k">pass</span>
-        <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="n">jit</span> <span class="o">=</span> <span class="n">numba</span><span class="o">.</span><span class="n">jit</span>
@@ -120,7 +120,7 @@
 <div class="viewcode-block" id="extCalcLayers">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.extCalcLayers">[docs]</a>
 <span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">extCalcLayers</span><span class="p">(</span><span class="n">cz</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extCalcLayers</span><span class="p">(</span><span class="n">cz</span><span class="p">,</span>
         <span class="n">r_detector</span><span class="p">,</span>
         <span class="n">prop_height</span><span class="p">,</span>
         <span class="n">detector_depth</span><span class="p">,</span>
@@ -256,7 +256,7 @@
 
 <div class="viewcode-block" id="Layers">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers">[docs]</a>
-<span class="k">class</span> <span class="nc">Layers</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Layers</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate the path through earth for a given layer model with densities</span>
 <span class="sd">    (PREM [1]), the electron fractions (Ye) and an array of coszen values</span>
@@ -300,7 +300,7 @@
 <span class="sd">        http://www.sciencedirect.com/science/article/pii/300031920181900467</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prem_file</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">2.</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prem_file</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">2.</span><span class="p">):</span>
         <span class="c1"># Load earth model</span>
         <span class="k">if</span> <span class="n">prem_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span> <span class="o">=</span> <span class="kc">True</span>
@@ -356,7 +356,7 @@
 
 <div class="viewcode-block" id="Layers.setElecFrac">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.setElecFrac">[docs]</a>
-    <span class="k">def</span> <span class="nf">setElecFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">YeI</span><span class="p">,</span> <span class="n">YeO</span><span class="p">,</span> <span class="n">YeM</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setElecFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">YeI</span><span class="p">,</span> <span class="n">YeO</span><span class="p">,</span> <span class="n">YeM</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set electron fractions of inner core, outer core, and mantle.</span>
 <span class="sd">        Locations of boundaries between each layer come from PREM.</span>
 
@@ -380,7 +380,7 @@
 
 <div class="viewcode-block" id="Layers.scaling">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.scaling">[docs]</a>
-    <span class="k">def</span> <span class="nf">scaling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scaling_array</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scaling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scaling_array</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Multplies scaling factor with densities from earth model</span>
 
@@ -400,7 +400,7 @@
 
 <div class="viewcode-block" id="Layers.computeMinLengthToLayers">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.computeMinLengthToLayers">[docs]</a>
-    <span class="k">def</span> <span class="nf">computeMinLengthToLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeMinLengthToLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Deterine the coszen values for which a track will </span>
 <span class="sd">        be tangeant to a given layer.</span>
@@ -434,7 +434,7 @@
 
 <div class="viewcode-block" id="Layers.calcLayers">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.calcLayers">[docs]</a>
-    <span class="k">def</span> <span class="nf">calcLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cz</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calcLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cz</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameters</span>
@@ -462,31 +462,31 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">n_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot get layers when not using an Earth model&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_layers</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">density</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot get density when not using an Earth model&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">density_neutron_weighted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density_neutron_weighted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot get density when not using an Earth model&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density_neutron_weighted</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distance</span>
 
 
 <div class="viewcode-block" id="Layers.calcPathLength">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.calcPathLength">[docs]</a>
-    <span class="k">def</span> <span class="nf">calcPathLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cz</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calcPathLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cz</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Calculate path length of the neutrino through an Earth-sized sphere, given the </span>
@@ -512,7 +512,7 @@
 
 <div class="viewcode-block" id="Layers.weight_density_to_YeFrac">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.weight_density_to_YeFrac">[docs]</a>
-    <span class="k">def</span> <span class="nf">weight_density_to_YeFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_density_to_YeFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Adjust the densities of the provided earth model layers</span>
 <span class="sd">        for the different electron fractions in the inner core,</span>
@@ -543,7 +543,7 @@
 
 <div class="viewcode-block" id="Layers.weight_density_to_YnFrac">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.weight_density_to_YnFrac">[docs]</a>
-    <span class="k">def</span> <span class="nf">weight_density_to_YnFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_density_to_YnFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adjust the densities of the provided earth model layers</span>
 <span class="sd">        for the different neutron fractions in the inner core,</span>
@@ -587,7 +587,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">test_layers_1</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_layers_1</span><span class="p">():</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Test layers calculation:&#39;</span><span class="p">)</span>
     <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">)</span>
@@ -607,7 +607,7 @@
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Layers 1 &gt;&gt;&#39;</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">test_layers_2</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_layers_2</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Validate the total distance travered,</span>
 <span class="sd">    the number of layers crossed and the distance</span>
@@ -618,7 +618,7 @@
 <span class="sd">    zenith boundaries for any particular layer, as</span>
 <span class="sd">    calculated by computeMinLengthToLayers</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
     <span class="c1">#</span>
     <span class="c1"># The test file is a 4-layer PREM Earth model. The</span>
     <span class="c1"># file contains the following information:</span>
@@ -680,7 +680,7 @@
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">computed_length</span><span class="p">,</span> <span class="n">correct_length</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">computed_length</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">correct_length</span><span class="si">}</span><span class="s1">&#39;</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Layers 2 &gt;&gt;&#39;</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">test_layers_3</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_layers_3</span><span class="p">():</span>
     <span class="c1">#</span>
     <span class="c1"># TEST III: check the individual path distances crossed</span>
     <span class="c1">#           for the previous input cosines</span>
@@ -695,8 +695,8 @@
     <span class="c1">#</span>
     <span class="c1"># sin(alpha) = sin(pi-theta)*D /Rp</span>
     <span class="c1">#</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
-    <span class="kn">import</span> <span class="nn">copy</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Testing Earth layer segments and density computations...&#39;</span><span class="p">)</span>
     <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>

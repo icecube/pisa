@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.reco.simple_param &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -76,15 +76,15 @@
 <span class="c1">#TODO In future this could be integrated with param.py (but, that meed updating from cake to pi first)</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">collections</span>
-<span class="kn">import</span> <span class="nn">fnmatch</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">fnmatch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -118,7 +118,7 @@
 
 <div class="viewcode-block" id="dict_lookup_wildcard">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.dict_lookup_wildcard">[docs]</a>
-<span class="k">def</span> <span class="nf">dict_lookup_wildcard</span><span class="p">(</span><span class="n">dict_obj</span><span class="p">,</span><span class="n">key</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dict_lookup_wildcard</span><span class="p">(</span><span class="n">dict_obj</span><span class="p">,</span><span class="n">key</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Find the object in a dict specified by a key, where the key may include wildcards</span>
 
@@ -151,7 +151,7 @@
 
 <div class="viewcode-block" id="logistic_function">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.logistic_function">[docs]</a>
-<span class="k">def</span> <span class="nf">logistic_function</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">x</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">logistic_function</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">x</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Logistic function as defined here: https://en.wikipedia.org/wiki/Logistic_function.</span>
 <span class="sd">    Starts off slowly rising, before steeply rising, then plateaus.</span>
@@ -178,7 +178,7 @@
 
 <div class="viewcode-block" id="has_muon">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.has_muon">[docs]</a>
-<span class="k">def</span> <span class="nf">has_muon</span><span class="p">(</span><span class="n">particle_key</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">has_muon</span><span class="p">(</span><span class="n">particle_key</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Function returning True if the particle type has muons in the final state</span>
 <span class="sd">    This is numu CC and atmopsheric muons</span>
@@ -204,7 +204,7 @@
 
 <div class="viewcode-block" id="visible_energy_correction">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.visible_energy_correction">[docs]</a>
-<span class="k">def</span> <span class="nf">visible_energy_correction</span><span class="p">(</span><span class="n">particle_key</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">visible_energy_correction</span><span class="p">(</span><span class="n">particle_key</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Simple way to estimate the amount of visible energy in the event.</span>
 
@@ -253,7 +253,7 @@
 
 <div class="viewcode-block" id="energy_dependent_sigma">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.energy_dependent_sigma">[docs]</a>
-<span class="k">def</span> <span class="nf">energy_dependent_sigma</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span><span class="n">energy_0</span><span class="p">,</span><span class="n">sigma_0</span><span class="p">,</span><span class="n">energy_power</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">energy_dependent_sigma</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span><span class="n">energy_0</span><span class="p">,</span><span class="n">sigma_0</span><span class="p">,</span><span class="n">energy_power</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Returns an energy dependent sigma (standard deviation) value(s),</span>
 <span class="sd">    with energy dependence defined as follows:</span>
@@ -282,7 +282,7 @@
 
 <div class="viewcode-block" id="simple_reco_energy_parameterization">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_reco_energy_parameterization">[docs]</a>
-<span class="k">def</span> <span class="nf">simple_reco_energy_parameterization</span><span class="p">(</span><span class="n">particle_key</span><span class="p">,</span><span class="n">true_energy</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">random_state</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">simple_reco_energy_parameterization</span><span class="p">(</span><span class="n">particle_key</span><span class="p">,</span><span class="n">true_energy</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">random_state</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Function to produce a smeared reconstructed energy distribution.</span>
 <span class="sd">    Resolution is particle- and energy-dependent</span>
@@ -346,7 +346,7 @@
 
 <div class="viewcode-block" id="simple_reco_coszen_parameterization">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_reco_coszen_parameterization">[docs]</a>
-<span class="k">def</span> <span class="nf">simple_reco_coszen_parameterization</span><span class="p">(</span><span class="n">particle_key</span><span class="p">,</span><span class="n">true_energy</span><span class="p">,</span><span class="n">true_coszen</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">random_state</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">simple_reco_coszen_parameterization</span><span class="p">(</span><span class="n">particle_key</span><span class="p">,</span><span class="n">true_energy</span><span class="p">,</span><span class="n">true_coszen</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">random_state</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Function to produce a smeared reconstructed cos(zenith) distribution.</span>
 <span class="sd">    Resolution is particle- and energy-dependent</span>
@@ -413,7 +413,7 @@
 
 <div class="viewcode-block" id="simple_pid_parameterization">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_pid_parameterization">[docs]</a>
-<span class="k">def</span> <span class="nf">simple_pid_parameterization</span><span class="p">(</span><span class="n">particle_key</span><span class="p">,</span><span class="n">true_energy</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">track_pid</span><span class="p">,</span><span class="n">cascade_pid</span><span class="p">,</span><span class="n">random_state</span><span class="p">,)</span> <span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">simple_pid_parameterization</span><span class="p">(</span><span class="n">particle_key</span><span class="p">,</span><span class="n">true_energy</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">track_pid</span><span class="p">,</span><span class="n">cascade_pid</span><span class="p">,</span><span class="n">random_state</span><span class="p">,)</span> <span class="p">:</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Function to assign a PID based on truth information.</span>
 <span class="sd">    Is particle-, interaction- and energy-dependent</span>
@@ -471,7 +471,7 @@
 
 <div class="viewcode-block" id="simple_param">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_param">[docs]</a>
-<span class="k">class</span> <span class="nc">simple_param</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">simple_param</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage to generate reconstructed parameters (energy, coszen, pid) using simple parameterizations.</span>
 <span class="sd">    These are not fit to any input data, but are simple and easily understandable and require no</span>
@@ -513,7 +513,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                 <span class="p">):</span>
 
@@ -540,7 +540,7 @@
 
 <div class="viewcode-block" id="simple_param.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_param.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1">#TODO Could add a number of discrete cases here that can be selected betweeen, e.g. ICU baseline (LoI?), DeepCore current best, etc...</span>
 
@@ -641,7 +641,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;perfect_reco&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>

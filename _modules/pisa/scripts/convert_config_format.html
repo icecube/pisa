@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.scripts.convert_config_format &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -76,17 +76,17 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
 
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
-<span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">MissingSectionHeaderError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="kn">import</span> <span class="n">MissingSectionHeaderError</span>
 
-<span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">PISAConfigParser</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.config_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">PISAConfigParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;OLD_SUB_RE&#39;</span><span class="p">,</span> <span class="s1">&#39;parse_args&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">]</span>
@@ -239,7 +239,7 @@
 <span class="p">}</span>
 
 
-<span class="k">def</span> <span class="nf">replace_substitution</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">replace_substitution</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace old substitution syntax ``&lt;!section|key!&gt;`` with new syntax</span>
 <span class="sd">    ``${section:key}``. Also, convert any colons in `section` or `key` to</span>
 <span class="sd">    ``OTHER_SECTION_NAME_SEPARATOR``.</span>
@@ -271,7 +271,7 @@
     <span class="k">return</span> <span class="s1">&#39;${</span><span class="si">%s</span><span class="s1">:</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">s0</span><span class="p">,</span> <span class="n">s1</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">replace_order</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">replace_order</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace e.g.</span>
 <span class="sd">        ``  order = flux:honda , osc : prob3cpu,aeff :hist, reco : hist``</span>
 <span class="sd">    with</span>
@@ -299,7 +299,7 @@
     <span class="k">return</span> <span class="s1">&#39;order = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_substrings</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">append_include_as</span><span class="p">(</span><span class="n">include_match</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">append_include_as</span><span class="p">(</span><span class="n">include_match</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert ``#include x`` to ``#include x as y``, where appropriate; also,</span>
 <span class="sd">    convert incorrect &quot;as&quot; statements. See INCLUDE_AS dict for mapping from</span>
 <span class="sd">    resource to its &quot;as&quot; target.</span>
@@ -338,7 +338,7 @@
 
 <div class="viewcode-block" id="parse_args">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.convert_config_format.parse_args">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_args</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command line arguments&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
@@ -359,7 +359,7 @@
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.convert_config_format.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Do the conversion.&quot;&quot;&quot;</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
     <span class="n">in_fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
@@ -458,14 +458,14 @@
     <span class="c1"># Go back through and replace colon-sparated section names with</span>
     <span class="c1"># ``OTHER_SECTION_NAME_SEPARATOR``-separated section names</span>
     <span class="n">all_names_to_replace</span> <span class="o">=</span> <span class="n">section_names_with_colons</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-    <span class="k">def</span> <span class="nf">replace_var</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">replace_var</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Closure to replace variable names&quot;&quot;&quot;</span>
         <span class="n">whole_string</span><span class="p">,</span> <span class="n">var_name</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">all_names_to_replace</span><span class="p">:</span>
             <span class="k">return</span> <span class="s1">&#39;${</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">section_names_with_colons</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">whole_string</span>
 
-    <span class="k">def</span> <span class="nf">replace_section_name</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">replace_section_name</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Closure to replace section names&quot;&quot;&quot;</span>
         <span class="n">whole_string</span><span class="p">,</span> <span class="n">section_name</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">section_name</span> <span class="ow">in</span> <span class="n">all_names_to_replace</span><span class="p">:</span>

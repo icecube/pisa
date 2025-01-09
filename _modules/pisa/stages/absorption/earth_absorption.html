@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.absorption.earth_absorption &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -78,18 +78,18 @@
 <span class="sd">with protons and neutrons.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.layers</span> <span class="kn">import</span> <span class="n">Layers</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.layers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Layers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;A. Trettin&#39;</span>
 
@@ -123,7 +123,7 @@
 
 <div class="viewcode-block" id="earth_absorption">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption">[docs]</a>
-<span class="k">class</span> <span class="nc">earth_absorption</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">earth_absorption</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    earth absorption PISA Pi class</span>
 
@@ -139,7 +139,7 @@
 <span class="sd">        height of neutrino production in the atmosphere</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">earth_model</span><span class="p">,</span>
         <span class="n">xsec_file</span><span class="p">,</span>
@@ -176,8 +176,8 @@
 
 <div class="viewcode-block" id="earth_absorption.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="kn">import</span> <span class="nn">ROOT</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">ROOT</span>
         <span class="c1"># setup the layers</span>
         <span class="n">earth_model</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">earth_model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="n">earth_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector_depth</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop_height</span><span class="p">)</span>
@@ -228,7 +228,7 @@
 <div class="viewcode-block" id="earth_absorption.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.compute_function">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># --- calculate the integrated density in the layers ---</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span>
@@ -271,14 +271,14 @@
 
 <div class="viewcode-block" id="earth_absorption.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;survival_prob&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="earth_absorption.calculate_xsections">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.calculate_xsections">[docs]</a>
-    <span class="k">def</span> <span class="nf">calculate_xsections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">energy</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_xsections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">energy</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Calculates the cross-sections on isoscalar targets.</span>
 <span class="sd">        The result is returned in cm^2. The xsection on one</span>
 <span class="sd">        target is calculated by taking the xsection for O16</span>
@@ -299,7 +299,7 @@
 <span class="c1"># TODO: make this work with the &#39;cuda&#39; target. Right now, it seems like np.dot</span>
 <span class="c1"># does not work or is used incorrectly.</span>
 <span class="nd">@guvectorize</span><span class="p">(</span><span class="n">signatures</span><span class="p">,</span> <span class="s1">&#39;(n),(n)-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">calculate_integrated_rho</span><span class="p">(</span><span class="n">layer_dists</span><span class="p">,</span> <span class="n">layer_densities</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_integrated_rho</span><span class="p">(</span><span class="n">layer_dists</span><span class="p">,</span> <span class="n">layer_densities</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate density integrated over the path through all layers.</span>
 <span class="sd">    Gives the length of a matter-equivalent water column in cm.</span>
 
@@ -320,7 +320,7 @@
 
 <div class="viewcode-block" id="calculate_survivalprob">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.calculate_survivalprob">[docs]</a>
-<span class="k">def</span> <span class="nf">calculate_survivalprob</span><span class="p">(</span><span class="n">int_rho</span><span class="p">,</span> <span class="n">xsection</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_survivalprob</span><span class="p">(</span><span class="n">int_rho</span><span class="p">,</span> <span class="n">xsection</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate survival probability given layer distances,</span>
 <span class="sd">    layer densities and (pre-computed) cross-sections.</span>
 
@@ -346,7 +346,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">earth_absorption</span><span class="p">(</span>
         <span class="n">earth_model</span><span class="o">=</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">,</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.vbwkde &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -99,17 +99,17 @@
 <span class="c1"># TODO : accuracy tests for fbwkde and vbwkde</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">exp</span><span class="p">,</span> <span class="n">sqrt</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">exp</span><span class="p">,</span> <span class="n">sqrt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">time</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">fftpack</span><span class="p">,</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">optimize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">fftpack</span><span class="p">,</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">optimize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">numba_jit</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.gaussians</span> <span class="kn">import</span> <span class="n">gaussians</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">tprofile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">numba_jit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.gaussians</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussians</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">tprofile</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;OPT_TYPE&#39;</span><span class="p">,</span> <span class="s1">&#39;FIXED_POINT_IMPL&#39;</span><span class="p">,</span>
@@ -181,7 +181,7 @@
 
 <div class="viewcode-block" id="fbwkde">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.fbwkde">[docs]</a>
-<span class="k">def</span> <span class="nf">fbwkde</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_dct</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fbwkde</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_dct</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
            <span class="n">evaluate_dens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Fixed-bandwidth (standard) Gaussian KDE using the Improved</span>
 <span class="sd">    Sheather-Jones bandwidth.</span>
@@ -288,7 +288,7 @@
 
 <div class="viewcode-block" id="vbwkde">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.vbwkde">[docs]</a>
-<span class="k">def</span> <span class="nf">vbwkde</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_dct</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_addl_iter</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">vbwkde</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_dct</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_addl_iter</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
            <span class="n">evaluate_dens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">evaluate_at</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Variable-bandwidth (standard) Gaussian KDE that uses the function</span>
 <span class="sd">    `fbwkde` for a pilot density estimate.</span>
@@ -457,7 +457,7 @@
 
 <div class="viewcode-block" id="isj_bandwidth">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.isj_bandwidth">[docs]</a>
-<span class="k">def</span> <span class="nf">isj_bandwidth</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">x_range</span><span class="p">,</span> <span class="n">min_bandwidth</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">isj_bandwidth</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">x_range</span><span class="p">,</span> <span class="n">min_bandwidth</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -547,14 +547,14 @@
 
 
 <span class="k">if</span> <span class="n">OPT_TYPE</span> <span class="o">==</span> <span class="s1">&#39;root&#39;</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">optfunc</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">optfunc</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;No-op decorator&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">f</span>
 
 <span class="k">elif</span> <span class="n">OPT_TYPE</span> <span class="o">==</span> <span class="s1">&#39;minimum&#39;</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">optfunc</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">optfunc</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Decorator for returning abs of function output&quot;&quot;&quot;</span>
-        <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Return absolute value of function&quot;&quot;&quot;</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">func</span>
@@ -569,7 +569,7 @@
 
 <span class="nd">@optfunc</span>
 <span class="nd">@numba_jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">fixed_point_numba_np</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">log_i_range</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fixed_point_numba_np</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">log_i_range</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;ISJ fixed-point calculation as per Botev et al..</span>
 
 <span class="sd">    In this implementation, Numba makes calls to Numpy routines.</span>
@@ -604,7 +604,7 @@
 <span class="nd">@optfunc</span>
 <span class="nd">@numba_jit</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{f}</span><span class="s1">(</span><span class="si">{f}</span><span class="s1">, int64, </span><span class="si">{f}</span><span class="s1">[:], </span><span class="si">{f}</span><span class="s1">[:], </span><span class="si">{f}</span><span class="s1">[:])&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span>
            <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">fixed_point_numba_loops</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">log_i_range</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fixed_point_numba_loops</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">log_i_range</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;ISJ fixed-point calculation as per Botev et al..</span>
 
 <span class="sd">    In this implementation, Numba explicitly loops over arrays.</span>
@@ -654,7 +654,7 @@
 <span class="nd">@optfunc</span>
 <span class="nd">@numba_jit</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{f}</span><span class="s1">(</span><span class="si">{f}</span><span class="s1">, int64, </span><span class="si">{f}</span><span class="s1">[:], </span><span class="si">{f}</span><span class="s1">[:])&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span>
            <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">fixed_point_numba_orig</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fixed_point_numba_orig</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_datapoints</span><span class="p">,</span> <span class="n">i_range</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Fixed point algorithm for Improved Sheather Jones bandwidth</span>
 <span class="sd">    selection.</span>
 
@@ -705,7 +705,7 @@
 
 <div class="viewcode-block" id="test_fbwkde">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.test_fbwkde">[docs]</a>
-<span class="k">def</span> <span class="nf">test_fbwkde</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_fbwkde</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Test speed of fbwkde implementation&quot;&quot;&quot;</span>
     <span class="n">n_samp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
     <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>
@@ -728,7 +728,7 @@
 
 <div class="viewcode-block" id="test_vbwkde">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.vbwkde.test_vbwkde">[docs]</a>
-<span class="k">def</span> <span class="nf">test_vbwkde</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_vbwkde</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Test speed of unweighted vbwkde implementation&quot;&quot;&quot;</span>
     <span class="n">n_samp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
     <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>
@@ -750,7 +750,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">test_weighted_vbwkde</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_weighted_vbwkde</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Test speed of vbwkde implementation using weights&quot;&quot;&quot;</span>
     <span class="n">n_samp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
     <span class="n">n_dct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>

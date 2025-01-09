@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.core.binning &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -88,26 +88,26 @@
 <span class="c1">#       defined/saved in FP32 but want code able to run in FP64</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">namedtuple</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span><span class="p">,</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span><span class="p">,</span> <span class="n">wraps</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">product</span>
-<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">mul</span>
-<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">namedtuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">copy</span><span class="p">,</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span><span class="p">,</span> <span class="n">wraps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">product</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">mul</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">HASH_SIGFIGS</span><span class="p">,</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">interpret_quantity</span><span class="p">,</span> <span class="n">normQuant</span><span class="p">,</span> <span class="n">recursiveEquality</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="p">(</span><span class="n">make_valid_python_name</span><span class="p">,</span> <span class="n">text2tex</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">HASH_SIGFIGS</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">interpret_quantity</span><span class="p">,</span> <span class="n">normQuant</span><span class="p">,</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">make_valid_python_name</span><span class="p">,</span> <span class="n">text2tex</span><span class="p">,</span>
                                <span class="n">strip_outer_dollars</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">jsons</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">tprofile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.hash</span><span class="w"> </span><span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">jsons</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">tprofile</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;NAME_FIXES&#39;</span><span class="p">,</span> <span class="s1">&#39;NAME_SEPCHARS&#39;</span><span class="p">,</span> <span class="s1">&#39;NAME_FIXES_REGEXES&#39;</span><span class="p">,</span>
@@ -144,7 +144,7 @@
 <span class="c1"># TODO: move this to a centralized utils location</span>
 <div class="viewcode-block" id="basename">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.basename">[docs]</a>
-<span class="k">def</span> <span class="nf">basename</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">basename</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove &quot;true&quot; or &quot;reco&quot; prefix(es) and/or suffix(es) from binning</span>
 <span class="sd">    name `n` along with any number of possible separator characters.</span>
 
@@ -191,7 +191,7 @@
 
 <div class="viewcode-block" id="is_binning">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.is_binning">[docs]</a>
-<span class="k">def</span> <span class="nf">is_binning</span><span class="p">(</span><span class="n">something</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_binning</span><span class="p">(</span><span class="n">something</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True if argument is a PISA binning (of any dimension), False</span>
 <span class="sd">    otherwise&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">something</span><span class="p">,</span> <span class="p">(</span><span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">))</span></div>
@@ -199,10 +199,10 @@
 
 
 <span class="c1"># TODO: generalize to any object and move this to a centralized utils location</span>
-<span class="k">def</span> <span class="nf">_new_obj</span><span class="p">(</span><span class="n">original_function</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_new_obj</span><span class="p">(</span><span class="n">original_function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to deepcopy unaltered states into new OneDimBinning object.&quot;&quot;&quot;</span>
     <span class="nd">@wraps</span><span class="p">(</span><span class="n">original_function</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">new_function</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_function</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;&lt;&lt; docstring will be inherited from wrapped function &gt;&gt;&quot;&quot;&quot;</span>
         <span class="n">new_state</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="n">state_updates</span> <span class="o">=</span> <span class="n">original_function</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -217,7 +217,7 @@
 
 <div class="viewcode-block" id="OneDimBinning">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning">[docs]</a>
-<span class="k">class</span> <span class="nc">OneDimBinning</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OneDimBinning</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="c1"># pylint: disable=line-too-long</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Histogram-oriented binning specialized to a single dimension.</span>
 
@@ -321,7 +321,7 @@
 
     <span class="n">_attrs_to_create_new</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span> <span class="s1">&#39;bin_edges&#39;</span><span class="p">,</span> <span class="s1">&#39;is_log&#39;</span><span class="p">,</span> <span class="s1">&#39;is_lin&#39;</span><span class="p">,</span> <span class="s1">&#39;bin_names&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">num_bins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># Basic validation and translation of args; note that iterables are</span>
         <span class="c1"># converted to sequences later on</span>
@@ -557,7 +557,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_lin</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_log</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_irregular</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">previous_precision</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">get_printoptions</span><span class="p">()[</span><span class="s1">&#39;precision&#39;</span><span class="p">]</span>
         <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -568,7 +568,7 @@
             <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="n">previous_precision</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">r</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">lin_reg</span> <span class="o">=</span> <span class="s2">&quot;linearly-regular &quot;</span>
         <span class="n">log_reg</span> <span class="o">=</span> <span class="s2">&quot;logarithmically-regular &quot;</span>
 
@@ -612,7 +612,7 @@
 
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">:</span><span class="s2">s</span><span class="si">}</span><span class="s2">(&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">:</span><span class="s2">s</span><span class="si">}</span><span class="s2">&#39;, </span><span class="si">{</span><span class="n">descr</span><span class="si">:</span><span class="s2">s</span><span class="si">}</span><span class="s2">)&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__pretty__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__pretty__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by the `pretty` library for formatting&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">cycle</span><span class="p">:</span>
             <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(...)&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
@@ -620,21 +620,21 @@
             <span class="n">p</span><span class="o">.</span><span class="n">begin_group</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
             <span class="n">p</span><span class="o">.</span><span class="n">end_group</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;)&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by e.g. ipython/Jupyter for formatting&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pretty__</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method invoked during pickling&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializable_state</span>
 
-    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method invoked during unpickling&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">state</span><span class="p">)</span>
 
 <div class="viewcode-block" id="OneDimBinning.to_json">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.to_json">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the state to a JSON file that can be instantiated as a new</span>
 <span class="sd">        object later.</span>
 
@@ -658,7 +658,7 @@
 <div class="viewcode-block" id="OneDimBinning.from_json">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.from_json">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a new object from the contents of a JSON file as</span>
 <span class="sd">        formatted by the `to_json` method.</span>
 
@@ -676,7 +676,7 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">state</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -685,7 +685,7 @@
 
 <div class="viewcode-block" id="OneDimBinning.index">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.index">[docs]</a>
-    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return integer index of bin identified by `x`.</span>
 
 <span class="sd">        Parameters</span>
@@ -726,7 +726,7 @@
 
 <div class="viewcode-block" id="OneDimBinning.iterbins">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.iterbins">[docs]</a>
-    <span class="k">def</span> <span class="nf">iterbins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iterbins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an iterator over each bin. The elments returned by the</span>
 <span class="sd">        iterator are each a OneDimBinning object, just containing a single bin.</span>
 
@@ -748,7 +748,7 @@
 
 <div class="viewcode-block" id="OneDimBinning.iteredgetuples">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.iteredgetuples">[docs]</a>
-    <span class="k">def</span> <span class="nf">iteredgetuples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iteredgetuples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an iterator over each bin&#39;s edges. The elments returned by</span>
 <span class="sd">        the iterator are each a tuple, containing the edges of the bin. Units</span>
 <span class="sd">        are stripped prior to iteration for purposes of speed.</span>
@@ -770,7 +770,7 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;OrderedDict containing savable state attributes&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_serializable_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">state</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
@@ -787,7 +787,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_serializable_state</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hashable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hashable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;OrderedDict containing simplified state attributes (i.e. some state</span>
 <span class="sd">        attributes are represented by their hashes) used for testing equality</span>
 <span class="sd">        between two objects.</span>
@@ -806,7 +806,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hashable_state</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">normalized_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalized_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;OrderedDict containing normalized (base units, and rounded to</span>
 <span class="sd">        appropriate precision) state attributes used for testing equality</span>
 <span class="sd">        between two objects.</span>
@@ -826,19 +826,19 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalized_state</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">edge_magnitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">edge_magnitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Bin edges&#39; magnitudes&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_magnitudes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_edge_magnitudes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">magnitude</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_magnitudes</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the dimension&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">basename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">basename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Basename of the dimension, stripping &quot;true&quot;, &quot;reco&quot;, underscores,</span>
 <span class="sd">        whitespace, etc. from the `name` attribute.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_basename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -850,14 +850,14 @@
     <span class="c1"># translate-on-output...</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;string : TeX label&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">text2tex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tex</span>
 
     <span class="nd">@tex</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;None or TeX string for dimension; surrounding dollars-signs ($) are</span>
 <span class="sd">        stripped off (and must be added prior to e.g. plotting)&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
@@ -866,7 +866,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_tex</span> <span class="o">=</span> <span class="n">val</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">label</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">label</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;TeX-formatted axis label, including units (if not dimensionless)&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">name_tex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;{\rm </span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">text2tex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -881,27 +881,27 @@
         <span class="k">return</span> <span class="n">name_tex</span> <span class="o">+</span> <span class="n">units_tex</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;tuple : shape of binning, akin to `nump.ndarray.shape`&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_bins</span><span class="p">,)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : total number of bins&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_bins</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">bin_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bin_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;array : Edges of the bins.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bin_edges</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">bin_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bin_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;list of strings or None : Bin names&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bin_names</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">domain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">domain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;array : domain of the binning, (min, max) bin edges&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">bin_edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_magnitudes</span>
@@ -910,33 +910,33 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">range</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;float : range of the binning, (max-min) bin edges&quot;&quot;&quot;</span>
         <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span>
         <span class="k">return</span> <span class="n">domain</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">domain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;pint.Unit : units of the bins&#39; edges&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span>
 
     <span class="nd">@units</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;str or pint.Unit : units of the bins&#39; edges&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : Number of bins&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_bins</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_lin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_lin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;bool : Whether binning is to be treated in a linear space&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_lin</span>
 
     <span class="nd">@is_lin</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">is_lin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_lin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;bool&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">b</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_lin</span><span class="p">:</span>
@@ -950,12 +950,12 @@
             <span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="ow">not</span> <span class="n">b</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;bool : Whether binning is to be treated in a log space&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_log</span>
 
     <span class="nd">@is_log</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">is_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;bool&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">b</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_log</span><span class="p">:</span>
@@ -969,7 +969,7 @@
             <span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="ow">not</span> <span class="n">b</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_irregular</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_irregular</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;bool : True if bin spacing is not unform in the space defined (i.e.,</span>
 <span class="sd">        NOT linearly-uniform if `is_lin` or NOT logarithmically-uniform if</span>
 <span class="sd">        `is_log`).&quot;&quot;&quot;</span>
@@ -983,7 +983,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_irregular</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">midpoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">midpoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;array : Midpoints of the bins: linear average of each bin&#39;s</span>
 <span class="sd">        edges.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_midpoints</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -991,7 +991,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_midpoints</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">weighted_centers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weighted_centers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;array : Centers of the bins taking e.g. logarithmic behavior</span>
 <span class="sd">        into account. I.e., if binning is logarithmic, this is **not**</span>
 <span class="sd">        the same `midpoints`, whereas in all other cases, it is identical.&quot;&quot;&quot;</span>
@@ -1004,7 +1004,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weighted_centers</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : Hash value based upon less-than-double-precision-rounded</span>
 <span class="sd">        numerical values and any other state (includes name, tex, is_log, and</span>
 <span class="sd">        is_lin attributes). Rounding is done to `HASH_SIGFIGS` significant</span>
@@ -1022,7 +1022,7 @@
 
 <div class="viewcode-block" id="OneDimBinning.rehash">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.rehash">[docs]</a>
-    <span class="k">def</span> <span class="nf">rehash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rehash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Force `hash` and `edges_hash` attributes to be recomputed&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_edges_hash</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1030,16 +1030,16 @@
         <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges_hash</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;bool : Whether to normalize quantities&#39; units prior to hashing&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_values</span>
 
     <span class="nd">@normalize_values</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_values</span><span class="p">:</span>
             <span class="k">return</span>
@@ -1049,7 +1049,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_values</span> <span class="o">=</span> <span class="n">b</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">edges_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">edges_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash value based *solely* upon bin edges&#39; values.</span>
 
 <span class="sd">        The hash value is obtained on the edges after &quot;normalizing&quot; their</span>
@@ -1068,14 +1068,14 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">bin_widths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bin_widths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Absolute widths of bins.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bin_widths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_bin_widths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">m</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">units</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bin_widths</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">weighted_bin_widths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weighted_bin_widths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Absolute widths of bins.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weighted_bin_widths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_log</span><span class="p">:</span>
@@ -1087,7 +1087,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weighted_bin_widths</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">inbounds_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inbounds_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return string boolean criteria indicating e.g. an event falls within</span>
 <span class="sd">        the limits of the defined binning.</span>
 
@@ -1105,11 +1105,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_inbounds_criteria</span> <span class="o">=</span> <span class="n">crit</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inbounds_criteria</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of bins (*not* number of bin edges).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_bins</span>
 
-    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">])</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
@@ -1121,7 +1121,7 @@
     <span class="c1"># create a smarter MultiDimBinning object that allows for multiple</span>
     <span class="c1"># disconnected binning regions with arbitrary binning within each</span>
     <span class="c1"># region</span>
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">])</span>
 
@@ -1135,14 +1135,14 @@
         <span class="k">return</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tex</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">=</span><span class="n">new_bin_edges</span><span class="p">)</span>
 
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Explicit deepcopy constructor&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{}</span>
 
 <div class="viewcode-block" id="OneDimBinning.is_bin_spacing_log_uniform">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.is_bin_spacing_log_uniform">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">is_bin_spacing_log_uniform</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_bin_spacing_log_uniform</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if `bin_edges` define a logarithmically-uniform bin spacing.</span>
 
 <span class="sd">        Parameters</span>
@@ -1179,7 +1179,7 @@
 <div class="viewcode-block" id="OneDimBinning.is_bin_spacing_lin_uniform">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.is_bin_spacing_lin_uniform">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">is_bin_spacing_lin_uniform</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_bin_spacing_lin_uniform</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if `bin_edges` define a linearly-uniform bin spacing.</span>
 
 <span class="sd">        Parameters</span>
@@ -1218,7 +1218,7 @@
 <div class="viewcode-block" id="OneDimBinning.is_binning_ok">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.is_binning_ok">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">is_binning_ok</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_binning_ok</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check that there are 2 or more bin edges, and that they are</span>
 <span class="sd">        monotonically increasing.</span>
 
@@ -1244,7 +1244,7 @@
     <span class="c1"># TODO: as of now, only downsampling is allowed. Is this reasonable?</span>
 <div class="viewcode-block" id="OneDimBinning.is_compat">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.is_compat">[docs]</a>
-    <span class="k">def</span> <span class="nf">is_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compatibility -- for now -- is defined by all of self&#39;s bin</span>
 <span class="sd">        edges form a subset of other&#39;s bin edges (i.e. you can downsample to</span>
 <span class="sd">        get from the other binning to this binning), and the units must be</span>
@@ -1295,7 +1295,7 @@
     
 <div class="viewcode-block" id="OneDimBinning.assert_compat">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.assert_compat">[docs]</a>
-    <span class="k">def</span> <span class="nf">assert_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assert_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Assert that this binning is compatible with `other`.&quot;&quot;&quot;</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_compat</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
@@ -1304,14 +1304,14 @@
 
     <span class="nd">@property</span>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">basename_binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">basename_binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Identical binning but named as the basename of this binning. Note</span>
 <span class="sd">        that the `tex` property is not carried over into the new binning.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">basename</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
 
     <span class="nd">@property</span>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">finite_binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finite_binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Identical binning but with infinities in bin edges replaced by</span>
 <span class="sd">        largest/smallest floating-point numbers representable with the current</span>
 <span class="sd">        pisa.FTYPE.&quot;&quot;&quot;</span>
@@ -1323,7 +1323,7 @@
 <div class="viewcode-block" id="OneDimBinning.oversample">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.oversample">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">oversample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">oversample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a OneDimBinning object oversampled relative to this object&#39;s</span>
 <span class="sd">        binning.</span>
 
@@ -1386,7 +1386,7 @@
 <div class="viewcode-block" id="OneDimBinning.downsample">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.downsample">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Downsample the binning by an integer factor that evenly divides the</span>
 <span class="sd">        current number of bins.</span>
 
@@ -1439,7 +1439,7 @@
 
 <div class="viewcode-block" id="OneDimBinning.ito">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.ito">[docs]</a>
-    <span class="k">def</span> <span class="nf">ito</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ito</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert units in-place. Cf. Pint&#39;s `ito` method.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">units</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
@@ -1472,7 +1472,7 @@
 <div class="viewcode-block" id="OneDimBinning.to">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning.to">[docs]</a>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert bin edges&#39; units to `units`.</span>
 
 <span class="sd">        Parameters</span>
@@ -1490,7 +1490,7 @@
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;bin_edges&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">ureg</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">units</span><span class="p">)))}</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
 
     <span class="c1"># TODO: make this actually grab the bins specified (and be able to grab</span>
@@ -1507,7 +1507,7 @@
     <span class="c1">#       single colon) in a one-dimensional object is a &quot;violation of the</span>
     <span class="c1">#       contract&quot;: http://stackoverflow.com/a/118508</span>
     <span class="nd">@_new_obj</span>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a new OneDimBinning, sub-selected by `index`.</span>
 
 <span class="sd">        Parameters</span>
@@ -1592,22 +1592,22 @@
         <span class="n">new_edges</span> <span class="o">=</span> <span class="n">new_edges</span> <span class="o">*</span> <span class="n">units</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;bin_edges&#39;</span><span class="p">:</span> <span class="n">new_edges</span><span class="p">,</span> <span class="s1">&#39;bin_names&#39;</span><span class="p">:</span> <span class="n">new_names</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterbins</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="MultiDimBinning">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning">[docs]</a>
-<span class="k">class</span> <span class="nc">MultiDimBinning</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiDimBinning</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="c1"># pylint: disable=line-too-long</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Multi-dimensional binning object. This can contain one or more</span>
@@ -1676,7 +1676,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># pylint: enable=line-too-long</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__map_class</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
@@ -1717,7 +1717,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> 
 
 
-    <span class="k">def</span> <span class="nf">_init_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Initialize the bin mask. This can either be specified as:</span>
 <span class="sd">          (1) an array matching the bin dimensions with values True/False (e.g. a `mask`), where False means &quot;masked off&quot;</span>
@@ -1767,12 +1767,12 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the dimension&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
 
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">previous_precision</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">get_printoptions</span><span class="p">()[</span><span class="s1">&#39;precision&#39;</span><span class="p">]</span>
         <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1783,11 +1783,11 @@
             <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="n">previous_precision</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">r</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">b</span> <span class="o">=</span> <span class="s1">&#39; x &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">%i</span><span class="s1"> (</span><span class="si">%s</span><span class="s1">)&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">dim</span><span class="o">.</span><span class="n">num_bins</span><span class="p">,</span> <span class="n">dim</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimensions</span><span class="p">])</span>
         <span class="k">return</span> <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot;:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__pretty__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__pretty__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by the `pretty` library for formatting&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">cycle</span><span class="p">:</span>
             <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(...)&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
@@ -1800,28 +1800,28 @@
                     <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
             <span class="n">p</span><span class="o">.</span><span class="n">end_group</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;])&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by e.g. ipython/Jupyter for formatting&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pretty__</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method invoked during pickling&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializable_state</span>
 
-    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method invoked during unpickling&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">state</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_map_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_map_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__map_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span>  <span class="c1"># pylint: disable=wrong-import-position</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">Map</span>  <span class="c1"># pylint: disable=wrong-import-position</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__map_class</span> <span class="o">=</span> <span class="n">Map</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__map_class</span>
 
 <div class="viewcode-block" id="MultiDimBinning.to_json">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.to_json">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the state to a JSON file that can be instantiated as a new</span>
 <span class="sd">        object later.</span>
 
@@ -1849,7 +1849,7 @@
 <div class="viewcode-block" id="MultiDimBinning.from_json">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.from_json">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a new MultiDimBinning object from a JSON file.</span>
 
 <span class="sd">        The format of the JSON is generated by the `MultiDimBinning.to_json`</span>
@@ -1872,14 +1872,14 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;list of strings : names of each dimension contained&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">basenames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">basenames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;List of binning names with prefixes and/or suffixes along with any</span>
 <span class="sd">        number of possible separator characters removed. See function</span>
 <span class="sd">        `basename` for detailed specifications.&quot;&quot;&quot;</span>
@@ -1888,71 +1888,71 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_basenames</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">basename_binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">basename_binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Identical binning but with dimensions named by their basenames.</span>
 <span class="sd">        Note that the `tex` properties for the dimensions are not carried over</span>
 <span class="sd">        into the new binning.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">basename_binning</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">finite_binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finite_binning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Identical binning but with infinities in bin edges replaced by</span>
 <span class="sd">        largest/smallest floating-point numbers representable with the current</span>
 <span class="sd">        pisa.FTYPE.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">finite_binning</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;tuple of OneDimBinning : each dimension&#39;s binning in a list&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimensions</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">dims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;tuple of OneDimBinning : shortcut for `dimensions`&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimensions</span>
 
 <div class="viewcode-block" id="MultiDimBinning.iterdims">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.iterdims">[docs]</a>
-    <span class="k">def</span> <span class="nf">iterdims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iterdims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterator over contained `dimensions`, each a OneDimBinning&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dimensions</span><span class="p">)</span></div>
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : number of dimensions&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_dims</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_num_dims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dimensions</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_dims</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;array : return the bin mask&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;tuple : shape of binning, akin to `nump.ndarray.shape`&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">num_bins</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimensions</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : total number of bins&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="n">mul</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">coord</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">coord</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;namedtuple : coordinate for indexing into binning by dim names&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coord</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_coord</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;coord&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coord</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;bool : Normalize quantities&#39; units prior to hashing&quot;&quot;&quot;</span>
         <span class="n">nv</span> <span class="o">=</span> <span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">normalize_values</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">nv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">nv</span><span class="p">):</span>
@@ -1964,12 +1964,12 @@
             <span class="p">)</span>
 
     <span class="nd">@normalize_values</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">dim</span><span class="o">.</span><span class="n">normalize_values</span> <span class="o">=</span> <span class="n">b</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">mask_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mask_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash value based *solely* upon the mask.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_hash</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1977,7 +1977,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_hash</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">serializable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Attributes of the object that are stored to disk. Note that</span>
 <span class="sd">        attributes may be returned as references to other objects, so to</span>
 <span class="sd">        prevent external modification of those objects, the user must call</span>
@@ -1997,7 +1997,7 @@
         <span class="k">return</span> <span class="n">d</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hashable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hashable_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Everything necessary to fully describe this object&#39;s state. Note</span>
 <span class="sd">        that objects may be returned by reference, so to prevent external</span>
 <span class="sd">        modification, the user must call deepcopy() separately on the returned</span>
@@ -2027,7 +2027,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hashable_state</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">normalized_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalized_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;OrderedDict containing normalized (base units, and rounded to</span>
 <span class="sd">        appropriate precision) state attributes used for testing equality</span>
 <span class="sd">        between two objects.</span>
@@ -2041,53 +2041,53 @@
         <span class="k">return</span> <span class="n">state</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unique hash value for this object&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span>
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">edges_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">edges_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int : hash on the list of hashes for each dimension&#39;s edge values&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">hash_obj</span><span class="p">([</span><span class="n">d</span><span class="o">.</span><span class="n">edges_hash</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">bin_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bin_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of the contained dimensions&#39; bin_edges that is</span>
 <span class="sd">        compatible with the numpy.histogramdd `hist` argument.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">bin_edges</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
     
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_irregular</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_irregular</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns `True` if any of the 1D binnings is irregular.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">d</span><span class="o">.</span><span class="n">is_irregular</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
     
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_lin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_lin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns `True` iff all dimensions are linear.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">d</span><span class="o">.</span><span class="n">is_lin</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
     
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns `True` iff all dimensions are log.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">d</span><span class="o">.</span><span class="n">is_log</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">domains</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">domains</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of the contained dimensions&#39; domains&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">domain</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">midpoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">midpoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of the contained dimensions&#39; midpoints&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">midpoints</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">weighted_centers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weighted_centers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of the contained dimensions&#39; weighted_centers (e.g.</span>
 <span class="sd">        equidistant from bin edges on logarithmic scale, if the binning is</span>
 <span class="sd">        logarithmic; otherwise linear). Access `midpoints` attribute for</span>
@@ -2095,7 +2095,7 @@
         <span class="k">return</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">weighted_centers</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return a list of the contained dimensions&#39; num_bins.</span>
 <span class="sd">        Note that this does not accpunt for any bin mask (since it is computed per dimension)</span>
@@ -2103,7 +2103,7 @@
         <span class="k">return</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">num_bins</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tot_num_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tot_num_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return total number of bins.</span>
 <span class="sd">        If a bin mask is used, this will only count bins that are not masked off</span>
@@ -2114,17 +2114,17 @@
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;list : Return a list of the contained dimensions&#39; units&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">units</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
 
     <span class="nd">@units</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;sequence or *args containing units for each contained dim&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">inbounds_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inbounds_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return string boolean criteria indicating e.g. an event falls within</span>
 <span class="sd">        the limits of the defined binning.</span>
 
@@ -2140,7 +2140,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.index">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.index">[docs]</a>
-    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">use_basenames</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">use_basenames</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find dimension implied by `dim` and return its integer index.</span>
 
 <span class="sd">        Parameters</span>
@@ -2198,7 +2198,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.remove">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.remove">[docs]</a>
-    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dims</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dims</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove dimensions.</span>
 
 <span class="sd">        Parameters</span>
@@ -2228,7 +2228,7 @@
     <span class="c1"># add this to `slice` method if implemented.</span>
 <div class="viewcode-block" id="MultiDimBinning.indexer">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.indexer">[docs]</a>
-    <span class="k">def</span> <span class="nf">indexer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">indexer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Any dimension index/slice not specified by name in kwargs will</span>
 <span class="sd">        default to &quot;:&quot; (all elements).</span>
 
@@ -2303,7 +2303,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.slice">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.slice">[docs]</a>
-    <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Slice the binning by dimension name. Any dimension/index not</span>
 <span class="sd">        specified by name in kwargs will default to &quot;:&quot; (all bins).</span>
 
@@ -2319,7 +2319,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.broadcast">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.broadcast">[docs]</a>
-    <span class="k">def</span> <span class="nf">broadcast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">from_dim</span><span class="p">,</span> <span class="n">to_dims</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">broadcast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">from_dim</span><span class="p">,</span> <span class="n">to_dims</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Take a one-dimensional array representing one input dimension and</span>
 <span class="sd">        broadcast it across some number of output dimensions.</span>
 
@@ -2357,7 +2357,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.broadcaster">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.broadcaster">[docs]</a>
-    <span class="k">def</span> <span class="nf">broadcaster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_dim</span><span class="p">,</span> <span class="n">to_dims</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">broadcaster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_dim</span><span class="p">,</span> <span class="n">to_dims</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate an indexder that, if applied to a one-dimensional array</span>
 <span class="sd">        representing data from one dimension, broadcasts that array into some</span>
 <span class="sd">        number of other dimensions.</span>
@@ -2392,7 +2392,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.iterbins">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.iterbins">[docs]</a>
-    <span class="k">def</span> <span class="nf">iterbins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iterbins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an iterator over each N-dimensional bin. The elments returned</span>
 <span class="sd">        by the iterator are each a MultiDimBinning, just containing a single</span>
 <span class="sd">        bin.</span>
@@ -2413,7 +2413,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.iteredgetuples">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.iteredgetuples">[docs]</a>
-    <span class="k">def</span> <span class="nf">iteredgetuples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iteredgetuples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an iterator over each bin&#39;s edges. The elments returned by</span>
 <span class="sd">        the iterator are a tuple of tuples, where the innermost tuples</span>
 <span class="sd">        correspond to each dimension (in the order they&#39;re defined here).</span>
@@ -2439,7 +2439,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.itercoords">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.itercoords">[docs]</a>
-    <span class="k">def</span> <span class="nf">itercoords</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">itercoords</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an iterator over each N-dimensional coordinate into the</span>
 <span class="sd">        binning. The elments returned by the iterator are each a namedtuple,</span>
 <span class="sd">        which can be used to directly index into the binning.</span>
@@ -2462,7 +2462,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.index2coord">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.index2coord">[docs]</a>
-    <span class="k">def</span> <span class="nf">index2coord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">index2coord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a flat index into an N-dimensional bin coordinate.</span>
 
 <span class="sd">        Useful in conjunction with `enumerate(iterbins)`</span>
@@ -2492,7 +2492,7 @@
     <span class="c1"># TODO: examples!</span>
 <div class="viewcode-block" id="MultiDimBinning.reorder_dimensions">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.reorder_dimensions">[docs]</a>
-    <span class="k">def</span> <span class="nf">reorder_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">use_deepcopy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reorder_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">use_deepcopy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                            <span class="n">use_basenames</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a new MultiDimBinning object with dimensions ordered</span>
 <span class="sd">        according to `order`.</span>
@@ -2560,7 +2560,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.is_compat">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.is_compat">[docs]</a>
-    <span class="k">def</span> <span class="nf">is_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if another binning is compatible with this binning.</span>
 
 <span class="sd">        Note that for now, only downsampling is allowed from other to this, and</span>
@@ -2588,7 +2588,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.oversample">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.oversample">[docs]</a>
-    <span class="k">def</span> <span class="nf">oversample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">oversample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a MultiDimBinning object oversampled relative to this one.</span>
 
 <span class="sd">        Parameters</span>
@@ -2690,7 +2690,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.downsample">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.downsample">[docs]</a>
-    <span class="k">def</span> <span class="nf">downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a Binning object downsampled relative to this binning.</span>
 
 <span class="sd">        Parameters</span>
@@ -2745,7 +2745,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.assert_array_fits">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.assert_array_fits">[docs]</a>
-    <span class="k">def</span> <span class="nf">assert_array_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assert_array_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a 2D array of values fits into the defined bins (i.e., has</span>
 <span class="sd">        the exact shape defined by this binning).</span>
 
@@ -2771,7 +2771,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.assert_compat">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.assert_compat">[docs]</a>
-    <span class="k">def</span> <span class="nf">assert_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assert_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a (possibly different) binning can map onto the defined</span>
 <span class="sd">        binning. Allows for simple re-binning schemes (but no interpolation).</span>
 
@@ -2800,7 +2800,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.squeeze">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.squeeze">[docs]</a>
-    <span class="k">def</span> <span class="nf">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove any singleton dimensions (i.e. that have only a single bin).</span>
 <span class="sd">        Analagous to `numpy.squeeze`.</span>
 
@@ -2815,7 +2815,7 @@
         <span class="k">return</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_args_kwargs_to_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_args_kwargs_to_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Take either args or kwargs (but not both) and convert into a simple</span>
 <span class="sd">        sequence of values. Broadcasts a single arg to all dimensions.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_xor</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)):</span>
@@ -2841,7 +2841,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.ito">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.ito">[docs]</a>
-    <span class="k">def</span> <span class="nf">ito</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ito</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert units in-place. Cf. Pint&#39;s `ito` method.&quot;&quot;&quot;</span>
         <span class="n">units_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_args_kwargs_to_list</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">units</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iterdims</span><span class="p">(),</span> <span class="n">units_list</span><span class="p">):</span>
@@ -2850,7 +2850,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.to">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.to">[docs]</a>
-    <span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the contained dimensions to the passed units. Unspecified</span>
 <span class="sd">        dimensions will be omitted.</span>
 
@@ -2863,7 +2863,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.meshgrid">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.meshgrid">[docs]</a>
-    <span class="k">def</span> <span class="nf">meshgrid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">,</span> <span class="n">attach_units</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">meshgrid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">,</span> <span class="n">attach_units</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply NumPy&#39;s meshgrid method on various entities of interest.</span>
 
 <span class="sd">        Parameters</span>
@@ -2923,7 +2923,7 @@
     <span class="c1"># even take a `method` argument to force method manually.</span>
 <div class="viewcode-block" id="MultiDimBinning.bin_volumes">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.bin_volumes">[docs]</a>
-    <span class="k">def</span> <span class="nf">bin_volumes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attach_units</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bin_volumes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attach_units</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Bin &quot;volumes&quot; defined in `num_dims`-dimensions</span>
 
 <span class="sd">        Parameters</span>
@@ -2946,7 +2946,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.weighted_bin_volumes">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.weighted_bin_volumes">[docs]</a>
-    <span class="k">def</span> <span class="nf">weighted_bin_volumes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attach_units</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weighted_bin_volumes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attach_units</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Bin &quot;volumes&quot; defined in `num_dims`-dimensions, but unlike</span>
 <span class="sd">        `bin_volumes`, the volume is evaluated in the space of the binning.</span>
 <span class="sd">        E.g., logarithmic bins have `weighted_bin_volumes` of equal size in</span>
@@ -2977,7 +2977,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.empty">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.empty">[docs]</a>
-    <span class="k">def</span> <span class="nf">empty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">map_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">empty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">map_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a Map whose hist is an &quot;empty&quot; numpy ndarray with same</span>
 <span class="sd">        dimensions as this binning.</span>
 
@@ -3013,7 +3013,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.zeros">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.zeros">[docs]</a>
-    <span class="k">def</span> <span class="nf">zeros</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">map_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zeros</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">map_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a numpy ndarray filled with 0&#39;s with same dimensions as this</span>
 <span class="sd">        binning.</span>
 
@@ -3046,7 +3046,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.ones">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.ones">[docs]</a>
-    <span class="k">def</span> <span class="nf">ones</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">map_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ones</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">map_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a numpy ndarray filled with 1&#39;s with same dimensions as this</span>
 <span class="sd">        binning.</span>
 
@@ -3079,7 +3079,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning.full">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning.full">[docs]</a>
-    <span class="k">def</span> <span class="nf">full</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">map_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">full</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">map_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a map whose `hist` is filled with `fill_value` of same</span>
 <span class="sd">        dimensions as this binning.</span>
 
@@ -3113,14 +3113,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map_class</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="n">hist</span><span class="p">,</span> <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">map_kw</span><span class="p">)</span> <span class="c1"># pylint: disable=not-callable</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dims</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">)</span>
@@ -3128,11 +3128,11 @@
     <span class="c1"># TODO: remove this method, as it should just be considered an outer</span>
     <span class="c1"># product to increase dimensionality (i.e. the &quot;*&quot; operator, or __mul__</span>
     <span class="c1"># makes more sense than &quot;+&quot; or __add__)?</span>
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">other</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">)):</span>
             <span class="n">other</span> <span class="o">=</span> <span class="p">[</span><span class="n">other</span><span class="p">]</span>
         <span class="n">other</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -3141,7 +3141,7 @@
     <span class="c1"># TODO: should __getattr__ raise its own exception if the attr is not found</span>
     <span class="c1"># as a dimension rather than call parent&#39;s __getattribute__ method, since</span>
     <span class="c1"># presumably that already failed?</span>
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="c1"># If youve gotten here, __getattribute__ has failed. Try to get the</span>
         <span class="c1"># attr as a contained dimension:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -3159,7 +3159,7 @@
     <span class="c1">#       * [0, ...]</span>
     <span class="c1">#       * [..., 2]</span>
     <span class="c1">#       * [..., 2, 1, 4]</span>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpret indices as indexing bins and *not* bin edges.</span>
 <span class="sd">        Indices refer to dimensions in same order they were specified at</span>
 <span class="sd">        instantiation, and all dimensions must be present.</span>
@@ -3245,29 +3245,29 @@
 
         <span class="k">return</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="o">**</span><span class="n">new_binning</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">new_mask</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over dimensions. Use `iterbins` to iterate over bins.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dimensions</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_dims</span>
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="test_OneDimBinning">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.test_OneDimBinning">[docs]</a>
-<span class="k">def</span> <span class="nf">test_OneDimBinning</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_OneDimBinning</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for OneDimBinning class&quot;&quot;&quot;</span>
     <span class="c1"># pylint: disable=line-too-long, wrong-import-position</span>
-    <span class="kn">import</span> <span class="nn">pickle</span>
-    <span class="kn">import</span> <span class="nn">os</span>
-    <span class="kn">import</span> <span class="nn">shutil</span>
-    <span class="kn">import</span> <span class="nn">tempfile</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
     <span class="c1"># needed so that eval(repr(b)) works</span>
-    <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">float64</span> <span class="c1"># pylint: disable=unused-variable</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">float64</span> <span class="c1"># pylint: disable=unused-variable</span>
 
     <span class="n">b1</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;true_energy&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                        <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;E_{\rm true}&#39;</span><span class="p">,</span>
@@ -3441,17 +3441,17 @@
 
 <div class="viewcode-block" id="test_MultiDimBinning">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.test_MultiDimBinning">[docs]</a>
-<span class="k">def</span> <span class="nf">test_MultiDimBinning</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_MultiDimBinning</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for MultiDimBinning class&quot;&quot;&quot;</span>
     <span class="c1"># pylint: disable=wrong-import-position</span>
-    <span class="kn">import</span> <span class="nn">pickle</span>
-    <span class="kn">import</span> <span class="nn">os</span>
-    <span class="kn">import</span> <span class="nn">shutil</span>
-    <span class="kn">import</span> <span class="nn">tempfile</span>
-    <span class="kn">import</span> <span class="nn">time</span>
-    <span class="kn">import</span> <span class="nn">pytest</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
     <span class="c1"># needed so that eval(repr(mdb)) works</span>
-    <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">float64</span> <span class="c1"># pylint: disable=unused-variable</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">float64</span> <span class="c1"># pylint: disable=unused-variable</span>
 
     <span class="n">b1</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                        <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">)</span>

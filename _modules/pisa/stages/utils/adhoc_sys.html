@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.utils.adhoc_sys &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -74,23 +74,23 @@
 <span class="sd">hypothetical systematic would be on the physics parameters of an analysis.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.jsons</span> <span class="kn">import</span> <span class="n">from_json</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.jsons</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;adhoc_sys&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="adhoc_sys">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys">[docs]</a>
-<span class="k">class</span> <span class="nc">adhoc_sys</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">adhoc_sys</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage to re-weight events according to factors derived from post-fit data/MC</span>
 <span class="sd">    comparisons. The comparisons are produced somewhere externally and stored as a JSON</span>
@@ -109,7 +109,7 @@
 <span class="sd">        file must contain a dictionary in which, for each variable, a 1D binning and</span>
 <span class="sd">        an array of factors. This file is produced externally from PISA.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -145,7 +145,7 @@
 
 <div class="viewcode-block" id="adhoc_sys.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">scale_file</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale_file</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading scaling factors from : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">scale_file</span><span class="p">)</span>
 
@@ -162,7 +162,7 @@
 
 <div class="viewcode-block" id="adhoc_sys.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;adhoc_scale_factors&quot;</span><span class="p">]</span></div>
 </div>
@@ -171,13 +171,13 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">os</span>
-    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">CACHE_DIR</span>
-    <span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">to_file</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">CACHE_DIR</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_file</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.random_numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_random_state</span>
 
     <span class="c1"># create temporary scale file on the fly</span>
     <span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;reco_length&#39;</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.osc.prob3 &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -76,29 +76,29 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.nsi_params</span> <span class="kn">import</span> <span class="n">StdNSIParams</span><span class="p">,</span> <span class="n">VacuumLikeNSIParams</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.osc_params</span> <span class="kn">import</span> <span class="n">OscParams</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.decay_params</span> <span class="kn">import</span> <span class="n">DecayParams</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.lri_params</span> <span class="kn">import</span> <span class="n">LRIParams</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.scaling_params</span> <span class="kn">import</span> <span class="n">Mass_scaling</span><span class="p">,</span> <span class="n">Core_scaling_w_constrain</span><span class="p">,</span> <span class="n">Core_scaling_wo_constrain</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.layers</span> <span class="kn">import</span> <span class="n">Layers</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span> <span class="kn">import</span> <span class="n">propagate_array</span><span class="p">,</span> <span class="n">fill_probs</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.nsi_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">StdNSIParams</span><span class="p">,</span> <span class="n">VacuumLikeNSIParams</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.osc_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">OscParams</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.decay_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">DecayParams</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.lri_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">LRIParams</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.scaling_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mass_scaling</span><span class="p">,</span> <span class="n">Core_scaling_w_constrain</span><span class="p">,</span> <span class="n">Core_scaling_wo_constrain</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.layers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Layers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span><span class="w"> </span><span class="kn">import</span> <span class="n">propagate_array</span><span class="p">,</span> <span class="n">fill_probs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;prob3&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="prob3">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.prob3.prob3">[docs]</a>
-<span class="k">class</span> <span class="nc">prob3</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">prob3</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Prob3-like oscillation PISA Pi class</span>
 
@@ -158,7 +158,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span>
       <span class="n">nsi_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
       <span class="n">reparam_mix_matrix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -309,7 +309,7 @@
 
 <div class="viewcode-block" id="prob3.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># object for oscillation parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">osc_params</span> <span class="o">=</span> <span class="n">OscParams</span><span class="p">()</span>
@@ -396,7 +396,7 @@
 
 <div class="viewcode-block" id="prob3.calc_probs">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.calc_probs">[docs]</a>
-    <span class="k">def</span> <span class="nf">calc_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">e_array</span><span class="p">,</span> <span class="n">rho_array</span><span class="p">,</span> <span class="n">len_array</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">e_array</span><span class="p">,</span> <span class="n">rho_array</span><span class="p">,</span> <span class="n">len_array</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39; wrapper to execute osc. calc &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reparam_mix_matrix</span><span class="p">:</span>
             <span class="n">mix_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">osc_params</span><span class="o">.</span><span class="n">mix_matrix_reparam_complex</span>
@@ -424,7 +424,7 @@
 
 <div class="viewcode-block" id="prob3.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.compute_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
             <span class="c1"># speed up calculation by adding links</span>
@@ -578,7 +578,7 @@
 
 <div class="viewcode-block" id="prob3.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.prob3.prob3.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># maybe speed up like this?</span>
         <span class="c1">#self.data.representation = self.calc_mode</span>
@@ -596,7 +596,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.prob3.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;detector_depth&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">10</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">km</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.core.translation &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -80,28 +80,28 @@
 <span class="c1">#    This should be made more general that one function can handle everything...since now we have several</span>
 <span class="c1">#    functions doing similar things. not very pretty</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">import</span> <span class="nn">numba</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span><span class="p">,</span> <span class="n">prange</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numba</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">njit</span><span class="p">,</span> <span class="n">prange</span>
 <span class="c1"># When binnings are fully regular, we can use this for super speed</span>
-<span class="kn">import</span> <span class="nn">fast_histogram</span> <span class="k">as</span> <span class="nn">fh</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">fast_histogram</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">fh</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
 
-<span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">PISA_NUM_THREADS</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">recursiveEquality</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">myjit</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">line_profile</span><span class="p">,</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">PISA_NUM_THREADS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.numba_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">myjit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">vectorizer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">line_profile</span><span class="p">,</span> <span class="n">profile</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s1">&#39;resample&#39;</span><span class="p">,</span>
@@ -121,7 +121,7 @@
 
 <div class="viewcode-block" id="resample">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.resample">[docs]</a>
-<span class="k">def</span> <span class="nf">resample</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">old_sample</span><span class="p">,</span> <span class="n">old_binning</span><span class="p">,</span> <span class="n">new_sample</span><span class="p">,</span> <span class="n">new_binning</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resample</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">old_sample</span><span class="p">,</span> <span class="n">old_binning</span><span class="p">,</span> <span class="n">new_sample</span><span class="p">,</span> <span class="n">new_binning</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Resample binned data with a given binning into any arbitrary</span>
 <span class="sd">    `new_binning`</span>
 
@@ -165,7 +165,7 @@
 
 <div class="viewcode-block" id="histogram">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.histogram">[docs]</a>
-<span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">averaged</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">histogram</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">averaged</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Histogram `sample` points, weighting by `weights`, according to `binning`.</span>
 
 <span class="sd">    Parameters</span>
@@ -207,7 +207,7 @@
     <span class="k">return</span> <span class="n">flat_hist</span></div>
 
 
-<span class="k">def</span> <span class="nf">_threaded_fh_histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">bin_range</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_threaded_fh_histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">bin_range</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">fh</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="n">bin_range</span><span class="p">)</span>
 
@@ -233,7 +233,7 @@
         <span class="n">results</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">results</span>
 
-<span class="k">def</span> <span class="nf">histogram_fh</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># pylint: disable=missing-docstring</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">histogram_fh</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># pylint: disable=missing-docstring</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function for fast_histogram historams.</span>
 <span class="sd">    </span>
 <span class="sd">    This requires binnings to be fully regular and linear.</span>
@@ -269,7 +269,7 @@
         <span class="n">flat_hist</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">flat_hist</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">histogram_np</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># pylint: disable=missing-docstring</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">histogram_np</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">apply_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># pylint: disable=missing-docstring</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;helper function for numpy historams&quot;&quot;&quot;</span>
 
     <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">for</span> <span class="n">edges</span> <span class="ow">in</span> <span class="n">binning</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">]</span>
@@ -292,7 +292,7 @@
 
 <div class="viewcode-block" id="lookup">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.lookup">[docs]</a>
-<span class="k">def</span> <span class="nf">lookup</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The inverse of histograming: Extract the histogram values at `sample`</span>
 <span class="sd">    points.</span>
 
@@ -483,7 +483,7 @@
 
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_regular_1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_regular_1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
         <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">xmin</span> <span class="ow">and</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">xmax</span><span class="p">:</span>
@@ -493,7 +493,7 @@
         <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_regular_2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_regular_2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
     <span class="n">normy</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">/</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
@@ -506,7 +506,7 @@
         <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_regular_3d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_regular_3d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span>
                             <span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
     <span class="n">normy</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">/</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span>
@@ -523,7 +523,7 @@
         <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_regular_1d_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_regular_1d_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
         <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">xmin</span> <span class="ow">and</span> <span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">xmax</span><span class="p">:</span>
@@ -535,7 +535,7 @@
             <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_regular_2d_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_regular_2d_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
     <span class="n">normy</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">/</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
@@ -550,7 +550,7 @@
             <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_regular_3d_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_regular_3d_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">flat_hist</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span>
                             <span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">normx</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">/</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
     <span class="n">normy</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">/</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span>
@@ -569,7 +569,7 @@
             <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
 
 <span class="nd">@myjit</span>
-<span class="k">def</span> <span class="nf">find_index</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_index</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find index in binning for `val`. If `val` is below binning range or is</span>
 <span class="sd">    nan, return -1; if `val` is above binning range, return num_bins. Edge</span>
 <span class="sd">    inclusivity/exclusivity is defined as .. ::</span>
@@ -621,7 +621,7 @@
 
 
 <span class="nd">@myjit</span>
-<span class="k">def</span> <span class="nf">find_index_unsafe</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_index_unsafe</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find bin index of `val` within binning defined by `bin_edges`.</span>
 
 <span class="sd">    Validity of `val` and `bin_edges` is not checked.</span>
@@ -670,7 +670,7 @@
     <span class="s1">&#39;(), (j), (k) -&gt; ()&#39;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_vectorized_1d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_vectorized_1d</span><span class="p">(</span>
     <span class="n">sample</span><span class="p">,</span>
     <span class="n">flat_hist</span><span class="p">,</span>
     <span class="n">bin_edges</span><span class="p">,</span>
@@ -689,7 +689,7 @@
     <span class="s1">&#39;(), (j, d), (k) -&gt; (d)&#39;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_vectorized_1d_arrays</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_vectorized_1d_arrays</span><span class="p">(</span>
     <span class="n">sample</span><span class="p">,</span>
     <span class="n">flat_hist</span><span class="p">,</span>
     <span class="n">bin_edges</span><span class="p">,</span>
@@ -710,7 +710,7 @@
     <span class="s1">&#39;(), (), (j), (k), (l) -&gt; ()&#39;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_vectorized_2d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_vectorized_2d</span><span class="p">(</span>
     <span class="n">sample_x</span><span class="p">,</span>
     <span class="n">sample_y</span><span class="p">,</span>
     <span class="n">flat_hist</span><span class="p">,</span>
@@ -740,7 +740,7 @@
     <span class="s1">&#39;(), (), (j, d), (k), (l) -&gt; (d)&#39;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_vectorized_2d_arrays</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_vectorized_2d_arrays</span><span class="p">(</span>
     <span class="n">sample_x</span><span class="p">,</span>
     <span class="n">sample_y</span><span class="p">,</span>
     <span class="n">flat_hist</span><span class="p">,</span>
@@ -774,7 +774,7 @@
     <span class="s1">&#39;(), (), (), (j), (k), (l), (m) -&gt; ()&#39;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_vectorized_3d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_vectorized_3d</span><span class="p">(</span>
     <span class="n">sample_x</span><span class="p">,</span>
     <span class="n">sample_y</span><span class="p">,</span>
     <span class="n">sample_z</span><span class="p">,</span>
@@ -810,7 +810,7 @@
     <span class="s1">&#39;(), (), (), (j, d), (k), (l), (m) -&gt; (d)&#39;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_vectorized_3d_arrays</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_vectorized_3d_arrays</span><span class="p">(</span>
     <span class="n">sample_x</span><span class="p">,</span>
     <span class="n">sample_y</span><span class="p">,</span>
     <span class="n">sample_z</span><span class="p">,</span>
@@ -846,7 +846,7 @@
 
 <div class="viewcode-block" id="test_histogram">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.test_histogram">[docs]</a>
-<span class="k">def</span> <span class="nf">test_histogram</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_histogram</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `histogram` function.</span>
 
 <span class="sd">    Correctness is defined as matching the histogram produced by</span>
@@ -891,7 +891,7 @@
 
 <div class="viewcode-block" id="test_find_index">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.translation.test_find_index">[docs]</a>
-<span class="k">def</span> <span class="nf">test_find_index</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_find_index</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `find_index` function.</span>
 
 <span class="sd">    Correctness is defined as producing the same histogram as numpy.histogramdd</span>

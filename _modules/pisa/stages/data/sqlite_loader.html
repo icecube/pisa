@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.data.sqlite_loader &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,20 +72,20 @@
 <span class="sd">A Stage to load data from an sqlite database</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
-<span class="kn">import</span> <span class="nn">sqlite3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.container</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span>
 
 <span class="c1"># TODO: docstrings</span>
 <div class="viewcode-block" id="sqlite_loader">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader">[docs]</a>
-<span class="k">class</span> <span class="nc">sqlite_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">sqlite_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    SQLite loader PISA Pi class</span>
 <span class="sd">    Parameters</span>
@@ -94,7 +94,7 @@
 <span class="sd">    **kwargs</span>
 <span class="sd">        Passed to Stage</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">database</span><span class="p">,</span>
         <span class="n">output_names</span><span class="p">,</span>
@@ -117,7 +117,7 @@
 
 <div class="viewcode-block" id="sqlite_loader.get_pid_and_interaction_type">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.get_pid_and_interaction_type">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_pid_and_interaction_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_pid_and_interaction_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Sorry&#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="s1">&#39;bar&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
@@ -141,7 +141,7 @@
 
 <div class="viewcode-block" id="sqlite_loader.query_database">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.query_database">[docs]</a>
-    <span class="k">def</span> <span class="nf">query_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interaction_type</span><span class="p">,</span> <span class="n">pid</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">query_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interaction_type</span><span class="p">,</span> <span class="n">pid</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span> <span class="k">as</span> <span class="n">con</span><span class="p">:</span>
             <span class="c1"># Get truth</span>
             <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT * FROM truth WHERE interaction_type = </span><span class="si">%s</span><span class="s1"> and pid = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">interaction_type</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
@@ -162,7 +162,7 @@
 
 <div class="viewcode-block" id="sqlite_loader.add_truth">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_truth">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_truth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">flavor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_truth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">flavor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39; Adds truth to container&#39;&#39;&#39;</span>
         <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;zenith&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
@@ -173,7 +173,7 @@
 
 <div class="viewcode-block" id="sqlite_loader.add_reco">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_reco">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_reco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">reco</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_reco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">reco</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39; Adds reconstructed quantities to container&#39;&#39;&#39;</span>
 
         <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">reco</span><span class="p">[</span><span class="s1">&#39;zenith&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
@@ -187,7 +187,7 @@
 
 <div class="viewcode-block" id="sqlite_loader.add_aeff_weight">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_aeff_weight">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_aeff_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">n_files</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_aeff_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">n_files</span><span class="p">):</span>
         <span class="n">CM2_TO_M2</span> <span class="o">=</span> <span class="mf">1e-4</span>
         <span class="n">weighted_aeff</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">CM2_TO_M2</span>
@@ -202,7 +202,7 @@
 
 <div class="viewcode-block" id="sqlite_loader.initialize_weights">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.initialize_weights">[docs]</a>
-    <span class="k">def</span> <span class="nf">initialize_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">):</span>
         <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">container</span></div>
@@ -210,7 +210,7 @@
 
 <div class="viewcode-block" id="sqlite_loader.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># create containers from the events</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">:</span>
             <span class="c1"># make container</span>
@@ -233,7 +233,7 @@
 
 <div class="viewcode-block" id="sqlite_loader.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
 </div>
@@ -242,11 +242,11 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">os</span>
-    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">CACHE_DIR</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">CACHE_DIR</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.random_numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_random_state</span>
 
     <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">&#39;sqlite_loader_test_file&#39;</span><span class="p">)</span>
 

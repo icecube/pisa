@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.fileio &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -73,21 +73,21 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
 
-<span class="kn">import</span> <span class="nn">errno</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
-<span class="kn">import</span> <span class="nn">operator</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">pickle</span>
-<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">errno</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">hdf</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">jsons</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">log</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">resources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">hdf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">jsons</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -162,7 +162,7 @@
 
 <div class="viewcode-block" id="expand">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.expand">[docs]</a>
-<span class="k">def</span> <span class="nf">expand</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">exp_user</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exp_vars</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">resolve_symlinks</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">expand</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">exp_user</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exp_vars</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">resolve_symlinks</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convenience function for expanding a path</span>
 
 <span class="sd">    Parameters</span>
@@ -203,7 +203,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">check_file_exists</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_file_exists</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;See if a file exists, warning, raising an exception, or doing neither if</span>
 <span class="sd">    it already exists.</span>
 
@@ -242,7 +242,7 @@
 
 <div class="viewcode-block" id="mkdir">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.mkdir">[docs]</a>
-<span class="k">def</span> <span class="nf">mkdir</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o0750</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mkdir</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o0750</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple wrapper around os.makedirs to create a directory but not raise an</span>
 <span class="sd">    exception if the dir already exists</span>
 
@@ -271,7 +271,7 @@
 
 <div class="viewcode-block" id="get_valid_filename">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.get_valid_filename">[docs]</a>
-<span class="k">def</span> <span class="nf">get_valid_filename</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_valid_filename</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sanitize string to make it reasonable to use as a filename.</span>
 
 <span class="sd">    From https://github.com/django/django/blob/master/django/utils/text.py</span>
@@ -293,7 +293,7 @@
 
 <div class="viewcode-block" id="nsort">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.nsort">[docs]</a>
-<span class="k">def</span> <span class="nf">nsort</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">nsort</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sort a sequence of strings containing integer number fields by the</span>
 <span class="sd">    value of those numbers, rather than by simple alpha order. Useful</span>
 <span class="sd">    for sorting e.g. version strings, etc..</span>
@@ -325,7 +325,7 @@
 <span class="sd">        Sort sequence of strings with floating-point numbers in the strings.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">_field_splitter</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_field_splitter</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
         <span class="n">spl</span> <span class="o">=</span> <span class="n">NSORT_RE</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
         <span class="n">non_numbers</span> <span class="o">=</span> <span class="n">spl</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
         <span class="n">numbers</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">spl</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]]</span>
@@ -337,7 +337,7 @@
 
 <div class="viewcode-block" id="nsort_key_func">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.nsort_key_func">[docs]</a>
-<span class="k">def</span> <span class="nf">nsort_key_func</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">nsort_key_func</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Use as the `key` argument to the `sorted` function or `sort` method.</span>
 
 <span class="sd">    Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments</span>
@@ -360,7 +360,7 @@
 
 <div class="viewcode-block" id="fsort">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.fsort">[docs]</a>
-<span class="k">def</span> <span class="nf">fsort</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fsort</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sort a sequence of strings with one or more floating point number fields</span>
 <span class="sd">    in using the floating point value(s) (and intervening strings are treated</span>
 <span class="sd">    as normally done). Note that + and - preceding a number are included in the</span>
@@ -407,7 +407,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">fsort_re</span> <span class="o">=</span> <span class="n">UNSIGNED_FSORT_RE</span>
 
-    <span class="k">def</span> <span class="nf">_field_splitter</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_field_splitter</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
         <span class="n">spl</span> <span class="o">=</span> <span class="n">fsort_re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
         <span class="n">non_numbers</span> <span class="o">=</span> <span class="n">spl</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
         <span class="n">numbers</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">spl</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]]</span>
@@ -420,7 +420,7 @@
 
 <div class="viewcode-block" id="find_files">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.find_files">[docs]</a>
-<span class="k">def</span> <span class="nf">find_files</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dir_sorter</span><span class="o">=</span><span class="n">nsort</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_files</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dir_sorter</span><span class="o">=</span><span class="n">nsort</span><span class="p">,</span>
                <span class="n">file_sorter</span><span class="o">=</span><span class="n">nsort</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find files by re or name recursively w/ ordering.</span>
 
@@ -463,15 +463,15 @@
     <span class="c1"># Define a function for accepting a filename as a match</span>
     <span class="k">if</span> <span class="n">regex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">fname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">def</span> <span class="nf">_validfilefunc</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span> <span class="c1"># pylint: disable=unused-argument</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_validfilefunc</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span> <span class="c1"># pylint: disable=unused-argument</span>
                 <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">def</span> <span class="nf">_validfilefunc</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_validfilefunc</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">fn</span> <span class="o">==</span> <span class="n">fname</span><span class="p">:</span>
                     <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">None</span>
                 <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">def</span> <span class="nf">_validfilefunc</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_validfilefunc</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
             <span class="n">match</span> <span class="o">=</span> <span class="n">regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">match</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span> <span class="o">==</span> <span class="n">regex</span><span class="o">.</span><span class="n">groups</span><span class="p">):</span>
                 <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">match</span>
@@ -504,9 +504,9 @@
 
 <div class="viewcode-block" id="from_cfg">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.from_cfg">[docs]</a>
-<span class="k">def</span> <span class="nf">from_cfg</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_cfg</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a PISA config file&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">PISAConfigParser</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.config_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">PISAConfigParser</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="p">()</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">config</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
@@ -521,7 +521,7 @@
 
 <div class="viewcode-block" id="from_pickle">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.from_pickle">[docs]</a>
-<span class="k">def</span> <span class="nf">from_pickle</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_pickle</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load from a Python pickle file&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
 
@@ -548,14 +548,14 @@
 
 <div class="viewcode-block" id="to_pickle">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.to_pickle">[docs]</a>
-<span class="k">def</span> <span class="nf">to_pickle</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_pickle</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Save object to a pickle file&quot;&quot;&quot;</span>
     <span class="n">check_file_exists</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">),</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span></div>
 
 
 
-<span class="k">def</span> <span class="nf">from_txt</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">as_array</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_txt</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">as_array</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load from a text (txt) file&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">as_array</span><span class="p">:</span>
@@ -572,7 +572,7 @@
     <span class="k">return</span> <span class="n">a</span>
 
 
-<span class="k">def</span> <span class="nf">to_txt</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_txt</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Save object to a text (txt) file&quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
@@ -580,7 +580,7 @@
 
 <div class="viewcode-block" id="from_file">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.from_file">[docs]</a>
-<span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_file</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch correct file reader based on `fmt` (if specified) or guess</span>
 <span class="sd">    based on file name&#39;s extension.</span>
 
@@ -639,7 +639,7 @@
 
 <div class="viewcode-block" id="to_file">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.to_file">[docs]</a>
-<span class="k">def</span> <span class="nf">to_file</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_file</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch correct file writer based on fmt (if specified) or guess</span>
 <span class="sd">    based on file name&#39;s extension&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">fmt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

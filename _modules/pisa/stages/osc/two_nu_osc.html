@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.osc.two_nu_osc &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,22 +72,22 @@
 <span class="sd">PISA pi stage for the calculation osc. probabilities assuming two-neutrino model</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ITYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.numba_tools</span> <span class="kn">import</span> <span class="n">myjit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ITYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.numba_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">myjit</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;two_nu_osc&#39;</span><span class="p">,</span> <span class="s1">&#39;calc_probs&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_probs_vectorized&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 <div class="viewcode-block" id="two_nu_osc">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.two_nu_osc.two_nu_osc">[docs]</a>
-<span class="k">class</span> <span class="nc">two_nu_osc</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">two_nu_osc</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    two neutrino osc PISA Pi class</span>
 
@@ -111,7 +111,7 @@
 <span class="sd">    Atmospheric mixing angle is aproximated by theta (sin^2(2*theta))</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                 <span class="p">):</span>
 
@@ -138,7 +138,7 @@
 <div class="viewcode-block" id="two_nu_osc.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.two_nu_osc.two_nu_osc.apply_function">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
         <span class="n">deltam31</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">deltam31</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;eV**2&#39;</span><span class="p">)</span>
@@ -177,7 +177,7 @@
 
 
 <span class="nd">@myjit</span>
-<span class="k">def</span> <span class="nf">calc_probs</span><span class="p">(</span><span class="n">t23</span><span class="p">,</span> <span class="n">dm31</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">):</span> <span class="c1">#</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_probs</span><span class="p">(</span><span class="n">t23</span><span class="p">,</span> <span class="n">dm31</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">):</span> <span class="c1">#</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39; calculate osc prob of numu to nutau &#39;&#39;&#39;</span>
     <span class="n">L1</span> <span class="o">=</span> <span class="mf">19.</span> <span class="c1"># atmospheric production height</span>
     <span class="n">R</span> <span class="o">=</span> <span class="mf">6378.2</span> <span class="o">+</span> <span class="n">L1</span> <span class="c1"># mean radius of the Earth + L1</span>
@@ -197,7 +197,7 @@
     <span class="n">IX</span> <span class="o">=</span> <span class="s1">&#39;i4&#39;</span>
 <span class="n">signature</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">IX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span>
 <span class="nd">@guvectorize</span><span class="p">([</span><span class="n">signature</span><span class="p">],</span> <span class="s1">&#39;(d),(),(),(),(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">apply_probs_vectorized</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">t23</span><span class="p">,</span> <span class="n">dm31</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">,</span> <span class="n">nuflav</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_probs_vectorized</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">t23</span><span class="p">,</span> <span class="n">dm31</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">,</span> <span class="n">nuflav</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">nuflav</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># numu receive weights dependent on numu survival prob</span>
         <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="n">flux</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">calc_probs</span><span class="p">(</span><span class="n">t23</span><span class="p">,</span> <span class="n">dm31</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">))</span>
     <span class="k">elif</span> <span class="n">nuflav</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span> <span class="c1"># nutau receive weights dependent on nutau appearance prob</span>
@@ -209,7 +209,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.two_nu_osc.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">45</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>

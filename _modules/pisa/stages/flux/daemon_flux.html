@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.flux.daemon_flux &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -75,26 +75,26 @@
 <span class="sd">Maria Liubarska, J.P. Yanez 2023</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">daemonflux</span> <span class="kn">import</span> <span class="n">Flux</span>
-<span class="kn">from</span> <span class="nn">daemonflux</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">daemon_version</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">daemonflux</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flux</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">daemonflux</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">daemon_version</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">jit</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">interpolate</span>
-<span class="kn">from</span> <span class="nn">packaging.version</span> <span class="kn">import</span> <span class="n">Version</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.random_numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_random_state</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">interpolate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;daemon_flux&#39;</span><span class="p">,</span> <span class="s1">&#39;make_2d_flux_map&#39;</span><span class="p">,</span> <span class="s1">&#39;evaluate_flux_map&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="daemon_flux">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.daemon_flux.daemon_flux">[docs]</a>
-<span class="k">class</span> <span class="nc">daemon_flux</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">daemon_flux</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    DAEMON flux stage</span>
 
@@ -137,7 +137,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
@@ -184,7 +184,7 @@
 
 <div class="viewcode-block" id="daemon_flux.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.daemon_flux.daemon_flux.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
 
@@ -195,7 +195,7 @@
 <div class="viewcode-block" id="daemon_flux.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.daemon_flux.daemon_flux.compute_function">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
 
@@ -245,7 +245,7 @@
 <div class="viewcode-block" id="make_2d_flux_map">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.daemon_flux.make_2d_flux_map">[docs]</a>
 <span class="nd">@jit</span><span class="p">(</span><span class="n">forceobj</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">make_2d_flux_map</span><span class="p">(</span><span class="n">flux_obj</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_2d_flux_map</span><span class="p">(</span><span class="n">flux_obj</span><span class="p">,</span>
                      <span class="n">particle</span> <span class="o">=</span> <span class="s1">&#39;numuflux&#39;</span><span class="p">,</span>
                      <span class="n">egrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">500</span><span class="p">),</span>
                      <span class="n">params</span> <span class="o">=</span> <span class="p">{},</span>
@@ -272,7 +272,7 @@
 <div class="viewcode-block" id="evaluate_flux_map">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.daemon_flux.evaluate_flux_map">[docs]</a>
 <span class="nd">@jit</span><span class="p">(</span><span class="n">forceobj</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">):</span>
 
     <span class="n">uconv</span> <span class="o">=</span> <span class="n">true_energy</span><span class="o">**-</span><span class="mi">3</span> <span class="o">*</span> <span class="mf">1e4</span>
     <span class="k">return</span> <span class="n">flux_map</span><span class="o">.</span><span class="n">ev</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">)</span> <span class="o">*</span> <span class="n">uconv</span></div>
@@ -281,7 +281,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.daemon_flux.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">random_state</span> <span class="o">=</span> <span class="n">get_random_state</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">666</span><span class="p">)</span>

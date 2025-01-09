@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.osc.decay_params &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -76,17 +76,17 @@
 <span class="sd">           (alpha3)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">CTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">CTYPE</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DecayParams&#39;</span><span class="p">]</span>
 
 <div class="viewcode-block" id="DecayParams">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decay_params.DecayParams">[docs]</a>
-<span class="k">class</span> <span class="nc">DecayParams</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DecayParams</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Holds neutrino decay parameters, i.e., alpha</span>
 
@@ -103,23 +103,23 @@
 <span class="sd">    decay_matrix : 3d complex array</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_decay_alpha3</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_decay_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CTYPE</span><span class="p">)</span>
 
     <span class="c1"># --- theta12 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">decay_alpha3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decay_alpha3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;alpha3&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decay_alpha3</span>
 
     <span class="nd">@decay_alpha3</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">decay_alpha3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decay_alpha3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_decay_alpha3</span> <span class="o">=</span> <span class="n">value</span>
         
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">decay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Neutrino decay matrix&quot;&quot;&quot;</span>
         <span class="n">decay_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CTYPE</span><span class="p">)</span>
 
@@ -128,7 +128,7 @@
         <span class="k">return</span> <span class="n">decay_mat</span></div>
 
     
-<span class="k">def</span> <span class="nf">test_decay_params</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_decay_params</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    # TODO: implement me!</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -136,8 +136,8 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">TARGET</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">TARGET</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
     <span class="k">assert</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="s2">&quot;Cannot test functions on GPU, set PISA_TARGET to &#39;cpu&#39;&quot;</span>
     <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">test_decay_params</span><span class="p">()</span>

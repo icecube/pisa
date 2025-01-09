@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.core.bin_indexing &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -91,15 +91,15 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.core.translation</span> <span class="kn">import</span> <span class="n">find_index</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.translation</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_index</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;lookup_indices&quot;</span><span class="p">,</span> <span class="s2">&quot;test_lookup_indices&quot;</span><span class="p">]</span>
@@ -113,7 +113,7 @@
     <span class="s2">&quot;(), (j) -&gt; ()&quot;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_indices_vectorized_1d</span><span class="p">(</span><span class="n">sample_x</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_indices_vectorized_1d</span><span class="p">(</span><span class="n">sample_x</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Lookup bin indices for sample_x values, where binning is defined by</span>
 <span class="sd">    `bin_edges_x`.&quot;&quot;&quot;</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_x</span><span class="p">)</span>
@@ -124,7 +124,7 @@
     <span class="s2">&quot;(), (), (a), (b) -&gt; ()&quot;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_indices_vectorized_2d</span><span class="p">(</span><span class="n">sample_x</span><span class="p">,</span> <span class="n">sample_y</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_indices_vectorized_2d</span><span class="p">(</span><span class="n">sample_x</span><span class="p">,</span> <span class="n">sample_y</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Same as above, except we get back the index&quot;&quot;&quot;</span>
     <span class="n">idx_x</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_x</span><span class="p">)</span>
     <span class="n">idx_y</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_y</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_y</span><span class="p">)</span>
@@ -148,7 +148,7 @@
     <span class="s2">&quot;(), (), (), (a), (b), (c) -&gt; ()&quot;</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">lookup_indices_vectorized_3d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_indices_vectorized_3d</span><span class="p">(</span>
     <span class="n">sample_x</span><span class="p">,</span> <span class="n">sample_y</span><span class="p">,</span> <span class="n">sample_z</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">,</span> <span class="n">bin_edges_z</span><span class="p">,</span> <span class="n">out</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized gufunc to perform the lookup&quot;&quot;&quot;</span>
@@ -173,7 +173,7 @@
 
 <div class="viewcode-block" id="lookup_indices">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.bin_indexing.lookup_indices">[docs]</a>
-<span class="k">def</span> <span class="nf">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Lookup (flattened) bin index for sample points.</span>
 
 <span class="sd">    Parameters</span>
@@ -241,7 +241,7 @@
 
 <div class="viewcode-block" id="test_lookup_indices">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.bin_indexing.test_lookup_indices">[docs]</a>
-<span class="k">def</span> <span class="nf">test_lookup_indices</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_lookup_indices</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `lookup_indices` function&quot;&quot;&quot;</span>
 
     <span class="c1">#</span>

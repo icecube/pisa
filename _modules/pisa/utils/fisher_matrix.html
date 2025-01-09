@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.fisher_matrix &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -73,20 +73,20 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="c1">#TODO: fix, adapt, clean up</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
-<span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">operator</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">chi2</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">chi2</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span><span class="p">,</span> <span class="n">to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;FisherMatrix&#39;</span><span class="p">]</span>
@@ -108,7 +108,7 @@
 <span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
 
 
-<span class="k">def</span> <span class="nf">build_fisher_matrix</span><span class="p">(</span><span class="n">gradient_hist_flat_d</span><span class="p">,</span> <span class="n">fiducial_hist</span><span class="p">,</span> <span class="n">fiducial_params</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_fisher_matrix</span><span class="p">(</span><span class="n">gradient_hist_flat_d</span><span class="p">,</span> <span class="n">fiducial_hist</span><span class="p">,</span> <span class="n">fiducial_params</span><span class="p">):</span>
     <span class="c1"># fix the ordering of parameters</span>
     <span class="n">params</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">gradient_hist_flat_d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
@@ -145,10 +145,10 @@
     <span class="k">return</span> <span class="n">fisher</span><span class="p">,</span> <span class="n">nonempty</span>
 
 
-<span class="k">def</span> <span class="nf">get_fisher_matrix</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">test_vals</span><span class="p">,</span> <span class="n">counter</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_fisher_matrix</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">test_vals</span><span class="p">,</span> <span class="n">counter</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute Fisher matrices at fiducial hypothesis given data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.pull_method</span> <span class="kn">import</span> <span class="n">get_gradients</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.pull_method</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_gradients</span>
     <span class="n">hypo_params</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span>
 
     <span class="c1">#fisher = {&#39;total&#39;: {}}</span>
@@ -188,9 +188,9 @@
 
 <div class="viewcode-block" id="FisherMatrix">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix">[docs]</a>
-<span class="k">class</span> <span class="nc">FisherMatrix</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FisherMatrix</span><span class="p">:</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">best_fits</span><span class="p">,</span> <span class="n">priors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">best_fits</span><span class="p">,</span> <span class="n">priors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Construct a fisher matrix object</span>
@@ -228,7 +228,7 @@
 <div class="viewcode-block" id="FisherMatrix.fromFile">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.fromFile">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">fromFile</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fromFile</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Load a Fisher matrix from a json file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -240,7 +240,7 @@
 <div class="viewcode-block" id="FisherMatrix.fromPaPAFile">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.fromPaPAFile">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">fromPaPAFile</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fromPaPAFile</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Load Fisher matrix from json file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -270,7 +270,7 @@
 
     
     
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         
         <span class="c1"># merge parameter lists</span>
         <span class="n">new_params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">+</span><span class="n">other</span><span class="o">.</span><span class="n">parameters</span><span class="p">))</span>
@@ -327,7 +327,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.checkConsistency">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.checkConsistency">[docs]</a>
-    <span class="k">def</span> <span class="nf">checkConsistency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkConsistency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check whether number of parameters matches dimension of matrix; </span>
 <span class="sd">        matrix is symmetrical; parameter names are unique; and number of</span>
@@ -355,7 +355,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.saveFile">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.saveFile">[docs]</a>
-    <span class="k">def</span> <span class="nf">saveFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">saveFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Write Fisher matrix to json file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -373,7 +373,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getParameterIndex">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getParameterIndex">[docs]</a>
-    <span class="k">def</span> <span class="nf">getParameterIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getParameterIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Whether par is already existing in parameter list</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -388,7 +388,7 @@
     <span class="c1">## -&gt; Why on earth would we ever want to do that?</span>
 <div class="viewcode-block" id="FisherMatrix.renameParameter">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.renameParameter">[docs]</a>
-    <span class="k">def</span> <span class="nf">renameParameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fromname</span><span class="p">,</span> <span class="n">toname</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">renameParameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fromname</span><span class="p">,</span> <span class="n">toname</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Rename a parameter</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -405,7 +405,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.calculateCovariance">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.calculateCovariance">[docs]</a>
-    <span class="k">def</span> <span class="nf">calculateCovariance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculateCovariance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate covariance matrix from Fisher matrix (i.e. invert including priors).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -421,7 +421,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getBestFit">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getBestFit">[docs]</a>
-    <span class="k">def</span> <span class="nf">getBestFit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getBestFit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get best fit value for given parameter</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -434,7 +434,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getLabel">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getLabel">[docs]</a>
-    <span class="k">def</span> <span class="nf">getLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get pretty-print label for given parameter</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -447,7 +447,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.setLabel">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.setLabel">[docs]</a>
-    <span class="k">def</span> <span class="nf">setLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">newlabel</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">newlabel</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Change the pretty-print label for given parameter</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -460,7 +460,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.removeParameter">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.removeParameter">[docs]</a>
-    <span class="k">def</span> <span class="nf">removeParameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">removeParameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove par from Fisher matrix and recalculate covariance</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -484,7 +484,7 @@
 <div class="viewcode-block" id="FisherMatrix.translatePrior">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.translatePrior">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">translatePrior</span><span class="p">(</span><span class="n">prior</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">translatePrior</span><span class="p">(</span><span class="n">prior</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Translates a Prior object, numeric, or None to the simplistic prior</span>
 <span class="sd">        format used internally (a value for sigma).</span>
@@ -519,7 +519,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.setPrior">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.setPrior">[docs]</a>
-    <span class="k">def</span> <span class="nf">setPrior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setPrior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set prior for parameter &#39;par&#39; to value sigma. If sigma is None, no</span>
 <span class="sd">        prior is assumed</span>
@@ -533,7 +533,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.addPrior">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.addPrior">[docs]</a>
-    <span class="k">def</span> <span class="nf">addPrior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addPrior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add a prior of value sigma to the existing one for par (in quadrature)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -546,7 +546,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.removeAllPriors">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.removeAllPriors">[docs]</a>
-    <span class="k">def</span> <span class="nf">removeAllPriors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">removeAllPriors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove *all* priors from this Fisher Matrix</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -558,7 +558,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getPrior">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getPrior">[docs]</a>
-    <span class="k">def</span> <span class="nf">getPrior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getPrior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        List the prior (sigma value) for par</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -570,7 +570,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getPriorDict">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getPriorDict">[docs]</a>
-    <span class="k">def</span> <span class="nf">getPriorDict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getPriorDict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        List priors of all parameters (sigma values)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -581,7 +581,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getCovariance">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getCovariance">[docs]</a>
-    <span class="k">def</span> <span class="nf">getCovariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getCovariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the covariance of par1 and par2</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -594,7 +594,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getVariance">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getVariance">[docs]</a>
-    <span class="k">def</span> <span class="nf">getVariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getVariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns full variance of par</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -605,7 +605,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getSigma">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getSigma">[docs]</a>
-    <span class="k">def</span> <span class="nf">getSigma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getSigma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns full standard deviation of par,</span>
 <span class="sd">        marginalized over all other parameters</span>
@@ -617,7 +617,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getSigmaNoPriors">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getSigmaNoPriors">[docs]</a>
-    <span class="k">def</span> <span class="nf">getSigmaNoPriors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getSigmaNoPriors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns standard deviation of par, marginalized over all other </span>
 <span class="sd">        parameters, but ignoring priors on this parameter</span>
@@ -640,7 +640,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getSigmaStatistical">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getSigmaStatistical">[docs]</a>
-    <span class="k">def</span> <span class="nf">getSigmaStatistical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getSigmaStatistical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns standard deviation of par,</span>
 <span class="sd">        if all other parameters are fixed (i.e. known infinitely well)</span>
@@ -653,7 +653,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getSigmaSystematic">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getSigmaSystematic">[docs]</a>
-    <span class="k">def</span> <span class="nf">getSigmaSystematic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getSigmaSystematic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns standard deviation of par for infinite statistics</span>
 <span class="sd">        (i.e. systematic error)</span>
@@ -666,7 +666,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getErrorEllipse">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getErrorEllipse">[docs]</a>
-    <span class="k">def</span> <span class="nf">getErrorEllipse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">,</span> <span class="n">confLevel</span><span class="o">=</span><span class="mf">0.6827</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getErrorEllipse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">,</span> <span class="n">confLevel</span><span class="o">=</span><span class="mf">0.6827</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a, b, tan(2 theta) of confLevel error ellipse </span>
 <span class="sd">        in par1-par2-plane with:</span>
@@ -702,7 +702,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.getCorrelation">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.getCorrelation">[docs]</a>
-    <span class="k">def</span> <span class="nf">getCorrelation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getCorrelation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par1</span><span class="p">,</span> <span class="n">par2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns correlation coefficient between par1 and par2</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -713,7 +713,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.printResults">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.printResults">[docs]</a>
-    <span class="k">def</span> <span class="nf">printResults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">printResults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Prints statistical, systematic errors, priors, best fits </span>
 <span class="sd">        for specified (default: all) parameters</span>
@@ -757,7 +757,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.printResultsSorted">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.printResultsSorted">[docs]</a>
-    <span class="k">def</span> <span class="nf">printResultsSorted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">printResultsSorted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Prints statistical, systematic errors, priors, best fits </span>
 <span class="sd">        sorted by parameter par</span>
@@ -809,7 +809,7 @@
     
 <div class="viewcode-block" id="FisherMatrix.sortByParam">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fisher_matrix.FisherMatrix.sortByParam">[docs]</a>
-    <span class="k">def</span> <span class="nf">sortByParam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sortByParam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Sorts the parameters by their impact on parameter par.</span>
 <span class="sd">        Relevant quantity is covariance(par,i)/sigma_i.</span>

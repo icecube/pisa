@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.osc.osc_params &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -79,18 +79,18 @@
 <span class="sd">original version can be found in thehrh/pisa nsi_reparameterisation branch</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;OscParams&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="OscParams">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams">[docs]</a>
-<span class="k">class</span> <span class="nc">OscParams</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OscParams</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Holds neutrino oscillation parameters, i.e., mixing angles, squared-mass</span>
 <span class="sd">    differences, and a Dirac-type CPV phase. The neutrino mixing (PMNS) matrix</span>
@@ -142,7 +142,7 @@
 <span class="sd">        Antisymmetric matrix of squared-mass differences in vacuum</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_sin12</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sin13</span> <span class="o">=</span> <span class="mf">0.</span>
@@ -158,93 +158,93 @@
 
     <span class="c1"># --- theta12 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">sin12</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sin12</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 1-2 mixing angle&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin12</span>
 
     <span class="nd">@sin12</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">sin12</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sin12</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sin12</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">theta12</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">theta12</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sin12</span><span class="p">)</span>
 
     <span class="nd">@theta12</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">theta12</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">theta12</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sin12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="c1"># --- theta13 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">sin13</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sin13</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 1-3 mixing angle&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin13</span>
 
     <span class="nd">@sin13</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">sin13</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sin13</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sin13</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">theta13</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">theta13</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sin13</span><span class="p">)</span>
 
     <span class="nd">@theta13</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">theta13</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">theta13</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sin13</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="c1"># --- theta23 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">sin23</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sin23</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 2-3 mixing angle&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin23</span>
 
     <span class="nd">@sin23</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">sin23</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sin23</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sin23</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">theta23</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">theta23</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sin23</span><span class="p">)</span>
 
     <span class="nd">@theta23</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">theta23</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">theta23</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sin23</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="c1"># --- theta14 ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">sin14</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sin14</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 1-4 mixing angle&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin14</span>
 
     <span class="nd">@sin14</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">sin14</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sin14</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sin14</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">theta14</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">theta14</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sin14</span><span class="p">)</span>
 
     <span class="nd">@theta14</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">theta14</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">theta14</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sin14</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="c1"># --- deltaCP ---</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">deltacp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">deltacp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CPV phase&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deltacp</span>
 
     <span class="nd">@deltacp</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">deltacp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">deltacp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">value</span> <span class="o">&gt;=</span> <span class="mf">0.</span> <span class="ow">and</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_deltacp</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">mix_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mix_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Neutrino mixing matrix in its &#39;standard&#39; form&quot;&quot;&quot;</span>
         <span class="n">mix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
@@ -277,13 +277,13 @@
         <span class="k">return</span> <span class="n">mix</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">mix_matrix_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mix_matrix_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Mixing matrix as complex 2-d array&quot;&quot;&quot;</span>
         <span class="n">mix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_matrix</span>
         <span class="k">return</span> <span class="n">mix</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">mix</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.</span><span class="n">j</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">mix_matrix_reparam</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mix_matrix_reparam</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Neutrino mixing matrix reparameterised in a way</span>
 <span class="sd">        such that the CPT trafo Hvac -&gt; -Hvac*  is exactly implemented by</span>
@@ -329,13 +329,13 @@
         <span class="k">return</span> <span class="n">mix</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">mix_matrix_reparam_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mix_matrix_reparam_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reparameterised mixing matrix as complex 2-d array&quot;&quot;&quot;</span>
         <span class="n">mix_reparam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_matrix_reparam</span>
         <span class="k">return</span> <span class="n">mix_reparam</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">mix_reparam</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.</span><span class="n">j</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">dm_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dm_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Neutrino mass splitting matrix in vacuum&quot;&quot;&quot;</span>
         <span class="n">dmVacVac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="n">mVac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
@@ -365,7 +365,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">test_osc_params</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_osc_params</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    # TODO: implement me!</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -373,8 +373,8 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">TARGET</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">TARGET</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
     <span class="k">assert</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="s2">&quot;Cannot test functions on GPU, set PISA_TARGET to &#39;cpu&#39;&quot;</span>
     <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">test_osc_params</span><span class="p">()</span>

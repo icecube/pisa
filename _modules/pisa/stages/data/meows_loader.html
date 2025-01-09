@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.data.meows_loader &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,26 +72,26 @@
 <span class="sd">A class to load in the MEOWS hdf5 files</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">time</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">h5py</span> <span class="k">as</span> <span class="nn">h5</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">h5</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.core.container</span> <span class="kn">import</span> <span class="n">Container</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.container</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 
 <div class="viewcode-block" id="meows_loader">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.meows_loader.meows_loader">[docs]</a>
-<span class="k">class</span> <span class="nc">meows_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">meows_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Docstring incoming...</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n_files</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">output_names</span><span class="p">,</span> <span class="o">**</span><span class="n">std_kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n_files</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">output_names</span><span class="p">,</span> <span class="o">**</span><span class="n">std_kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">events_file</span> <span class="o">=</span> <span class="n">events_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_n_files</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_files</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="o">=</span> <span class="n">output_names</span>
@@ -104,7 +104,7 @@
 
 <div class="viewcode-block" id="meows_loader.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.meows_loader.meows_loader.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Go over all those input files and load them in.</span>
 
@@ -170,7 +170,7 @@
 
 <div class="viewcode-block" id="meows_loader.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.meows_loader.meows_loader.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resets all the weights to the initial weights</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -183,12 +183,12 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.meows_loader.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">os</span>
-    <span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">CACHE_DIR</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">to_file</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.random_numbers</span> <span class="kn">import</span> <span class="n">get_random_state</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">CACHE_DIR</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_file</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.random_numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_random_state</span>
 
     <span class="n">expected_events_keys</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s1">&#39;oneweight&#39;</span><span class="p">,</span> <span class="s1">&#39;TotalColumnDepth&#39;</span><span class="p">,</span> <span class="s1">&#39;FinalStateX&#39;</span><span class="p">,</span> <span class="s1">&#39;FinalStateY&#39;</span><span class="p">,</span>

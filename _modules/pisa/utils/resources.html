@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.resources &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -74,13 +74,13 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
 
-<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">environ</span>
-<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">exists</span><span class="p">,</span> <span class="n">expanduser</span><span class="p">,</span> <span class="n">expandvars</span><span class="p">,</span> <span class="n">join</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="kn">import</span> <span class="n">environ</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">exists</span><span class="p">,</span> <span class="n">expanduser</span><span class="p">,</span> <span class="n">expandvars</span><span class="p">,</span> <span class="n">join</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
-<span class="kn">import</span> <span class="nn">pkg_resources</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pkg_resources</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;RESOURCES_SUBDIRS&#39;</span><span class="p">,</span> <span class="s1">&#39;find_resource&#39;</span><span class="p">,</span> <span class="s1">&#39;open_resource&#39;</span><span class="p">,</span> <span class="s1">&#39;find_path&#39;</span><span class="p">]</span>
@@ -107,7 +107,7 @@
 
 <div class="viewcode-block" id="find_resource">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.resources.find_resource">[docs]</a>
-<span class="k">def</span> <span class="nf">find_resource</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">fail</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_resource</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">fail</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to find a resource (file or directory).</span>
 
 <span class="sd">    First check if `resource` is an absolute path, then check relative to</span>
@@ -154,7 +154,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># NOTE: this import needs to be here -- and not at top -- to avoid circular</span>
     <span class="c1"># imports</span>
-    <span class="kn">import</span> <span class="nn">pisa.utils.log</span> <span class="k">as</span> <span class="nn">log</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">log</span>
 
     <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Attempting to find resource &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
 
@@ -200,7 +200,7 @@
 
 <div class="viewcode-block" id="open_resource">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.resources.open_resource">[docs]</a>
-<span class="k">def</span> <span class="nf">open_resource</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">open_resource</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the resource file (see find_resource), open it, and return a file</span>
 <span class="sd">    handle.</span>
 
@@ -245,7 +245,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># NOTE: this import needs to be here -- and not at top -- to avoid circular</span>
     <span class="c1"># imports</span>
-    <span class="kn">import</span> <span class="nn">pisa.utils.log</span> <span class="k">as</span> <span class="nn">log</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">log</span>
 
     <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Attempting to open resource &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
 
@@ -300,7 +300,7 @@
 
 <div class="viewcode-block" id="find_path">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.resources.find_path">[docs]</a>
-<span class="k">def</span> <span class="nf">find_path</span><span class="p">(</span><span class="n">pathspec</span><span class="p">,</span> <span class="n">fail</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_path</span><span class="p">(</span><span class="n">pathspec</span><span class="p">,</span> <span class="n">fail</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a file or directory in the filesystem (i.e., something that the</span>
 <span class="sd">    operating system can locate, as opposed to Python package resources, which</span>
 <span class="sd">    can be located within a package and therefore hidden from the filesystem).</span>
@@ -317,7 +317,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># NOTE: this import needs to be here -- and not at top -- to avoid circular</span>
     <span class="c1"># imports</span>
-    <span class="kn">import</span> <span class="nn">pisa.utils.log</span> <span class="k">as</span> <span class="nn">log</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">log</span>
 
     <span class="c1"># 1) Check for absolute path or path relative to current working</span>
     <span class="c1">#    directory</span>

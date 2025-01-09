@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.core.events &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -76,29 +76,29 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
 
-<span class="kn">import</span> <span class="nn">h5py</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">inf</span><span class="p">,</span> <span class="n">nan</span> <span class="c1"># pylint: disable=unused-import</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">inf</span><span class="p">,</span> <span class="n">nan</span> <span class="c1"># pylint: disable=unused-import</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">resources</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">normQuant</span><span class="p">,</span> <span class="n">recursiveEquality</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.flavInt</span> <span class="kn">import</span> <span class="p">(</span><span class="n">FlavIntData</span><span class="p">,</span> <span class="n">FlavIntDataGroup</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">normQuant</span><span class="p">,</span> <span class="n">recursiveEquality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.flavInt</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">FlavIntData</span><span class="p">,</span> <span class="n">FlavIntDataGroup</span><span class="p">,</span>
                                 <span class="n">flavintGroupsFromString</span><span class="p">,</span> <span class="n">NuFlavIntGroup</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">text2tex</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.hash</span> <span class="kn">import</span> <span class="n">hash_obj</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">hdf</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">text2tex</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.hash</span><span class="w"> </span><span class="kn">import</span> <span class="n">hash_obj</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">hdf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Events&#39;</span><span class="p">,</span> <span class="s1">&#39;Data&#39;</span><span class="p">,</span> <span class="s1">&#39;test_Events&#39;</span><span class="p">]</span>
@@ -123,7 +123,7 @@
 <span class="c1"># TODO: test hash function (attr)</span>
 <div class="viewcode-block" id="Events">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events">[docs]</a>
-<span class="k">class</span> <span class="nc">Events</span><span class="p">(</span><span class="n">FlavIntData</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Events</span><span class="p">(</span><span class="n">FlavIntData</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for storing events, including metadata about the events.</span>
 
 <span class="sd">    Examples</span>
@@ -160,7 +160,7 @@
 <span class="sd">      (&#39;runs&#39;, [620, 621, 622])]</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([</span>
             <span class="p">(</span><span class="s1">&#39;detector&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
             <span class="p">(</span><span class="s1">&#39;geom&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
@@ -194,38 +194,38 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_hash</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">meta</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; : &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
         <span class="c1">#fields =</span>
         <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash value&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span>
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
 
 <div class="viewcode-block" id="Events.update_hash">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.update_hash">[docs]</a>
-    <span class="k">def</span> <span class="nf">update_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the cached hash value&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">normQuant</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">))</span></div>
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flavint_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flavint_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;All flavor/interaction type groups (even singletons) present&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">flavintGroupsFromString</span><span class="p">(</span>
             <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">])</span>
         <span class="p">))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">joined_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">joined_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Concise string identifying _only_ joined flavints&quot;&quot;&quot;</span>
         <span class="n">joined_groups</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="p">[</span><span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]]</span>
@@ -236,30 +236,30 @@
 
 <div class="viewcode-block" id="Events.meta_eq">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.meta_eq">[docs]</a>
-    <span class="k">def</span> <span class="nf">meta_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">meta_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Test whether the metadata for this object matches that of `other`&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Events.data_eq">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.data_eq">[docs]</a>
-    <span class="k">def</span> <span class="nf">data_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Test whether the data for this object matches that of `other`&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_eq</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_eq</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Events.save">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.save">[docs]</a>
-    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">hdf</span><span class="o">.</span><span class="n">to_hdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Events.histogram">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.histogram">[docs]</a>
-    <span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kinds</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">binning_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights_col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kinds</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">binning_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights_col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                   <span class="n">errors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Histogram the events of all `kinds` specified, with `binning` and</span>
 <span class="sd">        optionally applying `weights`.</span>
@@ -363,7 +363,7 @@
 
 <div class="viewcode-block" id="Events.applyCut">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.applyCut">[docs]</a>
-    <span class="k">def</span> <span class="nf">applyCut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">applyCut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a cut by specifying criteria for keeping events. The cut must</span>
 <span class="sd">        be successfully applied to all flav/ints in the events object before</span>
 <span class="sd">        the changes are kept, otherwise the cuts are reverted.</span>
@@ -441,7 +441,7 @@
 
 <div class="viewcode-block" id="Events.keepInbounds">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Events.keepInbounds">[docs]</a>
-    <span class="k">def</span> <span class="nf">keepInbounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">keepInbounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cut out any events that fall outside `binning`. Note that events</span>
 <span class="sd">        that fall exactly on an outer edge are kept.</span>
 
@@ -486,7 +486,7 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">flavints_present</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flavints_present</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a tuple of the flavints that are present in the events&quot;&quot;&quot;</span>
 
         <span class="n">flavints_present_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -514,7 +514,7 @@
 
 <div class="viewcode-block" id="Data">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data">[docs]</a>
-<span class="k">class</span> <span class="nc">Data</span><span class="p">(</span><span class="n">FlavIntDataGroup</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Data</span><span class="p">(</span><span class="n">FlavIntDataGroup</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for storing events, including metadata about the events.</span>
 
 <span class="sd">    Examples</span>
@@ -531,7 +531,7 @@
 <span class="sd">         (&#39;runs&#39;, [620, 621, 622])]</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># TODO(shivesh): add noise implementation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([</span>
             <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
@@ -640,26 +640,26 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">update_hash</span><span class="p">()</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Probabilistically unique identifier&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span>
 
     <span class="nd">@hash</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="n">val</span>
 
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
 
 <div class="viewcode-block" id="Data.update_hash">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.update_hash">[docs]</a>
-    <span class="k">def</span> <span class="nf">update_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the cached hash value&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">normQuant</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">))</span></div>
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">muons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">muons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;muon data&quot;&quot;&quot;</span>
         <span class="c1"># TODO: it seems more sensible to return None rather than raise</span>
         <span class="c1"># AttributeError, since the attribute `muons` absolutely exists, just</span>
@@ -670,25 +670,25 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_muons</span>
 
     <span class="nd">@muons</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">muons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">muons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">contains_muons</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_muons</span> <span class="o">=</span> <span class="n">val</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">noise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">noise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;No noise loaded in Data&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise</span>
 
     <span class="nd">@noise</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">noise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">noise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">contains_noise</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_noise</span> <span class="o">=</span> <span class="n">val</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">neutrinos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">neutrinos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;neutrino data&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_neutrinos</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;No neutrinos loaded in Data&#39;</span><span class="p">)</span>
@@ -697,27 +697,27 @@
     <span class="c1"># TODO: make sure this returns all flavints, and not just joined (grouped)</span>
     <span class="c1"># flavints, as is the case for the Events object</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Names of flavints joined&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Data.meta_eq">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.meta_eq">[docs]</a>
-    <span class="k">def</span> <span class="nf">meta_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">meta_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Test whether the metadata for this object matches that of `other`&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Data.data_eq">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.data_eq">[docs]</a>
-    <span class="k">def</span> <span class="nf">data_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Test whether the data for this object matche that of `other`&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Data.applyCut">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.applyCut">[docs]</a>
-    <span class="k">def</span> <span class="nf">applyCut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">applyCut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a cut by specifying criteria for keeping events. The cut must</span>
 <span class="sd">        be successfully applied to all flav/ints in the events object before</span>
 <span class="sd">        the changes are kept, otherwise the cuts are reverted.</span>
@@ -804,7 +804,7 @@
 
 <div class="viewcode-block" id="Data.keepInbounds">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.keepInbounds">[docs]</a>
-    <span class="k">def</span> <span class="nf">keepInbounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">keepInbounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cut out any events that fall outside `binning`. Note that events</span>
 <span class="sd">        that fall exactly on the outer edge are kept.</span>
 
@@ -826,7 +826,7 @@
 
 <div class="viewcode-block" id="Data.transform_groups">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.transform_groups">[docs]</a>
-    <span class="k">def</span> <span class="nf">transform_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavint_groups</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform Data into a structure given by the input</span>
 <span class="sd">        flavint_groups. Calls the corresponding inherited function.</span>
 
@@ -857,7 +857,7 @@
 
 <div class="viewcode-block" id="Data.digitize">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.digitize">[docs]</a>
-    <span class="k">def</span> <span class="nf">digitize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kinds</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">binning_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">digitize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kinds</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">binning_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper for numpy&#39;s digitize function.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kinds</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">kinds</span> <span class="o">=</span> <span class="p">[</span><span class="n">kinds</span><span class="p">]</span>
@@ -909,7 +909,7 @@
 
 <div class="viewcode-block" id="Data.histogram">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.histogram">[docs]</a>
-    <span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kinds</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">binning_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights_col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kinds</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">binning_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights_col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                   <span class="n">errors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Histogram the events of all `kinds` specified, with `binning` and</span>
 <span class="sd">        optionally applying `weights`.</span>
@@ -1021,7 +1021,7 @@
 
 <div class="viewcode-block" id="Data.histogram_set">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.Data.histogram_set">[docs]</a>
-    <span class="k">def</span> <span class="nf">histogram_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">nu_weights_col</span><span class="p">,</span> <span class="n">mu_weights_col</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">histogram_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">nu_weights_col</span><span class="p">,</span> <span class="n">mu_weights_col</span><span class="p">,</span>
                       <span class="n">noise_weights_col</span><span class="p">,</span> <span class="n">mapset_name</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Uses the above histogram function but returns the set of all of them</span>
 <span class="sd">        for everything in the Data object.</span>
@@ -1103,7 +1103,7 @@
         <span class="k">return</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">maps</span><span class="o">=</span><span class="n">outputs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">mapset_name</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">arg</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;muons&#39;</span><span class="p">:</span>
@@ -1113,7 +1113,7 @@
         <span class="n">tgt_obj</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">tgt_obj</span>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">arg</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">arg</span> <span class="o">==</span> <span class="s1">&#39;muons&#39;</span><span class="p">:</span>
@@ -1124,7 +1124,7 @@
                 <span class="k">return</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">muons</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">noise</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Data</span><span class="p">)</span>
@@ -1197,14 +1197,14 @@
             <span class="n">a_fidg</span> <span class="o">=</span> <span class="n">a_dict</span>
         <span class="k">return</span> <span class="n">Data</span><span class="p">(</span><span class="n">a_fidg</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">meta</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; : &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
         <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_eq</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_eq</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
 
 
@@ -1212,9 +1212,9 @@
 <span class="c1"># pylint: disable=line-too-long</span>
 <div class="viewcode-block" id="test_Events">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events.test_Events">[docs]</a>
-<span class="k">def</span> <span class="nf">test_Events</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_Events</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for Events class&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.flavInt</span> <span class="kn">import</span> <span class="n">NuFlavInt</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.flavInt</span><span class="w"> </span><span class="kn">import</span> <span class="n">NuFlavInt</span>
     <span class="c1"># Instantiate empty object</span>
     <span class="n">events</span> <span class="o">=</span> <span class="n">Events</span><span class="p">()</span>
 
@@ -1273,7 +1273,7 @@
 
 
 <span class="c1"># TODO: requires proprietary data; remove dependence on this</span>
-<span class="k">def</span> <span class="nf">todo_test_Data</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">todo_test_Data</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for Data class&quot;&quot;&quot;</span>
     <span class="c1"># Instantiate from LEESARD file - located in $PISA_RESOURCES</span>
     <span class="n">file_loc</span> <span class="o">=</span> <span class="s1">&#39;LEESARD/PRD_extend_finalLevel/12550.pckl&#39;</span>

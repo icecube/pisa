@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.plotter &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -74,22 +74,22 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
-<span class="kn">import</span> <span class="nn">itertools</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="kn">from</span> <span class="nn">matplotlib.offsetbox</span> <span class="kn">import</span> <span class="n">AnchoredText</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.offsetbox</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnchoredText</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.format</span> <span class="kn">import</span> <span class="n">tex_dollars</span><span class="p">,</span> <span class="n">text2tex</span><span class="p">,</span> <span class="n">tex_join</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">tex_dollars</span><span class="p">,</span> <span class="n">text2tex</span><span class="p">,</span> <span class="n">tex_join</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;CMAP_SEQ&#39;</span><span class="p">,</span> <span class="s1">&#39;CMAP_DIV&#39;</span><span class="p">,</span> <span class="s1">&#39;Plotter&#39;</span><span class="p">]</span>
@@ -125,13 +125,13 @@
 <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;font.size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">14</span>
 
 
-<span class="k">def</span> <span class="nf">inf2finite</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inf2finite</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Plotter">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter">[docs]</a>
-<span class="k">class</span> <span class="nc">Plotter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Plotter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plotting library for PISA `Map`s and `MapSet`s</span>
 
@@ -172,7 +172,7 @@
 <span class="sd">        either &#39;inside&#39; or &#39;outside&#39;, defining where to put axis titles</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outdir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">stamp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outdir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">stamp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span>
                  <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;# events&#39;</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ratio</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="n">annotate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">symmetric</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;outside&#39;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fig</span> <span class="o">=</span> <span class="kc">None</span>
@@ -199,13 +199,13 @@
 
 <div class="viewcode-block" id="Plotter.reset_colors">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.reset_colors">[docs]</a>
-    <span class="k">def</span> <span class="nf">reset_colors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset_colors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">colors</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="s1">&#39;C</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Plotter.next_color">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.next_color">[docs]</a>
-    <span class="k">def</span> <span class="nf">next_color</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">next_color</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">colors</span><span class="p">)</span></div>
 
 
@@ -213,7 +213,7 @@
 
 <div class="viewcode-block" id="Plotter.init_fig">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.init_fig">[docs]</a>
-    <span class="k">def</span> <span class="nf">init_fig</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_fig</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;clear/initialize figure&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">figsize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">size</span> <span class="o">=</span> <span class="n">figsize</span>
@@ -228,7 +228,7 @@
 
 <div class="viewcode-block" id="Plotter.add_stamp">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.add_stamp">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_stamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_stamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add common stamp with text.</span>
 
 <span class="sd">        NOTE add_stamp cannot be used on a subplot that has been de-selected</span>
@@ -249,14 +249,14 @@
 
 <div class="viewcode-block" id="Plotter.add_leg">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.add_leg">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_leg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_leg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;initialize legend &quot;&quot;&quot;</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">numpoints</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Plotter.dump">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.dump">[docs]</a>
-    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;dump figure to file&quot;&quot;&quot;</span>
         <span class="n">basepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">fmt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span><span class="p">:</span>
@@ -271,7 +271,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_2d_single">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_2d_single">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_2d_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_2d_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;plot all maps in individual plots&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">map_set</span><span class="p">,</span> <span class="n">Map</span><span class="p">):</span>
             <span class="n">map_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">map_set</span><span class="p">]</span>
@@ -284,7 +284,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_2d_array">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_2d_array">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_2d_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_2d_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;plot all maps in a single plot&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">fname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -319,7 +319,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_1d_single">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_1d_single">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_1d_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_1d_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;plot all maps in individual plots&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="nb">map</span> <span class="ow">in</span> <span class="n">map_set</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">init_fig</span><span class="p">()</span>
@@ -330,7 +330,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_1d_array">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_1d_array">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_1d_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_1d_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;plot 1d projections as an array&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">plot_array</span><span class="p">(</span><span class="n">map_set</span><span class="p">,</span> <span class="s1">&#39;plot_1d_projection&#39;</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="n">n_rows</span><span class="p">,</span>
@@ -340,7 +340,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_1d_slices_array">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_1d_slices_array">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_1d_slices_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_sets</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_1d_slices_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_sets</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;plot 1d projections as an array&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">slices_array</span><span class="p">(</span><span class="n">map_sets</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span></div>
@@ -348,7 +348,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_1d_all">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_1d_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_1d_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_1d_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;all one one canvas&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_fig</span><span class="p">()</span>
         <span class="k">for</span> <span class="nb">map</span> <span class="ow">in</span> <span class="n">map_set</span><span class="p">:</span>
@@ -360,7 +360,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_1d_stack">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_1d_stack">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_1d_stack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_1d_stack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;all maps stacked on top of each other&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_fig</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="nb">map</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">map_set</span><span class="p">):</span>
@@ -374,7 +374,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_1d_cmp">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_1d_cmp">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_1d_cmp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_sets</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_1d_cmp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_sets</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;1d comparisons for two map_sets as projections&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">map_sets</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
             <span class="n">maps</span> <span class="o">=</span> <span class="p">[</span><span class="n">map_set</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">map_set</span> <span class="ow">in</span> <span class="n">map_sets</span><span class="p">]</span>
@@ -402,7 +402,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_array">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_array">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;wrapper funtion to exccute plotting function fun for every map in a</span>
 <span class="sd">        set distributed over a grid&quot;&quot;&quot;</span>
         <span class="n">n_rows</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;n_rows&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -440,7 +440,7 @@
 
 <div class="viewcode-block" id="Plotter.slices_array">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.slices_array">[docs]</a>
-    <span class="k">def</span> <span class="nf">slices_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_sets</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">slices_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_sets</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;plot map_set in array using a function fun&quot;&quot;&quot;</span>
         <span class="n">n_cols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_sets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">plt_axis_n</span> <span class="o">=</span> <span class="n">map_sets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">plot_axis</span><span class="p">)</span>
@@ -497,7 +497,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_2d_map">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_2d_map">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_2d_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_2d_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;plot map on current axis in 2d&quot;&quot;&quot;</span>
         <span class="n">vmin</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;vmin&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">vmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;vmax&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -590,7 +590,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_1d_projection">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_1d_projection">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_1d_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_1d_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;plot map projected on plot_axis&quot;&quot;&quot;</span>
         <span class="n">r_vmin</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;r_vmin&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">r_vmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;r_vmax&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -635,7 +635,7 @@
 
 <div class="viewcode-block" id="Plotter.project_1d">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.project_1d">[docs]</a>
-    <span class="k">def</span> <span class="nf">project_1d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">project_1d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;sum up a map along all axes except plot_axis&quot;&quot;&quot;</span>
         <span class="n">hist</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">hist</span>
         <span class="n">plt_axis_n</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">plot_axis</span><span class="p">)</span>
@@ -647,7 +647,7 @@
 
 <div class="viewcode-block" id="Plotter.plot_1d_ratio">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_1d_ratio">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_1d_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maps</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_1d_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maps</span><span class="p">,</span> <span class="n">plot_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;make a ratio plot for a 1d projection&quot;&quot;&quot;</span>
         <span class="n">r_vmin</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;r_vmin&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">r_vmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;r_vmax&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -722,8 +722,8 @@
 
 <div class="viewcode-block" id="Plotter.plot_xsec">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.plotter.Plotter.plot_xsec">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_xsec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logx</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">fileio</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_xsec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_set</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logx</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">fileio</span>
 
         <span class="n">zero_np_element</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">for</span> <span class="nb">map</span> <span class="ow">in</span> <span class="n">map_set</span><span class="p">:</span>

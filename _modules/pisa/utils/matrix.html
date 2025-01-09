@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.matrix &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,10 +72,10 @@
 <span class="sd">Utilities for performing some not-so-common matrix tasks.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy.linalg</span> <span class="k">as</span> <span class="nn">lin</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.linalg</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lin</span>
 
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s1">&#39;is_psd&#39;</span><span class="p">,</span>
@@ -100,7 +100,7 @@
 
 <div class="viewcode-block" id="is_psd">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.matrix.is_psd">[docs]</a>
-<span class="k">def</span> <span class="nf">is_psd</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_psd</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Test whether a matrix is positive semi-definite.</span>
 
 <span class="sd">    Test is done via attempted Cholesky decomposition as suggested in [1]_.</span>
@@ -130,7 +130,7 @@
 
 <div class="viewcode-block" id="fronebius_nearest_psd">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.matrix.fronebius_nearest_psd">[docs]</a>
-<span class="k">def</span> <span class="nf">fronebius_nearest_psd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">return_distance</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fronebius_nearest_psd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">return_distance</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the positive semi-definite matrix closest to `A`.</span>
 
 <span class="sd">    The closeness to `A` is measured by the Fronebius norm. The matrix closest to `A`</span>
@@ -192,7 +192,7 @@
     <span class="k">return</span> <span class="n">X</span></div>
 
 
-<span class="k">def</span> <span class="nf">check_frob_psd</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_frob_psd</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check approximation of Frobenius-closest PSD on given matrix.</span>
 <span class="sd">    </span>
 <span class="sd">    This is not a unit test.</span>
@@ -209,7 +209,7 @@
     <span class="k">assert</span> <span class="n">is_psd_after</span><span class="p">,</span> <span class="s2">&quot;did not produce PSD matrix&quot;</span>
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">xdist</span><span class="p">,</span> <span class="n">actual_dist</span><span class="p">),</span> <span class="s2">&quot;actual distance differs from expectation&quot;</span>
 
-<span class="k">def</span> <span class="nf">test_matrix_random</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_matrix_random</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test producing a number of random matrices and checking if the</span>
 <span class="sd">    approximated matrix is indeed PSD.</span>
 <span class="sd">    &quot;&quot;&quot;</span>

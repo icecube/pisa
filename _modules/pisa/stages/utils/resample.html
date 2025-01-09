@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.utils.resample &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -77,18 +77,18 @@
 <span class="sd">the `apply` method.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
-<span class="kn">from</span> <span class="nn">pisa.core</span> <span class="kn">import</span> <span class="n">translation</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">vectorizer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">translation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ResampleMode&#39;</span><span class="p">,</span> <span class="s1">&#39;resample&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">,</span> <span class="s1">&#39;test_resample&#39;</span><span class="p">]</span>
@@ -96,7 +96,7 @@
 
 <div class="viewcode-block" id="ResampleMode">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.ResampleMode">[docs]</a>
-<span class="k">class</span> <span class="nc">ResampleMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ResampleMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumerates sampling methods of the `resample` stage.&quot;&quot;&quot;</span>
 
     <span class="n">UP</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
@@ -106,7 +106,7 @@
 
 <div class="viewcode-block" id="resample">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.resample">[docs]</a>
-<span class="k">class</span> <span class="nc">resample</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">resample</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stage to resample weighted MC histograms from one binning to another.</span>
 
@@ -120,7 +120,7 @@
 <span class="sd">        If `True` (default), apply scaling to errors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">scale_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
@@ -178,7 +178,7 @@
 
 <div class="viewcode-block" id="resample.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.resample.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Set up a container for intermediate storage of variances in input specs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
@@ -195,7 +195,7 @@
 <div class="viewcode-block" id="resample.apply">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.resample.apply">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># DO NOT USE THIS STAGE AS YOUR TEMPLATE IF YOU ARE NEW TO PISA!</span>
         <span class="c1"># --------------------------------------------------------------</span>
         <span class="c1">#</span>
@@ -270,24 +270,24 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">pisa_tests.test_services</span> <span class="kn">import</span> <span class="n">TEST_BINNING</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa_tests.test_services</span><span class="w"> </span><span class="kn">import</span> <span class="n">TEST_BINNING</span>
     <span class="k">return</span> <span class="n">resample</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="test_resample">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.resample.test_resample">[docs]</a>
-<span class="k">def</span> <span class="nf">test_resample</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_resample</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for the resampling stage.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">pisa.core.distribution_maker</span> <span class="kn">import</span> <span class="n">DistributionMaker</span>
-    <span class="kn">from</span> <span class="nn">pisa.core.map</span> <span class="kn">import</span> <span class="n">Map</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.config_parser</span> <span class="kn">import</span> <span class="n">parse_pipeline_config</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
-    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-    <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-    <span class="kn">from</span> <span class="nn">numpy.testing</span> <span class="kn">import</span> <span class="n">assert_allclose</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.distribution_maker</span><span class="w"> </span><span class="kn">import</span> <span class="n">DistributionMaker</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">Map</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.config_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_pipeline_config</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.testing</span><span class="w"> </span><span class="kn">import</span> <span class="n">assert_allclose</span>
 
     <span class="n">example_cfg</span> <span class="o">=</span> <span class="n">parse_pipeline_config</span><span class="p">(</span><span class="s1">&#39;settings/pipeline/example.cfg&#39;</span><span class="p">)</span>
     <span class="n">reco_binning</span> <span class="o">=</span> <span class="n">example_cfg</span><span class="p">[(</span><span class="s1">&#39;utils&#39;</span><span class="p">,</span> <span class="s1">&#39;hist&#39;</span><span class="p">)][</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span>

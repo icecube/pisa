@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.flux_weights &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -78,11 +78,11 @@
 <span class="sd">accidentally do the wrong thing with that script.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="k">as</span> <span class="nn">interpolate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">interpolate</span>
 
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">open_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">open_resource</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -119,7 +119,7 @@
 
 <div class="viewcode-block" id="load_2d_honda_table">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_2d_honda_table">[docs]</a>
-<span class="k">def</span> <span class="nf">load_2d_honda_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hg_taumode</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_2d_honda_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hg_taumode</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Added &quot;hg_taumode&quot; to load in hillas gaisser h3a tables made with tau neutrino contributions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -205,7 +205,7 @@
 
 <div class="viewcode-block" id="load_2d_bartol_table">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_2d_bartol_table">[docs]</a>
-<span class="k">def</span> <span class="nf">load_2d_bartol_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_2d_bartol_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading atmospheric flux table </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flux_file</span><span class="p">)</span>
 
@@ -280,7 +280,7 @@
 
 <div class="viewcode-block" id="load_2d_table">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_2d_table">[docs]</a>
-<span class="k">def</span> <span class="nf">load_2d_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_2d_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Manipulate 2 dimensional flux tables.</span>
 
 <span class="sd">    2D is expected to mean energy and cosZenith, where azimuth is averaged</span>
@@ -345,7 +345,7 @@
 
 <div class="viewcode-block" id="calculate_2d_flux_weights">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.calculate_2d_flux_weights">[docs]</a>
-<span class="k">def</span> <span class="nf">calculate_2d_flux_weights</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_2d_flux_weights</span><span class="p">(</span>
     <span class="n">true_energies</span><span class="p">,</span> <span class="n">true_coszens</span><span class="p">,</span> <span class="n">en_splines</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate flux weights for given array of energy and cos(zenith).</span>
@@ -433,7 +433,7 @@
 
 <div class="viewcode-block" id="load_3d_honda_table">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_3d_honda_table">[docs]</a>
-<span class="k">def</span> <span class="nf">load_3d_honda_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_3d_honda_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading atmospheric flux table </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flux_file</span><span class="p">)</span>
 
@@ -515,7 +515,7 @@
 
 <div class="viewcode-block" id="load_3d_table">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.load_3d_table">[docs]</a>
-<span class="k">def</span> <span class="nf">load_3d_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_3d_table</span><span class="p">(</span><span class="n">flux_file</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_table</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Manipulate 3 dimensional flux tables.</span>
 
 <span class="sd">    3D is expected to mean energy, cosZenith and azimuth. The angular range</span>
@@ -561,7 +561,7 @@
 
 <div class="viewcode-block" id="calculate_3d_flux_weights">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.flux_weights.calculate_3d_flux_weights">[docs]</a>
-<span class="k">def</span> <span class="nf">calculate_3d_flux_weights</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_3d_flux_weights</span><span class="p">(</span>
     <span class="n">true_energies</span><span class="p">,</span> <span class="n">true_coszens</span><span class="p">,</span> <span class="n">true_azimuths</span><span class="p">,</span> <span class="n">en_splines</span><span class="p">,</span> <span class="n">enpow</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">az_linear</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate flux weights for given array of energy, cos(zenith) and</span>
@@ -693,14 +693,14 @@
 
 
 
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a slightly longer example than that given in the docstring of</span>
 <span class="sd">    the calculate_flux_weights function. This will make a quick plot of the</span>
 <span class="sd">    flux at 5.0 GeV and 20.0 GeV across all of cos(zenith) for NuMu just to</span>
 <span class="sd">    make sure everything looks sensible.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
 
     <span class="n">spline_dict</span> <span class="o">=</span> <span class="n">load_2d_table</span><span class="p">(</span><span class="s2">&quot;flux/honda-2015-spl-solmax-aa.d&quot;</span><span class="p">)</span>
     <span class="n">czs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">81</span><span class="p">)</span>

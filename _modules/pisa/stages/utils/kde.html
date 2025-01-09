@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.utils.kde &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,22 +72,22 @@
 <span class="sd">Stage to transform arrays with weights into KDE maps</span>
 <span class="sd">that represent event counts</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">time</span>
 
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">kde_hist</span>
-<span class="kn">from</span> <span class="nn">pisa_tests.test_services</span> <span class="kn">import</span> <span class="n">TEST_BINNING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">kde_hist</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa_tests.test_services</span><span class="w"> </span><span class="kn">import</span> <span class="n">TEST_BINNING</span>
 
 
 <div class="viewcode-block" id="kde">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kde.kde">[docs]</a>
-<span class="k">class</span> <span class="nc">kde</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">kde</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;stage to KDE-map events</span>
 
 <span class="sd">    Parameters</span>
@@ -121,7 +121,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">bw_method</span><span class="o">=</span><span class="s2">&quot;silverman&quot;</span><span class="p">,</span>
         <span class="n">coszen_name</span><span class="o">=</span><span class="s2">&quot;reco_coszen&quot;</span><span class="p">,</span>
@@ -175,7 +175,7 @@
 
 <div class="viewcode-block" id="kde.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kde.kde.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># For dimensions that are logarithmic, we add a linear binning in</span>
         <span class="c1"># the logarithm (but only if this feature is enabled)</span>
@@ -211,7 +211,7 @@
 <div class="viewcode-block" id="kde.apply">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kde.kde.apply">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is special, we want the actual event weights in the kde</span>
 <span class="sd">        therefor we&#39;re overwritting the apply function</span>
 <span class="sd">        normally in a stage you would implement the `apply_function` method</span>
@@ -229,7 +229,7 @@
 
 <div class="viewcode-block" id="kde.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kde.kde.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stash_valid</span><span class="p">:</span>
@@ -274,7 +274,7 @@
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bootstrap</span><span class="p">:</span>
-                <span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">default_rng</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.random</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_rng</span>
 
                 <span class="n">kde_maps</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="n">rng</span> <span class="o">=</span> <span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bootstrap_seed</span><span class="p">)</span>
@@ -381,7 +381,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kde.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">kde</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span></div>
 

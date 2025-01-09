@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.analysis package &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
@@ -507,9 +507,9 @@ of <cite>fit_recursively</cite> for descriptions of these arguments. The return 
 of the function must be a <cite>HypoFitResult</cite> object. As an example, the following
 sub-class of the BasicAnalysis has a custom fit method that, nonsensically,
 always sets 42 degrees as the starting value for theta23:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SubclassedAnalysis</span><span class="p">(</span><span class="n">BasicAnalysis</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SubclassedAnalysis</span><span class="p">(</span><span class="n">BasicAnalysis</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">_fit_nonsense</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fit_nonsense</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">data_dist</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span>
         <span class="n">external_priors_penalty</span><span class="p">,</span> <span class="n">method_kwargs</span><span class="p">,</span> <span class="n">local_fit_kwargs</span>
     <span class="p">):</span>
@@ -652,10 +652,15 @@ fits.</p></li>
 </dd></dl>
 
 <dl class="py data">
-<dt class="sig sig-object py" id="pisa.analysis.analysis.MINIMIZERS_USING_CONSTRAINTS">
-<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">MINIMIZERS_USING_CONSTRAINTS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cobyla'</span></em><a class="headerlink" href="#pisa.analysis.analysis.MINIMIZERS_USING_CONSTRAINTS" title="Link to this definition"></a></dt>
-<dd><p>Minimizers that cannot use the ‘bounds’ argument and instead need bounds to
-be formulated in terms of constraints.</p>
+<dt class="sig sig-object py" id="pisa.analysis.analysis.MINIMIZERS_ACCEPTING_CONSTRS">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">MINIMIZERS_ACCEPTING_CONSTRS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('cobyla',</span> <span class="pre">'slsqp',</span> <span class="pre">'trust-constr',</span> <span class="pre">'cobyqa')</span></em><a class="headerlink" href="#pisa.analysis.analysis.MINIMIZERS_ACCEPTING_CONSTRS" title="Link to this definition"></a></dt>
+<dd><p>Minimizers that allow constraints to be passed. According to
+scipy docs, cobyla and slsqp require dictionaries, whereas
+trust-constr and cobyqa require constraints to be passed as <cite>LinearConstraint</cite>
+or <cite>NonlinearConstraint</cite> instances. However, as of now, the conversion to the
+form required by the minimizer is done internally by scipy. Hence, this global
+variable merely serves documentation purposes right now. Note that cobyqa is
+only added in scipy version 1.14.0.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -663,6 +668,22 @@ be formulated in terms of constraints.</p>
 <span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">MINIMIZERS_USING_SYMM_GRAD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('l-bfgs-b',</span> <span class="pre">'slsqp')</span></em><a class="headerlink" href="#pisa.analysis.analysis.MINIMIZERS_USING_SYMM_GRAD" title="Link to this definition"></a></dt>
 <dd><p>Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See <a class="reference external" href="https://github.com/scipy/scipy/issues/4916">https://github.com/scipy/scipy/issues/4916</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.get_nlopt_inequality_constraint_funcs">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">get_nlopt_inequality_constraint_funcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_kwargs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#get_nlopt_inequality_constraint_funcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.get_nlopt_inequality_constraint_funcs" title="Link to this definition"></a></dt>
+<dd><p>Convert constraints expressions in terms of ParamSets
+into callables for nlopt. Evals expression(s) from <cite>method_kwargs</cite>
+and returns list of callables.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.scipy_constraints_to_callables">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">scipy_constraints_to_callables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constr_dicts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#scipy_constraints_to_callables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.scipy_constraints_to_callables" title="Link to this definition"></a></dt>
+<dd><p>Convert constraints expressions in terms of ParamSets
+into callables for scipy. Overwrites “fun” entries
+in <cite>constr_dicts</cite>.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -686,6 +707,7 @@ gradients. See <a class="reference external" href="https://github.com/scipy/scip
 <dt class="sig sig-object py" id="pisa.analysis.analysis.validate_minimizer_settings">
 <span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">validate_minimizer_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimizer_settings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#validate_minimizer_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.validate_minimizer_settings" title="Link to this definition"></a></dt>
 <dd><p>Validate minimizer settings.</p>
+<p>Supported minimizers are the same as in <cite>set_minimizer_defaults</cite>.</p>
 <p>See source for specific thresholds set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

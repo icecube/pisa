@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.core.events_pi &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -70,20 +70,20 @@
   <h1>Source code for pisa.core.events_pi</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;PISA data container&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
-<span class="kn">import</span> <span class="nn">argparse</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">from_file</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -152,7 +152,7 @@
     <span class="s2">&quot;nominal_numubar_flux&quot;</span> <span class="p">:</span> <span class="s2">&quot;neutrino_numu_flux&quot;</span><span class="p">,</span>
 <span class="p">}</span>
 
-<span class="k">def</span> <span class="nf">append_arrays_dict</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">sdict</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">append_arrays_dict</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">sdict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Helper function for appending multiple dicts of arrays (e.g. from </span>
 <span class="sd">    multiple input files) into a single dict of arrays </span>
@@ -174,7 +174,7 @@
 
 <div class="viewcode-block" id="EventsPi">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.EventsPi">[docs]</a>
-<span class="k">class</span> <span class="nc">EventsPi</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EventsPi</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Container for events for use with PISA pi</span>
 
@@ -197,7 +197,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="n">args</span><span class="p">,</span>
         <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -241,7 +241,7 @@
 
 <div class="viewcode-block" id="EventsPi.load_events_file">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.EventsPi.load_events_file">[docs]</a>
-    <span class="k">def</span> <span class="nf">load_events_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events_file</span><span class="p">,</span> <span class="n">variable_mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">required_metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123456</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_events_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events_file</span><span class="p">,</span> <span class="n">variable_mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">required_metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123456</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Fill this events container from an input HDF5 file filled with event</span>
 <span class="sd">        data Optionally can provide a variable mapping so select a subset of</span>
 <span class="sd">        variables, rename them, etc.</span>
@@ -574,7 +574,7 @@
 
 <div class="viewcode-block" id="EventsPi.apply_cut">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.EventsPi.apply_cut">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_cut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_cut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a cut by specifying criteria for keeping events. The cut must</span>
 <span class="sd">        be successfully applied to all flav/ints in the events object before</span>
 <span class="sd">        the changes are kept, otherwise the cuts are reverted.</span>
@@ -653,7 +653,7 @@
 
 <div class="viewcode-block" id="EventsPi.keep_inbounds">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.EventsPi.keep_inbounds">[docs]</a>
-    <span class="k">def</span> <span class="nf">keep_inbounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">keep_inbounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cut out any events that fall outside `binning`. Note that events</span>
 <span class="sd">        that fall exactly on an outer edge are kept.</span>
 
@@ -683,7 +683,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_cut</span><span class="p">(</span><span class="n">bin_edge_cuts</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># TODO Handle non-array data cases</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># TODO Handle non-array data cases</span>
         <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;-----------------------------</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="n">string</span> <span class="o">+=</span> <span class="s2">&quot;EventsPi container </span><span class="si">%s</span><span class="s2"> :&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -711,7 +711,7 @@
 
 <div class="viewcode-block" id="split_nu_events_by_flavor_and_interaction">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.split_nu_events_by_flavor_and_interaction">[docs]</a>
-<span class="k">def</span> <span class="nf">split_nu_events_by_flavor_and_interaction</span><span class="p">(</span><span class="n">input_data</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">split_nu_events_by_flavor_and_interaction</span><span class="p">(</span><span class="n">input_data</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Split neutrino events by nu vs nubar, and CC vs NC.</span>
 
 <span class="sd">    Should be compatible with DRAGON and GRECO samples, but this depends on the</span>
@@ -799,7 +799,7 @@
 
 <div class="viewcode-block" id="fix_oppo_flux">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.fix_oppo_flux">[docs]</a>
-<span class="k">def</span> <span class="nf">fix_oppo_flux</span><span class="p">(</span><span class="n">input_data</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fix_oppo_flux</span><span class="p">(</span><span class="n">input_data</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Fix this `oppo` flux insanity</span>
 <span class="sd">    someone added this in the nominal flux calculation that</span>
 <span class="sd">    oppo flux is nue flux if flavour is nuebar, and vice versa</span>
@@ -824,7 +824,7 @@
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load an events file and print the contents&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Events parsing&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>

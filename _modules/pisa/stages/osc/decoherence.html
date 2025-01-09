@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.osc.decoherence &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -78,21 +78,21 @@
 
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.profiler</span> <span class="kn">import</span> <span class="n">profile</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.osc_params</span> <span class="kn">import</span> <span class="n">OscParams</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.layers</span> <span class="kn">import</span> <span class="n">Layers</span>
-<span class="kn">from</span> <span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span> <span class="kn">import</span> <span class="n">fill_probs</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">find_resource</span>
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">,</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.osc_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">OscParams</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.layers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Layers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.prob3numba.numba_osc_hostfuncs</span><span class="w"> </span><span class="kn">import</span> <span class="n">fill_probs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DecoherenceParams&#39;</span><span class="p">,</span> <span class="s1">&#39;calc_decoherence_probs&#39;</span><span class="p">,</span> <span class="s1">&#39;decoherence&#39;</span><span class="p">,</span>
@@ -103,14 +103,14 @@
 
 <div class="viewcode-block" id="DecoherenceParams">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.DecoherenceParams">[docs]</a>
-<span class="k">class</span> <span class="nc">DecoherenceParams</span><span class="p">(</span><span class="n">OscParams</span><span class="p">):</span> <span class="c1">#TODO Start using osc_params instead...</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DecoherenceParams</span><span class="p">(</span><span class="n">OscParams</span><span class="p">):</span> <span class="c1">#TODO Start using osc_params instead...</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Container for decoherence oscillation params</span>
 <span class="sd">    This includes standard oscillation params plus additional &#39;Gamma&#39; terms parameterising decoherence</span>
 <span class="sd">    gamma21,31,32 params have units of energy</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deltam21</span><span class="p">,</span> <span class="n">deltam31</span><span class="p">,</span> <span class="n">theta12</span><span class="p">,</span> <span class="n">theta13</span><span class="p">,</span> <span class="n">theta23</span><span class="p">,</span> <span class="n">deltacp</span><span class="p">,</span> <span class="n">gamma21</span><span class="p">,</span> <span class="n">gamma31</span><span class="p">,</span> <span class="n">gamma32</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deltam21</span><span class="p">,</span> <span class="n">deltam31</span><span class="p">,</span> <span class="n">theta12</span><span class="p">,</span> <span class="n">theta13</span><span class="p">,</span> <span class="n">theta23</span><span class="p">,</span> <span class="n">deltacp</span><span class="p">,</span> <span class="n">gamma21</span><span class="p">,</span> <span class="n">gamma31</span><span class="p">,</span> <span class="n">gamma32</span><span class="p">):</span>
 
         <span class="c1"># Call base class constructor</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -134,7 +134,7 @@
 
 <div class="viewcode-block" id="calc_decoherence_probs">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.calc_decoherence_probs">[docs]</a>
-<span class="k">def</span> <span class="nf">calc_decoherence_probs</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">prob_tau</span><span class="p">,</span> <span class="n">two_flavor</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_decoherence_probs</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">prob_tau</span><span class="p">,</span> <span class="n">two_flavor</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Oscillation probability calculator function, with decoherence included</span>
 
@@ -191,7 +191,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">_calc_numu_disappearance_prob_2flav</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span><span class="n">E</span><span class="p">,</span><span class="n">L</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_calc_numu_disappearance_prob_2flav</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span><span class="n">E</span><span class="p">,</span><span class="n">L</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate numu disppearance in 2-flavor model</span>
 <span class="sd">    User should no call this directly, instead use `calc_decoherence_probs`</span>
@@ -231,7 +231,7 @@
     <span class="k">return</span> <span class="n">norm_term</span> <span class="o">*</span> <span class="p">(</span> <span class="mf">1.</span> <span class="o">-</span> <span class="p">(</span><span class="n">decoh_term</span><span class="o">*</span><span class="n">osc_term</span><span class="p">)</span> <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_update_pmns_matrix</span><span class="p">(</span><span class="n">theta12</span><span class="p">,</span> <span class="n">theta13</span><span class="p">,</span> <span class="n">theta23</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_update_pmns_matrix</span><span class="p">(</span><span class="n">theta12</span><span class="p">,</span> <span class="n">theta13</span><span class="p">,</span> <span class="n">theta23</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Helper function used by _calc_numu_disappearance_prob_3flav</span>
 <span class="sd">    Updates the PMNS matrix and its complex conjugate.</span>
@@ -269,7 +269,7 @@
     <span class="k">return</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">anti_matrix</span>
 
 
-<span class="k">def</span> <span class="nf">_calc_numu_disappearance_prob_3flav</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_calc_numu_disappearance_prob_3flav</span><span class="p">(</span><span class="n">decoh_params</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate numu disppearance in 3-flavor model</span>
 
@@ -325,7 +325,7 @@
 
 <div class="viewcode-block" id="decoherence">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence">[docs]</a>
-<span class="k">class</span> <span class="nc">decoherence</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">decoherence</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    PISA Pi stage representing oscillations in the presence of decoherence</span>
 
@@ -360,7 +360,7 @@
 <span class="sd">            &quot;sys_flux&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                 <span class="p">):</span>
 
@@ -411,7 +411,7 @@
 
 <div class="viewcode-block" id="decoherence.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># setup Earth model</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">earth_model</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -473,7 +473,7 @@
 <div class="viewcode-block" id="decoherence.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.compute_function">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># set the correct data mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
@@ -531,7 +531,7 @@
 <div class="viewcode-block" id="decoherence.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.apply_function">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># update the outputted weights</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
@@ -545,7 +545,7 @@
 
 <div class="viewcode-block" id="decoherence.calc_probs">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.decoherence.calc_probs">[docs]</a>
-    <span class="k">def</span> <span class="nf">calc_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">e_array</span><span class="p">,</span> <span class="n">len_array</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">e_array</span><span class="p">,</span> <span class="n">len_array</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
 
         <span class="c1">#Get the probability values output array</span>
         <span class="n">prob_array</span> <span class="o">=</span> <span class="n">out</span>
@@ -579,13 +579,13 @@
 <span class="k">else</span><span class="p">:</span>
     <span class="n">signature</span> <span class="o">=</span> <span class="s1">&#39;(f4[:], f4, f4, f4[:])&#39;</span>
 <span class="nd">@guvectorize</span><span class="p">([</span><span class="n">signature</span><span class="p">],</span> <span class="s1">&#39;(d),(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">apply_probs</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_probs</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">prob_e</span><span class="p">,</span> <span class="n">prob_mu</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="n">flux</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">prob_e</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">flux</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">prob_mu</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.decoherence.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;detector_depth&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">km</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>

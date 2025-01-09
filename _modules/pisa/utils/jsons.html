@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.jsons &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -74,21 +74,21 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">bz2</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">numbers</span> <span class="kn">import</span> <span class="n">Integral</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="n">Real</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">bz2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Integral</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="n">Real</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">simplejson</span> <span class="k">as</span> <span class="nn">json</span>
-<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">simplejson</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">six</span><span class="w"> </span><span class="kn">import</span> <span class="n">string_types</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">ureg</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s1">&#39;JSON_EXTS&#39;</span><span class="p">,</span>
@@ -128,7 +128,7 @@
 
 <div class="viewcode-block" id="json_string">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.json_string">[docs]</a>
-<span class="k">def</span> <span class="nf">json_string</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">json_string</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode a json string&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">string</span><span class="p">)</span></div>
 
@@ -136,7 +136,7 @@
 
 <div class="viewcode-block" id="dumps">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.dumps">[docs]</a>
-<span class="k">def</span> <span class="nf">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dump object to JSON-encoded string&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span>
                       <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
@@ -145,7 +145,7 @@
 
 <div class="viewcode-block" id="loads">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.loads">[docs]</a>
-<span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load (create) object from JSON-encoded string&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyDecoder</span><span class="p">)</span></div>
 
@@ -153,7 +153,7 @@
 
 <div class="viewcode-block" id="from_json">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.from_json">[docs]</a>
-<span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Open a file in JSON format (optionally compressed with bz2 or</span>
 <span class="sd">    xor-scrambled) and parse the content into Python objects.</span>
 
@@ -201,8 +201,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Import here to avoid circular imports</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.resources</span> <span class="kn">import</span> <span class="n">open_resource</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">open_resource</span>
 
     <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
@@ -278,7 +278,7 @@
 
 <div class="viewcode-block" id="to_json">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.to_json">[docs]</a>
-<span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Write `content` to a JSON file at `filename`.</span>
 
@@ -318,8 +318,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Import here to avoid circular imports</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.fileio</span> <span class="kn">import</span> <span class="n">check_file_exists</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_file_exists</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s1">&#39;to_json&#39;</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">content</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
@@ -369,7 +369,7 @@
 
 <div class="viewcode-block" id="NumpyEncoder">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyEncoder">[docs]</a>
-<span class="k">class</span> <span class="nc">NumpyEncoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NumpyEncoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Subclass of ::class::`json.JSONEncoder` that overrides `default` method to</span>
 <span class="sd">    allow writing numpy arrays and other special objects PISA uses to JSON</span>
@@ -377,7 +377,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="NumpyEncoder.default">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyEncoder.default">[docs]</a>
-    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>  <span class="c1"># pylint: disable=method-hidden</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>  <span class="c1"># pylint: disable=method-hidden</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Encode special objects to be representable as JSON.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;serializable_state&#39;</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">serializable_state</span>
@@ -425,10 +425,10 @@
 
 <div class="viewcode-block" id="NumpyDecoder">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyDecoder">[docs]</a>
-<span class="k">class</span> <span class="nc">NumpyDecoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NumpyDecoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode JSON array(s) as numpy.ndarray; also returns python strings</span>
 <span class="sd">    instead of unicode.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">object_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -453,7 +453,7 @@
 
 <div class="viewcode-block" id="NumpyDecoder.json_array_numpy">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyDecoder.json_array_numpy">[docs]</a>
-    <span class="k">def</span> <span class="nf">json_array_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">json_array_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpret arrays (lists by default) as numpy arrays where this does</span>
 <span class="sd">        not yield a string or object array; also handle conversion of</span>
 <span class="sd">        particularly-formatted input to pint Quantities.&quot;&quot;&quot;</span>
@@ -554,13 +554,13 @@
 <span class="c1"># TODO: include more basic types in testing (strings, etc.)</span>
 <div class="viewcode-block" id="test_to_json_from_json">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.test_to_json_from_json">[docs]</a>
-<span class="k">def</span> <span class="nf">test_to_json_from_json</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_to_json_from_json</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for writing various types of objects to and reading from JSON</span>
 <span class="sd">    files (including bz2-compressed and xor-scrambled files)&quot;&quot;&quot;</span>
     <span class="c1"># pylint: disable=unused-variable</span>
-    <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">rmtree</span>
-    <span class="kn">import</span> <span class="nn">sys</span>
-    <span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">recursiveEquality</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">shutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">rmtree</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursiveEquality</span>
 
     <span class="n">proto_float_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
         <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span>

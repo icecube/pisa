@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.hypersurface.hypersurface_plotting &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -90,11 +90,11 @@
 <span class="s1"> See the License for the specific language governing permissions and</span>
 <span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <div class="viewcode-block" id="plot_bin_fits">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hypersurface_plotting.plot_bin_fits">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_bin_fits</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">hypersurface</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">,</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hs_label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_nominal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_offaxis</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_onaxis</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_zero</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_uncertainty</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_bin_fits</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">hypersurface</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">,</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hs_label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_nominal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_offaxis</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_onaxis</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_zero</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_uncertainty</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Plot the hypersurface for a given bin, in 1D w.r.t. to a single specified parameter.</span>
 <span class="sd">    Plots the following:</span>
@@ -142,7 +142,7 @@
 
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
     <span class="c1"># Get the param</span>
     <span class="n">param</span> <span class="o">=</span> <span class="n">hypersurface</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span>
@@ -238,7 +238,7 @@
 
 <div class="viewcode-block" id="plot_bin_fits_2d">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hypersurface_plotting.plot_bin_fits_2d">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_bin_fits_2d</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">hypersurface</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">,</span> <span class="n">param_names</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_bin_fits_2d</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">hypersurface</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">,</span> <span class="n">param_names</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Plot the hypersurface for a given bin, in 2D w.r.t. to a pair of params</span>
 <span class="sd">    Plots the following:</span>
@@ -261,7 +261,7 @@
 <span class="sd">        List containing the names of the two parameters of interest</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_idx</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">hypersurface</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>

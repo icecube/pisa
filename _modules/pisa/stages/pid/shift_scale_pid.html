@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.pid.shift_scale_pid &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,15 +72,15 @@
 <span class="sd">The purpose of this stage is shift and/or scale the pid values.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
-<span class="kn">from</span> <span class="nn">pisa.core.param</span> <span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">vectorizer</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;shift_scale_pid&#39;</span><span class="p">,</span> <span class="s1">&#39;calculate_pid_function&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
 
@@ -89,7 +89,7 @@
 
 <div class="viewcode-block" id="shift_scale_pid">
 <a class="viewcode-back" href="../../../../pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.shift_scale_pid">[docs]</a>
-<span class="k">class</span> <span class="nc">shift_scale_pid</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">shift_scale_pid</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Shift/scale pid.</span>
 
@@ -102,7 +102,7 @@
 <span class="sd">            scale pid values by given scale factor</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                  <span class="p">):</span>
 
@@ -122,7 +122,7 @@
 
 <div class="viewcode-block" id="shift_scale_pid.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.shift_scale_pid.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup the stage&quot;&quot;&quot;</span>
 
         <span class="c1"># set the correct data mode</span>
@@ -135,7 +135,7 @@
 
 <div class="viewcode-block" id="shift_scale_pid.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.shift_scale_pid.compute_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform computation&quot;&quot;&quot;</span>
 
         <span class="c1"># bias/scale have no units.</span>
@@ -152,7 +152,7 @@
 
 <div class="viewcode-block" id="shift_scale_pid.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.shift_scale_pid.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="c1"># set the pid value to the calculated one</span>
             <span class="n">vectorizer</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;calculated_pid&#39;</span><span class="p">],</span> <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">])</span></div>
@@ -168,7 +168,7 @@
 
 
 <span class="nd">@guvectorize</span><span class="p">(</span><span class="n">signatures</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">calculate_pid_function</span><span class="p">(</span><span class="n">bias_value</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_pid_function</span><span class="p">(</span><span class="n">bias_value</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This function selects a pid cut by shifting the pid variable so</span>
 <span class="sd">    the default cut at 1.0 is at the desired cut position.</span>
 
@@ -190,7 +190,7 @@
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.pid.html#pisa.stages.pid.shift_scale_pid.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
         <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bias&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>

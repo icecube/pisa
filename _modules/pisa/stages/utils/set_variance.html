@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.stages.utils.set_variance &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -72,14 +72,14 @@
 <span class="sd">Override errors and replace with manually chosen error fraction.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">guvectorize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
-<span class="kn">from</span> <span class="nn">pisa.core.stage</span> <span class="kn">import</span> <span class="n">Stage</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">vectorizer</span>
-<span class="kn">from</span> <span class="nn">pisa.core.binning</span> <span class="kn">import</span> <span class="n">MultiDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">TARGET</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">vectorizer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;set_variance&quot;</span><span class="p">,</span> <span class="s2">&quot;apply_floor&quot;</span><span class="p">,</span> <span class="s2">&quot;apply_floor_gufunc&quot;</span><span class="p">,</span>
@@ -89,12 +89,12 @@
 
 <div class="viewcode-block" id="set_variance">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance">[docs]</a>
-<span class="k">class</span> <span class="nc">set_variance</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">set_variance</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Override errors and replace with manually chosen variance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variance_scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
         <span class="n">variance_floor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -129,7 +129,7 @@
 
 <div class="viewcode-block" id="set_variance.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance.setup_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">divide_n</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
             <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
@@ -144,14 +144,14 @@
 
 <div class="viewcode-block" id="set_variance.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance.apply_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">vectorizer</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">],</span> <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="set_variance.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance.compute_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">vectorizer</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">],</span> <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">])</span>
             <span class="n">vectorizer</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span>
@@ -174,28 +174,28 @@
 
 <div class="viewcode-block" id="apply_floor">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.apply_floor">[docs]</a>
-<span class="k">def</span> <span class="nf">apply_floor</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_floor</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">apply_floor_gufunc</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span></div>
 
 
 <span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:])&quot;</span><span class="p">],</span> <span class="s2">&quot;() -&gt; ()&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">apply_floor_gufunc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_floor_gufunc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span> <span class="k">if</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">val</span> <span class="k">else</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
 <div class="viewcode-block" id="set_constant">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.set_constant">[docs]</a>
-<span class="k">def</span> <span class="nf">set_constant</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_constant</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">set_constant_gufunc</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span></div>
 
 
 <span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:])&quot;</span><span class="p">],</span> <span class="s2">&quot;() -&gt; ()&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">set_constant_gufunc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_constant_gufunc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.init_test">[docs]</a>
-<span class="k">def</span> <span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">set_variance</span><span class="p">(</span><span class="n">expected_total_mc</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span></div>
 

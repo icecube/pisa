@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.stats &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -73,16 +73,16 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">gammaln</span>
-<span class="kn">from</span> <span class="nn">uncertainties</span> <span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">gammaln</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
 
-<span class="kn">from</span> <span class="nn">pisa</span> <span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.comparisons</span> <span class="kn">import</span> <span class="n">FTYPE_PREC</span><span class="p">,</span> <span class="n">isbarenumeric</span>
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">pisa.utils</span> <span class="kn">import</span> <span class="n">likelihood_functions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE_PREC</span><span class="p">,</span> <span class="n">isbarenumeric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">likelihood_functions</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SMALL_POS&#39;</span><span class="p">,</span> <span class="s1">&#39;CHI2_METRICS&#39;</span><span class="p">,</span> <span class="s1">&#39;LLH_METRICS&#39;</span><span class="p">,</span> <span class="s1">&#39;ALL_METRICS&#39;</span><span class="p">,</span>
            <span class="s1">&#39;maperror_logmsg&#39;</span><span class="p">,</span>
@@ -130,7 +130,7 @@
 <span class="c1"># TODO(philippeller):</span>
 <span class="c1"># * unit tests to ensure these don&#39;t break</span>
 
-<span class="k">def</span> <span class="nf">it_got_better</span><span class="p">(</span><span class="n">new_metric_val</span><span class="p">,</span> <span class="n">old_metric_val</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">it_got_better</span><span class="p">(</span><span class="n">new_metric_val</span><span class="p">,</span> <span class="n">old_metric_val</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare metric values and report whether improvement found.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">to_maximize</span> <span class="o">=</span> <span class="n">is_metric_to_maximize</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
@@ -140,7 +140,7 @@
         <span class="n">got_better</span> <span class="o">=</span> <span class="n">new_metric_val</span> <span class="o">&lt;</span> <span class="n">old_metric_val</span>
     <span class="k">return</span> <span class="n">got_better</span>
 
-<span class="k">def</span> <span class="nf">is_metric_to_maximize</span><span class="p">(</span><span class="n">metric</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_metric_to_maximize</span><span class="p">(</span><span class="n">metric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether the resulting metric has to be maximized or minimized.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -153,7 +153,7 @@
 
 <div class="viewcode-block" id="maperror_logmsg">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.maperror_logmsg">[docs]</a>
-<span class="k">def</span> <span class="nf">maperror_logmsg</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">maperror_logmsg</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create message with thorough info about a map for logging purposes&quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
@@ -170,7 +170,7 @@
 
 <div class="viewcode-block" id="chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.chi2">[docs]</a>
-<span class="k">def</span> <span class="nf">chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the chi-square between each value in `actual_values` and</span>
 <span class="sd">    `expected_values`.</span>
 
@@ -241,7 +241,7 @@
 
 <div class="viewcode-block" id="llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.llh">[docs]</a>
-<span class="k">def</span> <span class="nf">llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the log-likelihoods (llh) that each count in `actual_values`</span>
 <span class="sd">    came from the the corresponding expected value in `expected_values`.</span>
 
@@ -308,7 +308,7 @@
 
 <div class="viewcode-block" id="mcllh_mean">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.mcllh_mean">[docs]</a>
-<span class="k">def</span> <span class="nf">mcllh_mean</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mcllh_mean</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the log-likelihood (llh) based on LMean in table 2 - https://doi.org/10.1007/JHEP06(2019)030</span>
 <span class="sd">    accounting for finite MC statistics.</span>
 <span class="sd">    This is the second most recommended likelihood in the paper.</span>
@@ -371,7 +371,7 @@
 
 <div class="viewcode-block" id="mcllh_eff">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.mcllh_eff">[docs]</a>
-<span class="k">def</span> <span class="nf">mcllh_eff</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mcllh_eff</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the log-likelihood (llh) based on eq. 3.16 - https://doi.org/10.1007/JHEP06(2019)030</span>
 <span class="sd">    accounting for finite MC statistics.</span>
 <span class="sd">    This is the most recommended likelihood in the paper.</span>
@@ -434,7 +434,7 @@
 
 <div class="viewcode-block" id="log_poisson">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.log_poisson">[docs]</a>
-<span class="k">def</span> <span class="nf">log_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the log of a poisson pdf</span>
 
 <span class="sd">    .. math::</span>
@@ -457,7 +457,7 @@
 
 <div class="viewcode-block" id="log_smear">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.log_smear">[docs]</a>
-<span class="k">def</span> <span class="nf">log_smear</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_smear</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the log of a normal pdf</span>
 
 <span class="sd">    .. math::</span>
@@ -481,7 +481,7 @@
 
 <div class="viewcode-block" id="conv_poisson">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.conv_poisson">[docs]</a>
-<span class="k">def</span> <span class="nf">conv_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">conv_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Poisson pdf</span>
 
 <span class="sd">    .. math::</span>
@@ -535,7 +535,7 @@
 
 <div class="viewcode-block" id="norm_conv_poisson">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.norm_conv_poisson">[docs]</a>
-<span class="k">def</span> <span class="nf">norm_conv_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">norm_conv_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convoluted poisson likelihood normalized so that the value at k=l</span>
 <span class="sd">    (asimov) does not change</span>
 
@@ -568,7 +568,7 @@
 
 <div class="viewcode-block" id="conv_llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.conv_llh">[docs]</a>
-<span class="k">def</span> <span class="nf">conv_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">conv_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the convolution llh using the uncertainty on the expected values</span>
 <span class="sd">    to smear out the poisson PDFs</span>
 
@@ -603,7 +603,7 @@
 
 <div class="viewcode-block" id="barlow_llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.barlow_llh">[docs]</a>
-<span class="k">def</span> <span class="nf">barlow_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">barlow_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the Barlow LLH taking into account finite statistics.</span>
 <span class="sd">    The likelihood is described in this paper: https://doi.org/10.1016/0010-4655(93)90005-W</span>
 <span class="sd">    Parameters</span>
@@ -658,7 +658,7 @@
 
 <div class="viewcode-block" id="mod_chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.mod_chi2">[docs]</a>
-<span class="k">def</span> <span class="nf">mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the chi-square value taking into account uncertainty terms</span>
 <span class="sd">    (incl. e.g. finite stats)</span>
 
@@ -699,7 +699,7 @@
 
 <div class="viewcode-block" id="correct_chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.correct_chi2">[docs]</a>
-<span class="k">def</span> <span class="nf">correct_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">correct_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the chi-square value taking into account uncertainty terms</span>
 <span class="sd">    (incl. e.g. finite stats) and their changes</span>
 
@@ -727,7 +727,7 @@
     <span class="k">return</span> <span class="n">m_chi2</span></div>
 
 
-<span class="k">def</span> <span class="nf">weighted_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">bin_unc2</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">weighted_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">bin_unc2</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the chi-square value for weighted events taking into account</span>
 <span class="sd">    uncertainty terms (incl. e.g. finite stats)</span>
 
@@ -759,7 +759,7 @@
 
 <div class="viewcode-block" id="signed_sqrt_mod_chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.signed_sqrt_mod_chi2">[docs]</a>
-<span class="k">def</span> <span class="nf">signed_sqrt_mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">signed_sqrt_mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute a (signed) pull value taking into account uncertainty terms.</span>
 
 <span class="sd">    Parameters</span>
@@ -790,7 +790,7 @@
 <span class="c1">#</span>
 <div class="viewcode-block" id="generalized_poisson_llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.generalized_poisson_llh">[docs]</a>
-<span class="k">def</span> <span class="nf">generalized_poisson_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">empty_bins</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generalized_poisson_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">empty_bins</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831</span>
 
 
@@ -811,7 +811,7 @@
 <span class="sd">    llh_per_bin : bin-wise llh values, in a numpy array</span>
 
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
 
     
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">),</span> <span class="s1">&#39;ERROR: expected_values must be an OrderedDict of MapSet objects&#39;</span>
@@ -860,7 +860,7 @@
             <span class="n">llh_per_bin</span><span class="p">[</span><span class="n">bin_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">logP</span>
             
         <span class="k">else</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">pisa.utils.llh_defs.poisson</span> <span class="kn">import</span> <span class="n">fast_pgmix</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.llh_defs.poisson</span><span class="w"> </span><span class="kn">import</span> <span class="n">fast_pgmix</span>
 
             <span class="n">alphas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">&#39;llh_alphas&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
             <span class="n">betas</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">&#39;llh_betas&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
@@ -880,7 +880,7 @@
 
     
 
-<span class="k">def</span> <span class="nf">approximate_poisson_normal</span><span class="p">(</span><span class="n">data_count</span><span class="p">,</span> <span class="n">alphas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_c</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">approximate_poisson_normal</span><span class="p">(</span><span class="n">data_count</span><span class="p">,</span> <span class="n">alphas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_c</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Compute the likelihood of a marginalized poisson-gamma</span>
 <span class="sd">    function, using a single normal distribution instead of</span>
@@ -890,8 +890,8 @@
 <span class="sd">    high, and where the gamma function throws infinite values</span>
 
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">quad</span>
-    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">quad</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
     <span class="n">gamma_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">alphas</span><span class="o">/</span><span class="n">betas</span><span class="p">)</span>
     <span class="n">gamma_sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">alphas</span><span class="o">/</span><span class="n">betas</span><span class="o">**</span><span class="mf">2.</span><span class="p">))</span>
@@ -907,9 +907,9 @@
     <span class="c1">#</span>
     <span class="k">if</span> <span class="n">use_c</span><span class="p">:</span>
 
-        <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">ctypes</span>
-        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-        <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">integrate</span><span class="p">,</span> <span class="n">LowLevelCallable</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">ctypes</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">integrate</span><span class="p">,</span> <span class="n">LowLevelCallable</span>
 
         <span class="n">lib</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">&#39;/groups/icecube/bourdeet/pisa/pisa/utils/poisson_normal.so&#39;</span><span class="p">))</span>
         <span class="n">lib</span><span class="o">.</span><span class="n">approximate_gamma_poisson_integrand</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span>
@@ -936,9 +936,9 @@
 
 
 
-<span class="k">def</span> <span class="nf">approximate_poisson_normal_python</span><span class="p">(</span><span class="n">lamb</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">approximate_poisson_normal_python</span><span class="p">(</span><span class="n">lamb</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
 
-    <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
     
     <span class="n">normal_term</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">lamb</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">A</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">B</span><span class="p">)</span>
     <span class="n">normal_poisson</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">lamb</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">lamb</span><span class="p">))</span>

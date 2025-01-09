@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pisa.utils.random_numbers &mdash; PISA 4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -77,13 +77,13 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">division</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pisa.utils.log</span> <span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;get_random_state&#39;</span><span class="p">,</span>
@@ -108,7 +108,7 @@
 
 <div class="viewcode-block" id="get_random_state">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.random_numbers.get_random_state">[docs]</a>
-<span class="k">def</span> <span class="nf">get_random_state</span><span class="p">(</span><span class="n">random_state</span><span class="p">,</span> <span class="n">jumpahead</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_random_state</span><span class="p">(</span><span class="n">random_state</span><span class="p">,</span> <span class="n">jumpahead</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Derive a `numpy.random.RandomState` object (usable to generate random</span>
 <span class="sd">    numbers and distributions) from a flexible specification..</span>
 
@@ -211,7 +211,7 @@
 
 <div class="viewcode-block" id="test_get_random_state">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.random_numbers.test_get_random_state">[docs]</a>
-<span class="k">def</span> <span class="nf">test_get_random_state</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_get_random_state</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for get_random_state function&quot;&quot;&quot;</span>
     <span class="c1"># Instantiate random states in all legal ways</span>
     <span class="n">rstates</span> <span class="o">=</span> <span class="p">{</span>
