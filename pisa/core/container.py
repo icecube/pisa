@@ -276,7 +276,7 @@ class Container():
     """
 
     default_translation_mode = "average"
-    translation_modes = ("average", "sum", None)
+    translation_modes = ("average", "sum")
     array_representations = ("events", "log_events")
 
 

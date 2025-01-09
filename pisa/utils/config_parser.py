@@ -590,7 +590,7 @@ def parse_pipeline_config(config):
 
     """
     # Note: imports placed here to avoid circular imports
-    from pisa.core.binning import MultiDimBinning, OneDimBinning
+    from pisa.core.binning import MultiDimBinning, OneDimBinning, VarBinning
     from pisa.core.param import ParamSelector, DerivedParam
 
     if isinstance(config, str):
@@ -618,48 +618,82 @@ def parse_pipeline_config(config):
             # dimension definitions...
             order = split(config.get('binning', name))
             binning, _ = split(name, sep='.')
-            bins = []
-            for bin_name in order:
-                try:
+
+            bin_split = config['binning'].get(binning + '.split', None)
+            if bin_split is not None: # Use multiple MultiDimBinning(s)
+                bin_split = OneDimBinning(**eval(config.get('binning', binning + '.split')))
+
+                bins = [[] for i in range(bin_split.size)]
+                for bin_name in order:
                     def_raw = config.get('binning', binning + '.' + bin_name)
-                except:
-                    dims_defined = [
-                        split(dim, sep='.')[1] for dim in
-                        config['binning'].keys() if
-                        dim.startswith(binning + '.') and not
-                        dim.endswith('.order')
-                    ]
-                    logging.error(
-                        "Failed to find definition of '%s' dimension of '%s'"
-                        " binning entry. Only found definition(s) of: %s",
-                        bin_name, binning, dims_defined
-                    )
-                    del dims_defined
-                    raise
-                try:
-                    kwargs = eval(def_raw) # pylint: disable=eval-used
-                except:
-                    logging.error(
-                        "Failed to evaluate definition of '%s' dimension of"
-                        " '%s' binning entry:\n'%s'",
-                        bin_name, binning, def_raw
-                    )
-                    raise
-                try:
-                    bins.append(OneDimBinning(bin_name, **kwargs))
-                except:
-                    logging.error(
-                        "Failed to instantiate new `OneDimBinning` from '%s'"
-                        " dimension of '%s' binning entry with definition:\n"
-                        "'%s'\n", bin_name, binning, kwargs
-                    )
-                    raise
-            # Get the bin mask, if there is ome
-            mask = config['binning'].get(binning + '.mask', None)
-            if mask is not None :
-                mask = eval(mask)
-            # Create the binning object
-            binning_dict[binning] = MultiDimBinning(bins, name=binning, mask=mask)
+                    kwargs = eval(def_raw)
+                    if isinstance(kwargs, list):
+                        assert len(kwargs) == bin_split.size
+                    else:
+                        kwargs = [kwargs] * bin_split.size
+                    for i in range(bin_split.size):
+                        kw = kwargs[i]
+                        bins[i].append(OneDimBinning(bin_name, **kw))
+
+                mask = config['binning'].get(binning + '.mask', None)
+                if mask is not None:
+                    mask = eval(mask)
+                    if isinstance(mask[0], list):
+                        assert len(mask) == bin_split.size
+                    else:
+                        mask = [mask] * bin_split.size
+                else:
+                    mask = [mask] * bin_split.size
+
+                multibins = []
+                for i in range(bin_split.size):
+                    multibins.append(MultiDimBinning(bins[i], name=binning+f"_{i}", mask=mask[i]))
+
+                binning_dict[binning] = VarBinning(multibins, bin_split, name=binning)
+
+            else: # Use only one MultiDimBinning
+                bins = []
+                for bin_name in order:
+                    try:
+                        def_raw = config.get('binning', binning + '.' + bin_name)
+                    except:
+                        dims_defined = [
+                            split(dim, sep='.')[1] for dim in
+                            config['binning'].keys() if
+                            dim.startswith(binning + '.') and not
+                            dim.endswith('.order')
+                        ]
+                        logging.error(
+                            "Failed to find definition of '%s' dimension of '%s'"
+                            " binning entry. Only found definition(s) of: %s",
+                            bin_name, binning, dims_defined
+                        )
+                        del dims_defined
+                        raise
+                    try:
+                        kwargs = eval(def_raw) # pylint: disable=eval-used
+                    except:
+                        logging.error(
+                            "Failed to evaluate definition of '%s' dimension of"
+                            " '%s' binning entry:\n'%s'",
+                            bin_name, binning, def_raw
+                        )
+                        raise
+                    try:
+                        bins.append(OneDimBinning(bin_name, **kwargs))
+                    except:
+                        logging.error(
+                            "Failed to instantiate new `OneDimBinning` from '%s'"
+                            " dimension of '%s' binning entry with definition:\n"
+                            "'%s'\n", bin_name, binning, kwargs
+                        )
+                        raise
+                # Get the bin mask, if there is one
+                mask = config['binning'].get(binning + '.mask', None)
+                if mask is not None :
+                    mask = eval(mask)
+                # Create the binning object
+                binning_dict[binning] = MultiDimBinning(bins, name=binning, mask=mask)
 
 
     stage_dicts = OrderedDict()

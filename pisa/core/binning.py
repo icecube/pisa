@@ -1590,7 +1590,6 @@ class MultiDimBinning(object):
         # Handle masking
         self._init_mask(mask) 
 
-
     def _init_mask(self, mask) :
         '''
         Initialize the bin mask. This can either be specified as:
@@ -1639,12 +1638,10 @@ class MultiDimBinning(object):
         # Done, store the mask
         self._mask = mask
 
-
     @property
     def name(self):
         """Name of the dimension"""
         return self._name
-
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']

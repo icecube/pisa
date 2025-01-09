@@ -74,7 +74,7 @@ __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 # dynamically access this?
 
 
-class Pipeline(object):
+class Pipeline():
     """Instantiate stages according to a parsed config object; excecute
     stages.
 
@@ -118,6 +118,11 @@ class Pipeline(object):
         self._config = config
         self._init_stages()
         self._source_code_hash = None
+
+        # VarBinning will only work if all stages have apply_mode=events
+        if isinstance(self.output_binning, VarBinning):
+            for s in self.stages:
+                assert s.apply_mode == 'events'
 
         # check in case someone decided to add a non-daemonflux parameter with daemon_
         # in it, which would potentially make penalty calculation incorrect
@@ -409,7 +414,7 @@ class Pipeline(object):
                         assert len(output_key) == 2
                         cc[output_key[0]] = c[output_key[0]][cut_idcs]
                         cc.tranlation_modes[output_key[0]] = 'sum'
-                        cc[output_key[1]] = np.square(c[output_key[1]][cut_idcs])
+                        cc[output_key[1]] = np.square(c[output_key[0]][cut_idcs])
                         cc.tranlation_modes[output_key[1]] = 'sum'
                     else:
                         cc[output_key] = c[output_key][cut_idcs]
@@ -589,6 +594,11 @@ class Pipeline(object):
     def stage_names(self):
         """list of strings : names of stages in the pipeline"""
         return [s.stage_name for s in self]
+
+    @property
+    def service_names(self):
+        """list of strings : names of services in the pipeline"""
+        return [s.service_name for s in self]
 
     @property
     def config(self):
