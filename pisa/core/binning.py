@@ -3084,6 +3084,30 @@ class VarBinning(object):
                 self._names.extend([n for n in b.names if n not in self._names])
         return self._names
 
+    def __pretty__(self, p, cycle):
+        """Method used by the `pretty` library for formatting"""
+        if cycle:
+            p.text('%s(...)' % self.__class__.__name__)
+        else:
+            p.begin_group(4, '%s([' % self.__class__.__name__)
+            for n, dim in enumerate(self):
+                p.breakable()
+                p.pretty(dim)
+                if n < len(self)-1:
+                    p.text(',')
+            p.end_group(4, '])')
+
+    def _repr_pretty_(self, p, cycle):
+        """Method used by e.g. ipython/Jupyter for formatting"""
+        return self.__pretty__(p, cycle)
+
+    def __iter__(self):
+        """Iterate over dimensions. Use `iterbins` to iterate over bins."""
+        return iter(self._binnings)
+
+    def __len__(self):
+        return len(self._binnings)
+
 
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""

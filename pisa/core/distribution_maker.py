@@ -285,7 +285,7 @@ class DistributionMaker(object):
             elif isinstance(outputs[0], list):
                 outs = []
                 for i in range(len(outputs[0])):
-                    o = sum([sum(x) for x in outputs[:, i]])
+                    o = sum([sum(x) for x in np.array(outputs)[:, i]])
                     o.name = sum_map_name
                     o.tex = sum_map_tex_name
                     outs.append(MapSet(o))

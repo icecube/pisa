@@ -492,13 +492,13 @@ class HypoFitResult(object):
                 self.detailed_metric_info = [self.get_detailed_metric_info(
                     data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
                     params=hypo_maker.distribution_makers[i].params, metric=metric[i],
-                    other_metrics=other_metrics, detector_name=hypo_maker.det_names[i], hypo_maker=hypo_maker
+                    other_metrics=other_metrics, detector_name=hypo_maker.det_names[i], hypo_maker=hypo_maker,
                 ) for i in range(len(data_dist))]
             elif isinstance(data_dist, list): # DistributionMaker object with variable binning
                 self.detailed_metric_info = [self.get_detailed_metric_info(
                     data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
                     params=hypo_maker.params, metric=metric[0],
-                    other_metrics=other_metrics, detector_name=hypo_maker.det_name, hypo_maker=hypo_maker
+                    other_metrics=other_metrics, detector_name=hypo_maker.detector_name, hypo_maker=hypo_maker,
                 ) for i in range(len(data_dist))]
             else: # DistributionMaker object with regular binning
                 if metric[0] == 'generalized_poisson_llh':
@@ -510,7 +510,7 @@ class HypoFitResult(object):
                 self.detailed_metric_info = self.get_detailed_metric_info(
                     data_dist=data_dist, hypo_asimov_dist=self.hypo_asimov_dist, generalized_poisson_hypo=generalized_poisson_dist,
                     params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
-                    detector_name=hypo_maker.detector_name, hypo_maker=hypo_maker
+                    detector_name=hypo_maker.detector_name, hypo_maker=hypo_maker,
                 )
 
     def __getitem__(self, i):
