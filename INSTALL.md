@@ -112,11 +112,8 @@ Load the CVMFS environment:<br>
 ```bash
 unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
 ```
-<details>
-  <summary>on one of IceCube's Cobalt nodes</summary>
-   
-   Verify that `which python` outputs `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`.
-</details>
+> [!WARNING]
+> Make sure you are using python version between 3.8 and 3.10, otherwise the installation will fail due to the `setuptools` package version.
 
 ```bash
 python -m venv /PATH/TO/<VENV NAME>
