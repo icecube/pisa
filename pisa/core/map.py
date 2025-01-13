@@ -30,7 +30,7 @@ from uncertainties import ufloat
 from uncertainties import unumpy as unp
 
 from pisa import ureg, HASH_SIGFIGS
-from pisa.core.binning import OneDimBinning, MultiDimBinning
+from pisa.core.binning import OneDimBinning, MultiDimBinning, VarMultiDimBinning, EventSpecie
 from pisa.utils.comparisons import normQuant, recursiveEquality, ALLCLOSE_KW
 from pisa.utils.flavInt import NuFlavIntGroup
 from pisa.utils.hash import hash_obj
@@ -201,7 +201,7 @@ def _new_obj(original_function):
                 new_state[slot] = state_updates[slot]
             else:
                 new_state[slot] = deepcopy(getattr(self, slot))
-        if len(new_state['binning']) == 0:
+        if not isinstance(new_state['binning'], VarMultiDimBinning) and len(new_state['binning']) == 0:
             return new_state['hist']
         return Map(**new_state)
     return decorate(original_function, new_function)
@@ -296,7 +296,8 @@ class Map(object):
 
     """
     _slots = ('name', 'hist', 'binning', 'hash', '_hash', 'tex',
-              'full_comparison', 'parent_indexer', '_normalize_values')
+              'full_comparison', 'parent_indexer', '_normalize_values',
+              'variable_binning')
     _state_attrs = ('name', 'hist', 'binning', 'hash', 'tex',
                     'full_comparison')
 
@@ -308,22 +309,42 @@ class Map(object):
         super().__setattr__('_hash', hash)
         super().__setattr__('_full_comparison', full_comparison)
 
-        if not isinstance(binning, MultiDimBinning):
+        # TODO: add further checks for VarMultiDimBinning case
+        if not isinstance(binning, (MultiDimBinning, VarMultiDimBinning)): 
             if isinstance(binning, Sequence):
                 binning = MultiDimBinning(dimensions=binning)
             elif isinstance(binning, Mapping):
                 binning = MultiDimBinning(**binning)
+                # TODO: figure out file read out for VarMultiDimBinning
+#                 if not 'event_species' in binning.keys():
+#                     binning = MultiDimBinning(**binning)
+#                 else:
+#                     ev_species = [EventSpecie(**es_str) for es_str 
+#                                   in binning['event_species']]
+#                     print(binning['event_species'])
+#                     binning = VarMultiDimBinning(event_species=ev_species,
+#                                                  name=binning['name'])
             else:
                 raise ValueError('Do not know what to do with `binning`=%s of'
                                  ' type %s' %(binning, type(binning)))
         self.parent_indexer = None
 
+        if isinstance(binning, VarMultiDimBinning):
+            self.variable_binning = True
+        else:
+            self.variable_binning = False
+
         # Do the work here to set read-only attributes
         super().__setattr__('_binning', binning)
         binning.assert_array_fits(hist)
-        super().__setattr__(
-            '_hist', np.ascontiguousarray(hist)
-        )
+        if not self.variable_binning:
+            super().__setattr__(
+                '_hist', np.ascontiguousarray(hist)
+            )
+        else:
+            super().__setattr__(
+                '_hist', [np.ascontiguousarray(hi) for hi in hist]
+            )
         if error_hist is not None:
             self.set_errors(error_hist)
         self._normalize_values = True
@@ -333,9 +354,17 @@ class Map(object):
         np.set_printoptions(precision=18)
         try:
             state = self.serializable_state
-            state['hist'] = np.array_repr(state['hist'])
+
+            if not self.variable_binning:
+                state['hist'] = np.array_repr(state['hist'])
+            else:
+                state['hist'] = [np.array_repr(h) for h in state['hist']]
+
             if state['error_hist'] is not None:
-                state['error_hist'] = np.array_repr(state['error_hist'])
+                if not self.variable_binning:
+                    state['error_hist'] = np.array_repr(state['error_hist'])
+                else:
+                    state['error_hist'] = [np.array_repr(eh) for eh in state['error_hist']]
             argstrs = [('%s=%r' % item) for item in
                        self.serializable_state.items()]
             r = '%s(%s)' % (self.__class__.__name__, ',\n    '.join(argstrs))
@@ -349,7 +378,10 @@ class Map(object):
         state = {a: getattr(self, a) for a in attrs}
         state['name'] = repr(state['name'])
         state['tex'] = repr(state['tex'])
-        state['hist'] = np.array_repr(state['hist'])
+        if not self.variable_binning:
+            state['hist'] = np.array_repr(state['hist'])
+        else:
+            state['hist'] = [np.array_repr(h) for h in state['hist']]
         argstrs = [('%s=%s' % (a, state[a])) for a in attrs]
         s = '%s(%s)' % (self.__class__.__name__, ',\n    '.join(argstrs))
         return s
@@ -392,6 +424,9 @@ class Map(object):
         z : Standard Python scalar object
 
         """
+        if self.variable_binning:
+            raise TypeError('item() method not supported for Map with VarMultiDimBinning')
+
         return self.hist.item(*args)
 
     def slice(self, **kwargs):
@@ -461,15 +496,24 @@ class Map(object):
             object's dimensionality.
 
         """
+        if self.variable_binning:
+            raise TypeError('slice() method not supported for Map with VarMultiDimBinning')
+
         return self[self.binning.indexer(**kwargs)]
 
     def set_poisson_errors(self):
         """Approximate poisson errors using sqrt(n)."""
         nom_values = self.nominal_values
-        super().__setattr__(
-            '_hist',
-            unp.uarray(nom_values, np.sqrt(nom_values))
-        )
+        if not self.variable_binning:
+            super().__setattr__(
+                '_hist',
+                unp.uarray(nom_values, np.sqrt(nom_values))
+            )
+        else:
+            super().__setattr__(
+                '_hist',
+                [unp.uarray(nv, np.sqrt(nv)) for nv in nom_values]
+            )
 
     def set_errors(self, error_hist):
         """Manually define the error with an array the same shape as the
@@ -489,10 +533,16 @@ class Map(object):
             )
             return
         self.assert_compat(error_hist)
-        super().__setattr__(
-            '_hist',
-            unp.uarray(self.nominal_values, np.ascontiguousarray(error_hist))
-        )
+        if not self.variable_binning:
+            super().__setattr__(
+                '_hist',
+                unp.uarray(self.nominal_values, np.ascontiguousarray(error_hist))
+            )
+        else:
+            super().__setattr__(
+                '_hist', [unp.uarray(nv, np.ascontiguousarray(ehi)) \
+                                     for nv, ehi in zip(self.nominal_values,error_hist)]
+            )
 
     # TODO: make this return an OrderedDict to organize all of the returned
     # objects
@@ -520,6 +570,11 @@ class Map(object):
           * 'infmatch' : bool, whether +inf (and separately -inf) entries match
 
         """
+
+        if self.variable_binning:
+            raise TypeError('compare() method is not implemented for '
+            'Map with VarMultiDimBinning')
+
         assert isinstance(ref, Map)
         assert ref.binning == self.binning
         diff = self - ref
@@ -687,6 +742,11 @@ class Map(object):
         colorbar : :class:`matplotlib.colorbar.Colorbar`
 
         """
+
+        if self.variable_binning:
+            raise TypeError('plot() method is not implemented for '
+            'Map with VarMultiDimBinning')
+
         import matplotlib as mpl
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -931,6 +991,11 @@ class Map(object):
             Modify Map (and its binning) by combining adjacent bins
 
         """
+
+        if self.variable_binning:
+            raise TypeError('reorder_dimensions() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         new_binning = self.binning.reorder_dimensions(order)
         orig_order = list(range(len(self.binning)))
         new_order = [self.binning.index(b, use_basenames=False)
@@ -951,6 +1016,11 @@ class Map(object):
         Map with equivalent values but singleton dimensions removed
 
         """
+
+        if self.variable_binning:
+            raise TypeError('squeeze() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         new_binning = self.binning.squeeze()
         new_hist = self.hist.squeeze()
         return {'hist': new_hist, 'binning': new_binning}
@@ -958,9 +1028,13 @@ class Map(object):
     @_new_obj
     def round2int(self):
         binning = self.binning
-        nominal_values = np.rint(self.nominal_values)
+        nominal_values = self.nominal_values
         std_devs = self.std_devs
-        return {'hist': unp.uarray(nominal_values, std_devs)}
+        if not self.variable_binning:
+            return {'hist': unp.uarray(np.rint(nominal_values), std_devs)}
+        else:
+            return {'hist': [unp.uarray(np.rint(nv), sd) for nv,sd 
+                             in zip(nominal_values, std_devs)]}
 
     @_new_obj
     def sum(self, axis=None, keepdims=False):
@@ -989,6 +1063,10 @@ class Map(object):
         """
 
         #TODO This function does't work if axis=None, since @_new_obj expects the output to be a map
+
+        if self.variable_binning:
+            raise TypeError('sum() method not supported for '
+                            'Map with VarMultiDimBinning')
 
         if axis is None:
             axis = self.binning.names
@@ -1027,6 +1105,11 @@ class Map(object):
         projection : Map
 
         """
+
+        if self.variable_binning:
+            raise TypeError('project() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         keep_index = self.binning.index(axis)
         sum_indices = list(range(len(self.binning.dims)))
         sum_indices.remove(keep_index)
@@ -1058,6 +1141,10 @@ class Map(object):
         """
         # TODO: put uncertainties in
 
+        if self.variable_binning:
+            raise TypeError('rebin() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         assert self.binning.mask is None, "`rebin` function does not currenty support bin masking"
 
         new_hist = rebin(hist=self.hist, orig_binning=self.binning,
@@ -1072,6 +1159,11 @@ class Map(object):
         details.
 
         """
+
+        if self.variable_binning:
+            raise TypeError('downsample() method not supported for '
+                            'Map with VarMultiDimBinning')
+
         new_binning = self.binning.downsample(*args, **kwargs)
         return self.rebin(new_binning)
 
@@ -1103,6 +1195,11 @@ class Map(object):
         ..  [1] Bohm & Zech, "Statistics of weighted Poisson events and its applications" (2013),
             https://arxiv.org/abs/1309.1287
         """
+
+        if self.variable_binning:
+            raise TypeError('fluctuate() method not yet implemented for '
+                            'Map with VarMultiDimBinning (TODO)')
+
         orig = method
         method = str(method).strip().lower().replace(' ', '')
         if not method in FLUCTUATE_METHODS:
@@ -1216,17 +1313,25 @@ class Map(object):
     @property
     def shape(self):
         """tuple : shape of the map, akin to `nump.ndarray.shape`"""
-        return self.hist.shape
+        # return self.hist.shape
+        # any reason to take shape from the hist and not binning for Map with MultiDimBinning?
+        return self.binning.shape
 
     @property
     def size(self):
         """int : total number of elements"""
-        return self.hist.size
+        if not self.variable_binning:
+            return self.hist.size
+        else:
+            return np.sum([h.size for h in self.hist])
 
     @property
     def num_entries(self):
         """int : total number of weighted entries in all bins"""
-        return np.sum(valid_nominal_values(self.hist))
+        if not self.variable_binning:
+            return np.sum(valid_nominal_values(self.hist))
+        else:
+            return np.sum([np.sum(valid_nominal_values(h)) for h in self.hist])
 
     @property
     def serializable_state(self):
@@ -1298,6 +1403,10 @@ class Map(object):
         pisa.utils.jsons.to_json
 
         """
+        if self.variable_binning:
+            raise TypeError('to_json() method not yet implemented for '
+                            'Map with VarMultiDimBinning (TODO)')
+
         jsons.to_json(self.serializable_state, filename=filename, **kwargs)
 
     @classmethod
@@ -1327,7 +1436,7 @@ class Map(object):
     def assert_compat(self, other):
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             return
-        elif isinstance(other, np.ndarray):
+        elif isinstance(other, (np.ndarray, list)):
             self.binning.assert_array_fits(other)
         elif isinstance(other, Map):
             self.binning.assert_compat(other.binning)
@@ -1347,6 +1456,10 @@ class Map(object):
         Map object containing one of each bin of this Map
 
         """
+        if self.variable_binning:
+            raise TypeError('iterbins() method is not supported for '
+                            'Map with VarMultiDimBinning')
+
         for i in range(self.size):
             idx_coord = self.binning.index2coord(i)
             idx_view = tuple(slice(x, x+1) for x in idx_coord)
@@ -1364,6 +1477,10 @@ class Map(object):
     # TODO : example!
     def itercoords(self):
         """Iterator that yields the coordinate of each bin in the map."""
+        if self.variable_binning:
+            raise TypeError('itercoords() method is not supported for '
+                            'Map with VarMultiDimBinning')
+
         return self.binning.itercoords()
 
     def __hash__(self):
@@ -1388,6 +1505,10 @@ class Map(object):
         hist should be).
 
         """
+        if self.variable_binning:
+            raise TypeError('_slice_or_index() method is not supported for '
+                            'Map with VarMultiDimBinning')
+
         new_binning = self.binning[idx]
 
         new_map = Map(name=self.name,
@@ -1455,6 +1576,9 @@ class Map(object):
             copied into the new map(s).
 
         """
+        if self.variable_binning:
+            raise TypeError('split() method is not supported for '
+                            'Map with VarMultiDimBinning')
 
         dim_index = self.binning.index(dim, use_basenames=use_basenames)
         spliton_dim = self.binning.dims[dim_index]
@@ -1549,11 +1673,19 @@ class Map(object):
         expected_values = reduceToHist(expected_values)
 
         if binned:
-            return stats.llh(actual_values=self.hist,
-                             expected_values=expected_values)
+            if not self.variable_binning:
+                return stats.llh(actual_values=self.hist,
+                                 expected_values=expected_values)
+            else:
+                return [stats.llh(actual_values=hi,
+                                 expected_values=exp_val_hi)\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        return np.sum(stats.llh(actual_values=self.hist,
-                                expected_values=expected_values))
+        if not self.variable_binning:
+            return np.sum(stats.llh(actual_values=self.hist,
+                                    expected_values=expected_values))
+        return np.sum([np.sum(stats.llh(actual_values=hi, expected_values=exp_val_hi))\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)])
 
     def mcllh_mean(self, expected_values, binned=False):
         """Calculate the total LMean log-likelihood value between this map and the
@@ -1575,11 +1707,19 @@ class Map(object):
         expected_values = reduceToHist(expected_values)
 
         if binned:
-            return stats.mcllh_mean(actual_values=self.hist,
-                             expected_values=expected_values)
+            if not self.variable_binning:
+                return stats.mcllh_mean(actual_values=self.hist,
+                                 expected_values=expected_values)
+            else:
+                return [stats.mcllh_mean(actual_values=hi,
+                                 expected_values=exp_val_hi)\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        return np.sum(stats.mcllh_mean(actual_values=self.hist,
-                                expected_values=expected_values))
+        if not self.variable_binning:
+            return np.sum(stats.mcllh_mean(actual_values=self.hist,
+                                    expected_values=expected_values))
+        return np.sum([np.sum(stats.mcllh_mean(actual_values=hi, expected_values=exp_val_hi))\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)])
 
 
     def mcllh_eff(self, expected_values, binned=False):
@@ -1602,11 +1742,19 @@ class Map(object):
         expected_values = reduceToHist(expected_values)
 
         if binned:
-            return stats.mcllh_eff(actual_values=self.hist,
-                             expected_values=expected_values)
+            if not self.variable_binning:
+                return stats.mcllh_eff(actual_values=self.hist,
+                                 expected_values=expected_values)
+            else:
+                return [stats.mcllh_eff(actual_values=hi,
+                                 expected_values=exp_val_hi)\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        return np.sum(stats.mcllh_eff(actual_values=self.hist,
-                                expected_values=expected_values))
+        if not self.variable_binning:
+            return np.sum(stats.mcllh_eff(actual_values=self.hist,
+                                    expected_values=expected_values))
+        return np.sum([np.sum(stats.mcllh_eff(actual_values=hi, expected_values=exp_val_hi))\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)])
 
     def conv_llh(self, expected_values, binned=False):
         """Calculate the total convoluted log-likelihood value between this map
@@ -1628,11 +1776,19 @@ class Map(object):
         expected_values = reduceToHist(expected_values)
 
         if binned:
-            return stats.conv_llh(actual_values=self.hist,
-                                  expected_values=expected_values)
+            if not self.variable_binning:
+                return stats.conv_llh(actual_values=self.hist,
+                                 expected_values=expected_values)
+            else:
+                return [stats.conv_llh(actual_values=hi,
+                                 expected_values=exp_val_hi)\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        return np.sum(stats.conv_llh(actual_values=self.hist,
-                                     expected_values=expected_values))
+        if not self.variable_binning:
+            return np.sum(stats.conv_llh(actual_values=self.hist,
+                                    expected_values=expected_values))
+        return np.sum([np.sum(stats.conv_llh(actual_values=hi, expected_values=exp_val_hi))\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)])
 
     def barlow_llh(self, expected_values, binned=False):
         """Calculate the total barlow log-likelihood value between this map and
@@ -1660,11 +1816,20 @@ class Map(object):
             expected_values = [reduceToHist(x) for x in expected_values]
 
         if binned:
-            return stats.barlow_llh(actual_values=self.hist,
-                                    expected_values=expected_values)
+            if not self.variable_binning:
+                return stats.barlow_llh(actual_values=self.hist,
+                                 expected_values=expected_values)
+            else:
+                return [stats.barlow_llh(actual_values=hi,
+                                 expected_values=exp_val_hi)\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        return np.sum(stats.barlow_llh(actual_values=self.hist,
-                                       expected_values=expected_values))
+        if not self.variable_binning:
+            return np.sum(stats.barlow_llh(actual_values=self.hist,
+                                    expected_values=expected_values))
+        return np.sum([np.sum(stats.barlow_llh(actual_values=hi, expected_values=exp_val_hi))\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)])
+
 
     def mod_chi2(self, expected_values, binned=False):
         """Calculate the total modified chi2 value between this map and the map
@@ -1686,11 +1851,19 @@ class Map(object):
         expected_values = reduceToHist(expected_values)
 
         if binned:
-            return stats.mod_chi2(actual_values=self.hist,
-                                  expected_values=expected_values)
+            if not self.variable_binning:
+                return stats.mod_chi2(actual_values=self.hist,
+                                 expected_values=expected_values)
+            else:
+                return [stats.mod_chi2(actual_values=hi,
+                                 expected_values=exp_val_hi)\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        return np.sum(stats.mod_chi2(actual_values=self.hist,
-                                     expected_values=expected_values))
+        if not self.variable_binning:
+            return np.sum(stats.mod_chi2(actual_values=self.hist,
+                                    expected_values=expected_values))
+        return np.sum([np.sum(stats.mod_chi2(actual_values=hi, expected_values=exp_val_hi))\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)])
 
     def correct_chi2(self, expected_values, binned=False):
         """Calculate the total correct chi2 value between this map and the map
@@ -1712,11 +1885,19 @@ class Map(object):
         expected_values = reduceToHist(expected_values)
 
         if binned:
-            return stats.correct_chi2(actual_values=self.hist,
-                                  expected_values=expected_values)
+            if not self.variable_binning:
+                return stats.correct_chi2(actual_values=self.hist,
+                                 expected_values=expected_values)
+            else:
+                return [stats.correct_chi2(actual_values=hi,
+                                 expected_values=exp_val_hi)\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        return np.sum(stats.correct_chi2(actual_values=self.hist,
-                                     expected_values=expected_values))
+        if not self.variable_binning:
+            return np.sum(stats.correct_chi2(actual_values=self.hist,
+                                    expected_values=expected_values))
+        return np.sum([np.sum(stats.correct_chi2(actual_values=hi, expected_values=exp_val_hi))\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)])
 
     def chi2(self, expected_values, binned=False):
         """Calculate the total chi-squared value between this map and the map
@@ -1738,11 +1919,19 @@ class Map(object):
         expected_values = reduceToHist(expected_values)
 
         if binned:
-            return stats.chi2(actual_values=self.hist,
-                              expected_values=expected_values)
+            if not self.variable_binning:
+                return stats.chi2(actual_values=self.hist,
+                                 expected_values=expected_values)
+            else:
+                return [stats.chi2(actual_values=hi,
+                                 expected_values=exp_val_hi)\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)]
 
-        return np.sum(stats.chi2(actual_values=self.hist,
-                                 expected_values=expected_values))
+        if not self.variable_binning:
+            return np.sum(stats.chi2(actual_values=self.hist,
+                                    expected_values=expected_values))
+        return np.sum([np.sum(stats.chi2(actual_values=hi, expected_values=exp_val_hi))\
+                        for hi, exp_val_hi in zip(self.hist, expected_values)])
 
     def signed_sqrt_mod_chi2(self, expected_values):
         """Calculate the binwise (signed) square-root of the modified chi2 value
@@ -1761,8 +1950,12 @@ class Map(object):
         """
         expected_values = reduceToHist(expected_values)
 
-        return stats.signed_sqrt_mod_chi2(actual_values=self.hist,
-                                          expected_values=expected_values)
+        if not self.variable_binning:
+            return stats.chi2(actual_values=self.hist,
+                             expected_values=expected_values)
+        return [stats.chi2(actual_values=hi,
+                         expected_values=exp_val_hi)\
+                for hi, exp_val_hi in zip(self.hist, expected_values)]
 
 
     def generalized_poisson_llh(self, expected_values=None, empty_bins=None, binned=False):
@@ -1781,6 +1974,10 @@ class Map(object):
             binned: bool (return the bin-by-bin llh or the sum over all bins)
 
         '''
+
+        #TODO: implement for VarMultiDimBinning
+        if self.variable_binning:
+            raise ValueError("generalized_poisson_llh not implemented for Maps with VarMultiDimBinning")
 
         llh_per_bin = stats.generalized_poisson_llh(actual_values=self.hist,
                                                     expected_values=expected_values,
@@ -1869,7 +2066,10 @@ class Map(object):
         # Apply bin mask, if one exists
         # Set masked off elements to NaN (handling both cases where the hst is either a simple array, or has uncertainties)
         if self.binning.mask is not None :
-            hist[~self.binning.mask] = ufloat(np.NaN, np.NaN) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.NaN #TODO Is there a better way to check if this is a uarray?
+            if not self.variable_binning:
+                hist[~self.binning.mask] = ufloat(np.NaN, np.NaN) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.NaN #TODO Is there a better way to check if this is a uarray?
+            else:
+                raise ValueError("Masking for Maps with Variable binning is not implemented")
 
         # Done
         return hist
@@ -1877,12 +2077,18 @@ class Map(object):
     @property
     def nominal_values(self):
         """numpy.ndarray : Bin values stripped of uncertainties"""
-        return unp.nominal_values(self.hist)
+        if not self.variable_binning:
+            return unp.nominal_values(self.hist)
+        else:
+            return [unp.nominal_values(hi) for hi in self.hist]
 
     @property
     def std_devs(self):
         """numpy.ndarray : Uncertainties (standard deviations) per bin"""
-        return unp.std_devs(self.hist)
+        if not self.variable_binning:
+            return unp.std_devs(self.hist)
+        else:
+            return [unp.std_devs(hi) for hi in self.hist]
 
     @property
     def binning(self):
@@ -1906,7 +2112,8 @@ class Map(object):
         state_updates = {
             #'name': "|%s|" % (self.name,),
             #'tex': r"{\left| %s \right|}" % strip_outer_parens(self.tex),
-            'hist': np.abs(self.hist)
+            'hist': np.abs(self.hist) if not self.variable_binning else \
+            [np.abs(hi) for hi in self.hist]
         }
         return state_updates
 
@@ -1917,19 +2124,25 @@ class Map(object):
             state_updates = {
                 #'name': "(%s + %s)" % (self.name, other),
                 #'tex': r"{(%s + %s)}" % (self.tex, other),
-                'hist': self.hist + other
+                'hist': self.hist + other if not self.variable_binning else \
+                [hi+other for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            state_updates = {
-                #'name': "(%s + array)" % self.name,
-                #'tex': r"{(%s + X)}" % self.tex,
-                'hist': self.hist + other
-            }
+            if not self.variable_binning:
+                state_updates = {
+                    #'name': "(%s + array)" % self.name,
+                    #'tex': r"{(%s + X)}" % self.tex,
+                    'hist': self.hist + other
+                }
+            else:
+                raise ValueError("Addition of numpy.ndarray is not supported \
+                for Map with VarMultiDimBinning")
         elif isinstance(other, Map):
             state_updates = {
                 #'name': "(%s + %s)" % (self.name, other.name),
                 #'tex': r"{(%s + %s)}" % (self.tex, other.tex),
-                'hist': self.hist + other.hist,
+                'hist': self.hist + other.hist if not self.variable_binning else \
+                [hi+other_hi for hi, other_hi in zip(self.hist,other.hist)],
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
             }
@@ -1939,25 +2152,64 @@ class Map(object):
 
     #def __cmp__(self, other):
 
+
+    @_new_obj
+    def __sub__(self, other):
+        if np.isscalar(other) or type(other) is uncertainties.core.Variable:
+            state_updates = {
+                #'name': "(%s - %s)" % (self.name, other),
+                #'tex': "{(%s - %s)}" % (self.tex, other),
+                'hist': self.hist - other if not self.variable_binning else \
+                [hi-other for hi in self.hist],
+            }
+        elif isinstance(other, np.ndarray):
+            if not self.variable_binning:
+                state_updates = {
+                    #'name': "(%s - array)" % self.name,
+                    #'tex': "{(%s - X)}" % self.tex,
+                    'hist': self.hist - other,
+                }
+            else:
+                raise ValueError("Substraction of numpy.ndarray is not supported for \
+                Map with VarMultiDimBinning")
+        elif isinstance(other, Map):
+            state_updates = {
+                #'name': "%s - %s" % (self.name, other.name),
+                #'tex': "{(%s - %s)}" % (self.tex, other.tex),
+                'hist': self.hist - other.hist if not self.variable_binning else \
+                [hi-other_hi for hi, other_hi in zip(self.hist,other.hist)],
+                'full_comparison': (self.full_comparison or
+                                    other.full_comparison),
+            }
+        else:
+            type_error(other)
+        return state_updates
+
     @_new_obj
     def __div__(self, other):
         if np.isscalar(other) or type(other) is uncertainties.core.Variable:
             state_updates = {
                 #'name': "(%s / %s)" % (self.name, other),
                 #'tex': r"{(%s / %s)}" % (self.tex, other),
-                'hist': self.hist / other
+                'hist': self.hist / other if not self.variable_binning else \
+                [hi/other for hi in self.hist]
             }
         elif isinstance(other, np.ndarray):
-            state_updates = {
-                #'name': "(%s / array)" % self.name,
-                #'tex': r"{(%s / X)}" % self.tex,
-                'hist': self.hist / other
-            }
+            if not self.variable_binning:
+                state_updates = {
+                    #'name': "(%s / array)" % self.name,
+                    #'tex': r"{(%s / X)}" % self.tex,
+                    'hist': self.hist / other
+                }
+            else:
+                raise ValueError("Division by numpy.ndarray is not supported \
+                for Map with VarMultiDimBinning")
         elif isinstance(other, Map):
             state_updates = {
                 #'name': "(%s / %s)" % (self.name, other.name),
                 #'tex': r"{(%s / %s)}" % (self.tex, other.tex),
-                'hist': self.hist / other.hist,
+                'hist': self.hist / other.hist if not self.variable_binning else \
+                [hi/other_hi for hi, other_hi in zip(self.hist,other.hist)],
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
             }
@@ -1967,6 +2219,9 @@ class Map(object):
 
     def __truediv__(self, other):
         return self.__div__(other)
+
+    def __rtruediv__(self, other):
+        return self.__rdiv__(other)
 
     def __floordiv__(self, other):
         raise NotImplementedError('floordiv not implemented for type Map')
@@ -1986,14 +2241,21 @@ class Map(object):
 
         """
         if np.isscalar(other):
-            return np.all(self.nominal_values == other)
+            if not self.variable_binning:
+                return np.all(self.nominal_values == other)
+            else:
+                return np.all([np.all(nv==other) for nv in self.nominal_values])
 
         if type(other) is uncertainties.core.Variable \
                 or isinstance(other, np.ndarray):
-            return (np.all(self.nominal_values
-                           == unp.nominal_values(other))
-                    and np.all(self.std_devs
-                               == unp.std_devs(other)))
+            if not self.variable_binning:
+                return (np.all(self.nominal_values
+                               == unp.nominal_values(other))
+                        and np.all(self.std_devs
+                                   == unp.std_devs(other)))
+            else:
+                raise ValueError("Comparison numpy.ndarray or uncertainties.core.Variable \
+                is not supported for Map with VarMultiDimBinning")
 
         if isinstance(other, Map):
             if (self.full_comparison or other.full_comparison
@@ -2001,6 +2263,7 @@ class Map(object):
                 return recursiveEquality(self.hashable_state,
                                          other.hashable_state)
             return self.hash == other.hash
+                
 
         type_error(other)
 
@@ -2016,7 +2279,7 @@ class Map(object):
         state_updates = {
             #'name': "log(%s)" % self.name,
             #'tex': r"\ln\left( %s \right)" % self.tex,
-            'hist': unp.log(self.hist)
+            'hist': unp.log(self.hist) if not self.variable_binning else [unp.log(hi) for hi in self.hist]
         }
         return state_updates
 
@@ -2032,7 +2295,8 @@ class Map(object):
         state_updates = {
             #'name': "log10(%s)" % self.name,
             #'tex': r"\log_{10}\left( %s \right)" % self.tex,
-            'hist': unp.log10(self.hist)
+            'hist': unp.log10(self.hist) if not self.variable_binning else \
+            [unp.log10(hi) for hi in self.hist]
         }
         return state_updates
 
@@ -2042,19 +2306,25 @@ class Map(object):
             state_updates = {
                 #'name': "%s * %s" % (other, self.name),
                 #'tex': r"%s \cdot %s" % (other, self.tex),
-                'hist': self.hist * other
+                'hist': self.hist * other if not self.variable_binning else \
+                [hi * other for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            state_updates = {
-                #'name': "array * %s" % self.name,
-                #'tex': r"X \cdot %s" % self.tex,
-                'hist': self.hist * other,
-            }
+            if not self.variable_binning:
+                state_updates = {
+                    #'name': "array * %s" % self.name,
+                    #'tex': r"X \cdot %s" % self.tex,
+                    'hist': self.hist * other,
+                }
+            else:
+                raise ValueError("Multiplication by numpy.ndarray is not \
+                supported for Map with VarMultiDimBinning")
         elif isinstance(other, Map):
             state_updates = {
                 #'name': "%s * %s" % (self.name, other.name),
                 #'tex': r"%s \cdot %s" % (self.tex, other.tex),
-                'hist': self.hist * other.hist,
+                'hist': self.hist * other.hist if not self.variable_binning else \
+                [hi * other_hi for hi, other_hi in zip(self.hist,other.hist)],
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
             }
@@ -2070,7 +2340,7 @@ class Map(object):
         state_updates = {
             #'name': "-%s" % self.name,
             #'tex': r"-%s" % self.tex,
-            'hist': -self.hist,
+            'hist': -self.hist if not self.variable_binning else [-hi for hi in self.hist],
         }
         return state_updates
 
@@ -2080,20 +2350,26 @@ class Map(object):
             state_updates = {
                 #'name': "%s**%s" % (self.name, other),
                 #'tex': "%s^{%s}" % (self.tex, other),
-                'hist': unp.pow(self.hist, other)
+                'hist': unp.pow(self.hist, other) if not self.variable_binning else \
+                [unp.pow(hi, other) for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            state_updates = {
-                #'name': "%s**(array)" % self.name,
-                #'tex': r"%s^{X}" % self.tex,
-                'hist': unp.pow(self.hist, other),
-            }
+            if not self.variable_binning:
+                state_updates = {
+                    #'name': "%s**(array)" % self.name,
+                    #'tex': r"%s^{X}" % self.tex,
+                    'hist': unp.pow(self.hist, other),
+                }
+            else:
+                raise ValueError("Power operation using numpy.ndarray is \
+                not supported for Map with VarMultiDimBinning")
         elif isinstance(other, Map):
             state_updates = {
                 #'name': "%s**(%s)" % (self.name,
                 #                      strip_outer_parens(other.name)),
                 #'tex': r"%s^{%s}" % (self.tex, strip_outer_parens(other.tex)),
-                'hist': unp.pow(self.hist, other.hist),
+                'hist': unp.pow(self.hist, other.hist) if not self.variable_binning else \
+                [unp.pow(hi, other_hi) for hi, other_hi in zip(self.hist, other.hist)],
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
             }
@@ -2115,14 +2391,19 @@ class Map(object):
             state_updates = {
                 #'name': "(%s / %s)" % (other, self.name),
                 #'tex': "{(%s / %s)}" % (other, self.tex),
-                'hist': other / self.hist,
+                'hist': other / self.hist if not self.variable_binning else \
+                [other / hi for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            state_updates = {
-                #'name': "array / %s" % self.name,
-                #'tex': "{(X / %s)}" % self.tex,
-                'hist': other / self.hist,
-            }
+            if not self.variable_binning:
+                state_updates = {
+                    #'name': "array / %s" % self.name,
+                    #'tex': "{(X / %s)}" % self.tex,
+                    'hist': other / self.hist,
+                    }
+            else:
+                raise ValueError("Division of numpy.ndarray by Map with \
+                VarMultiDimBinning is not supported")
         else:
             type_error(other)
         return state_updates
@@ -2141,14 +2422,19 @@ class Map(object):
             state_updates = {
                 #'name': "(%s - %s)" % (other, self.name),
                 #'tex': "{(%s - %s)}" % (other, self.tex),
-                'hist': other - self.hist,
+                'hist': other - self.hist if not self.variable_binning else \
+                [other - hi for hi in self.hist],
             }
         elif isinstance(other, np.ndarray):
-            state_updates = {
-                #'name': "(array - %s)" % self.name,
-                #'tex': "{(X - %s)}" % self.tex,
-                'hist': other - self.hist,
-            }
+            if not self.variable_binning:
+                state_updates = {
+                    #'name': "(array - %s)" % self.name,
+                    #'tex': "{(X - %s)}" % self.tex,
+                    'hist': other - self.hist,
+                }
+            else:
+                raise ValueError("Substarction of numpy.ndarray by Map \
+                with VarMultiDimBinning is not supported")
         else:
             type_error(other)
         return state_updates
@@ -2166,40 +2452,19 @@ class Map(object):
             #'name': "sqrt(%s)" % self.name,
             #'tex': r"\sqrt{%s}" % self.tex,
             #'hist': np.asarray(unp.sqrt(self.hist), dtype='float'),
-            'hist': unp.sqrt(self.hist),
+            'hist': unp.sqrt(self.hist) if not self.variable_binning else \
+            [unp.sqrt(hi) for hi in self.hist],
         }
-        return state_updates
-
-    @_new_obj
-    def __sub__(self, other):
-        if np.isscalar(other) or type(other) is uncertainties.core.Variable:
-            state_updates = {
-                #'name': "(%s - %s)" % (self.name, other),
-                #'tex': "{(%s - %s)}" % (self.tex, other),
-                'hist': self.hist - other,
-            }
-        elif isinstance(other, np.ndarray):
-            state_updates = {
-                #'name': "(%s - array)" % self.name,
-                #'tex': "{(%s - X)}" % self.tex,
-                'hist': self.hist - other,
-            }
-        elif isinstance(other, Map):
-            state_updates = {
-                #'name': "%s - %s" % (self.name, other.name),
-                #'tex': "{(%s - %s)}" % (self.tex, other.tex),
-                'hist': self.hist - other.hist,
-                'full_comparison': (self.full_comparison or
-                                    other.full_comparison),
-            }
-        else:
-            type_error(other)
         return state_updates
 
     def allclose(self, other):
         '''Check if this map and another have the same (within machine precision) bin counts'''
         self.assert_compat(other)
-        return np.allclose(self.nominal_values, other.nominal_values, **ALLCLOSE_KW)
+        if not self.variable_binning:
+            return np.allclose(self.nominal_values, other.nominal_values, **ALLCLOSE_KW)
+        else:
+            return np.all([np.allclose(nv, other_nv, **ALLCLOSE_KW) \
+                           for nv, other_nv in zip(self.nominal_values, other.nominal_values)])
 
 
 # TODO: instantiate individual maps from dicts if passed as such, so user
@@ -3340,6 +3605,46 @@ def test_Map():
         # assert test_return[1] == matplotlib.axes._subplots.AxesSubplot
         # assert test_return[2] == matplotlib.collections.QuadMesh
         # assert test_return[3] == matplotlib.colorbar.Colorbar
+
+
+    # Test Map with VarMultiDimBinning
+    binning_2d = MultiDimBinning([dict(name='reco_energy', is_log=True, 
+                                       num_bins=12, domain=[5., 80.], units='GeV'),
+                                  dict(name='reco_coszen', is_lin=True, 
+                                       num_bins=10, domain=[-1, 0.])
+                                ])
+    binning_3d = MultiDimBinning([dict(name='reco_energy', is_log=True, 
+                                       num_bins=12, domain=[5., 80.], units='GeV'),
+                                  dict(name='reco_coszen', is_lin=True,
+                                       num_bins=10, domain=[-1, 0.]),
+                                  dict(name='pid', is_lin=True, 
+                                       bin_edges=[0.0, 0.25, 0.55, 1.0], 
+                                       bin_names=['cascades', 'mixed','tracks'])
+                                ])
+    vb = VarMultiDimBinning([EventSpecie(name='high_ndom', selection='n_hit_doms>20', 
+                                         binning=binning_3d),
+                             EventSpecie(name='low_ndom', selection='n_hit_doms<20', 
+                                         binning=binning_2d),
+                            ])
+
+    hist_vb = [np.ones(sp) for sp in vb.shape]
+    mvb = Map(name='a', hist=hist_vb, error_hist=hist_vb, binning=vb)
+
+    mvb.set_poisson_errors()
+    mvb.set_errors([3*np.ones(sp) for sp in vb.shape])
+    _ = mvb.shape
+    _ = mvb.size
+    _ = mvb.num_entries
+
+    mvb_copy = deepcopy(mvb)
+    assert mvb == mvb_copy
+    assert mvb*2 != mvb_copy
+    assert mvb.sqrt()**2 == mvb_copy
+
+    _ = mvb+mvb_copy
+    _ = mvb-mvb_copy
+    _ = mvb*mvb_copy
+    _ = mvb/mvb_copy
 
     logging.info(str(('<< PASS : test_Map >>')))
 
