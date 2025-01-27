@@ -45,7 +45,7 @@ Plotting is also available via `-p/--plot' and is HIGHLY recomended to inspect t
 
 ### Ultrasurfaces
 
-Treatment of detector systematics via likelihood-free inference. Polynomial coefficients, assigned to every event allow continuoius re-weighting as a function of detector uncertainties in a way that is fully decoupled from flux and oscillation effects. The results are stored in a feather file containing all events of the nominal MC set and their associated polynomial coefficients.
+Treatment of detector systematics via likelihood-free inference. Polynomial coefficients, assigned to every event, allow continuous re-weighting as a function of detector uncertainties in a way that is fully decoupled from flux and oscillation effects. The results are stored in a feather file containing all events of the nominal MC set and their associated polynomial coefficients.
 
 To use this in a PISA analysis pipeline, you will need to set up an ultrasurface config file looking like this:
 
@@ -96,16 +96,9 @@ nominal_points = {"dom_eff": 1.0, "hole_ice_p0": 0.101569, "hole_ice_p1": -0.049
 fit_results_file = /path/to/ultrasurface_fits/genie_all_knn_200pc_weight_weighted_aeff_poly_2.feather
 ```
 
-Here you specify the detector systematic parameters to be varied in the fit, with their nominal values and allowed ranges. Additionally, you have to specify the nominal point at which the ultrasurfaces were fit, since this might be different from the nominal point used in your analysis. Finally, you have to point to the file where the polynomial coefficients are stored.
+Here you specify the detector systematic parameters to be varied in the fit, with their nominal values and allowed ranges. Additionally, you have to specify the nominal point at which the ultrasurfaces were fit (`nominal_points`), since this might be different from the nominal point used in your analysis. Finally, you have to point to the file where the polynomial coefficients are stored (`fit_results_file`).
 
-You also have to import this config file as part of all your imports, like so:
-
-```ini
-#include your_analysis/settings/pipeline/stages/neutrino_ultrasurface_stage.cfg
-```
-This can be directly in your main neutrino pipeline config, or together with your collected common imports.
-
-Then you just have to add this stage in your pipeline, which could then look like this:
+Your pipeline's order could then look like this:
 
 ```ini
 order = data.simple_data_loader, flux.honda_ip, flux.mceq_barr, osc.prob3, xsec.genie_sys, xsec.dis_sys, aeff.aeff, discr_sys.ultrasurfaces, utils.hist
