@@ -29,7 +29,7 @@ from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet, DerivedParam
 from pisa.core.stage import Stage
 from pisa.core.container import ContainerSet
-from pisa.core.binning import MultiDimBinning
+from pisa.core.binning import MultiDimBinning, VarMultiDimBinning
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.format import format_times
@@ -373,19 +373,19 @@ class Pipeline(object):
     def _get_outputs(self, output_binning=None, output_key=None):
         """Get MapSet output"""
 
-
-
         self.run()
 
         if output_binning is None:
             output_binning = self.output_binning
             output_key = self.output_key
         else:
-            assert(isinstance(output_binning, MultiDimBinning))
+            assert(isinstance(output_binning, (MultiDimBinning,VarMultiDimBinning)))
 
         assert output_binning is not None
 
-        self.data.representation = output_binning
+        # avoid unnecessary translation
+        if self.data.representation != output_binning:
+            self.data.representation = output_binning
 
         if isinstance(output_key, tuple):
             assert len(output_key) == 2
