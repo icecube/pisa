@@ -2946,11 +2946,8 @@ class Analysis(BasicAnalysis):
                 metric = list(metric) * len(hypo_maker.distribution_makers)
             elif len(metric) != len(hypo_maker.distribution_makers):
                 raise IndexError(f"Number of defined metrics does not match with number of detectors.")
-        elif isinstance(hypo_asimov_dist, MapSet) or isinstance(hypo_asimov_dist, list):
-            # DistributionMaker object (list means variable binning)
+        else:
             assert len(metric) == 1, f"Only one metric allowed for DistributionMaker"
-        else: 
-            raise NotImplementedError(f"hypo_maker returned output of type {type(hypo_asimov_dist)}")
 
         if check_ordering:
             if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
