@@ -28,8 +28,8 @@ from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet, DerivedParam
 from pisa.core.stage import Stage
-from pisa.core.container import ContainerSet
-from pisa.core.binning import MultiDimBinning
+from pisa.core.container import Container, ContainerSet
+from pisa.core.binning import MultiDimBinning, VarBinning
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.format import format_times
@@ -74,7 +74,7 @@ __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 # dynamically access this?
 
 
-class Pipeline(object):
+class Pipeline():
     """Instantiate stages according to a parsed config object; excecute
     stages.
 
@@ -118,6 +118,11 @@ class Pipeline(object):
         self._config = config
         self._init_stages()
         self._source_code_hash = None
+
+        # VarBinning will only work if all stages have apply_mode=events
+        if isinstance(self.output_binning, VarBinning):
+            for s in self.stages:
+                assert s.apply_mode == 'events'
 
         # check in case someone decided to add a non-daemonflux parameter with daemon_
         # in it, which would potentially make penalty calculation incorrect
@@ -373,25 +378,61 @@ class Pipeline(object):
     def _get_outputs(self, output_binning=None, output_key=None):
         """Get MapSet output"""
 
-
-
         self.run()
 
         if output_binning is None:
             output_binning = self.output_binning
+        if output_key is None:
             output_key = self.output_key
-        else:
-            assert(isinstance(output_binning, MultiDimBinning))
 
-        assert output_binning is not None
+        assert(isinstance(output_binning, (MultiDimBinning, VarBinning)))
 
-        self.data.representation = output_binning
+        if isinstance(output_binning, MultiDimBinning):
+            self.data.representation = output_binning
 
-        if isinstance(output_key, tuple):
-            assert len(output_key) == 2
-            outputs = self.data.get_mapset(output_key[0], error=output_key[1])
-        else:
-            outputs = self.data.get_mapset(output_key)
+            if isinstance(output_key, tuple):
+                assert len(output_key) == 2
+                outputs = self.data.get_mapset(output_key[0], error=output_key[1])
+            else:
+                outputs = self.data.get_mapset(output_key)
+                
+        else: #VarBinning
+            outputs = []
+            assert self.data.representation == "events"
+
+            cut_var_name, bin_edges = output_binning.cut_var.name, output_binning.cut_var.edge_magnitudes
+            for i in range(len(output_binning.binnings)):
+                containers = []
+                for c in self.data.containers:
+                    cc = Container(name=c.name)
+                    cut_var = c[cut_var_name]
+                    cut_idcs = (cut_var >= bin_edges[i]) & (cut_var < bin_edges[i+1])
+                    for var_name in output_binning.binnings[i].names:
+                        cc[var_name] = c[var_name][cut_idcs]
+
+                    if isinstance(output_key, tuple):
+                        assert len(output_key) == 2
+                        cc[output_key[0]] = c[output_key[0]][cut_idcs]
+                        cc.tranlation_modes[output_key[0]] = 'sum'
+                        cc[output_key[1]] = np.square(c[output_key[0]][cut_idcs])
+                        cc.tranlation_modes[output_key[1]] = 'sum'
+                    else:
+                        cc[output_key] = c[output_key][cut_idcs]
+                        cc.tranlation_modes[output_key] = 'sum'
+
+                    containers.append(cc)
+                
+                dat = ContainerSet(name=self.data.name,
+                                   containers=containers,
+                                   representation=output_binning.binnings[i],
+                                  )
+
+                if isinstance(output_key, tuple):
+                    for c in dat.containers:
+                        c[output_key[1]] = np.sqrt(c[output_key[1]])
+                    outputs.append(dat.get_mapset(output_key[0], error=output_key[1]))
+                else:
+                    outputs.append(dat.get_mapset(output_key))
 
         return outputs
 
@@ -553,6 +594,11 @@ class Pipeline(object):
     def stage_names(self):
         """list of strings : names of stages in the pipeline"""
         return [s.stage_name for s in self]
+
+    @property
+    def service_names(self):
+        """list of strings : names of services in the pipeline"""
+        return [s.service_name for s in self]
 
     @property
     def config(self):

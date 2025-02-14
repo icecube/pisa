@@ -1590,7 +1590,6 @@ class MultiDimBinning(object):
         # Handle masking
         self._init_mask(mask) 
 
-
     def _init_mask(self, mask) :
         '''
         Initialize the bin mask. This can either be specified as:
@@ -1639,12 +1638,10 @@ class MultiDimBinning(object):
         # Done, store the mask
         self._mask = mask
 
-
     @property
     def name(self):
         """Name of the dimension"""
         return self._name
-
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
@@ -3041,6 +3038,75 @@ class MultiDimBinning(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+class VarBinning(object):
+    # pylint: disable=line-too-long
+    r"""
+    Variable binning.
+
+    """
+    # pylint: enable=line-too-long
+    def __init__(self, binnings, cut_var, name=None, mask=None):
+        
+        assert isinstance(cut_var, OneDimBinning)
+        assert isinstance(binnings, list) and len(binnings) == cut_var.size
+        for b in binnings:
+            assert isinstance(b, MultiDimBinning)
+            assert cut_var.name not in b.names
+
+        self._binnings = binnings
+        self._cut_var = cut_var
+        self._name = name
+        self._names = None
+
+    @property
+    def binnings(self):
+        """list of MultiDimBinning : each binning in a list"""
+        return self._binnings
+
+    @property
+    def cut_var(self):
+        """OneDimBinning : variable for which to use different binnings"""
+        return self._cut_var
+
+    @property
+    def name(self):
+        """Name of the dimension"""
+        return self._name
+
+    @property
+    def names(self):
+        """list of strings : names of each dimension contained plus cut var"""
+        if self._names is None:
+            self._names = [self.cut_var.name]
+            for b in self.binnings:
+                self._names.extend([n for n in b.names if n not in self._names])
+        return self._names
+
+    def __pretty__(self, p, cycle):
+        """Method used by the `pretty` library for formatting"""
+        if cycle:
+            p.text('%s(...)' % self.__class__.__name__)
+        else:
+            p.begin_group(4, '%s([' % self.__class__.__name__)
+            for n, dim in enumerate(self):
+                p.breakable()
+                p.pretty(dim)
+                if n < len(self)-1:
+                    p.text(',')
+            p.end_group(4, '])')
+
+    def _repr_pretty_(self, p, cycle):
+        """Method used by e.g. ipython/Jupyter for formatting"""
+        return self.__pretty__(p, cycle)
+
+    def __iter__(self):
+        """Iterate over dimensions. Use `iterbins` to iterate over bins."""
+        return iter(self._binnings)
+
+    def __len__(self):
+        return len(self._binnings)
 
 
 def test_OneDimBinning():
