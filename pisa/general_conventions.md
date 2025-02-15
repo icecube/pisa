@@ -82,7 +82,7 @@ Expect pytest to eventually be configured to run with [doctest](https://docs.pyt
 Finally, until we get pytest configured, the `test_*` functions are called in the `__main__` section of many of the `pisa/core` modules (e.g., `map.py`, `binning.py`, `transform.py`, `param.py`). For now, these must be invoked by calling `python <filename>`.
 
 ### How to test a service
-There are no general conventions on how to test a service currently in place. However, to keep tests synchronized with the code they are testing, it is recommended that configurations be generated within the test code rather than read from an external file. This is not a hard-and-fast rule, but usually results in better long-term outcomes.
+Our [service howto](stages/how_to_service.md) describes what a given service should provide so that it can be tested. In general, to keep tests synchronized with the code they are testing, it is recommended that configurations be generated within the test code rather than read from an external file. This is not a hard-and-fast rule, but usually results in better long-term outcomes.
 
 ## High-level testing
 Here we will supply whatever basic configuration files and example data is necessary to fully test all high-level functionality. Outputs should be able to be compared against known-outputs, either exactly (for deterministic processes or pseudo-random processes) or as a ratio with a know result (in the case of a "new" physics implementation).

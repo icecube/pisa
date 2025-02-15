@@ -22,7 +22,7 @@ __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau'
 
-__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
 CHI2_METRICS = ['chi2', 'mod_chi2', 'correct_chi2', 'weighted_chi2']
 """Metrics defined that result in measures of chi squared"""
 
-LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 
+LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean',
 'mcllh_eff', 'generalized_poisson_llh']
 """Metrics defined that result in measures of log likelihood"""
 
@@ -96,8 +96,12 @@ def maperror_logmsg(m):
 
 
 def chi2(actual_values, expected_values):
-    """Compute the chi-square between each value in `actual_values` and
-    `expected_values`.
+    """
+    Compute Pearson's chi-square between each value in `actual_values`
+    and `expected_values`.
+
+    .. math::
+      \chi^2 = (N_{\mathrm{actual}} - N_{\mathrm{exp}})^2/N_{\mathrm{exp}}
 
     Parameters
     ----------
@@ -111,9 +115,9 @@ def chi2(actual_values, expected_values):
     Notes
     -----
     * Uncertainties are not propagated through this calculation.
-    * Values in expectation are clipped to the range [SMALL_POS, inf] prior to
-      the calculation to avoid infinities due to the divide function.
-    * actual_values are allowed to be = 0, since they don't com up in the denominator
+    * `expected_values` are clipped to the range [SMALL_POS, inf] prior to
+      the calculation to avoid infinities when dividing
+    * `actual_values` = 0 are allowed (appear only in numerator)
     """
     if actual_values.shape != expected_values.shape:
         raise ValueError(
@@ -164,8 +168,15 @@ def chi2(actual_values, expected_values):
 
 
 def llh(actual_values, expected_values):
-    """Compute the log-likelihoods (llh) that each count in `actual_values`
-    came from the the corresponding expected value in `expected_values`.
+    """
+    Compute the log-likelihoods that each count in `actual_values`
+    came from the corresponding expected value in `expected_values`.
+
+    .. math::
+      \mathcal{L} = N_{\mathrm{actual}} \ln(N_{\mathrm{exp}}) - N_{\mathrm{exp}} - (N_{\mathrm{actual}} \ln(N_{\mathrm{actual}}) - N_{\mathrm{actual}})
+
+    Note that this expression uses https://en.wikipedia.org/wiki/Stirling%27s_approximation
+    to estimate ln(k!)~k ln(k)-k.
 
     Parameters
     ----------
@@ -242,9 +253,6 @@ def mcllh_mean(actual_values, expected_values):
         llh corresponding to each pair of elements in `actual_values` and
         `expected_values`.
 
-    Notes
-    -----
-    *
     """
     assert actual_values.shape == expected_values.shape
 
@@ -302,9 +310,6 @@ def mcllh_eff(actual_values, expected_values):
         llh corresponding to each pair of elements in `actual_values` and
         `expected_values`.
 
-    Notes
-    -----
-    *
     """
     assert actual_values.shape == expected_values.shape
 
@@ -415,8 +420,8 @@ def conv_poisson(k, l, s, nsigma=3, steps=50):
     """
     # Replace 0's with small positive numbers to avoid inf in log
     l = max(SMALL_POS, l)
-    k = max(SMALL_POS,k) #To avoid the zero values and nan values , added on 20/10/2022 
-    s = max(SMALL_POS,s) #To avoid the zero values and nan values , added on 20/10/2022 
+    k = max(SMALL_POS, k)
+    s = max(SMALL_POS, s)
     st = 2*(steps + 1)
     conv_x = np.linspace(-nsigma*s, +nsigma*s, st)[:-1]+nsigma*s/(st-1.)
     conv_y = log_smear(conv_x, s)
@@ -470,8 +475,15 @@ def norm_conv_poisson(k, l, s, nsigma=3, steps=50):
 
 
 def conv_llh(actual_values, expected_values):
-    """Compute the convolution llh using the uncertainty on the expected values
-    to smear out the poisson PDFs
+    """
+    This convolution log-likelihood takes into account any uncertainties on the
+    expected values (from e.g. finite MC statistics), which is achieved by
+    smearing out the simple Poisson pdf with a normal distribution centered at 0.
+
+    .. math::
+      (p\star n)(k,\lambda,\sigma) = \int p(k,\lambda-x)n(x,\sigma)\mathrm{d}x
+
+    The integral is calculated as a discrete sum with N steps.
 
     Parameters
     ----------
@@ -479,9 +491,9 @@ def conv_llh(actual_values, expected_values):
 
     Returns
     -------
-        conv_llh : numpy.ndarray of same shape as the inputs                       
-        conv_llh corresponding to each pair of elements in `actual_values` and
-        `expected_values`.
+        conv_llh : numpy.ndarray of same shape as the inputs
+            convoluted llh corresponding to each pair of elements in
+            `actual_values` and `expected_values`.
 
     """
     in_array_shape = np.shape(actual_values)
@@ -496,14 +508,16 @@ def conv_llh(actual_values, expected_values):
         total += np.log(max(SMALL_POS, norm_conv_poisson(*triplets[i]))) # FIXME? (cf. pylint)
         total -= np.log(max(SMALL_POS, norm_conv_poisson(*norm_triplets[i]))) # FIXME? (cf. pylint)
         bin_wise_conv_llh.append(total)
-        total =0
-    bin_wise_conv_llh_np = np.array(bin_wise_conv_llh) #21/10/2022
-    bin_wise_conv_llh_np = bin_wise_conv_llh_np.reshape(in_array_shape) # reshaping the array to match inputs #21/10/2022
+        total = 0
+    bin_wise_conv_llh_np = np.array(bin_wise_conv_llh)
+    # reshape to match inputs
+    bin_wise_conv_llh_np = bin_wise_conv_llh_np.reshape(in_array_shape)
     return bin_wise_conv_llh_np
 
 def barlow_llh(actual_values, expected_values):
     """Compute the Barlow LLH taking into account finite statistics.
     The likelihood is described in this paper: https://doi.org/10.1016/0010-4655(93)90005-W
+
     Parameters
     ----------
     actual_values, expected_values : numpy.ndarrays of same shape
@@ -554,8 +568,12 @@ def barlow_llh(actual_values, expected_values):
     return llh_val
 
 def mod_chi2(actual_values, expected_values):
-    """Compute the chi-square value taking into account uncertainty terms
-    (incl. e.g. finite stats)
+    """
+    Compute a modified Pearson's chi-square between each value in `actual_values`
+    and `expected_values` taking into account uncertainty terms (incl. e.g. finite stats).
+
+    .. math::
+      \chi^2 = (N_{\mathrm{actual}} - N_{\mathrm{exp}})^2/(\sigma^2 + N_{\mathrm{exp}})
 
     Parameters
     ----------
@@ -566,7 +584,11 @@ def mod_chi2(actual_values, expected_values):
     m_chi2 : numpy.ndarray of same shape as inputs
         Modified chi-squared values corresponding to each pair of elements in
         the inputs
-
+   Notes
+    -----
+    * `expected_values` are clipped to the range [SMALL_POS, inf] prior to
+      the calculation to avoid infinities when dividing
+    * `actual_values` = 0 are allowed (appear only in numerator)
     """
     in_array_shape = np.shape(actual_values)
     actual_values = unp.nominal_values(actual_values).ravel()
@@ -574,7 +596,7 @@ def mod_chi2(actual_values, expected_values):
     expected_values = unp.nominal_values(expected_values).ravel()
 
     with np.errstate(invalid='ignore'):
-        
+
         # Mask off any NaN bin/sigma values (resulting from bin masking)
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
@@ -587,13 +609,21 @@ def mod_chi2(actual_values, expected_values):
         m_chi2 = (
             (actual_values - expected_values)**2 / (sigma**2 + expected_values)
         )
-    
+
     m_chi2 = m_chi2.reshape(in_array_shape)
     return m_chi2
 
 def correct_chi2(actual_values, expected_values):
-    """Compute the chi-square value taking into account uncertainty terms
-    (incl. e.g. finite stats) and their changes
+    """
+    Compute -2 times the log-likelihood of a normal approximation of
+    the Poisson pdf between each value in `actual_values` and `expected_values`
+    taking into account uncertainty terms (incl. e.g. finite stats) and their
+    changes.
+
+    .. math::
+      \chi^2 = \ln(\sigma^2 + N_{\mathrm{exp}}) + (N_{\mathrm{actual}} - N_{\mathrm{exp}})^2/(\sigma^2 + N_{\mathrm{exp}})
+
+    Note that a constant normalisation factor :math:`\ln(2\pi)` has already been subtracted.
 
     Parameters
     ----------
@@ -602,7 +632,7 @@ def correct_chi2(actual_values, expected_values):
     Returns
     -------
     m_chi2 : numpy.ndarray of same shape as inputs
-        Modified chi-squared values corresponding to each pair of elements in
+        modified chi-squared values corresponding to each pair of elements in
         the inputs
 
     """
@@ -649,7 +679,9 @@ def weighted_chi2(actual_values, expected_values, bin_unc2):
     return m_chi2
 
 def signed_sqrt_mod_chi2(actual_values, expected_values):
-    """Compute a (signed) pull value taking into account uncertainty terms.
+    """
+    Compute a (signed) pull value taking into account uncertainty terms
+    (cf. `mod_chi2`).
 
     Parameters
     ----------
@@ -672,19 +704,20 @@ def signed_sqrt_mod_chi2(actual_values, expected_values):
         (actual_values - expected_values) / np.sqrt(sigma**2 + expected_values)
     )
     return m_pull
-      
+
 #
 # Generalized Poisson-gamma llh from 1902.08831
 #
 def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None):
-    '''Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831
+    '''Compute the generalized Poisson likelihood as formulated in
+    https://arxiv.org/abs/1902.08831
 
 
-    Note that unlike the other likelihood functions, expected_values
-    is expected to be a ditribution maker
+    Note that unlike the other likelihood functions, `expected_values`
+    is expected to be a distribution maker
 
-    inputs:
-    ------
+    Parameters
+    ----------
 
     actual_values: flattened hist of a Map object
 
@@ -692,14 +725,14 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
 
     empty_bins: None, list or np.ndarray (list the bin indices that are empty)
 
-    returns:
-    --------
+    Returns
+    -------
     llh_per_bin : bin-wise llh values, in a numpy array
 
     '''
     from collections import OrderedDict
 
-    
+
     assert isinstance(expected_values, OrderedDict), 'ERROR: expected_values must be an OrderedDict of MapSet objects'
     assert 'weights' in expected_values.keys(), 'ERROR: expected_values need a key named "weights"'
     assert 'llh_alphas' in expected_values.keys(), 'ERROR: expected_values need a key named "llh_alphas"'
@@ -715,7 +748,7 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
 
     for bin_i in range(num_bins):
 
-        # TODO: sometimes the histogram spits out uncertainty objects, sometimes not. 
+        # TODO: sometimes the histogram spits out uncertainty objects, sometimes not.
         #       Not sure why.
         data_count = actual_values.astype(np.int64)[bin_i]
 
@@ -744,14 +777,14 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
 
             logP = data_count*np.log(weight_sum.sum())-weight_sum.sum()-(data_count*np.log(data_count)-data_count)
             llh_per_bin[bin_i] = logP
-            
+
         else:
             from pisa.utils.llh_defs.poisson import fast_pgmix
 
             alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
             betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
 
-            # Remove the NaN's 
+            # Remove the NaN's
             mask = np.isfinite(alphas)*np.isfinite(betas)
 
             # Check that the alpha and betas make sense
@@ -763,7 +796,7 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
             llh_per_bin[bin_i] = llh_of_bin
 
     return llh_per_bin
-    
+
 
 def approximate_poisson_normal(data_count, alphas=None, betas=None, use_c=False):
     '''
@@ -816,7 +849,7 @@ def approximate_poisson_normal(data_count, alphas=None, betas=None, use_c=False)
         LH = quad(approximate_poisson_normal_python, lower, upper, args=(data_count, gamma_mean, gamma_sigma))[0]
         #print('lower ',lower,' upper: ',upper,' data_count: ',data_count,' mean: ', gamma_mean, ' sigma: ',gamma_sigma, ' LH: ',LH)
 
-    LH = max(SMALL_POS,LH) 
+    LH = max(SMALL_POS,LH)
     return np.log(LH)
 
 
@@ -824,7 +857,7 @@ def approximate_poisson_normal(data_count, alphas=None, betas=None, use_c=False)
 def approximate_poisson_normal_python(lamb, k, A, B):
 
     from scipy.stats import norm
-    
+
     normal_term = norm.pdf(lamb, loc=A, scale=B)
     normal_poisson = norm.pdf(k, loc=lamb, scale=np.sqrt(lamb))
 
