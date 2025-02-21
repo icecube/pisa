@@ -2,7 +2,8 @@
 
 PISA is distributed with some software and data obtained from outside the IceCube Collaboration.
 The authors and any pertinent copyrights are listed below.
-If you identify any mistakes in the below or find any other such components being distributed with PISA that are not listed here, please [email](analysis@icecube.wisc.edu) or [file an issue](https://github.com/icecube/pisa/issues).
+If you identify any mistakes in the below or find any other such components being distributed with PISA that are not listed here,
+please [email](mailto:analysis@icecube.wisc.edu?subject=[GitHub]%20PISA%20source) or [file an issue](https://github.com/icecube/pisa/issues).
 
 Unless noted below or in the contents of an individual file, all files distributed with PISA are Copyright (c) 2014-2025, The IceCube Collaboration, and are licensed under the Apache 2.0 license.
 See the LICENSE file for details.
@@ -10,7 +11,7 @@ See the LICENSE file for details.
 
 ## daemonflux
 
-The service [`flux.daemon_flux`](/pisa/stages/flux/daemon_flux) does not reproduce but calls upon the daemonflux software
+The service [`flux.daemon_flux`](/pisa/stages/flux/daemon_flux.py) does not reproduce but calls upon the daemonflux software
 > https://github.com/mceq-project/daemonflux
 
 based on the paper
@@ -56,8 +57,9 @@ have been produced with the MCEq software
 
 The authors of that software / the paper that it is based upon
 > A. Fedynitch, R. Engel, T. K. Gaisser, F. Riehn, T. Stanev, EPJ Web Conf. 99 (2015) 08001, arXiv:1503.00544
- request that anyone who uses their work to produce results cite their work. Please do so if you make use of either of the
-[`flux.mceq_barr`](/pisa/stages/flux/daemon_flux) or [`flux.mceq_barr_red`](/pisa/stages/flux/daemon_flux) services or of
+
+request that anyone who uses their work to produce results cite their work. Please do so if you make use of either of the
+[`flux.mceq_barr`](/pisa/stages/flux/mceq_barr.py) or [`flux.mceq_barr_red`](/pisa/stages/flux/mceq_barr_red.py) services or of
 the script [`create_barr_sys_tables_mceq.py`](/pisa/scripts/create_barr_sys_tables_mceq.py) which calls upon MCEq.
 
 The form of the citation that they request is found in their documentation at
@@ -117,6 +119,7 @@ with associated paper
 
 The service [`osc.nusquids`](/pisa/stages/osc/nusquids.py) does not reproduce but calls upon the nuSQuIDS software
 > https://github.com/arguelles/nuSQuIDS
+
 which is subject to the LGPL-3.0 license.
 
 ## prob3numba
@@ -129,7 +132,7 @@ which is cited by the paper
 
 ## PREM
 
-The preliminary reference Earth model data in the [`pisa_examples/resources/osc`](/pisa_examples/resources/osc) (named `PREM*`) come from the paper
+The preliminary reference Earth model data in [`pisa_examples/resources/osc`](/pisa_examples/resources/osc) (named `PREM*`) come from the paper
 > A. M. Dziewonski and D. L. Anderson, Physics of the Earth and Planetary Interiors 25, 297 (1981)
 
 ## emcee
@@ -164,7 +167,7 @@ SOFTWARE.
 
 ## KDE
 
-The file [`vbwkde.py`](/pisa/pisa/utils/vbwkde.py) contains an implementation of (part of) the paper
+The file [`vbwkde.py`](/pisa/utils/vbwkde.py) contains an implementation of (part of) the paper
 > Z. I. Botev, J. F. Grotowski, and D. P. Kroese, Ann. Statist. 38, 2916 (2010).
 
 The functions `isj_bandwidth` and `fixed_point` therein are adapted directly from the Matlab implementation by Zdravko Botev at
@@ -202,6 +205,6 @@ and are therefore subject to the following copyright:
 ## Versioneer
 
 Automatic versioning is provided by public-domain sofware The Versioneer, written by Brian Warner
-(files `versioneer.py` and `pisa/_version.py`). This project can be found at
+(files [`versioneer.py`](versioneer.py) and [`_version.py`](/pisa/_version.py). This project can be found at
 > https://github.com/python-versioneer/python-versioneer
 
