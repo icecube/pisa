@@ -115,6 +115,16 @@ modified slightly (to have similar format to the work by Honda et al. cited abov
 with associated paper
 > G. D. Barr, T. K. Gaisser, P. Lipari, S. Robbins, and T. Stanev, Phys. Rev. D 70, 023006 (2004).
 
+## GLoBES
+
+The service [`osc.globes`](/pisa/stages/osc/globes.py) does not reproduce but calls upon the GLoBES software
+> https://www.mpi-hd.mpg.de/personalhomes/globes/index.html
+
+The authors of that software request that anyone who uses their work to produce results cite their work.
+Please do so if you make use of the above service. The form of the citation that they request
+is found in their documentation at
+> https://www.mpi-hd.mpg.de/personalhomes/globes/documentation.html
+
 ## nuSQuIDS
 
 The service [`osc.nusquids`](/pisa/stages/osc/nusquids.py) does not reproduce but calls upon the nuSQuIDS software
@@ -202,9 +212,47 @@ and are therefore subject to the following copyright:
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
+## scikit-learn
+
+The service [`utils.kfold`](/pisa/stages/utils/kfold.py) does not reproduce but calls upon the scikit-learn software
+> https://github.com/scikit-learn/scikit-learn
+
+The software is subject to the following copyright:
+```
+BSD 3-Clause License
+
+Copyright (c) 2007-2024 The scikit-learn developers.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
 ## Versioneer
 
 Automatic versioning is provided by public-domain sofware The Versioneer, written by Brian Warner
-(files [`versioneer.py`](versioneer.py) and [`_version.py`](/pisa/_version.py). This project can be found at
+(files [`versioneer.py`](versioneer.py) and [`_version.py`](/pisa/_version.py)). This project can be found at
 > https://github.com/python-versioneer/python-versioneer
 
