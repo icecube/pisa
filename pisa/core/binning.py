@@ -3047,16 +3047,19 @@ class VarBinning(object):
 
     """
     # pylint: enable=line-too-long
-    def __init__(self, binnings, cut_var, name=None, mask=None):
-        
-        assert isinstance(cut_var, OneDimBinning)
-        assert isinstance(binnings, list) and len(binnings) == cut_var.size
+    def __init__(self, binnings, selections, name=None, mask=None):
+
+        assert (isinstance(selections, OneDimBinning) or
+                isinstance(selections, list))
+        assert isinstance(binnings, list) and len(binnings) == len(selections)
         for b in binnings:
             assert isinstance(b, MultiDimBinning)
-            assert cut_var.name not in b.names
+            if isinstance(selections, OneDimBinning):
+                assert selections.name not in b.names
 
         self._binnings = binnings
-        self._cut_var = cut_var
+        self._selections = selections
+        self._nselections = len(selections)
         self._name = name
         self._names = None
 
@@ -3066,9 +3069,14 @@ class VarBinning(object):
         return self._binnings
 
     @property
-    def cut_var(self):
-        """OneDimBinning : variable for which to use different binnings"""
-        return self._cut_var
+    def selections(self):
+        """list of strs or OneDimBinning : selections for which to use different binnings"""
+        return self._selections
+
+    @property
+    def nselections(self):
+        """int : number of selections with possibly different binnings"""
+        return self._nselections
 
     @property
     def name(self):
@@ -3079,7 +3087,7 @@ class VarBinning(object):
     def names(self):
         """list of strings : names of each dimension contained plus cut var"""
         if self._names is None:
-            self._names = [self.cut_var.name]
+            self._names = [self.cut_var.name] #FIXME
             for b in self.binnings:
                 self._names.extend([n for n in b.names if n not in self._names])
         return self._names
@@ -3106,7 +3114,7 @@ class VarBinning(object):
         return iter(self._binnings)
 
     def __len__(self):
-        return len(self._binnings)
+        return self._nselections
 
 
 def test_OneDimBinning():

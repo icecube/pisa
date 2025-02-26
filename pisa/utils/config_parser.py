@@ -239,6 +239,7 @@ from __future__ import absolute_import, division
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from collections import OrderedDict
+from collections.abc import Mapping
 from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
@@ -620,38 +621,68 @@ def parse_pipeline_config(config):
             binning, _ = split(name, sep='.')
 
             bin_split = config['binning'].get(binning + '.split', None)
-            if bin_split is not None: # Use multiple MultiDimBinning(s)
-                bin_split = OneDimBinning(**eval(config.get('binning', binning + '.split')))
+            if bin_split is not None:
+                # User requested split into several event samples with their
+                # own MultiDimBinning definitions.
+                try:
+                    bin_split = eval(bin_split) # pylint: disable=eval-used
+                except:
+                    assert isinstance(bin_split, str)
+                    # Just split original str into individual selection strs
+                    bin_split = split(bin_split)
+                else:
+                    assert isinstance(bin_split, Mapping)
+                    # If input can be parsed as dict, split events according to
+                    # the presumably contained OneDimBinning definition
+                    bin_split = OneDimBinning(**bin_split)
 
-                bins = [[] for i in range(bin_split.size)]
+                nselections = len(bin_split)
+                # instantiate the OneDimBinnings corresponding to each selection
+                bins = [[] for i in range(nselections)]
                 for bin_name in order:
                     def_raw = config.get('binning', binning + '.' + bin_name)
-                    kwargs = eval(def_raw)
+                    kwargs = eval(def_raw) # pylint: disable=eval-used
                     if isinstance(kwargs, list):
-                        assert len(kwargs) == bin_split.size
+                        # Dedicated OneDimBinning kwargs for each selection
+                        assert len(kwargs) == nselections
                     else:
-                        kwargs = [kwargs] * bin_split.size
-                    for i in range(bin_split.size):
-                        kw = kwargs[i]
-                        bins[i].append(OneDimBinning(bin_name, **kw))
+                        # Broadcast the universal OneDimBinning kwargs across
+                        # all selections
+                        kwargs = [kwargs] * nselections
+                    for i, kw in enumerate(kwargs):
+                        bins[i].append(OneDimBinning(name=bin_name, **kw))
 
                 mask = config['binning'].get(binning + '.mask', None)
                 if mask is not None:
-                    mask = eval(mask)
+                    mask = eval(mask) # pylint: disable=eval-used
                     if isinstance(mask[0], list):
-                        assert len(mask) == bin_split.size
+                        # Dedicated mask for each selection
+                        assert len(mask) == nselections
                     else:
-                        mask = [mask] * bin_split.size
+                        # Broadcast the universal mask across all selections
+                        mask = [mask] * nselections
                 else:
-                    mask = [mask] * bin_split.size
+                    # No mask for any selection
+                    mask = [None] * nselections
 
                 multibins = []
-                for i in range(bin_split.size):
-                    multibins.append(MultiDimBinning(bins[i], name=binning+f"_{i}", mask=mask[i]))
+                for i in range(nselections):
+                    mb = MultiDimBinning(
+                            dimensions=bins[i],
+                            name=binning+f"_{i}",
+                            mask=mask[i]
+                        )
+                    multibins.append(mb)
 
-                binning_dict[binning] = VarBinning(multibins, bin_split, name=binning)
+                binning_dict[binning] = VarBinning(
+                    binnings=multibins,
+                    selections=bin_split,
+                    name=binning,
+                    mask=mask
+                )
 
-            else: # Use only one MultiDimBinning
+            else:
+                # Requested only one single MultiDimBinning for all events
                 bins = []
                 for bin_name in order:
                     try:
@@ -680,7 +711,7 @@ def parse_pipeline_config(config):
                         )
                         raise
                     try:
-                        bins.append(OneDimBinning(bin_name, **kwargs))
+                        bins.append(OneDimBinning(name=bin_name, **kwargs))
                     except:
                         logging.error(
                             "Failed to instantiate new `OneDimBinning` from '%s'"
@@ -691,9 +722,11 @@ def parse_pipeline_config(config):
                 # Get the bin mask, if there is one
                 mask = config['binning'].get(binning + '.mask', None)
                 if mask is not None :
-                    mask = eval(mask)
+                    mask = eval(mask) # pylint: disable=eval-used
                 # Create the binning object
-                binning_dict[binning] = MultiDimBinning(bins, name=binning, mask=mask)
+                binning_dict[binning] = MultiDimBinning(
+                    dimensions=bins, name=binning, mask=mask
+                )
 
 
     stage_dicts = OrderedDict()
