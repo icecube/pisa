@@ -115,10 +115,15 @@ class EventsPi(OrderedDict):
         Flag indicating if events represent neutrinos; toggles special
         behavior such as splitting into nu/nubar and CC/NC. Default is True.
 
-    fraction_events_to_keep : float
+    fraction_events_to_keep : float, default: None
         Fraction of loaded events to use (use to downsample).
-        Must be in range [0.,1.], or disable by setting to `None`.
-        Default in None.
+        Must be in range [0.,1.]. Disabled by setting to `None`.
+
+    events_subsample_index : int >= 0, default: 0
+        If `fraction_events_to_keep` is not `None`, determines
+        which of the statistically independent sub-samples
+        (uniquely determined by the seed passed to `load_events_file`)
+        to select.
 
     *args, **kwargs
         Passed on to `__init__` method of OrderedDict
@@ -169,7 +174,7 @@ class EventsPi(OrderedDict):
 
     def load_events_file(self, events_file, variable_mapping=None, required_metadata=None, seed=123456):
         """Fill this events container from an input HDF5 file filled with event
-        data Optionally can provide a variable mapping so select a subset of
+        data. Optionally can provide a variable mapping so select a subset of
         variables, rename them, etc.
 
         Parameters
@@ -186,10 +191,15 @@ class EventsPi(OrderedDict):
             latter case, each of the specified source variables will become a
             column vector in the destination array.
 
-        required_metadata : None, or list of str
+        required_metadata : sequence of str, default: None
             Can optionally specify metadata keys to parse from the input file metdata.
             ONLY metadata specified here will be parsed.
-            Anything specified here MUST exist in the files. 
+            Anything specified here MUST exist in the files.
+
+        seed : int, default: 123456
+            If `fraction_events_to_keep` is not `None`, serves
+            as random seed for generating reproducible sub-samples.
+
         """
 
         # Validate `events_file`
