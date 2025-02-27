@@ -678,7 +678,6 @@ def parse_pipeline_config(config):
                     binnings=multibins,
                     selections=bin_split,
                     name=binning,
-                    mask=mask
                 )
 
             else:

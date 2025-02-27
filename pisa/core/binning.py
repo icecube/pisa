@@ -3047,7 +3047,7 @@ class VarBinning(object):
 
     """
     # pylint: enable=line-too-long
-    def __init__(self, binnings, selections, name=None, mask=None):
+    def __init__(self, binnings, selections, name=None):
 
         assert (isinstance(selections, OneDimBinning) or
                 isinstance(selections, list))
@@ -3087,9 +3087,9 @@ class VarBinning(object):
     def names(self):
         """list of strings : names of each dimension contained plus cut var"""
         if self._names is None:
-            self._names = [self.cut_var.name] #FIXME
+            self._names = []
             for b in self.binnings:
-                self._names.extend([n for n in b.names if n not in self._names])
+                self._names.append(b.names)
         return self._names
 
     def __pretty__(self, p, cycle):

@@ -11,6 +11,7 @@ from collections.abc import Sequence
 from collections import defaultdict
 
 import numpy as np
+import re
 
 from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
@@ -735,6 +736,19 @@ class Container():
             hist_binning = src_representation
    
         return lookup(sample, weights, hist_binning)
+
+    def get_keep_mask(self, keep_criteria):
+        """Returns a mask that only keeps the events that survive the given cut(s)."""
+        assert isinstance(keep_criteria, str)
+
+        for var in self.keys:
+            # using word boundary \b to replace whole words only
+            keep_criteria = re.sub(
+                r'\b{}\b'.format(var),
+                'self["%s"]'%(var),
+                keep_criteria
+            )
+        return eval(keep_criteria)  # pylint: disable=eval-used
 
 
 

@@ -400,24 +400,27 @@ class Pipeline():
             outputs = []
             assert self.data.representation == "events"
 
-            cut_var_name, bin_edges = output_binning.cut_var.name, output_binning.cut_var.edge_magnitudes
+            selections = output_binning.selections
             for i in range(len(output_binning.binnings)):
                 containers = []
                 for c in self.data.containers:
                     cc = Container(name=c.name)
-                    cut_var = c[cut_var_name]
-                    cut_idcs = (cut_var >= bin_edges[i]) & (cut_var < bin_edges[i+1])
+                    if isinstance(selections, list):
+                        keep = c.get_keep_mask(selections[i])
+                    else:
+                        cut_var = c[selections.name]
+                        keep = (cut_var >= selections.edge_magnitudes[i]) & (cut_var < selections.edge_magnitudes[i+1])
                     for var_name in output_binning.binnings[i].names:
-                        cc[var_name] = c[var_name][cut_idcs]
+                        cc[var_name] = c[var_name][keep]
 
                     if isinstance(output_key, tuple):
                         assert len(output_key) == 2
-                        cc[output_key[0]] = c[output_key[0]][cut_idcs]
+                        cc[output_key[0]] = c[output_key[0]][keep]
                         cc.tranlation_modes[output_key[0]] = 'sum'
-                        cc[output_key[1]] = np.square(c[output_key[0]][cut_idcs])
+                        cc[output_key[1]] = np.square(c[output_key[0]][keep])
                         cc.tranlation_modes[output_key[1]] = 'sum'
                     else:
-                        cc[output_key] = c[output_key][cut_idcs]
+                        cc[output_key] = c[output_key][keep]
                         cc.tranlation_modes[output_key] = 'sum'
 
                     containers.append(cc)
