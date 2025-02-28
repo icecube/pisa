@@ -638,14 +638,13 @@ class Pipeline():
             assert s.apply_mode == 'events'
 
         # now check if VarBinning selection is exclusive (only necessary if list)
+        if output_binning == None:
+            selections =  self.output_binning.selections
+            nselections = self.output_binning.nselections
+        else:
+            selections = output_binning.selections
+            nselections = output_binning.nselections
         if isinstance(selections, list):
-            if output_binning == None:
-                selections =  self.output_binning.selections
-                nselections = self.output_binning.nselections
-            else:
-                selections = output_binning.selections
-                nselections = output_binning.nselections
-
             for c in self.data:
                 keep = np.zeros(c.size)
                 for i in range(nselections):
