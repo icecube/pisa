@@ -106,7 +106,7 @@ class Pipeline():
         self.name = config['pipeline']['name']
         self.data = ContainerSet(self.name)
         self.detector_name = config['pipeline']['detector_name']
-        self.output_binning = config['pipeline']['output_binning']
+        self._output_binning = config['pipeline']['output_binning']
         self.output_key = config['pipeline']['output_key']
 
         self._profile = profile
@@ -119,10 +119,8 @@ class Pipeline():
         self._init_stages()
         self._source_code_hash = None
 
-        # VarBinning will only work if all stages have apply_mode=events
-        if isinstance(self.output_binning, VarBinning):
-            for s in self.stages:
-                assert s.apply_mode == 'events'
+        if isinstance(self._output_binning, VarBinning):
+            self.check_VarBinning()
 
         # check in case someone decided to add a non-daemonflux parameter with daemon_
         # in it, which would potentially make penalty calculation incorrect
@@ -382,6 +380,8 @@ class Pipeline():
 
         if output_binning is None:
             output_binning = self.output_binning
+        elif isinstance(output_binning, VarBinning):
+            self.check_VarBinning(output_binning)
         if output_key is None:
             output_key = self.output_key
 
@@ -629,6 +629,38 @@ class Pipeline():
 
     def __hash__(self):
         return self.hash
+
+    def check_VarBinning(self, output_binning=None):
+        """Checks if pipeline works with VarBinning and if VarBinning selections 
+        are exclusive."""
+        # VarBinning will only work if all stages have apply_mode=events
+        for s in self.stages:
+            assert s.apply_mode == 'events'
+
+        # now check if VarBinning selection is exclusive (only necessary if list)
+        if isinstance(selections, list):
+            if output_binning == None:
+                selections =  self.output_binning.selections
+                nselections = self.output_binning.nselections
+            else:
+                selections = output_binning.selections
+                nselections = output_binning.nselections
+
+            for c in self.data:
+                keep = np.zeros(c.size)
+                for i in range(nselections):
+                    keep += c.get_keep_mask(selections[i])
+                assert np.all(keep <= 1), 'Selection is not exclusive'
+
+    @property
+    def output_binning(self):
+        return self._output_binning
+
+    @output_binning.setter
+    def output_binning(self, binning):
+        if isinstance(binning, VarBinning):
+            self.check_VarBinning(binning)
+        self._output_binning = binning
 
 
 def test_Pipeline():
