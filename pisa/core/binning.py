@@ -3052,10 +3052,15 @@ class VarBinning(object):
         assert (isinstance(selections, OneDimBinning) or
                 isinstance(selections, list))
         assert isinstance(binnings, list) and len(binnings) == len(selections)
+        all_equal = True
         for b in binnings:
             assert isinstance(b, MultiDimBinning)
             if isinstance(selections, OneDimBinning):
                 assert selections.name not in b.names
+            else:
+                assert binnings.count(b) == 1, 'Binning used more than once, modify your selection'
+            all_equal = all_equal and b == binnings[0]
+        assert not all_equal, 'No need for VarBinning'
 
         self._binnings = binnings
         self._selections = selections
@@ -3571,6 +3576,28 @@ def test_MultiDimBinning():
     mdb2.assert_compat(mdb1)
     
     logging.info('<< PASS : test_MultiDimBinning >>')
+
+
+def test_VarBinning():
+    """Unit tests for VarBinning class"""
+    # pylint: disable=wrong-import-position
+
+    b1 = OneDimBinning(name='energy', num_bins=40, is_log=True,
+                       domain=[1, 80]*ureg.GeV)
+    b2 = OneDimBinning(name='coszen', num_bins=40, is_lin=True,
+                       domain=[-1, 1])
+    mdb1 = MultiDimBinning([b1, b2])
+    b3 = OneDimBinning(name='energy', num_bins=20, is_log=True,
+                       domain=[1, 80]*ureg.GeV)
+    mdb2 = MultiDimBinning([b3, b2])
+
+    selection = OneDimBinning(name='pid', is_lin=True, num_bins=2, domain=[0, 1])
+    varbin = VarBinning([mdb1, mdb2], selection)
+
+    selection = ['pid < 0.5', 'pid >= 0.5']
+    varbin = VarBinning([mdb1, mdb2], selection)
+
+    logging.info('<< PASS : test_VarBinning >>')
 
 
 if __name__ == "__main__":
