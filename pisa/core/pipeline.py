@@ -377,10 +377,14 @@ class Pipeline():
 
         if output_binning is None:
             output_binning = self.output_binning
-        if isinstance(output_binning, VarBinning):
-            # checks also have to be done when no new output_binning is passed
-            self.assert_varbinning_compat()
+        elif isinstance(output_binning, VarBinning):
+            # Only have to check exclusivity in case external output binning
+            # is requested
             self.assert_exclusive_varbinning(output_binning=output_binning)
+        if isinstance(output_binning, VarBinning):
+            # Any contained stages' apply_modes could have changed, whether
+            # an external output binning is specified here or not
+            self.assert_varbinning_compat()
         if output_key is None:
             output_key = self.output_key
 
