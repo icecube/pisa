@@ -139,7 +139,7 @@ def _new_obj(original_function):
     return new_function
 
 
-class OneDimBinning(object):
+class OneDimBinning():
     # pylint: disable=line-too-long
     """Histogram-oriented binning specialized to a single dimension.
 
@@ -1481,7 +1481,7 @@ class OneDimBinning(object):
         return not self.__eq__(other)
 
 
-class MultiDimBinning(object):
+class MultiDimBinning():
     # pylint: disable=line-too-long
     r"""
     Multi-dimensional binning object. This can contain one or more
@@ -3040,7 +3040,7 @@ class MultiDimBinning(object):
         return not self.__eq__(other)
 
 
-class VarBinning(object):
+class VarBinning():
     # pylint: disable=line-too-long
     r"""Binning class that allows to use multiple MultiDimBinning(s)
 
@@ -3057,6 +3057,7 @@ class VarBinning(object):
 
     binnings : list of MultiDimBinnings
         The MultiDimBinnings that should be used for each selection.
+
     """
     # pylint: enable=line-too-long
     def __init__(self, binnings, selections):
@@ -3610,3 +3611,4 @@ if __name__ == "__main__":
     set_verbosity(1)
     test_OneDimBinning()
     test_MultiDimBinning()
+    test_VarBinning()
