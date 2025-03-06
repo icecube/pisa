@@ -676,8 +676,7 @@ def parse_pipeline_config(config):
 
                 binning_dict[binning] = VarBinning(
                     binnings=multibins,
-                    selections=bin_split,
-                    name=binning,
+                    selections=bin_split
                 )
 
             else:

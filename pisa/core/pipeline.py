@@ -653,7 +653,8 @@ class Pipeline():
             )
             raise ValueError(
                 "When a variable binning is used, all stages need to set "
-                f"apply_mode='events', but {str_incompat} do(es) not!"
+                f"apply_mode='events', but '{str_incompat}' of '{self.name}' "
+                "do(es) not!"
             )
 
     def assert_exclusive_varbinning(self, output_binning=None):
@@ -678,14 +679,33 @@ class Pipeline():
             nselections = output_binning.nselections
         if isinstance(selections, list):
             # list of selection-criteria strings
+            # perform and report sanity checks on selected event counts
+            # total count per selection across all containers
+            tot_sel_counts = {sel: 0 for sel in selections}
             for c in self.data:
                 keep = np.zeros(c.size)
-                for i in range(nselections):
-                    keep += c.get_keep_mask(selections[i])
+                # Looping over all selections for a fixed container is
+                # sufficient to detect overlaps
+                for sel in selections:
+                    keep_mask = c.get_keep_mask(sel)
+                    keep += keep_mask
+                    # number of events selected from this container
+                    sel_count = np.sum(keep_mask)
+                    logging.debug(f"'{c.name}' selected by '{sel}': {sel_count}")
+                    tot_sel_counts[sel] += sel_count
                 if not np.all(keep <= 1):
                     raise ValueError(
-                        f"Selections {selections} are not mutually exclusive!"
+                        f"Selections {selections} are not mutually exclusive for "
+                        f"'{c.name}' (at least) in pipeline '{self.name}'!"
                     )
+            # Warn on empty selections (don't assume that this must be an error)
+            empty_sels = [sel for sel in selections if tot_sel_counts[sel] == 0]
+            if empty_sels:
+                empty_sels_str = ", ".join(empty_sels)
+                logging.warning(
+                    f"There are empty selections in pipeline '{self.name}': "
+                    f"'{empty_sels_str}'"
+                )
 
     @property
     def output_binning(self):
@@ -795,6 +815,24 @@ def test_Pipeline():
     else:
         assert False
 
+    # also verify that pipeline correctly detects non-exclusive selections
+    p.stages[2].apply_mode = "events"
+    vb = p.output_binning
+    # define a selection string which will simply be repeated
+    assert vb.nselections > 1
+    sel = ["pid > 0"] * vb.nselections
+    invalid_vb = VarBinning(binnings=vb.binnings, selections=sel)
+    try:
+        p.output_binning = invalid_vb
+    except ValueError:
+        pass
+    else:
+        assert False
+
+    # pipeline should accept any empty selections
+    sel[-1] = "pid > np.inf"
+    invalid_vb = VarBinning(binnings=vb.binnings, selections=sel)
+    p.output_binning = invalid_vb
 
 # ----- Most of this below cang go (?) ---
 
