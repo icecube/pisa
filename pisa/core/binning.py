@@ -3042,12 +3042,24 @@ class MultiDimBinning(object):
 
 class VarBinning(object):
     # pylint: disable=line-too-long
-    r"""
-    Variable binning.
+    r"""Binning class that allows to use multiple MultiDimBinning(s)
 
+    A use cases is for example if you want to use different energy and coszen
+    binnings for each pid bin
+
+    Parameters
+    ----------
+    selections : OneDimBinning or list of strings
+        Selections for which different binnings should be used. Can either
+        be a OneDimBinning of the selection variable or an arbitray selection
+        defined in a list of strings where each string contains the respective
+        selection cuts (similar to the mc_cuts).
+
+    binnings : list of MultiDimBinnings
+        The MultiDimBinnings that should be used for each selection.
     """
     # pylint: enable=line-too-long
-    def __init__(self, binnings, selections, name=None):
+    def __init__(self, binnings, selections):
 
         assert (isinstance(selections, OneDimBinning) or
                 isinstance(selections, list))
@@ -3056,16 +3068,15 @@ class VarBinning(object):
         for b in binnings:
             assert isinstance(b, MultiDimBinning)
             if isinstance(selections, OneDimBinning):
-                assert selections.name not in b.names
-            else:
-                assert binnings.count(b) == 1, 'Binning used more than once, modify your selection'
+                assert selections.name not in b.names #TODO do this test also for list
+            elif binnings.count(b) > 1:
+                logging.warning('Binning used more than once, consider modifying your selection')
             all_equal = all_equal and b == binnings[0]
         assert not all_equal, 'No need for VarBinning'
 
         self._binnings = binnings
         self._selections = selections
         self._nselections = len(selections)
-        self._name = name
         self._names = None
 
     @property
@@ -3084,13 +3095,8 @@ class VarBinning(object):
         return self._nselections
 
     @property
-    def name(self):
-        """Name of the dimension"""
-        return self._name
-
-    @property
     def names(self):
-        """list of strings : names of each dimension contained plus cut var"""
+        """list of strings : names of each (binning) dimension contained"""
         if self._names is None:
             self._names = []
             for b in self.binnings:

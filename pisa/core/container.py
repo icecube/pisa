@@ -593,7 +593,7 @@ class Container():
                 
         elif self.tranlation_modes[key] == 'sum':
             if from_map and to_map:
-                raise NotImplementedError()
+                raise NotImplementedError("Map to Map in sum mode needs to integrate over bins.")
 
             elif to_map:
                 out = self.array_to_binned(key, src_representation, dest_representation, averaged=False)
@@ -738,7 +738,19 @@ class Container():
         return lookup(sample, weights, hist_binning)
 
     def get_keep_mask(self, keep_criteria):
-        """Returns a mask that only keeps the events that survive the given cut(s)."""
+        """Returns a mask that only keeps the events that survive the given cut(s).
+        Parameters
+        ----------
+        keep_criteria : str
+            Any string interpretable as numpy boolean expression.
+
+        Examples
+        --------
+        Keep events with true energies in [1, 80] GeV (note that units are not
+        recognized, so have to be handled outside this method)
+
+        >>> mask = container.get_keep_mask("(true_energy >= 1) & (true_energy <= 80)")
+        """
         assert isinstance(keep_criteria, str)
 
         for var in self.keys:

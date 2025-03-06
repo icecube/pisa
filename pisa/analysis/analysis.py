@@ -3050,9 +3050,12 @@ class Analysis(BasicAnalysis):
                     metric_val += data
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
-            elif isinstance(data_dist, list):
-                raise NotImplementedError()
-            else: # DistributionMaker object
+            elif isinstance(data_dist, list): # DistributionMaker object with VarBinning
+                metric_val = 0
+                for i in range(len(data_dist)):
+                    metric_val += data_dist[i].metric_total(expected_values=hypo_asimov_dist[i], metric=metric[0])
+                metric_val += hypo_maker.params.priors_penalty(metric=metric[0])
+            else: # DistributionMaker object with MultiDimBinning
 
                 if 'generalized_poisson_llh' == metric[0]:
 
@@ -3100,9 +3103,13 @@ class Analysis(BasicAnalysis):
                 params=hypo_maker.distribution_makers[i].params, metric=metric[i],
                 other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
             ) for i in range(len(data_dist))]
-        elif isinstance(data_dist, list):
-                raise NotImplementedError()
-        else: # DistributionMaker object
+        elif isinstance(data_dist, list): # DistributionMaker object with VarBinning
+            fit_info.detailed_metric_info = [fit_info.get_detailed_metric_info(
+                data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
+                params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
+                detector_name=hypo_maker.detector_name
+            ) for i in range(len(data_dist))]
+        else: # DistributionMaker object with MultiDimBinning
 
             if 'generalized_poisson_llh' == metric[0]:
                 generalized_poisson_dist = hypo_maker.get_outputs(return_sum=False, force_standard_output=False)
