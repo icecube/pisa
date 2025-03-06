@@ -42,7 +42,7 @@ __all__ = ["Pipeline", "test_Pipeline", "parse_args", "main"]
 
 __author__ = "J.L. Lanfranchi, P. Eller"
 
-__license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -68,10 +68,6 @@ __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 # input)? Alternatively, the lack of apparent inputs for a stage could show
 # a warning message. Or we just wait to see if it fails when the user runs the
 # code.
-
-# TODO: return an OrderedDict instead of a list if the user requests
-# intermediate results? Or simply use the `outputs` attribute of each stage to
-# dynamically access this?
 
 
 class Pipeline():
@@ -120,7 +116,8 @@ class Pipeline():
         self._source_code_hash = None
 
         if isinstance(self._output_binning, VarBinning):
-            self.check_VarBinning()
+            self.assert_varbinning_compat()
+            self.assert_exclusive_varbinning()
 
         # check in case someone decided to add a non-daemonflux parameter with daemon_
         # in it, which would potentially make penalty calculation incorrect
@@ -372,7 +369,7 @@ class Pipeline():
         else:
             outputs = self._get_outputs(**get_outputs_kwargs)
         return outputs
-        
+
     def _get_outputs(self, output_binning=None, output_key=None):
         """Get MapSet output"""
 
@@ -380,8 +377,10 @@ class Pipeline():
 
         if output_binning is None:
             output_binning = self.output_binning
-        elif isinstance(output_binning, VarBinning):
-            self.check_VarBinning(output_binning)
+        if isinstance(output_binning, VarBinning):
+            # checks also have to be done when no new output_binning is passed
+            self.assert_varbinning_compat()
+            self.assert_exclusive_varbinning(output_binning=output_binning)
         if output_key is None:
             output_key = self.output_key
 
@@ -395,10 +394,11 @@ class Pipeline():
                 outputs = self.data.get_mapset(output_key[0], error=output_key[1])
             else:
                 outputs = self.data.get_mapset(output_key)
-                
-        else: #VarBinning
-            outputs = []
+
+        else:
+            assert isinstance(output_binning, VarBinning)
             assert self.data.representation == "events"
+            outputs = []
 
             selections = output_binning.selections
             for i in range(len(output_binning.binnings)):
@@ -424,7 +424,7 @@ class Pipeline():
                         cc.tranlation_modes[output_key] = 'sum'
 
                     containers.append(cc)
-                
+
                 dat = ContainerSet(name=self.data.name,
                                    containers=containers,
                                    representation=output_binning.binnings[i],
@@ -630,26 +630,58 @@ class Pipeline():
     def __hash__(self):
         return self.hash
 
-    def check_VarBinning(self, output_binning=None):
-        """Checks if pipeline works with VarBinning and if VarBinning selections 
-        are exclusive."""
-        # VarBinning will only work if all stages have apply_mode=events
-        for s in self.stages:
-            assert s.apply_mode == 'events'
+    def assert_varbinning_compat(self):
+        """Asserts that pipeline setup is compatible with `VarBinning`:
+        all stages need to apply to events.
 
-        # now check if VarBinning selection is exclusive (only necessary if list)
-        if output_binning == None:
+        Raises
+        ------
+        ValueError : if at least one stage has apply_mode!='events'
+
+        """
+        incompat = []
+        for s in self.stages:
+            if not s.apply_mode == 'events':
+                incompat.append(s)
+        if len(incompat) >= 1:
+            str_incompat = ", ".join(
+                [f"{stage.stage_name}.{stage.service_name}" for stage in incompat]
+            )
+            raise ValueError(
+                "When a variable binning is used, all stages need to set "
+                f"apply_mode='events', but {str_incompat} do(es) not!"
+            )
+
+    def assert_exclusive_varbinning(self, output_binning=None):
+        """Assert that `VarBinning` selections are mutually exclusive.
+        This is done individually for each `Container` in `self.data`.
+
+        Parameters
+        -----------
+        output_binning : None, MultiDimBinning, VarBinning
+
+        Raises
+        ------
+        ValueError : if a `VarBinning` is tested and at least two selections
+            (if applicable) are not mutually exclusive
+
+        """
+        if output_binning is None:
             selections =  self.output_binning.selections
             nselections = self.output_binning.nselections
         else:
             selections = output_binning.selections
             nselections = output_binning.nselections
         if isinstance(selections, list):
+            # list of selection-criteria strings
             for c in self.data:
                 keep = np.zeros(c.size)
                 for i in range(nselections):
                     keep += c.get_keep_mask(selections[i])
-                assert np.all(keep <= 1), 'Selection is not exclusive'
+                if not np.all(keep <= 1):
+                    raise ValueError(
+                        f"Selections {selections} are not mutually exclusive!"
+                    )
 
     @property
     def output_binning(self):
@@ -658,14 +690,13 @@ class Pipeline():
     @output_binning.setter
     def output_binning(self, binning):
         if isinstance(binning, VarBinning):
-            self.check_VarBinning(binning)
+            self.assert_varbinning_compat()
+            self.assert_exclusive_varbinning(output_binning=binning)
         self._output_binning = binning
 
 
 def test_Pipeline():
     """Unit tests for Pipeline class"""
-    # pylint: disable=line-too-long
-
     # TODO: make a test config file with hierarchy AND material selector,
     # uncomment / add in tests commented / removed below
 
@@ -741,6 +772,24 @@ def test_Pipeline():
         #current_hier = new_hier
         #current_mat = new_mat
 
+    #
+    # Test: a pipeline using a VarBinning
+    #
+    p = Pipeline("settings/pipeline/varbin_example.cfg")
+    out = p.get_outputs()
+    # a split into two event selections has to result in two MapSets
+    assert len(out) == 2
+    # a binned apply_mode has to result in a ValueError
+    # first get a pre-existing binning
+    binned_calc_mode = p.stages[2].calc_mode
+    assert isinstance(binned_calc_mode, MultiDimBinning)
+    p.stages[2].apply_mode = binned_calc_mode
+    try:
+        out = p.get_outputs()
+    except ValueError:
+        pass
+    else:
+        assert False
 
 
 # ----- Most of this below cang go (?) ---
