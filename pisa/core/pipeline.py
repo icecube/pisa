@@ -29,7 +29,7 @@ from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet, DerivedParam
 from pisa.core.stage import Stage
 from pisa.core.container import Container, ContainerSet
-from pisa.core.binning import MultiDimBinning, VarBinning
+from pisa.core.binning import MultiDimBinning, OneDimBinning, VarBinning
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.format import format_times
@@ -370,6 +370,84 @@ class Pipeline():
             outputs = self._get_outputs(**get_outputs_kwargs)
         return outputs
 
+    def _get_outputs_multdimbinning(self, output_binning, output_key):
+        """Logic that produces a single `MapSet` when the pipeline's
+        output binning is a regular `MultiDimBinning`.
+
+        Returns
+        -------
+        outputs : MapSet
+
+        """
+        self.data.representation = output_binning
+        if isinstance(output_key, tuple):
+            assert len(output_key) == 2
+            outputs = self.data.get_mapset(output_key[0], error=output_key[1])
+        else:
+            outputs = self.data.get_mapset(output_key)
+        return outputs
+
+    def _get_outputs_varbinning(self, output_binning, output_key):
+        """Logic that produces multiple `MapSet`s when the pipeline's
+        output binning is a `VarBinning`.
+
+        Returns
+        -------
+        outputs : list of MapSet
+
+        """
+        assert self.data.representation == "events"
+        outputs = []
+
+        selections = output_binning.selections
+        for i in range(output_binning.nselections):
+            # there will be a new ContainerSet created for each selection
+            containers = []
+            for c in self.data.containers:
+                cc = Container(name=c.name)
+                # Find the events that belong to the given selection, depending on
+                # type of selection
+                if isinstance(selections, list):
+                    keep = c.get_keep_mask(selections[i])
+                else:
+                    assert isinstance(selections, OneDimBinning)
+                    cut_var = c[selections.name]
+                    # cut on bin edges
+                    keep = (cut_var >= selections.edge_magnitudes[i]) & (cut_var < selections.edge_magnitudes[i+1])
+                for var_name in output_binning.binnings[i].names:
+                    # Store the selected var_name entries (corresponding to the
+                    # dimensions in which the data for this selection will be
+                    # binned) in the fresh Container
+                    cc[var_name] = c[var_name][keep]
+                # store the quantities that will populate each bin
+                if isinstance(output_key, tuple):
+                    assert len(output_key) == 2
+                    cc[output_key[0]] = c[output_key[0]][keep]
+                    cc.tranlation_modes[output_key[0]] = 'sum'
+                    cc[output_key[1]] = np.square(c[output_key[0]][keep])
+                    cc.tranlation_modes[output_key[1]] = 'sum'
+                else:
+                    cc[output_key] = c[output_key][keep]
+                    cc.tranlation_modes[output_key] = 'sum'
+
+                containers.append(cc)
+
+            dat = ContainerSet(
+                name=self.data.name,
+                containers=containers,
+                representation=output_binning.binnings[i],
+            )
+
+            if isinstance(output_key, tuple):
+                for c in dat.containers:
+                    # uncertainties
+                    c[output_key[1]] = np.sqrt(c[output_key[1]])
+                outputs.append(dat.get_mapset(output_key[0], error=output_key[1]))
+            else:
+                outputs.append(dat.get_mapset(output_key))
+        return outputs
+
+
     def _get_outputs(self, output_binning=None, output_key=None):
         """Get MapSet output"""
 
@@ -391,55 +469,10 @@ class Pipeline():
         assert(isinstance(output_binning, (MultiDimBinning, VarBinning)))
 
         if isinstance(output_binning, MultiDimBinning):
-            self.data.representation = output_binning
-
-            if isinstance(output_key, tuple):
-                assert len(output_key) == 2
-                outputs = self.data.get_mapset(output_key[0], error=output_key[1])
-            else:
-                outputs = self.data.get_mapset(output_key)
-
+            outputs = self._get_outputs_multdimbinning(output_binning, output_key)
         else:
             assert isinstance(output_binning, VarBinning)
-            assert self.data.representation == "events"
-            outputs = []
-
-            selections = output_binning.selections
-            for i in range(len(output_binning.binnings)):
-                containers = []
-                for c in self.data.containers:
-                    cc = Container(name=c.name)
-                    if isinstance(selections, list):
-                        keep = c.get_keep_mask(selections[i])
-                    else:
-                        cut_var = c[selections.name]
-                        keep = (cut_var >= selections.edge_magnitudes[i]) & (cut_var < selections.edge_magnitudes[i+1])
-                    for var_name in output_binning.binnings[i].names:
-                        cc[var_name] = c[var_name][keep]
-
-                    if isinstance(output_key, tuple):
-                        assert len(output_key) == 2
-                        cc[output_key[0]] = c[output_key[0]][keep]
-                        cc.tranlation_modes[output_key[0]] = 'sum'
-                        cc[output_key[1]] = np.square(c[output_key[0]][keep])
-                        cc.tranlation_modes[output_key[1]] = 'sum'
-                    else:
-                        cc[output_key] = c[output_key][keep]
-                        cc.tranlation_modes[output_key] = 'sum'
-
-                    containers.append(cc)
-
-                dat = ContainerSet(name=self.data.name,
-                                   containers=containers,
-                                   representation=output_binning.binnings[i],
-                                  )
-
-                if isinstance(output_key, tuple):
-                    for c in dat.containers:
-                        c[output_key[1]] = np.sqrt(c[output_key[1]])
-                    outputs.append(dat.get_mapset(output_key[0], error=output_key[1]))
-                else:
-                    outputs.append(dat.get_mapset(output_key))
+            outputs = self._get_outputs_varbinning(output_binning, output_key)
 
         return outputs
 
@@ -636,11 +669,13 @@ class Pipeline():
 
     def assert_varbinning_compat(self):
         """Asserts that pipeline setup is compatible with `VarBinning`:
-        all stages need to apply to events.
+        all stages need to apply to events (this precludes use with
+        any histogramming service, which requires a binning as apply_mode).
 
         Raises
         ------
-        ValueError : if at least one stage has apply_mode!='events'
+        ValueError
+            if at least one stage has apply_mode!='events'
 
         """
         incompat = []
@@ -667,7 +702,8 @@ class Pipeline():
 
         Raises
         ------
-        ValueError : if a `VarBinning` is tested and at least two selections
+        ValueError
+            if a `VarBinning` is tested and at least two selections
             (if applicable) are not mutually exclusive
 
         """
@@ -1004,9 +1040,9 @@ def main(return_outputs=False):
             pass
         if isinstance(stop_idx, str):
             stop_idx = pipeline.index(stop_idx)
-        outputs = pipeline.get_outputs(
+        outputs = pipeline.get_outputs( # pylint: disable=redefined-outer-name
             idx=stop_idx
-        )  # pylint: disable=redefined-outer-name
+        )
         if stop_idx is not None:
             stop_idx += 1
         indices = slice(0, stop_idx)
@@ -1102,4 +1138,4 @@ def main(return_outputs=False):
 
 
 if __name__ == "__main__":
-    pipeline, outputs = main(return_outputs=True)  # pylint: disable=invalid-name
+    pipeline, outp = main(return_outputs=True)
