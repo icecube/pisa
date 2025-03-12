@@ -42,8 +42,8 @@ from pisa.utils.log import logging, set_verbosity, tprofile
 
 __all__ = ['NAME_FIXES', 'NAME_SEPCHARS', 'NAME_FIXES_REGEXES',
            'basename', '_new_obj', 'is_binning',
-           'OneDimBinning', 'MultiDimBinning',
-           'test_OneDimBinning', 'test_MultiDimBinning']
+           'OneDimBinning', 'MultiDimBinning', 'VarBinning',
+           'test_OneDimBinning', 'test_MultiDimBinning', 'test_VarBinning']
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -3042,43 +3042,91 @@ class MultiDimBinning():
 
 class VarBinning():
     # pylint: disable=line-too-long
-    r"""Binning class that allows to use multiple MultiDimBinning(s)
+    r"""Binning class that allows to use multiple different analysis binnings
+    or to split up an event sample with a given analysis binning into
+    non-overlapping sub-samples - which will be verified at analysis time -
+    defined by arbitrary cuts.
 
-    A use cases is for example if you want to use different energy and coszen
-    binnings for each pid bin
+    A use case is for example if you want to use a different 2d binning in
+    reconstructed energy and cosine zenith for each PID bin.
 
     Parameters
     ----------
-    selections : OneDimBinning or list of strings
-        Selections for which different binnings should be used. Can either
-        be a OneDimBinning of the selection variable or an arbitray selection
-        defined in a list of strings where each string contains the respective
-        selection cuts (similar to the mc_cuts).
-
     binnings : list of MultiDimBinnings
         The MultiDimBinnings that should be used for each selection.
+
+    selections : OneDimBinning or list of strings (cut expressions)
+        Selections for creating sub-samples and for which different binnings
+        can be used. Can either be a OneDimBinning of the selection variable
+        or an arbitray selection defined in a list of strings where each string
+        contains the respective selection cuts (similar to
+        data.simple_data_loader's `mc_cuts`).
+
+    Notes
+    -----
+    The lengths of `binnings` and `selections` are required to be > 1 (otherwise,
+    just apply MC cuts the regular way) and the same (one `MultiDimBinning`
+    per selection - we don't attempt any array broadcasting).
+
+    If a `OneDimBinning` is passed to `selections`, the corresponding
+    dimension must not be a dimension of any `MultiDimBinning` in `binnings`.
+    Similarly, if a list of cut expressions is passed, none of its contained
+    variables may simultaneously serve as a `MultiDimBinning`'s dimension.
+    While such scenarios needn't always be dangerous, there are probably less
+    convoluted ways of achieving them.
+
+    A warning is issued when `selections` is of type `OneDimBinning` and
+    all `binnings` entries are identical.
 
     """
     # pylint: enable=line-too-long
     def __init__(self, binnings, selections):
 
-        assert (isinstance(selections, OneDimBinning) or
-                isinstance(selections, list))
+        if not isinstance(selections, (OneDimBinning, list)):
+            raise ValueError(f"Selection type {type(selections)} not supported!")
+        # some "trivial" asserts
         assert isinstance(binnings, list) and len(binnings) == len(selections)
+        assert len(binnings) > 1
+
         all_equal = True
         for b in binnings:
             assert isinstance(b, MultiDimBinning)
-            if isinstance(selections, OneDimBinning):
-                assert selections.name not in b.names #TODO do this test also for list
-            elif binnings.count(b) > 1:
-                logging.warning('Binning used more than once, consider modifying your selection')
+            # determine whether any variable is part of this binning
+            invalid_sel_vars = self._selection_vars_in_mdb(b, selections)
+            if invalid_sel_vars:
+                raise ValueError(
+                    f"Selection variables {invalid_sel_vars} may not"
+                    " simultaneously be part of any MultiDimBinning!"
+                )
             all_equal = all_equal and b == binnings[0]
-        assert not all_equal, 'No need for VarBinning'
+
+        if isinstance(selections, OneDimBinning) and all_equal:
+            logging.warning(
+                f"All binnings are equal, namely {binnings[0]!s}. It will most"
+                " likely be advantageous to simply use the MultiDimBinning"
+                " class for the same analysis purpose."
+            )
 
         self._binnings = binnings
         self._selections = selections
         self._nselections = len(selections)
         self._names = None
+
+    def _selection_vars_in_mdb(self, binning, selections):
+        """Check which binning dimensions also appear in the selections.
+        """
+        if isinstance(selections, OneDimBinning):
+            if selections.name in binning.names:
+                return [selections.name]
+        elif isinstance(selections, Sequence):
+            # dumb way to find all cut variables in expressions (+ cut values)
+            vars_and_more = []
+            for cut_expr in selections:
+                vars_and_more.extend(re.findall(r"\b\w+\b", cut_expr))
+            # Return any dimension names that occur identically in any
+            # cut expression. Adapt the above if there is a false positive.
+            return [dim for dim in binning.names if dim in vars_and_more]
+        return []
 
     @property
     def binnings(self):
@@ -3600,9 +3648,20 @@ def test_VarBinning():
 
     selection = OneDimBinning(name='pid', is_lin=True, num_bins=2, domain=[0, 1])
     varbin = VarBinning([mdb1, mdb2], selection)
+    assert varbin.names[0] == varbin.names[1] == ['energy', 'coszen']
+    l = [isinstance(mdb, MultiDimBinning) for mdb in varbin]
+    assert len(l) == 2 and np.all(l)
 
     selection = ['pid < 0.5', 'pid >= 0.5']
     varbin = VarBinning([mdb1, mdb2], selection)
+
+    selection = ['energy == 10', 'coszen < 0']
+    try:
+        varbin = VarBinning([mdb1, mdb1], selection)
+    except ValueError:
+        pass
+    else:
+        assert False
 
     logging.info('<< PASS : test_VarBinning >>')
 

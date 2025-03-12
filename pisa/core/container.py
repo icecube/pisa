@@ -739,6 +739,7 @@ class Container():
 
     def get_keep_mask(self, keep_criteria):
         """Returns a mask that only keeps the events that survive the given cut(s).
+
         Parameters
         ----------
         keep_criteria : str
@@ -750,6 +751,7 @@ class Container():
         recognized, so have to be handled outside this method)
 
         >>> mask = container.get_keep_mask("(true_energy >= 1) & (true_energy <= 80)")
+
         """
         assert isinstance(keep_criteria, str)
 
