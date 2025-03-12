@@ -884,6 +884,19 @@ class BasicAnalysis():
     `method`, `method_kwargs` and `local_fit_kwargs`. In this way, sub-routines
     can be arbitrarily stacked to define complex fit strategies.
 
+    Attributes
+    ----------
+    pprint : bool, default: True
+        Whether to show live updates of minimizer progress (overridden by
+        `blindness`).
+
+    blindness : bool or int, default: False
+        Whether to carry out a blind analysis. If True or 1, this hides actual
+        parameter values from display and disallows these (as well as Jacobian,
+        Hessian, etc.) from ending up in logfiles. If given an integer > 1, the
+        fitted parameters are also prevented from being stored in fit info
+        dictionaries.
+
     Examples
     --------
 
