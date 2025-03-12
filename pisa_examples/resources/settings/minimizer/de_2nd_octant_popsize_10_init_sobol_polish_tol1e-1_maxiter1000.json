@@ -1,0 +1,18 @@
+{
+  "method": "scipy",
+  "method_kwargs": {
+    "global_method": "differential_evolution",
+    "options": {
+      "maxiter": 1000,
+      "tol": 0.1,
+      "popsize": 10,
+      "init": "sobol",
+      "disp": true,
+      "seed": 0,
+      "constraints": [
+        {"type": "ineq",
+         "fun": "lambda p: p.theta23.m_as('degree') - 45."}
+      ]
+    }
+  }
+}

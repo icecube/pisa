@@ -42,39 +42,66 @@ This will generate N different `.json` for N systematics.
 All the info from the fit, including the fit function itself is stored in that file.
 Plotting is also available via `-p/--plot' and is HIGHLY recomended to inspect the fit results.
 
+
 ### Ultrasurfaces
 
-This is the novel treatment of detector systematics via likelihood-free inference. It assigns gradients to _every event_ to allow event-by-event re-weighting as a function of detector uncertainties in a way that is fully decoupled from flux and oscillation effects.
+Treatment of detector systematics via likelihood-free inference. Polynomial coefficients, assigned to every event, allow continuous re-weighting as a function of detector uncertainties in a way that is fully decoupled from flux and oscillation effects. The results are stored in a feather file containing all events of the nominal MC set and their associated polynomial coefficients.
 
-Once ready, the results are stored in a `.feather` file containing all events of the nominal MC set and their associated gradients.
+To use this in a PISA analysis pipeline, you will need to set up an ultrasurface config file looking like this:
 
-### Preparation
+```ini
+[discr_sys.ultrasurfaces]
 
-The scripts producing the gradients are located in `$FRIDGE_DIR/analysis/oscnext_ultrasurfaces`. To produce the gradient feather file, we first need to convert PISA HDF5 files to `.feather` using the `pisa_to_feather.py` script. We need to pass the input file, the output file, and a flag setting the sample (variable names) to be used (either `--verification-sample`, `--flercnn-sample`, `--flercnn-hnl-sample`, `--upgrade-sample`, or no additional flag for the Retro sample).
+calc_mode = events
+apply_mode = events
 
+# DOM efficiency
+param.dom_eff = 1.0 +/- 0.1
+param.dom_eff.fixed = False
+param.dom_eff.range = [0.8, 1.2] * units.dimensionless
+param.dom_eff.tex = \epsilon_{\rm{DOM}}
+
+# hole ice scattering
+param.hole_ice_p0 = +0.101569
+param.hole_ice_p0.fixed = False
+param.hole_ice_p0.range = [-0.6, 0.5] * units.dimensionless
+param.hole_ice_p0.prior = uniform
+param.hole_ice_p0.tex = \rm{hole \, ice}, \: p_0
+
+# hole ice forward
+param.hole_ice_p1 = -0.049344
+param.hole_ice_p1.fixed = False
+param.hole_ice_p1.range = [-0.2, 0.2] * units.dimensionless
+param.hole_ice_p1.prior = uniform
+param.hole_ice_p1.tex = \rm{hole \, ice}, \: p_1
+
+# bulk ice absorption
+param.bulk_ice_abs = 1.0
+param.bulk_ice_abs.fixed = False
+param.bulk_ice_abs.range = [0.85, 1.15] * units.dimensionless
+param.bulk_ice_abs.prior = uniform
+param.bulk_ice_abs.tex = \rm{ice \, absorption}
+
+# bulk ice scattering
+param.bulk_ice_scatter = 1.05
+param.bulk_ice_scatter.fixed = False
+param.bulk_ice_scatter.range = [0.90, 1.20] * units.dimensionless
+param.bulk_ice_scatter.prior = uniform
+param.bulk_ice_scatter.tex = \rm{ice \, scattering}
+
+# These nominal points are the nominal points that were used to fit the gradients
+# and might not agree with the nominal points of the parameter prior.
+nominal_points = {"dom_eff": 1.0, "hole_ice_p0": 0.101569, "hole_ice_p1": -0.049344, "bulk_ice_abs": 1.0, "bulk_ice_scatter": 1.0}
+
+fit_results_file = /path/to/ultrasurface_fits/genie_all_knn_200pc_weight_weighted_aeff_poly_2.feather
 ```
-python pisa_to_feather.py -i /path/to/pisa_hdf5/oscnext_genie_0151.hdf5 -o /path/to/pisa_hdf5/oscnext_genie_0151.feather {"--verification-sample", "--flercnn-sample", ""}
-```
-After converting all files and setting the appropriate paths in `$FRIDGE_DIR/analysis/oscnext_ultrasurfaces/datasets/data_loading.py`, we produce gradients in two steps.
 
-**First**: Calculate event-wise probabilities with (assuming we `cd`'d into `$FRIDGE_DIR/analysis/oscnext_ultrasurfaces/knn`)
+Here you specify the detector systematic parameters to be varied in the fit, with their nominal values and allowed ranges. Additionally, you have to specify the nominal point at which the ultrasurfaces were fit (`nominal_points`), since this might be different from the nominal point used in your analysis. Finally, you have to point to the file where the polynomial coefficients are stored (`fit_results_file`).
 
-(Note here that this needs to be run with an earlier version of sklearn, due to deprecation of some used functions, e.g. use: `scikit-learn = 1.1.2`)
+Your pipeline's order could then look like this:
 
-```
-python calculate_knn_probs.py --data-sample {"verification", "flercnn", "flercnn_hnl", "retro"} --root-dir /path/to/pisa_feather/ --outfile /path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather --neighbors-per-class 200 --datasets 0000 0001 0002 0003 0004 0100 0101 0102 0103 0104 0105 0106 0107 0109 0151 0500 0501 0502 0503 0504 0505 0506 0507 --jobs 24
+```ini
+order = data.simple_data_loader, flux.honda_ip, flux.mceq_barr, osc.prob3, xsec.genie_sys, xsec.dis_sys, aeff.aeff, discr_sys.ultrasurfaces, utils.hist
 ```
 
-**Second**: Calculate the gradients that best fit the probabilities with:
-
-```
-python calculate_grads.py --input /path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather --output /path/to/ultrasurface_grads_vs/genie_all_bulkice_pm10pc_knn_200pc_poly2.feather --include-systematics dom_eff hole_ice_p0 hole_ice_p1 bulk_ice_abs bulk_ice_scatter --poly-features 2 --jobs 24
-```
-
-### Usage
-
-The gradients are stored in a `.feather` file containing all events of the nominal MC set and their associated gradients. The Ultrasurface PISA stage needs to be pointed to the location of this file. In the unblinding version of this analysis, the file is
-
-```
-/path/to/ultrasurface_grads_vs/genie_all_bulkice_pm10pc_knn_200pc_poly2.feather
-```
+It's important to include the ultrasurface stage **before** the histogramming stage, unlike it's done for the hypersurfaces. Now you should be good to go.
