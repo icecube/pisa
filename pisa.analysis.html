@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pisa.analysis package &mdash; PISA 4.0 documentation</title>
+  <title>pisa.analysis package &mdash; PISA 4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=9f5556dd"></script>
+      <script src="_static/documentation_options.js?v=3b2dd2c4"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -331,6 +331,33 @@ nested sub-routines that are run within the outer sub-routine. A sub-sub-routine
 defined in <cite>local_fit_kwargs</cite> should again be a dictionary with the three keywords
 <cite>method</cite>, <cite>method_kwargs</cite> and <cite>local_fit_kwargs</cite>. In this way, sub-routines
 can be arbitrarily stacked to define complex fit strategies.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.BasicAnalysis.pprint">
+<span class="sig-name descname"><span class="pre">pprint</span></span><a class="headerlink" href="#pisa.analysis.analysis.BasicAnalysis.pprint" title="Link to this definition"></a></dt>
+<dd><p>Whether to show live updates of minimizer progress (overridden by
+<cite>blindness</cite>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool, default: True</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.BasicAnalysis.blindness">
+<span class="sig-name descname"><span class="pre">blindness</span></span><a class="headerlink" href="#pisa.analysis.analysis.BasicAnalysis.blindness" title="Link to this definition"></a></dt>
+<dd><p>Whether to carry out a blind analysis. If True or 1, this hides actual
+parameter values from display and disallows these (as well as Jacobian,
+Hessian, etc.) from ending up in logfiles. If given an integer &gt; 1, the
+fitted parameters are also prevented from being stored in fit info
+dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool or int, default: False</p>
+</dd>
+</dl>
+</dd></dl>
+
 <p class="rubric">Examples</p>
 <p>A canonical standard oscillation fit fits octants in <cite>theta23</cite> separately and then
 runs a scipy minimizer to optimize locally in each octant. The arguments that would
@@ -736,7 +763,7 @@ in <cite>constr_dicts</cite>.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

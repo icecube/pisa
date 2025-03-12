@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pisa.core package &mdash; PISA 4.0 documentation</title>
+  <title>pisa.core package &mdash; PISA 4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=9f5556dd"></script>
+      <script src="_static/documentation_options.js?v=3b2dd2c4"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -3037,9 +3037,12 @@ that fall exactly on an outer edge are kept.</p>
 <li><p><strong>name</strong> (<em>string</em><em>, </em><em>optional</em>) – Name to identify events</p></li>
 <li><p><strong>neutrinos</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag indicating if events represent neutrinos; toggles special
 behavior such as splitting into nu/nubar and CC/NC. Default is True.</p></li>
-<li><p><strong>fraction_events_to_keep</strong> (<em>float</em>) – Fraction of loaded events to use (use to downsample).
-Must be in range [0.,1.], or disable by setting to <cite>None</cite>.
-Default in None.</p></li>
+<li><p><strong>fraction_events_to_keep</strong> (<em>float</em><em>, </em><em>default: None</em>) – Fraction of loaded events to use (use to downsample).
+Must be in range [0.,1.]. Disabled by setting to <cite>None</cite>.</p></li>
+<li><p><strong>events_subsample_index</strong> (<em>int &gt;= 0</em><em>, </em><em>default: 0</em>) – If <cite>fraction_events_to_keep</cite> is not <cite>None</cite>, determines
+which of the statistically independent sub-samples
+(uniquely determined by the seed passed to <cite>load_events_file</cite>)
+to select.</p></li>
 <li><p><strong>*args</strong> – Passed on to <cite>__init__</cite> method of OrderedDict</p></li>
 <li><p><strong>**kwargs</strong> – Passed on to <cite>__init__</cite> method of OrderedDict</p></li>
 </ul>
@@ -3094,7 +3097,7 @@ that fall exactly on an outer edge are kept.</p>
 <dt class="sig sig-object py" id="pisa.core.events_pi.EventsPi.load_events_file">
 <span class="sig-name descname"><span class="pre">load_events_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">123456</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/events_pi.html#EventsPi.load_events_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.events_pi.EventsPi.load_events_file" title="Link to this definition"></a></dt>
 <dd><p>Fill this events container from an input HDF5 file filled with event
-data Optionally can provide a variable mapping so select a subset of
+data. Optionally can provide a variable mapping so select a subset of
 variables, rename them, etc.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -3107,9 +3110,11 @@ destination variable names and the items are either the source
 variable names or an iterable of source variables names. In the
 latter case, each of the specified source variables will become a
 column vector in the destination array.</p></li>
-<li><p><strong>required_metadata</strong> (<em>None</em><em>, or </em><em>list</em><em> of </em><em>str</em>) – Can optionally specify metadata keys to parse from the input file metdata.
+<li><p><strong>required_metadata</strong> (<em>sequence</em><em> of </em><em>str</em><em>, </em><em>default: None</em>) – Can optionally specify metadata keys to parse from the input file metdata.
 ONLY metadata specified here will be parsed.
 Anything specified here MUST exist in the files.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>default: 123456</em>) – If <cite>fraction_events_to_keep</cite> is not <cite>None</cite>, serves
+as random seed for generating reproducible sub-samples.</p></li>
 </ul>
 </dd>
 </dl>
@@ -6358,7 +6363,7 @@ numpy.histogramdd.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

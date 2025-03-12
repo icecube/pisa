@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>&lt;no title&gt; &mdash; PISA 4.0 documentation</title>
+  <title>&lt;no title&gt; &mdash; PISA 4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=9f5556dd"></script>
+      <script src="../_static/documentation_options.js?v=3b2dd2c4"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -68,26 +68,23 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <p># PISA Terminology</p>
-<ul>
-<li><p><strong>DistributionMaker</strong>: A collection of one or more <em>pipelines</em>; this produces the events distributions we see (in the case of data) or that we expect to see (in the case of Monte Carlo). The output of a DistributionMaker is a sequence of MapSets, one produced per pipeline in the DistributionMaker.</p></li>
-<li><p><strong>Map</strong>: N-dimensional histogram, most often in energy and cosine of the zenith angle (coszen)–but the number of dimensions and the binning in each are completely configurable in PISA). Note that the binning of a map is accessed via <cite>map.binning</cite>.</p></li>
-<li><p><strong>MapSet</strong>: Container or set of <cite>Map</cite>, with convenience methods for working with the contained maps.</p></li>
-<li><p><strong>Pipeline</strong>: A single sequence of stages and the services implementing them for processing a single data type. E.g.:
-* There might be defined a pipeline for processing neutrinos and a separate pipeline for processing muons.
-* For neutrino mass ordering measurements, the set of pipelines to produce “template” distributions might include one neutrino pipeline for normal ordering and one neutrino pipeline for inverted ordering, in addition to a single pipeline for muons.</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>If parameters to produce the “data” distribution used to match templates to differ from the nominal values for the template pipelines, a separate set of the aforementioned pipelines can be defined to produce the “data” distribution.</p></li>
-</ul>
-</div></blockquote>
-</li>
-<li><p><strong>Pipeline settings</strong>: The collection of all parameters required (and no more) to instantiate all stages (and which service to use for each) in a single pipeline.</p></li>
-<li><p><strong>Quantity</strong>: A number or array <em>with units attached</em>. See (units_and_uncertainties).</p></li>
-<li><p><strong>Resource</strong>: A file with settings, simulated events, parameterizations, metadata, etc. that is used by one of the services, the template maker, the minimizer, …. Example resources are found in <cite>$PISA/pisa_examples/resources</cite> directory, where a subdirectory exists for each stage (and several directories exist for resources used for other purposes). Set (in your command shell) the environment variable PISA_RESOURCES to your personal PISA resources directory location to access your own resources.</p></li>
-<li><p><strong>Reweighted Monte Carlo (MC) analysis</strong>: Each stage of the analysis simulates the effects of physics and detector systematics by directly modifying the MC events’ characteristics (e.g., their importance weights and reconstructed properties). After applying all such effects, only in the last step are the MC events histogrammed. Contrast with <em>parameterized-MC analysis</em> (defined above), where it is histograms that are modified throughout the analysis to reflect the effects of physics and detector systematics.</p></li>
-<li><p><strong>Service</strong>: A particular <em>implementation</em> of a stage is called a <strong>*service*</strong>. For example, the effective areas stage (<cite>aeff</cite>) has services <cite>mc</cite> and <cite>slice_smooth</cite>. Each service is a python <cite>.py</cite> file that lives inside its stage’s directory. E.g., the effective area <cite>mc</cite> service is at <cite>$PISA/pisa/stages/aeff/mc.py</cite>.</p></li>
-<li><p><strong>Stage</strong>: Each stage represents a critical part of the process by which we can eventually detect neutrinos. For example, atmospheric neutrinos that pass through the earth will oscillate partially into different flavors prior to reaching the IceCube/PINGU detector. This part of the process is called the <strong>oscillations</strong> stage. There are currently defined the stages <cite>flux</cite> (for neutrino flux), <cite>osc</cite> (neutrino oscillations), <cite>aeff</cite> (detector effective area), <cite>reco</cite> (reconstruction resolutions), and <cite>pid</cite> (particle identification; e.g., tracks vs. cascades). Stages are directories in the <cite>$PISA/pisa/stages</cite> directory.</p></li>
+  <p># PISA Terminology
+A selection of key terms and concepts in PISA is compiled below.</p>
+<ul class="simple">
+<li><p><strong>Detectors</strong>: A collection of one or more <em>DistributionMakers</em>, where each corresponds to one detector/experiment. The output of <cite>Detectors</cite> typically is a sequence of <em>MapSets</em>, one per <cite>DistributionMaker</cite> (detector).</p></li>
+<li><p><strong>DistributionMaker</strong>: A collection of one or more <em>pipelines</em>; this produces the events distributions we see (in the case of data) or that we expect to see (in the case of Monte Carlo). The output of a <cite>DistributionMaker</cite> typically is a <cite>MapSet</cite>, produced by summing over outputs of all pipelines in the <cite>DistributionMaker</cite>.</p></li>
+<li><p><strong>Map</strong>: N-dimensional histogram, most often in energy and cosine of the zenith angle (coszen). However, the number of dimensions and the binning in each are completely configurable.</p></li>
+<li><p><strong>MapSet</strong>: Set of maps, with convenience methods for working with each.</p></li>
+<li><p><strong>Pipeline</strong>: A single sequence of <em>stages</em> and the <em>services</em> implementing them for processing a single data type. E.g.:
+* There might be one pipeline for processing atmospheric neutrinos and a separate pipeline for processing atmospheric muons.
+* A separate and possibly completely independent set of pipelines can be defined to produce the pseudodata or the observed data distribution.</p></li>
+<li><p><strong>Pipeline settings</strong>: The collection of all parameters required (and no more) to instantiate all stages (and which service to use for each) in a single <cite>Pipeline</cite>.</p></li>
+<li><p><strong>Quantity</strong>: A number or array <em>with units attached</em>. See [units and uncertainties](units_and_uncertainties.md).</p></li>
+<li><p><strong>Resource</strong>: A file with settings, simulated events, parameterizations, metadata, etc. that is used by one of the services, a <cite>DistributionMaker</cite>, an analysis script, …. Example resources are found in <cite>$PISA/pisa_examples/resources</cite>, where a subdirectory may exist for each stage (and several directories exist for resources used for other purposes). For PISA to be able to detect your personal resources anywhere else, include all your custom resource locations in your command shell’s environment variable <cite>PISA_RESOURCES</cite>.</p></li>
+<li><p><strong>Reweighted Monte Carlo (MC) analysis</strong>: Each stage of the analysis simulates the effects of physics and detector systematics by directly modifying the MC events’ characteristics (e.g., their importance weights and reconstructed properties). After applying all such effects, only in the last step are the MC events histogrammed.</p></li>
+<li><p><strong>Service</strong>: A particular <em>implementation</em> of a stage is called a <strong>*service*</strong>. Each service is a python <cite>.py</cite> file that lives inside its stage’s directory in <cite>$PISA/pisa/stages/&lt;stage name&gt;/</cite>.</p></li>
+<li><p><strong>Stage</strong>: Each <cite>Stage</cite> represents a critical part of the process by which we can eventually detect e.g. neutrinos. For example, atmospheric neutrinos that pass through the earth will oscillate partially into different flavors prior to reaching the detector. This part of the process is modelled by the <strong>oscillations</strong> stage. Other characteristic stages are <cite>data</cite> (for initially loading events available in arbitrary formats into a pipeline), <cite>flux</cite>, or <cite>xsec</cite> (interaction cross section). Stages are directories in the <cite>$PISA/pisa/stages</cite> directory.</p></li>
+<li><p><strong>Stage modes</strong>: Each <cite>Stage</cite> defines two modes which determine how the data (e.g. neutrino MC events) handed to it is represented during <cite>setup()</cite>/<cite>compute()</cite> and during <cite>apply()</cite>. Two common representations are individual events and grids/histograms.</p></li>
 </ul>
 
 
@@ -98,7 +95,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

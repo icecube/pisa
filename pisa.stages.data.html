@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pisa.stages.data package &mdash; PISA 4.0 documentation</title>
+  <title>pisa.stages.data package &mdash; PISA 4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=9f5556dd"></script>
+      <script src="_static/documentation_options.js?v=3b2dd2c4"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -289,9 +289,17 @@ key in the hdf5 file or lists of keys, and the data will be
 stacked into a 2d array.</p></li>
 <li><p><strong>neutrinos</strong> (<em>bool</em>) – Flag indicating whether data events represent neutrinos
 In this case, special handling for e.g. nu/nubar, CC vs NC, …</p></li>
-<li><p><strong>fraction_events_to_keep</strong> (<em>float</em>) – Fraction of loaded events to use (use to downsample).
-Must be in range [0.,1.], or disable by setting to <cite>None</cite>.
-Default in None.</p></li>
+<li><p><strong>required_metadata</strong> (<em>sequence</em><em> of </em><em>str</em><em>, </em><em>default: None</em>) – Optionally specify metadata keys to parse from the
+<cite>events_file</cite> metadata.</p></li>
+<li><p><strong>fraction_events_to_keep</strong> (<em>float</em><em>, </em><em>default: None</em>) – Fraction of loaded events to use (use to downsample).
+Must be in range [0.,1.]. Disabled by setting to <cite>None</cite>.</p></li>
+<li><p><strong>events_subsample_index</strong> (<em>int &gt;= 0</em><em>, </em><em>default: 0</em>) – If <cite>fraction_events_to_keep</cite> is not <cite>None</cite>, determines
+which of the statistically independent sub-samples
+(uniquely determined by the <cite>seed</cite> below) to select.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>default: 123456</em>) – If <cite>fraction_events_to_keep</cite> is not <cite>None</cite>, serves
+as random seed for generating reproducible sub-samples.</p></li>
+<li><p><strong>output_names</strong> (<em>sequence</em><em> of </em><em>str</em><em>, </em><em>default: None</em>) – Event categories to be recorded. If specified,
+needs to be a subset of names in <cite>events_file</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -513,7 +521,7 @@ and initialize the container we will need</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

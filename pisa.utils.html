@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pisa.utils package &mdash; PISA 4.0 documentation</title>
+  <title>pisa.utils package &mdash; PISA 4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=9f5556dd"></script>
+      <script src="_static/documentation_options.js?v=3b2dd2c4"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -5675,17 +5675,19 @@ Must corrspond to the array dimension</p></li>
 <dt class="sig sig-object py" id="pisa.utils.stats.barlow_llh">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">barlow_llh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/stats.html#barlow_llh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.stats.barlow_llh" title="Link to this definition"></a></dt>
 <dd><p>Compute the Barlow LLH taking into account finite statistics.
-The likelihood is described in this paper: <a class="reference external" href="https://doi.org/10.1016/0010-4655(93)90005-W">https://doi.org/10.1016/0010-4655(93)90005-W</a>
-:param actual_values:
-:type actual_values: numpy.ndarrays of same shape
-:param expected_values:
-:type expected_values: numpy.ndarrays of same shape</p>
+The likelihood is described in this paper: <a class="reference external" href="https://doi.org/10.1016/0010-4655(93)90005-W">https://doi.org/10.1016/0010-4655(93)90005-W</a></p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>barlow_llh</strong></p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actual_values</strong> (<em>numpy.ndarrays</em><em> of </em><em>same shape</em>)</p></li>
+<li><p><strong>expected_values</strong> (<em>numpy.ndarrays</em><em> of </em><em>same shape</em>)</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>numpy.ndarray</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>barlow_llh</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -5693,8 +5695,10 @@ The likelihood is described in this paper: <a class="reference external" href="h
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.stats.chi2">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/stats.html#chi2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.stats.chi2" title="Link to this definition"></a></dt>
-<dd><p>Compute the chi-square between each value in <cite>actual_values</cite> and
-<cite>expected_values</cite>.</p>
+<dd><p>Compute Pearson’s chi-square between each value in <cite>actual_values</cite>
+and <cite>expected_values</cite>.</p>
+<div class="math notranslate nohighlight">
+\[\chi^2 = (N_{\mathrm{actual}} - N_{\mathrm{exp}})^2/N_{\mathrm{exp}}\]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -5712,17 +5716,21 @@ The likelihood is described in this paper: <a class="reference external" href="h
 <p class="rubric">Notes</p>
 <ul class="simple">
 <li><p>Uncertainties are not propagated through this calculation.</p></li>
-<li><p>Values in expectation are clipped to the range [SMALL_POS, inf] prior to
-the calculation to avoid infinities due to the divide function.</p></li>
-<li><p>actual_values are allowed to be = 0, since they don’t com up in the denominator</p></li>
+<li><p><cite>expected_values</cite> are clipped to the range [SMALL_POS, inf] prior to
+the calculation to avoid infinities when dividing</p></li>
+<li><p><cite>actual_values</cite> = 0 are allowed (appear only in numerator)</p></li>
 </ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.stats.conv_llh">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">conv_llh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/stats.html#conv_llh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.stats.conv_llh" title="Link to this definition"></a></dt>
-<dd><p>Compute the convolution llh using the uncertainty on the expected values
-to smear out the poisson PDFs</p>
+<dd><p>This convolution log-likelihood takes into account any uncertainties on the
+expected values (from e.g. finite MC statistics), which is achieved by
+smearing out the simple Poisson pdf with a normal distribution centered at 0.</p>
+<div class="math notranslate nohighlight">
+\[(p\star n)(k,\lambda,\sigma) = \int p(k,\lambda-x)n(x,\sigma)\mathrm{d}x\]</div>
+<p>The integral is calculated as a discrete sum with N steps.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -5731,12 +5739,11 @@ to smear out the poisson PDFs</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>conv_llh</strong> (<em>numpy.ndarray of same shape as the inputs</em>)</p></li>
-<li><p>conv_llh corresponding to each pair of elements in <cite>actual_values</cite> and</p></li>
-<li><p><cite>expected_values</cite>.</p></li>
-</ul>
-</p>
+<dd class="field-even"><p><strong>conv_llh</strong> – convoluted llh corresponding to each pair of elements in
+<cite>actual_values</cite> and <cite>expected_values</cite>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray of same shape as the inputs</p>
 </dd>
 </dl>
 </dd></dl>
@@ -5771,8 +5778,13 @@ so this is the steps to each side of the gaussian smearing term)</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.stats.correct_chi2">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">correct_chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/stats.html#correct_chi2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.stats.correct_chi2" title="Link to this definition"></a></dt>
-<dd><p>Compute the chi-square value taking into account uncertainty terms
-(incl. e.g. finite stats) and their changes</p>
+<dd><p>Compute -2 times the log-likelihood of a normal approximation of
+the Poisson pdf between each value in <cite>actual_values</cite> and <cite>expected_values</cite>
+taking into account uncertainty terms (incl. e.g. finite stats) and their
+changes.</p>
+<div class="math notranslate nohighlight">
+\[\chi^2 = \ln(\sigma^2 + N_{\mathrm{exp}}) + (N_{\mathrm{actual}} - N_{\mathrm{exp}})^2/(\sigma^2 + N_{\mathrm{exp}})\]</div>
+<p>Note that a constant normalisation factor <span class="math notranslate nohighlight">\(\ln(2\pi)\)</span> has already been subtracted.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -5781,7 +5793,7 @@ so this is the steps to each side of the gaussian smearing term)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>m_chi2</strong> – Modified chi-squared values corresponding to each pair of elements in
+<dd class="field-even"><p><strong>m_chi2</strong> – modified chi-squared values corresponding to each pair of elements in
 the inputs</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -5793,26 +5805,36 @@ the inputs</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.stats.generalized_poisson_llh">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">generalized_poisson_llh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">empty_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/stats.html#generalized_poisson_llh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.stats.generalized_poisson_llh" title="Link to this definition"></a></dt>
-<dd><p>Compute the generalized Poisson likelihood as formulated in <a class="reference external" href="https://arxiv.org/abs/1902.08831">https://arxiv.org/abs/1902.08831</a></p>
-<p>Note that unlike the other likelihood functions, expected_values
-is expected to be a ditribution maker</p>
-<section id="inputs">
-<h3>inputs:<a class="headerlink" href="#inputs" title="Link to this heading"></a></h3>
-<p>actual_values: flattened hist of a Map object</p>
-<p>expected_values: OrderedDict of MapSets</p>
-<p>empty_bins: None, list or np.ndarray (list the bin indices that are empty)</p>
-</section>
-<section id="returns">
-<h3>returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h3>
-<p>llh_per_bin : bin-wise llh values, in a numpy array</p>
-</section>
+<dd><p>Compute the generalized Poisson likelihood as formulated in
+<a class="reference external" href="https://arxiv.org/abs/1902.08831">https://arxiv.org/abs/1902.08831</a></p>
+<p>Note that unlike the other likelihood functions, <cite>expected_values</cite>
+is expected to be a distribution maker</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actual_values</strong> (<em>flattened hist</em><em> of </em><em>a Map object</em>)</p></li>
+<li><p><strong>expected_values</strong> (<a class="reference internal" href="pisa.html#pisa.OrderedDict" title="pisa.OrderedDict"><em>OrderedDict</em></a><em> of </em><em>MapSets</em>)</p></li>
+<li><p><strong>empty_bins</strong> (<em>None</em><em>, </em><em>list</em><em> or </em><em>np.ndarray</em><em> (</em><em>list the bin indices that are empty</em><em>)</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>llh_per_bin</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bin-wise llh values, in a numpy array</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.stats.llh">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">llh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/stats.html#llh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.stats.llh" title="Link to this definition"></a></dt>
-<dd><p>Compute the log-likelihoods (llh) that each count in <cite>actual_values</cite>
-came from the the corresponding expected value in <cite>expected_values</cite>.</p>
+<dd><p>Compute the log-likelihoods that each count in <cite>actual_values</cite>
+came from the corresponding expected value in <cite>expected_values</cite>.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L} = N_{\mathrm{actual}} \ln(N_{\mathrm{exp}}) - N_{\mathrm{exp}} - (N_{\mathrm{actual}} \ln(N_{\mathrm{actual}}) - N_{\mathrm{actual}})\]</div>
+<p>Note that this expression uses <a class="reference external" href="https://en.wikipedia.org/wiki/Stirling%27s_approximation">https://en.wikipedia.org/wiki/Stirling%27s_approximation</a>
+to estimate ln(k!)~k ln(k)-k.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -5901,10 +5923,6 @@ This is the most recommended likelihood in the paper.</p>
 <dd class="field-odd"><p>numpy.ndarray of same shape as the inputs</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li></li>
-</ul>
 </dd></dl>
 
 <dl class="py function">
@@ -5928,30 +5946,29 @@ This is the second most recommended likelihood in the paper.</p>
 <dd class="field-odd"><p>numpy.ndarray of same shape as the inputs</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li></li>
-</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.stats.mod_chi2">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">mod_chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/stats.html#mod_chi2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.stats.mod_chi2" title="Link to this definition"></a></dt>
-<dd><p>Compute the chi-square value taking into account uncertainty terms
-(incl. e.g. finite stats)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>actual_values</strong> (<em>numpy.ndarrays</em><em> of </em><em>same shape</em>)</p></li>
-<li><p><strong>expected_values</strong> (<em>numpy.ndarrays</em><em> of </em><em>same shape</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>m_chi2</strong> – Modified chi-squared values corresponding to each pair of elements in
+<dd><blockquote>
+<div><p>Compute a modified Pearson’s chi-square between each value in <cite>actual_values</cite>
+and <cite>expected_values</cite> taking into account uncertainty terms (incl. e.g. finite stats).</p>
+<div class="math notranslate nohighlight">
+\[\chi^2 = (N_{\mathrm{actual}} - N_{\mathrm{exp}})^2/(\sigma^2 + N_{\mathrm{exp}})\]</div>
+<p>actual_values, expected_values : numpy.ndarrays of same shape</p>
+<dl class="simple">
+<dt>m_chi2<span class="classifier">numpy.ndarray of same shape as inputs</span></dt><dd><p>Modified chi-squared values corresponding to each pair of elements in
 the inputs</p>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>numpy.ndarray of same shape as inputs</p>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>Notes</dt><dd><ul class="simple">
+<li><p><cite>expected_values</cite> are clipped to the range [SMALL_POS, inf] prior to
+the calculation to avoid infinities when dividing</p></li>
+<li><p><cite>actual_values</cite> = 0 are allowed (appear only in numerator)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -5986,7 +6003,8 @@ so this is the steps to each side of the gaussian smearing term)</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.stats.signed_sqrt_mod_chi2">
 <span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">signed_sqrt_mod_chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/stats.html#signed_sqrt_mod_chi2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.stats.signed_sqrt_mod_chi2" title="Link to this definition"></a></dt>
-<dd><p>Compute a (signed) pull value taking into account uncertainty terms.</p>
+<dd><p>Compute a (signed) pull value taking into account uncertainty terms
+(cf. <cite>mod_chi2</cite>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -6346,7 +6364,7 @@ modifications that have been proposed in the literature.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

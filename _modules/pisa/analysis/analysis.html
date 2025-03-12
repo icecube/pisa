@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pisa.analysis.analysis &mdash; PISA 4.0 documentation</title>
+  <title>pisa.analysis.analysis &mdash; PISA 4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+      <script src="../../../_static/documentation_options.js?v=3b2dd2c4"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -973,6 +973,19 @@
 <span class="sd">    defined in `local_fit_kwargs` should again be a dictionary with the three keywords</span>
 <span class="sd">    `method`, `method_kwargs` and `local_fit_kwargs`. In this way, sub-routines</span>
 <span class="sd">    can be arbitrarily stacked to define complex fit strategies.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pprint : bool, default: True</span>
+<span class="sd">        Whether to show live updates of minimizer progress (overridden by</span>
+<span class="sd">        `blindness`).</span>
+
+<span class="sd">    blindness : bool or int, default: False</span>
+<span class="sd">        Whether to carry out a blind analysis. If True or 1, this hides actual</span>
+<span class="sd">        parameter values from display and disallows these (as well as Jacobian,</span>
+<span class="sd">        Hessian, etc.) from ending up in logfiles. If given an integer &gt; 1, the</span>
+<span class="sd">        fitted parameters are also prevented from being stored in fit info</span>
+<span class="sd">        dictionaries.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -4351,7 +4364,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

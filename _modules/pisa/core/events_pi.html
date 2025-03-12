@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pisa.core.events_pi &mdash; PISA 4.0 documentation</title>
+  <title>pisa.core.events_pi &mdash; PISA 4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=9f5556dd"></script>
+      <script src="../../../_static/documentation_options.js?v=3b2dd2c4"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -187,10 +187,15 @@
 <span class="sd">        Flag indicating if events represent neutrinos; toggles special</span>
 <span class="sd">        behavior such as splitting into nu/nubar and CC/NC. Default is True.</span>
 
-<span class="sd">    fraction_events_to_keep : float</span>
+<span class="sd">    fraction_events_to_keep : float, default: None</span>
 <span class="sd">        Fraction of loaded events to use (use to downsample).</span>
-<span class="sd">        Must be in range [0.,1.], or disable by setting to `None`.</span>
-<span class="sd">        Default in None.</span>
+<span class="sd">        Must be in range [0.,1.]. Disabled by setting to `None`.</span>
+
+<span class="sd">    events_subsample_index : int &gt;= 0, default: 0</span>
+<span class="sd">        If `fraction_events_to_keep` is not `None`, determines</span>
+<span class="sd">        which of the statistically independent sub-samples</span>
+<span class="sd">        (uniquely determined by the seed passed to `load_events_file`)</span>
+<span class="sd">        to select.</span>
 
 <span class="sd">    *args, **kwargs</span>
 <span class="sd">        Passed on to `__init__` method of OrderedDict</span>
@@ -243,7 +248,7 @@
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.events_pi.EventsPi.load_events_file">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_events_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events_file</span><span class="p">,</span> <span class="n">variable_mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">required_metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123456</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Fill this events container from an input HDF5 file filled with event</span>
-<span class="sd">        data Optionally can provide a variable mapping so select a subset of</span>
+<span class="sd">        data. Optionally can provide a variable mapping so select a subset of</span>
 <span class="sd">        variables, rename them, etc.</span>
 
 <span class="sd">        Parameters</span>
@@ -260,10 +265,15 @@
 <span class="sd">            latter case, each of the specified source variables will become a</span>
 <span class="sd">            column vector in the destination array.</span>
 
-<span class="sd">        required_metadata : None, or list of str</span>
+<span class="sd">        required_metadata : sequence of str, default: None</span>
 <span class="sd">            Can optionally specify metadata keys to parse from the input file metdata.</span>
 <span class="sd">            ONLY metadata specified here will be parsed.</span>
-<span class="sd">            Anything specified here MUST exist in the files. </span>
+<span class="sd">            Anything specified here MUST exist in the files.</span>
+
+<span class="sd">        seed : int, default: 123456</span>
+<span class="sd">            If `fraction_events_to_keep` is not `None`, serves</span>
+<span class="sd">            as random seed for generating reproducible sub-samples.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Validate `events_file`</span>
@@ -859,7 +869,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

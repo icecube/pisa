@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>&lt;no title&gt; &mdash; PISA 4.0 documentation</title>
+  <title>&lt;no title&gt; &mdash; PISA 4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=9f5556dd"></script>
+      <script src="../_static/documentation_options.js?v=3b2dd2c4"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -149,7 +149,7 @@ Write simple functions named <cite>test_&lt;FUNCNAME&gt;</cite> or <cite>test_&l
 <p>Expect pytest to eventually be configured to run with [doctest](<a class="reference external" href="https://docs.python.org/3/library/doctest.html#module-doctest">https://docs.python.org/3/library/doctest.html#module-doctest</a>) [functionality](<a class="reference external" href="https://docs.pytest.org/en/latest/how-to/doctest.html">https://docs.pytest.org/en/latest/how-to/doctest.html</a>) enabled, so it’s also acceptable to put simple tests in docstrings, Markdown documentation files, or reST documentation files. (Just these won’t be exercised until we get pytest fully configured to do look for these tests.)</p>
 <p>Finally, until we get pytest configured, the <cite>test_*</cite> functions are called in the <cite>__main__</cite> section of many of the <cite>pisa/core</cite> modules (e.g., <cite>map.py</cite>, <cite>binning.py</cite>, <cite>transform.py</cite>, <cite>param.py</cite>). For now, these must be invoked by calling <cite>python &lt;filename&gt;</cite>.</p>
 <p>### How to test a service
-There are no general conventions on how to test a service currently in place. However, to keep tests synchronized with the code they are testing, it is recommended that configurations be generated within the test code rather than read from an external file. This is not a hard-and-fast rule, but usually results in better long-term outcomes.</p>
+Our [service howto](stages/how_to_service.md) describes what a given service should provide so that it can be tested. In general, to keep tests synchronized with the code they are testing, it is recommended that configurations be generated within the test code rather than read from an external file. This is not a hard-and-fast rule, but usually results in better long-term outcomes.</p>
 <p>## High-level testing
 Here we will supply whatever basic configuration files and example data is necessary to fully test all high-level functionality. Outputs should be able to be compared against known-outputs, either exactly (for deterministic processes or pseudo-random processes) or as a ratio with a know result (in the case of a “new” physics implementation).</p>
 <p>There should be both quick tests that just show an analysis can make it through from beginning to end (and produce a known output), as well as more thorough tests that check the correctness of a result.</p>
@@ -171,7 +171,7 @@ For more information on using units and uncertainties, see the [Units and uncert
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, The IceCube/PINGU Collaboration.</p>
+    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
