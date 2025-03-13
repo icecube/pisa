@@ -406,7 +406,8 @@ class Pipeline():
             for c in self.data.containers:
                 cc = Container(name=c.name)
                 # Find the events that belong to the given selection, depending on
-                # type of selection
+                # type of selection.
+                # TODO: consider optimisations such as caching these masks?
                 if isinstance(selections, list):
                     keep = c.get_keep_mask(selections[i])
                 else:
