@@ -1837,6 +1837,86 @@ the same <cite>midpoints</cite>, whereas in all other cases, it is identical.</p
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.core.binning.VarBinning">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.core.binning.</span></span><span class="sig-name descname"><span class="pre">VarBinning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">binnings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selections</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/binning.html#VarBinning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.binning.VarBinning" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Binning class that allows to use multiple different analysis binnings
+or to split up an event sample with a given analysis binning into
+non-overlapping sub-samples - which will be verified at analysis time -
+defined by arbitrary cuts.</p>
+<p>A use case is for example if you want to use a different 2d binning in
+reconstructed energy and cosine zenith for each PID bin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>binnings</strong> (<em>list</em><em> of </em><em>MultiDimBinnings</em>) – The MultiDimBinnings that should be used for each selection.</p></li>
+<li><p><strong>selections</strong> (<a class="reference internal" href="#pisa.core.binning.OneDimBinning" title="pisa.core.binning.OneDimBinning"><em>OneDimBinning</em></a><em> or </em><em>list</em><em> of </em><em>strings</em><em> (</em><em>cut expressions</em><em>)</em>) – Selections for creating sub-samples and for which different binnings
+can be used. Can either be a OneDimBinning of the selection variable
+or an arbitray selection defined in a list of strings where each string
+contains the respective selection cuts (similar to
+data.simple_data_loader’s <cite>mc_cuts</cite>).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The lengths of <cite>binnings</cite> and <cite>selections</cite> are required to be &gt; 1 (otherwise,
+just apply MC cuts the regular way) and the same (one <cite>MultiDimBinning</cite>
+per selection - we don’t attempt any array broadcasting).</p>
+<p>If a <cite>OneDimBinning</cite> is passed to <cite>selections</cite>, the corresponding
+dimension must not be a dimension of any <cite>MultiDimBinning</cite> in <cite>binnings</cite>.
+Similarly, if a list of cut expressions is passed, none of its contained
+variables may simultaneously serve as a <cite>MultiDimBinning</cite>’s dimension.
+While such scenarios needn’t always be dangerous, there are probably less
+convoluted ways of achieving them.</p>
+<p>A warning is issued when <cite>selections</cite> is of type <cite>OneDimBinning</cite> and
+all <cite>binnings</cite> entries are identical.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.core.binning.VarBinning.binnings">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">binnings</span></span><a class="headerlink" href="#pisa.core.binning.VarBinning.binnings" title="Link to this definition"></a></dt>
+<dd><p>each binning in a list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of <a class="reference internal" href="#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning">MultiDimBinning</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.core.binning.VarBinning.names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">names</span></span><a class="headerlink" href="#pisa.core.binning.VarBinning.names" title="Link to this definition"></a></dt>
+<dd><p>names of each (binning) dimension contained</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of strings</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.core.binning.VarBinning.nselections">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nselections</span></span><a class="headerlink" href="#pisa.core.binning.VarBinning.nselections" title="Link to this definition"></a></dt>
+<dd><p>number of selections with possibly different binnings</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.core.binning.VarBinning.selections">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">selections</span></span><a class="headerlink" href="#pisa.core.binning.VarBinning.selections" title="Link to this definition"></a></dt>
+<dd><p>selections for which to use different binnings</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of strs or <a class="reference internal" href="#pisa.core.binning.OneDimBinning" title="pisa.core.binning.OneDimBinning">OneDimBinning</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.core.binning.basename">
 <span class="sig-prename descclassname"><span class="pre">pisa.core.binning.</span></span><span class="sig-name descname"><span class="pre">basename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/binning.html#basename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.binning.basename" title="Link to this definition"></a></dt>
@@ -1891,6 +1971,12 @@ otherwise</p>
 <dt class="sig sig-object py" id="pisa.core.binning.test_OneDimBinning">
 <span class="sig-prename descclassname"><span class="pre">pisa.core.binning.</span></span><span class="sig-name descname"><span class="pre">test_OneDimBinning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/binning.html#test_OneDimBinning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.binning.test_OneDimBinning" title="Link to this definition"></a></dt>
 <dd><p>Unit tests for OneDimBinning class</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.core.binning.test_VarBinning">
+<span class="sig-prename descclassname"><span class="pre">pisa.core.binning.</span></span><span class="sig-name descname"><span class="pre">test_VarBinning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/binning.html#test_VarBinning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.binning.test_VarBinning" title="Link to this definition"></a></dt>
+<dd><p>Unit tests for VarBinning class</p>
 </dd></dl>
 
 </section>
@@ -1977,6 +2063,23 @@ are provided.</p>
 <dt class="sig sig-object py" id="pisa.core.container.Container.get_hist">
 <span class="sig-name descname"><span class="pre">get_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#Container.get_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.Container.get_hist" title="Link to this definition"></a></dt>
 <dd><p>Return reshaped data as normal n-dimensional histogram</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.container.Container.get_keep_mask">
+<span class="sig-name descname"><span class="pre">get_keep_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keep_criteria</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#Container.get_keep_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.Container.get_keep_mask" title="Link to this definition"></a></dt>
+<dd><p>Returns a mask that only keeps the events that survive the given cut(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>keep_criteria</strong> (<em>str</em>) – Any string interpretable as numpy boolean expression.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Keep events with true energies in [1, 80] GeV (note that units are not
+recognized, so have to be handled outside this method)</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mask</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">get_keep_mask</span><span class="p">(</span><span class="s2">&quot;(true_energy &gt;= 1) &amp; (true_energy &lt;= 80)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -2073,7 +2176,7 @@ src_representation : representation present in container</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pisa.core.container.Container.translation_modes">
-<span class="sig-name descname"><span class="pre">translation_modes</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('average',</span> <span class="pre">'sum',</span> <span class="pre">None)</span></em><a class="headerlink" href="#pisa.core.container.Container.translation_modes" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">translation_modes</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('average',</span> <span class="pre">'sum')</span></em><a class="headerlink" href="#pisa.core.container.Container.translation_modes" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -5614,6 +5717,35 @@ This is done by replacing relevant correlated parameters with “DerivedParams�
 So we go to the first stage we find that has one of the original parameters and manually add this in</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.assert_exclusive_varbinning">
+<span class="sig-name descname"><span class="pre">assert_exclusive_varbinning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_binning</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/pipeline.html#Pipeline.assert_exclusive_varbinning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.pipeline.Pipeline.assert_exclusive_varbinning" title="Link to this definition"></a></dt>
+<dd><p>Assert that <cite>VarBinning</cite> selections are mutually exclusive.
+This is done individually for each <cite>Container</cite> in <cite>self.data</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>output_binning</strong> (<em>None</em><em>, </em><a class="reference internal" href="#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning"><em>MultiDimBinning</em></a><em>, </em><a class="reference internal" href="#pisa.core.binning.VarBinning" title="pisa.core.binning.VarBinning"><em>VarBinning</em></a>)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – if a <cite>VarBinning</cite> is tested and at least two selections
+    (if applicable) are not mutually exclusive</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.assert_varbinning_compat">
+<span class="sig-name descname"><span class="pre">assert_varbinning_compat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/pipeline.html#Pipeline.assert_varbinning_compat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.pipeline.Pipeline.assert_varbinning_compat" title="Link to this definition"></a></dt>
+<dd><p>Asserts that pipeline setup is compatible with <cite>VarBinning</cite>:
+all stages need to apply to events (this precludes use with
+any histogramming service, which requires a binning as apply_mode).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – if at least one stage has apply_mode!=’events’</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.config">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#pisa.core.pipeline.Pipeline.config" title="Link to this definition"></a></dt>
@@ -5657,6 +5789,11 @@ contained stage.</p>
 </dl>
 <p>:raises ValueError : if <cite>stage_id</cite> not in pipeline.:</p>
 </dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.output_binning">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output_binning</span></span><a class="headerlink" href="#pisa.core.pipeline.Pipeline.output_binning" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.param_selections">
@@ -5722,6 +5859,17 @@ contained stage.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>KeyError if error_on_missing is True and any</strong><strong> of </strong><strong>selections does</strong> – not exist in any stage in the pipeline.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.service_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">service_names</span></span><a class="headerlink" href="#pisa.core.pipeline.Pipeline.service_names" title="Link to this definition"></a></dt>
+<dd><p>names of services in the pipeline</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of strings</p>
 </dd>
 </dl>
 </dd></dl>

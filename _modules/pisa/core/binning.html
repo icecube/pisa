@@ -112,8 +112,8 @@
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;NAME_FIXES&#39;</span><span class="p">,</span> <span class="s1">&#39;NAME_SEPCHARS&#39;</span><span class="p">,</span> <span class="s1">&#39;NAME_FIXES_REGEXES&#39;</span><span class="p">,</span>
            <span class="s1">&#39;basename&#39;</span><span class="p">,</span> <span class="s1">&#39;_new_obj&#39;</span><span class="p">,</span> <span class="s1">&#39;is_binning&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;OneDimBinning&#39;</span><span class="p">,</span> <span class="s1">&#39;MultiDimBinning&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;test_OneDimBinning&#39;</span><span class="p">,</span> <span class="s1">&#39;test_MultiDimBinning&#39;</span><span class="p">]</span>
+           <span class="s1">&#39;OneDimBinning&#39;</span><span class="p">,</span> <span class="s1">&#39;MultiDimBinning&#39;</span><span class="p">,</span> <span class="s1">&#39;VarBinning&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;test_OneDimBinning&#39;</span><span class="p">,</span> <span class="s1">&#39;test_MultiDimBinning&#39;</span><span class="p">,</span> <span class="s1">&#39;test_VarBinning&#39;</span><span class="p">]</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
 
@@ -217,7 +217,7 @@
 
 <div class="viewcode-block" id="OneDimBinning">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.OneDimBinning">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">OneDimBinning</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OneDimBinning</span><span class="p">():</span>
     <span class="c1"># pylint: disable=line-too-long</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Histogram-oriented binning specialized to a single dimension.</span>
 
@@ -1607,7 +1607,7 @@
 
 <div class="viewcode-block" id="MultiDimBinning">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.MultiDimBinning">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">MultiDimBinning</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiDimBinning</span><span class="p">():</span>
     <span class="c1"># pylint: disable=line-too-long</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Multi-dimensional binning object. This can contain one or more</span>
@@ -1716,7 +1716,6 @@
         <span class="c1"># Handle masking</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> 
 
-
     <span class="k">def</span><span class="w"> </span><span class="nf">_init_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Initialize the bin mask. This can either be specified as:</span>
@@ -1765,12 +1764,10 @@
         <span class="c1"># Done, store the mask</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mask</span> <span class="o">=</span> <span class="n">mask</span>
 
-
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the dimension&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
-
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">previous_precision</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">get_printoptions</span><span class="p">()[</span><span class="s1">&#39;precision&#39;</span><span class="p">]</span>
@@ -3257,6 +3254,146 @@
 
 
 
+<div class="viewcode-block" id="VarBinning">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.VarBinning">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VarBinning</span><span class="p">():</span>
+    <span class="c1"># pylint: disable=line-too-long</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Binning class that allows to use multiple different analysis binnings</span>
+<span class="sd">    or to split up an event sample with a given analysis binning into</span>
+<span class="sd">    non-overlapping sub-samples - which will be verified at analysis time -</span>
+<span class="sd">    defined by arbitrary cuts.</span>
+
+<span class="sd">    A use case is for example if you want to use a different 2d binning in</span>
+<span class="sd">    reconstructed energy and cosine zenith for each PID bin.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    binnings : list of MultiDimBinnings</span>
+<span class="sd">        The MultiDimBinnings that should be used for each selection.</span>
+
+<span class="sd">    selections : OneDimBinning or list of strings (cut expressions)</span>
+<span class="sd">        Selections for creating sub-samples and for which different binnings</span>
+<span class="sd">        can be used. Can either be a OneDimBinning of the selection variable</span>
+<span class="sd">        or an arbitray selection defined in a list of strings where each string</span>
+<span class="sd">        contains the respective selection cuts (similar to</span>
+<span class="sd">        data.simple_data_loader&#39;s `mc_cuts`).</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The lengths of `binnings` and `selections` are required to be &gt; 1 (otherwise,</span>
+<span class="sd">    just apply MC cuts the regular way) and the same (one `MultiDimBinning`</span>
+<span class="sd">    per selection - we don&#39;t attempt any array broadcasting).</span>
+
+<span class="sd">    If a `OneDimBinning` is passed to `selections`, the corresponding</span>
+<span class="sd">    dimension must not be a dimension of any `MultiDimBinning` in `binnings`.</span>
+<span class="sd">    Similarly, if a list of cut expressions is passed, none of its contained</span>
+<span class="sd">    variables may simultaneously serve as a `MultiDimBinning`&#39;s dimension.</span>
+<span class="sd">    While such scenarios needn&#39;t always be dangerous, there are probably less</span>
+<span class="sd">    convoluted ways of achieving them.</span>
+
+<span class="sd">    A warning is issued when `selections` is of type `OneDimBinning` and</span>
+<span class="sd">    all `binnings` entries are identical.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint: enable=line-too-long</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binnings</span><span class="p">,</span> <span class="n">selections</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">selections</span><span class="p">,</span> <span class="p">(</span><span class="n">OneDimBinning</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selection type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span><span class="si">}</span><span class="s2"> not supported!&quot;</span><span class="p">)</span>
+        <span class="c1"># some &quot;trivial&quot; asserts</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binnings</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">binnings</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">binnings</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+
+        <span class="n">all_equal</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">binnings</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+            <span class="c1"># determine whether any variable is part of this binning</span>
+            <span class="n">invalid_sel_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selection_vars_in_mdb</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">selections</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">invalid_sel_vars</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Selection variables </span><span class="si">{</span><span class="n">invalid_sel_vars</span><span class="si">}</span><span class="s2"> may not&quot;</span>
+                    <span class="s2">&quot; simultaneously be part of any MultiDimBinning!&quot;</span>
+                <span class="p">)</span>
+            <span class="n">all_equal</span> <span class="o">=</span> <span class="n">all_equal</span> <span class="ow">and</span> <span class="n">b</span> <span class="o">==</span> <span class="n">binnings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">selections</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">)</span> <span class="ow">and</span> <span class="n">all_equal</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;All binnings are equal, namely </span><span class="si">{</span><span class="n">binnings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">!s}</span><span class="s2">. It will most&quot;</span>
+                <span class="s2">&quot; likely be advantageous to simply use the MultiDimBinning&quot;</span>
+                <span class="s2">&quot; class for the same analysis purpose.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_binnings</span> <span class="o">=</span> <span class="n">binnings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selections</span> <span class="o">=</span> <span class="n">selections</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nselections</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_names</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_selection_vars_in_mdb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">selections</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check which binning dimensions also appear in the selections.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">selections</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">selections</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">binning</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">selections</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">selections</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="c1"># dumb way to find all cut variables in expressions (+ cut values)</span>
+            <span class="n">vars_and_more</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">cut_expr</span> <span class="ow">in</span> <span class="n">selections</span><span class="p">:</span>
+                <span class="n">vars_and_more</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b\w+\b&quot;</span><span class="p">,</span> <span class="n">cut_expr</span><span class="p">))</span>
+            <span class="c1"># Return any dimension names that occur identically in any</span>
+            <span class="c1"># cut expression. Adapt the above if there is a false positive.</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">dim</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">binning</span><span class="o">.</span><span class="n">names</span> <span class="k">if</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">vars_and_more</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">binnings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;list of MultiDimBinning : each binning in a list&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_binnings</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">selections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;list of strs or OneDimBinning : selections for which to use different binnings&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selections</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nselections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;int : number of selections with possibly different binnings&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nselections</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;list of strings : names of each (binning) dimension contained&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_names</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">binnings</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__pretty__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by the `pretty` library for formatting&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cycle</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(...)&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">begin_group</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">([&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">breakable</span><span class="p">()</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">pretty</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">end_group</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;])&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method used by e.g. ipython/Jupyter for formatting&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pretty__</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over dimensions. Use `iterbins` to iterate over bins.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_binnings</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nselections</span></div>
+
+
+
 <div class="viewcode-block" id="test_OneDimBinning">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.test_OneDimBinning">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_OneDimBinning</span><span class="p">():</span>
@@ -3719,10 +3856,47 @@
 
 
 
+<div class="viewcode-block" id="test_VarBinning">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.binning.test_VarBinning">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_VarBinning</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for VarBinning class&quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=wrong-import-position</span>
+
+    <span class="n">b1</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">)</span>
+    <span class="n">b2</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;coszen&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">mdb1</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">])</span>
+    <span class="n">b3</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">)</span>
+    <span class="n">mdb2</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">b3</span><span class="p">,</span> <span class="n">b2</span><span class="p">])</span>
+
+    <span class="n">selection</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pid&#39;</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">varbin</span> <span class="o">=</span> <span class="n">VarBinning</span><span class="p">([</span><span class="n">mdb1</span><span class="p">,</span> <span class="n">mdb2</span><span class="p">],</span> <span class="n">selection</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">varbin</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">varbin</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="s1">&#39;coszen&#39;</span><span class="p">]</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">mdb</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span> <span class="k">for</span> <span class="n">mdb</span> <span class="ow">in</span> <span class="n">varbin</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+
+    <span class="n">selection</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pid &lt; 0.5&#39;</span><span class="p">,</span> <span class="s1">&#39;pid &gt;= 0.5&#39;</span><span class="p">]</span>
+    <span class="n">varbin</span> <span class="o">=</span> <span class="n">VarBinning</span><span class="p">([</span><span class="n">mdb1</span><span class="p">,</span> <span class="n">mdb2</span><span class="p">],</span> <span class="n">selection</span><span class="p">)</span>
+
+    <span class="n">selection</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;energy == 10&#39;</span><span class="p">,</span> <span class="s1">&#39;coszen &lt; 0&#39;</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">varbin</span> <span class="o">=</span> <span class="n">VarBinning</span><span class="p">([</span><span class="n">mdb1</span><span class="p">,</span> <span class="n">mdb1</span><span class="p">],</span> <span class="n">selection</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="kc">False</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_VarBinning &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">test_OneDimBinning</span><span class="p">()</span>
     <span class="n">test_MultiDimBinning</span><span class="p">()</span>
+    <span class="n">test_VarBinning</span><span class="p">()</span>
 </pre></div>
 
            </div>

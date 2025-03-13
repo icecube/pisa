@@ -272,10 +272,18 @@
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.binning.OneDimBinning.weighted_centers"><code class="docutils literal notranslate"><span class="pre">OneDimBinning.weighted_centers</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.binning.VarBinning"><code class="docutils literal notranslate"><span class="pre">VarBinning</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.binning.VarBinning.binnings"><code class="docutils literal notranslate"><span class="pre">VarBinning.binnings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.binning.VarBinning.names"><code class="docutils literal notranslate"><span class="pre">VarBinning.names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.binning.VarBinning.nselections"><code class="docutils literal notranslate"><span class="pre">VarBinning.nselections</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.binning.VarBinning.selections"><code class="docutils literal notranslate"><span class="pre">VarBinning.selections</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.binning.basename"><code class="docutils literal notranslate"><span class="pre">basename()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.binning.is_binning"><code class="docutils literal notranslate"><span class="pre">is_binning()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.binning.test_MultiDimBinning"><code class="docutils literal notranslate"><span class="pre">test_MultiDimBinning()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.binning.test_OneDimBinning"><code class="docutils literal notranslate"><span class="pre">test_OneDimBinning()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.binning.test_VarBinning"><code class="docutils literal notranslate"><span class="pre">test_VarBinning()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="pisa.core.html#module-pisa.core.container">pisa.core.container module</a><ul>
@@ -289,6 +297,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.default_translation_mode"><code class="docutils literal notranslate"><span class="pre">Container.default_translation_mode</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.find_valid_representation"><code class="docutils literal notranslate"><span class="pre">Container.find_valid_representation()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.get_hist"><code class="docutils literal notranslate"><span class="pre">Container.get_hist()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.get_keep_mask"><code class="docutils literal notranslate"><span class="pre">Container.get_keep_mask()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.get_map"><code class="docutils literal notranslate"><span class="pre">Container.get_map()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.is_map"><code class="docutils literal notranslate"><span class="pre">Container.is_map</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.container.Container.keys"><code class="docutils literal notranslate"><span class="pre">Container.keys</span></code></a></li>
@@ -644,16 +653,20 @@
 <li class="toctree-l2"><a class="reference internal" href="pisa.core.html#module-pisa.core.pipeline">pisa.core.pipeline module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline"><code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.add_covariance"><code class="docutils literal notranslate"><span class="pre">Pipeline.add_covariance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.assert_exclusive_varbinning"><code class="docutils literal notranslate"><span class="pre">Pipeline.assert_exclusive_varbinning()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.assert_varbinning_compat"><code class="docutils literal notranslate"><span class="pre">Pipeline.assert_varbinning_compat()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.config"><code class="docutils literal notranslate"><span class="pre">Pipeline.config</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.get_outputs"><code class="docutils literal notranslate"><span class="pre">Pipeline.get_outputs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.hash"><code class="docutils literal notranslate"><span class="pre">Pipeline.hash</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.index"><code class="docutils literal notranslate"><span class="pre">Pipeline.index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.output_binning"><code class="docutils literal notranslate"><span class="pre">Pipeline.output_binning</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.param_selections"><code class="docutils literal notranslate"><span class="pre">Pipeline.param_selections</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.params"><code class="docutils literal notranslate"><span class="pre">Pipeline.params</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.profile"><code class="docutils literal notranslate"><span class="pre">Pipeline.profile</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.report_profile"><code class="docutils literal notranslate"><span class="pre">Pipeline.report_profile()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.run"><code class="docutils literal notranslate"><span class="pre">Pipeline.run()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.select_params"><code class="docutils literal notranslate"><span class="pre">Pipeline.select_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.service_names"><code class="docutils literal notranslate"><span class="pre">Pipeline.service_names</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.setup"><code class="docutils literal notranslate"><span class="pre">Pipeline.setup()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.source_code_hash"><code class="docutils literal notranslate"><span class="pre">Pipeline.source_code_hash</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pisa.core.html#pisa.core.pipeline.Pipeline.stage_names"><code class="docutils literal notranslate"><span class="pre">Pipeline.stage_names</span></code></a></li>

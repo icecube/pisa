@@ -271,6 +271,8 @@
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;Handle merging of multiple MapSets, when they come in</span>
 <span class="sd">    the shape of a dict</span>
 
+<span class="sd">    TODO: might not be required any longer (see various comments on</span>
+<span class="sd">    generalized_poisson_llh)</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mapset_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Mapping</span><span class="p">):</span>
@@ -735,16 +737,27 @@
             <span class="k">assert</span> <span class="n">hypo_maker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="n">msg</span>
             <span class="k">assert</span> <span class="n">data_dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="n">msg</span>
             <span class="k">assert</span> <span class="n">metric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="n">msg</span>
+            <span class="c1"># this passes through the setter method, but it should just pass through</span>
+            <span class="c1"># without actually doing anything</span>
             <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
-                <span class="c1"># this passes through the setter method, but it should just pass through</span>
-                <span class="c1"># without actually doing anything</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">detailed_metric_info</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_detailed_metric_info</span><span class="p">(</span>
                     <span class="n">data_dist</span><span class="o">=</span><span class="n">data_dist</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hypo_asimov_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hypo_asimov_dist</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
                     <span class="n">params</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                    <span class="n">other_metrics</span><span class="o">=</span><span class="n">other_metrics</span><span class="p">,</span> <span class="n">detector_name</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">det_names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hypo_maker</span><span class="o">=</span><span class="n">hypo_maker</span>
+                    <span class="n">other_metrics</span><span class="o">=</span><span class="n">other_metrics</span><span class="p">,</span> <span class="n">detector_name</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">det_names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hypo_maker</span><span class="o">=</span><span class="n">hypo_maker</span><span class="p">,</span>
                 <span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data_dist</span><span class="p">))]</span>
-            <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object</span>
-                <span class="k">if</span> <span class="s1">&#39;generalized_poisson_llh&#39;</span> <span class="o">==</span> <span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_dist</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span> <span class="c1"># DistributionMaker object with variable binning</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">detailed_metric_info</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_detailed_metric_info</span><span class="p">(</span>
+                    <span class="n">data_dist</span><span class="o">=</span><span class="n">data_dist</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hypo_asimov_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hypo_asimov_dist</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">params</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">other_metrics</span><span class="o">=</span><span class="n">other_metrics</span><span class="p">,</span> <span class="n">detector_name</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">detector_name</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">=</span><span class="n">hypo_maker</span><span class="p">,</span>
+                <span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data_dist</span><span class="p">))]</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object with regular binning</span>
+                <span class="k">if</span> <span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;generalized_poisson_llh&#39;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                        <span class="s2">&quot;generalized_poisson_llh isn&#39;t correctly implemented any longer!&quot;</span>
+                    <span class="p">)</span>
+                    <span class="c1"># FIXME: these `output_mode` and `force_standard_output` kwargs were removed in</span>
+                    <span class="c1"># https://github.com/icecube/pisa/commit/7a4e875aa7bdc52ea64a5270e9808d866d1395f3</span>
                     <span class="n">generalized_poisson_dist</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">force_standard_output</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     <span class="n">generalized_poisson_dist</span> <span class="o">=</span> <span class="n">merge_mapsets_together</span><span class="p">(</span><span class="n">mapset_list</span><span class="o">=</span><span class="n">generalized_poisson_dist</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -753,7 +766,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">detailed_metric_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_detailed_metric_info</span><span class="p">(</span>
                     <span class="n">data_dist</span><span class="o">=</span><span class="n">data_dist</span><span class="p">,</span> <span class="n">hypo_asimov_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hypo_asimov_dist</span><span class="p">,</span> <span class="n">generalized_poisson_hypo</span><span class="o">=</span><span class="n">generalized_poisson_dist</span><span class="p">,</span>
                     <span class="n">params</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">other_metrics</span><span class="o">=</span><span class="n">other_metrics</span><span class="p">,</span>
-                    <span class="n">detector_name</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">detector_name</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">=</span><span class="n">hypo_maker</span>
+                    <span class="n">detector_name</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">detector_name</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">=</span><span class="n">hypo_maker</span><span class="p">,</span>
                 <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
@@ -898,6 +911,7 @@
                 <span class="n">detailed_metric_info</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_vals_d</span>
 
             <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># TODO: remove this case?</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
                     <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">hypo_asimov_dist</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
 
@@ -1272,17 +1286,6 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">metric</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="p">]</span>
-
-        <span class="c1"># Before starting any fit, check if we already have a perfect match between data and template</span>
-        <span class="c1"># This can happen if using pseudodata that was generated with the nominal values for parameters</span>
-        <span class="c1"># (which will also be the initial values in the fit) and blah...</span>
-        <span class="c1"># If this is the case, don&#39;t both to fit and return results right away.</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">metric</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="p">]</span>
-
         <span class="c1"># Grab the hypo map</span>
         <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -1293,12 +1296,20 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># One metric for all detectors</span>
                 <span class="n">metric</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;Number of defined metrics does not match with number of detectors.&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of defined metrics does not match with number of detectors.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">,</span> <span class="n">MapSet</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c1"># DistributionMaker object (list means variable binning)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Only one metric allowed for DistributionMaker&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;hypo_maker returned output of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Check if the hypo matches data</span>
-        <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">!=</span> <span class="s2">&quot;Detectors&quot;</span> <span class="ow">and</span> <span class="n">data_dist</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">)</span> <span class="p">:</span>
+        <span class="c1"># Before starting any fit, check if we already have a perfect match</span>
+        <span class="c1"># between data and template. This can happen if using pseudodata that</span>
+        <span class="c1"># was generated with the nominal values for parameters (which will also</span>
+        <span class="c1"># be the initial values in the fit). If this is the case, don&#39;t bother</span>
+        <span class="c1"># to fit and return results right away. TODO: This speedup is currently</span>
+        <span class="c1"># only enabled for a DistributionMaker with regular binning.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_dist</span><span class="p">,</span> <span class="n">MapSet</span><span class="p">)</span> <span class="ow">and</span> <span class="n">data_dist</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">):</span>
 
             <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;Initial hypo matches data, no need for fit&#39;</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
@@ -2849,12 +2860,18 @@
         <span class="c1"># Get the map set</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;generalized_poisson_llh&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="s2">&quot;generalized_poisson_llh isn&#39;t correctly implemented any longer!&quot;</span>
+                <span class="p">)</span>
+                <span class="c1"># FIXME: these `output_mode` and `force_standard_output` kwargs were removed in</span>
+                <span class="c1"># https://github.com/icecube/pisa/commit/7a4e875aa7bdc52ea64a5270e9808d866d1395f3</span>
                 <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">output_mode</span><span class="o">=</span><span class="s1">&#39;binned&#39;</span><span class="p">,</span> <span class="n">force_standard_output</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">merge_mapsets_together</span><span class="p">(</span><span class="n">mapset_list</span><span class="o">=</span><span class="n">hypo_asimov_dist</span><span class="p">)</span>
                 <span class="n">data_dist</span> <span class="o">=</span> <span class="n">data_dist</span><span class="o">.</span><span class="n">maps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># Extract the map from the MapSet</span>
                 <span class="n">metric_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;empty_bins&#39;</span><span class="p">:</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">empty_bin_indices</span><span class="p">}</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># TODO: can be removed? (see same commit as above)</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
                     <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">hypo_asimov_dist</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
                 <span class="n">metric_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
@@ -2878,11 +2895,17 @@
                 <span class="n">metric_val</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">)):</span>
                     <span class="n">data</span> <span class="o">=</span> <span class="n">data_dist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">expected_values</span><span class="o">=</span><span class="n">hypo_asimov_dist</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                                  <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">metric_kwargs</span><span class="o">=</span><span class="n">metric_kwargs</span><span class="p">)</span>
+                                                     <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">metric_kwargs</span><span class="o">=</span><span class="n">metric_kwargs</span><span class="p">)</span>
                     <span class="n">metric_val</span> <span class="o">+=</span> <span class="n">data</span>
                 <span class="n">priors</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">priors_penalty</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c1"># uses just the &quot;first&quot; metric for prior</span>
                 <span class="n">metric_val</span> <span class="o">+=</span> <span class="n">priors</span>
-            <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span> <span class="c1"># DistributionMaker object with variable binning</span>
+                <span class="n">metric_val</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">)):</span>
+                    <span class="n">metric_val</span> <span class="o">+=</span> <span class="n">data_dist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">expected_values</span><span class="o">=</span><span class="n">hypo_asimov_dist</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                                            <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">metric_kwargs</span><span class="o">=</span><span class="n">metric_kwargs</span><span class="p">)</span>
+                <span class="n">metric_val</span> <span class="o">+=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">priors_penalty</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object with regular binning</span>
                 <span class="k">if</span> <span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;weighted_chi2&#39;</span><span class="p">:</span>
                     <span class="n">actual_values</span> <span class="o">=</span> <span class="n">data_dist</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span>
                     <span class="n">expected_values</span> <span class="o">=</span> <span class="n">hypo_asimov_dist</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span>
@@ -3222,9 +3245,9 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># One metric for all detectors</span>
                 <span class="n">metric</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;Number of defined metrics does not match with number of detectors.&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of defined metrics does not match with number of detectors.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Only one metric allowed for DistributionMaker&quot;</span>
 
         <span class="k">if</span> <span class="n">check_ordering</span><span class="p">:</span>
             <span class="k">if</span> <span class="s1">&#39;nh&#39;</span> <span class="ow">in</span> <span class="n">hypo_param_selections</span> <span class="ow">or</span> <span class="s1">&#39;ih&#39;</span> <span class="ow">in</span> <span class="n">hypo_param_selections</span><span class="p">:</span>
@@ -3313,9 +3336,12 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># One metric for all detectors</span>
                 <span class="n">metric</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;Number of defined metrics does not match with number of detectors.&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of defined metrics does not match with number of detectors.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">,</span> <span class="n">MapSet</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c1"># DistributionMaker object (list means variable binning)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Only one metric allowed for DistributionMaker&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;hypo_maker returned output of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">fit_info</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span>
 
         <span class="c1"># Assess the fit: whether the data came from the hypo_asimov_dist</span>
@@ -3327,10 +3353,19 @@
                     <span class="n">metric_val</span> <span class="o">+=</span> <span class="n">data</span>
                 <span class="n">priors</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">priors_penalty</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c1"># uses just the &quot;first&quot; metric for prior</span>
                 <span class="n">metric_val</span> <span class="o">+=</span> <span class="n">priors</span>
-            <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_dist</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span> <span class="c1"># DistributionMaker object with VarBinning</span>
+                <span class="n">metric_val</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data_dist</span><span class="p">)):</span>
+                    <span class="n">metric_val</span> <span class="o">+=</span> <span class="n">data_dist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">expected_values</span><span class="o">=</span><span class="n">hypo_asimov_dist</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">metric_val</span> <span class="o">+=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">priors_penalty</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object with MultiDimBinning</span>
 
                 <span class="k">if</span> <span class="s1">&#39;generalized_poisson_llh&#39;</span> <span class="o">==</span> <span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                        <span class="s2">&quot;generalized_poisson_llh isn&#39;t correctly implemented any longer!&quot;</span>
+                    <span class="p">)</span>
+                    <span class="c1"># FIXME: these `output_mode` and `force_standard_output` kwargs were removed in</span>
+                    <span class="c1"># https://github.com/icecube/pisa/commit/7a4e875aa7bdc52ea64a5270e9808d866d1395f3</span>
                     <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">output_mode</span><span class="o">=</span><span class="s1">&#39;binned&#39;</span><span class="p">,</span> <span class="n">force_standard_output</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">merge_mapsets_together</span><span class="p">(</span><span class="n">mapset_list</span><span class="o">=</span><span class="n">hypo_asimov_dist</span><span class="p">)</span>
                     <span class="n">data_dist</span> <span class="o">=</span> <span class="n">data_dist</span><span class="o">.</span><span class="n">maps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># Extract the map from the MapSet</span>
@@ -3375,9 +3410,20 @@
                 <span class="n">params</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">distribution_makers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
                 <span class="n">other_metrics</span><span class="o">=</span><span class="n">other_metrics</span><span class="p">,</span> <span class="n">detector_name</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">det_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data_dist</span><span class="p">))]</span>
-        <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_dist</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span> <span class="c1"># DistributionMaker object with VarBinning</span>
+            <span class="n">fit_info</span><span class="o">.</span><span class="n">detailed_metric_info</span> <span class="o">=</span> <span class="p">[</span><span class="n">fit_info</span><span class="o">.</span><span class="n">get_detailed_metric_info</span><span class="p">(</span>
+                <span class="n">data_dist</span><span class="o">=</span><span class="n">data_dist</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hypo_asimov_dist</span><span class="o">=</span><span class="n">hypo_asimov_dist</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">params</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">other_metrics</span><span class="o">=</span><span class="n">other_metrics</span><span class="p">,</span>
+                <span class="n">detector_name</span><span class="o">=</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">detector_name</span>
+            <span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data_dist</span><span class="p">))]</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># DistributionMaker object with MultiDimBinning</span>
 
             <span class="k">if</span> <span class="s1">&#39;generalized_poisson_llh&#39;</span> <span class="o">==</span> <span class="n">metric</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="s2">&quot;generalized_poisson_llh isn&#39;t correctly implemented any longer!&quot;</span>
+                <span class="p">)</span>
+                <span class="c1"># FIXME: these `output_mode` and `force_standard_output` kwargs were removed in</span>
+                <span class="c1"># https://github.com/icecube/pisa/commit/7a4e875aa7bdc52ea64a5270e9808d866d1395f3</span>
                 <span class="n">generalized_poisson_dist</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">force_standard_output</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="n">generalized_poisson_dist</span> <span class="o">=</span> <span class="n">merge_mapsets_together</span><span class="p">(</span><span class="n">mapset_list</span><span class="o">=</span><span class="n">generalized_poisson_dist</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>

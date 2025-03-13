@@ -367,16 +367,15 @@
                 <span class="n">outputs</span><span class="o">.</span><span class="n">tex</span> <span class="o">=</span> <span class="n">sum_map_tex_name</span>
                 <span class="n">outputs</span> <span class="o">=</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span> <span class="c1"># final output must be a MapSet</span>
 
-            <span class="c1"># Case where the output of a pipeline is a dict of different MapSets</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">OrderedDict</span><span class="p">):</span>
-                <span class="n">output_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">A</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">])</span> <span class="c1"># This produces a Map objects</span>
-                    <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">sum_map_name</span>
-                    <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">tex</span> <span class="o">=</span> <span class="n">sum_map_tex_name</span>
-                    <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-
-                <span class="n">outputs</span> <span class="o">=</span> <span class="n">output_dict</span>
+            <span class="c1"># Case where the output of a pipeline is a list of different MapSets</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">outs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+                    <span class="n">o</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">outputs</span><span class="p">)[:,</span> <span class="n">i</span><span class="p">]])</span>
+                    <span class="n">o</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">sum_map_name</span>
+                    <span class="n">o</span><span class="o">.</span><span class="n">tex</span> <span class="o">=</span> <span class="n">sum_map_tex_name</span>
+                    <span class="n">outs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MapSet</span><span class="p">(</span><span class="n">o</span><span class="p">))</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="n">outs</span>
 
         <span class="k">return</span> <span class="n">outputs</span></div>
 

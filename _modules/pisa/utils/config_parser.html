@@ -309,6 +309,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span> <span class="n">ArgumentParser</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">abspath</span><span class="p">,</span> <span class="n">expanduser</span><span class="p">,</span> <span class="n">expandvars</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">join</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
@@ -337,7 +338,7 @@
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;P. Eller, J. Lanfranchi&#39;</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2025, The IceCube Collaboration</span>
 
 <span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
@@ -552,7 +553,7 @@
 <span class="sd">    param : pisa.core.param.Param</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Note: imports placed here to avoid circular imports</span>
+    <span class="c1"># imports placed here to avoid circular imports</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">DerivedParam</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">Prior</span>
     <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">pname</span><span class="p">,</span> <span class="n">is_fixed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
@@ -655,6 +656,122 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_varbinning</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">bin_split</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse and initialize a `VarBinning` instance from config.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    VarBinning</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># imports placed here to avoid circular imports</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">VarBinning</span> <span class="c1"># pylint: disable=import-outside-toplevel</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">bin_split</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">bin_split</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bin_split</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="c1"># Just split original str into individual selection strs</span>
+        <span class="n">bin_split</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">bin_split</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bin_split</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+        <span class="c1"># If input can be parsed as dict, split events according to</span>
+        <span class="c1"># the presumably contained OneDimBinning definition</span>
+        <span class="n">bin_split</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="o">**</span><span class="n">bin_split</span><span class="p">)</span>
+
+    <span class="n">nselections</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bin_split</span><span class="p">)</span>
+    <span class="c1"># instantiate the OneDimBinnings corresponding to each selection</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nselections</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">bin_name</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
+        <span class="n">def_raw</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;binning&#39;</span><span class="p">,</span> <span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">bin_name</span><span class="p">)</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">def_raw</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c1"># Dedicated OneDimBinning kwargs for each selection</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">==</span> <span class="n">nselections</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Broadcast the universal OneDimBinning kwargs across</span>
+            <span class="c1"># all selections</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">[</span><span class="n">kwargs</span><span class="p">]</span> <span class="o">*</span> <span class="n">nselections</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">kw</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">bins</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bin_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">))</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.mask&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c1"># Dedicated mask for each selection</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> <span class="o">==</span> <span class="n">nselections</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Broadcast the universal mask across all selections</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">*</span> <span class="n">nselections</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># No mask for any selection</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">nselections</span>
+
+    <span class="n">multibins</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nselections</span><span class="p">):</span>
+        <span class="n">mb</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span>
+                <span class="n">dimensions</span><span class="o">=</span><span class="n">bins</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">binning</span><span class="o">+</span><span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="n">multibins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mb</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">VarBinning</span><span class="p">(</span><span class="n">binnings</span><span class="o">=</span><span class="n">multibins</span><span class="p">,</span> <span class="n">selections</span><span class="o">=</span><span class="n">bin_split</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_multidimbinning</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse and initialize a `MultiDimBinning` instance from config.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    MultiDimBinning</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># imports placed here to avoid circular imports</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span> <span class="c1"># pylint: disable=import-outside-toplevel</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">bin_name</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">def_raw</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;binning&#39;</span><span class="p">,</span> <span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">bin_name</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">dims_defined</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">split</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span>
+                <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span>
+                <span class="n">dim</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span>
+                <span class="n">dim</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.order&#39;</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to find definition of &#39;</span><span class="si">%s</span><span class="s2">&#39; dimension of &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
+                <span class="s2">&quot; binning entry. Only found definition(s) of: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">bin_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">dims_defined</span>
+            <span class="p">)</span>
+            <span class="k">del</span> <span class="n">dims_defined</span>
+            <span class="k">raise</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">def_raw</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to evaluate definition of &#39;</span><span class="si">%s</span><span class="s2">&#39; dimension of&quot;</span>
+                <span class="s2">&quot; &#39;</span><span class="si">%s</span><span class="s2">&#39; binning entry:</span><span class="se">\n</span><span class="s2">&#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                <span class="n">bin_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">def_raw</span>
+            <span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bin_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to instantiate new `OneDimBinning` from &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
+                <span class="s2">&quot; dimension of &#39;</span><span class="si">%s</span><span class="s2">&#39; binning entry with definition:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">bin_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">kwargs</span>
+            <span class="p">)</span>
+            <span class="k">raise</span>
+    <span class="c1"># Get the bin mask, if there is one</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.mask&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
+    <span class="c1"># Create the binning object</span>
+    <span class="k">return</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="parse_pipeline_config">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.parse_pipeline_config">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_pipeline_config</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
@@ -674,8 +791,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Note: imports placed here to avoid circular imports</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParamSelector</span><span class="p">,</span> <span class="n">DerivedParam</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParamSelector</span><span class="p">,</span> <span class="n">DerivedParam</span> <span class="c1"># pylint: disable=import-outside-toplevel</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
@@ -702,49 +818,16 @@
             <span class="c1"># dimension definitions...</span>
             <span class="n">order</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;binning&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
             <span class="n">binning</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
-            <span class="n">bins</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">bin_name</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">def_raw</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;binning&#39;</span><span class="p">,</span> <span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">bin_name</span><span class="p">)</span>
-                <span class="k">except</span><span class="p">:</span>
-                    <span class="n">dims_defined</span> <span class="o">=</span> <span class="p">[</span>
-                        <span class="n">split</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span>
-                        <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span>
-                        <span class="n">dim</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span>
-                        <span class="n">dim</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.order&#39;</span><span class="p">)</span>
-                    <span class="p">]</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                        <span class="s2">&quot;Failed to find definition of &#39;</span><span class="si">%s</span><span class="s2">&#39; dimension of &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
-                        <span class="s2">&quot; binning entry. Only found definition(s) of: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">bin_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">dims_defined</span>
-                    <span class="p">)</span>
-                    <span class="k">del</span> <span class="n">dims_defined</span>
-                    <span class="k">raise</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">def_raw</span><span class="p">)</span> <span class="c1"># pylint: disable=eval-used</span>
-                <span class="k">except</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                        <span class="s2">&quot;Failed to evaluate definition of &#39;</span><span class="si">%s</span><span class="s2">&#39; dimension of&quot;</span>
-                        <span class="s2">&quot; &#39;</span><span class="si">%s</span><span class="s2">&#39; binning entry:</span><span class="se">\n</span><span class="s2">&#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
-                        <span class="n">bin_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">def_raw</span>
-                    <span class="p">)</span>
-                    <span class="k">raise</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">bins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OneDimBinning</span><span class="p">(</span><span class="n">bin_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
-                <span class="k">except</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                        <span class="s2">&quot;Failed to instantiate new `OneDimBinning` from &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
-                        <span class="s2">&quot; dimension of &#39;</span><span class="si">%s</span><span class="s2">&#39; binning entry with definition:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                        <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">bin_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">kwargs</span>
-                    <span class="p">)</span>
-                    <span class="k">raise</span>
-            <span class="c1"># Get the bin mask, if there is ome</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.mask&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
-                <span class="n">mask</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
-            <span class="c1"># Create the binning object</span>
-            <span class="n">binning_dict</span><span class="p">[</span><span class="n">binning</span><span class="p">]</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
 
+            <span class="n">bin_split</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;binning&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">binning</span> <span class="o">+</span> <span class="s1">&#39;.split&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bin_split</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># User requested split into several event samples with their</span>
+                <span class="c1"># own MultiDimBinning definitions.</span>
+                <span class="n">binning_dict</span><span class="p">[</span><span class="n">binning</span><span class="p">]</span> <span class="o">=</span> <span class="n">_parse_varbinning</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">bin_split</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Requested only one single MultiDimBinning for all events</span>
+                <span class="n">binning_dict</span><span class="p">[</span><span class="n">binning</span><span class="p">]</span> <span class="o">=</span> <span class="n">_parse_multidimbinning</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">binning</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
 
     <span class="n">stage_dicts</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
 

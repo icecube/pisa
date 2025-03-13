@@ -81,6 +81,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span><span class="p">,</span> <span class="n">MultiDimBinning</span>
@@ -381,7 +382,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">default_translation_mode</span> <span class="o">=</span> <span class="s2">&quot;average&quot;</span>
-    <span class="n">translation_modes</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;average&quot;</span><span class="p">,</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">translation_modes</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;average&quot;</span><span class="p">,</span> <span class="s2">&quot;sum&quot;</span><span class="p">)</span>
     <span class="n">array_representations</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="s2">&quot;log_events&quot;</span><span class="p">)</span>
 
 
@@ -715,6 +716,18 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;translating </span><span class="si">{</span><span class="n">src_representation</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">dest_representation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tranlation_modes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;sum&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">from_map</span> <span class="ow">and</span> <span class="n">to_map</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Map to Map in sum mode needs to integrate over bins.&quot;</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">to_map</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">array_to_binned</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">src_representation</span><span class="p">,</span> <span class="n">dest_representation</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">dest_representation</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">out</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
             
@@ -742,13 +755,13 @@
 
         <span class="n">precedence</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
         <span class="n">representation</span> <span class="o">=</span> <span class="kc">None</span>
-        
+
         <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">validity</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">validity</span><span class="p">[</span><span class="n">h</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">precedence</span><span class="p">[</span><span class="n">h</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">precedence</span><span class="p">:</span>
                     <span class="n">precedence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precedence</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>
                     <span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_representations</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>
-                    
+
         <span class="k">return</span> <span class="n">representation</span></div>
 
         
@@ -863,6 +876,36 @@
             <span class="n">hist_binning</span> <span class="o">=</span> <span class="n">src_representation</span>
    
         <span class="k">return</span> <span class="n">lookup</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">hist_binning</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Container.get_keep_mask">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.container.Container.get_keep_mask">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_keep_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_criteria</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a mask that only keeps the events that survive the given cut(s).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keep_criteria : str</span>
+<span class="sd">            Any string interpretable as numpy boolean expression.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Keep events with true energies in [1, 80] GeV (note that units are not</span>
+<span class="sd">        recognized, so have to be handled outside this method)</span>
+
+<span class="sd">        &gt;&gt;&gt; mask = container.get_keep_mask(&quot;(true_energy &gt;= 1) &amp; (true_energy &lt;= 80)&quot;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keep_criteria</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+            <span class="c1"># using word boundary \b to replace whole words only</span>
+            <span class="n">keep_criteria</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+                <span class="sa">r</span><span class="s1">&#39;\b</span><span class="si">{}</span><span class="s1">\b&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">var</span><span class="p">),</span>
+                <span class="s1">&#39;self[&quot;</span><span class="si">%s</span><span class="s1">&quot;]&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">var</span><span class="p">),</span>
+                <span class="n">keep_criteria</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">keep_criteria</span><span class="p">)</span>  <span class="c1"># pylint: disable=eval-used</span></div>
 </div>
 
 
