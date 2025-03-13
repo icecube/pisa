@@ -28,8 +28,8 @@ from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet, DerivedParam
 from pisa.core.stage import Stage
-from pisa.core.container import ContainerSet
-from pisa.core.binning import MultiDimBinning
+from pisa.core.container import Container, ContainerSet
+from pisa.core.binning import MultiDimBinning, OneDimBinning, VarBinning
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.format import format_times
@@ -42,7 +42,7 @@ __all__ = ["Pipeline", "test_Pipeline", "parse_args", "main"]
 
 __author__ = "J.L. Lanfranchi, P. Eller"
 
-__license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -69,12 +69,8 @@ __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 # a warning message. Or we just wait to see if it fails when the user runs the
 # code.
 
-# TODO: return an OrderedDict instead of a list if the user requests
-# intermediate results? Or simply use the `outputs` attribute of each stage to
-# dynamically access this?
 
-
-class Pipeline(object):
+class Pipeline():
     """Instantiate stages according to a parsed config object; excecute
     stages.
 
@@ -106,7 +102,7 @@ class Pipeline(object):
         self.name = config['pipeline']['name']
         self.data = ContainerSet(self.name)
         self.detector_name = config['pipeline']['detector_name']
-        self.output_binning = config['pipeline']['output_binning']
+        self._output_binning = config['pipeline']['output_binning']
         self.output_key = config['pipeline']['output_key']
 
         self._profile = profile
@@ -118,6 +114,10 @@ class Pipeline(object):
         self._config = config
         self._init_stages()
         self._source_code_hash = None
+
+        if isinstance(self._output_binning, VarBinning):
+            self.assert_varbinning_compat()
+            self.assert_exclusive_varbinning()
 
         # check in case someone decided to add a non-daemonflux parameter with daemon_
         # in it, which would potentially make penalty calculation incorrect
@@ -369,29 +369,111 @@ class Pipeline(object):
         else:
             outputs = self._get_outputs(**get_outputs_kwargs)
         return outputs
-        
-    def _get_outputs(self, output_binning=None, output_key=None):
-        """Get MapSet output"""
 
+    def _get_outputs_multdimbinning(self, output_binning, output_key):
+        """Logic that produces a single `MapSet` when the pipeline's
+        output binning is a regular `MultiDimBinning`.
 
+        Returns
+        -------
+        outputs : MapSet
 
-        self.run()
-
-        if output_binning is None:
-            output_binning = self.output_binning
-            output_key = self.output_key
-        else:
-            assert(isinstance(output_binning, MultiDimBinning))
-
-        assert output_binning is not None
-
+        """
         self.data.representation = output_binning
-
         if isinstance(output_key, tuple):
             assert len(output_key) == 2
             outputs = self.data.get_mapset(output_key[0], error=output_key[1])
         else:
             outputs = self.data.get_mapset(output_key)
+        return outputs
+
+    def _get_outputs_varbinning(self, output_binning, output_key):
+        """Logic that produces multiple `MapSet`s when the pipeline's
+        output binning is a `VarBinning`.
+
+        Returns
+        -------
+        outputs : list of MapSet
+
+        """
+        assert self.data.representation == "events"
+        outputs = []
+
+        selections = output_binning.selections
+        for i in range(output_binning.nselections):
+            # there will be a new ContainerSet created for each selection
+            containers = []
+            for c in self.data.containers:
+                cc = Container(name=c.name)
+                # Find the events that belong to the given selection, depending on
+                # type of selection.
+                # TODO: consider optimisations such as caching these masks?
+                if isinstance(selections, list):
+                    keep = c.get_keep_mask(selections[i])
+                else:
+                    assert isinstance(selections, OneDimBinning)
+                    cut_var = c[selections.name]
+                    # cut on bin edges
+                    keep = (cut_var >= selections.edge_magnitudes[i]) & (cut_var < selections.edge_magnitudes[i+1])
+                for var_name in output_binning.binnings[i].names:
+                    # Store the selected var_name entries (corresponding to the
+                    # dimensions in which the data for this selection will be
+                    # binned) in the fresh Container
+                    cc[var_name] = c[var_name][keep]
+                # store the quantities that will populate each bin
+                if isinstance(output_key, tuple):
+                    assert len(output_key) == 2
+                    cc[output_key[0]] = c[output_key[0]][keep]
+                    cc.tranlation_modes[output_key[0]] = 'sum'
+                    cc[output_key[1]] = np.square(c[output_key[0]][keep])
+                    cc.tranlation_modes[output_key[1]] = 'sum'
+                else:
+                    cc[output_key] = c[output_key][keep]
+                    cc.tranlation_modes[output_key] = 'sum'
+
+                containers.append(cc)
+
+            dat = ContainerSet(
+                name=self.data.name,
+                containers=containers,
+                representation=output_binning.binnings[i],
+            )
+
+            if isinstance(output_key, tuple):
+                for c in dat.containers:
+                    # uncertainties
+                    c[output_key[1]] = np.sqrt(c[output_key[1]])
+                outputs.append(dat.get_mapset(output_key[0], error=output_key[1]))
+            else:
+                outputs.append(dat.get_mapset(output_key))
+        return outputs
+
+
+    def _get_outputs(self, output_binning=None, output_key=None):
+        """Get MapSet output"""
+
+        self.run()
+
+        if output_binning is None:
+            output_binning = self.output_binning
+        elif isinstance(output_binning, VarBinning):
+            # Only have to check exclusivity in case external output binning
+            # is requested
+            self.assert_exclusive_varbinning(output_binning=output_binning)
+        if isinstance(output_binning, VarBinning):
+            # Any contained stages' apply_modes could have changed, whether
+            # an external output binning is specified here or not
+            self.assert_varbinning_compat()
+        if output_key is None:
+            output_key = self.output_key
+
+        assert(isinstance(output_binning, (MultiDimBinning, VarBinning)))
+
+        if isinstance(output_binning, MultiDimBinning):
+            outputs = self._get_outputs_multdimbinning(output_binning, output_key)
+        else:
+            assert isinstance(output_binning, VarBinning)
+            outputs = self._get_outputs_varbinning(output_binning, output_key)
 
         return outputs
 
@@ -555,6 +637,11 @@ class Pipeline(object):
         return [s.stage_name for s in self]
 
     @property
+    def service_names(self):
+        """list of strings : names of services in the pipeline"""
+        return [s.service_name for s in self]
+
+    @property
     def config(self):
         """Deepcopy of the OrderedDict used to instantiate the pipeline"""
         return deepcopy(self._config)
@@ -581,11 +668,96 @@ class Pipeline(object):
     def __hash__(self):
         return self.hash
 
+    def assert_varbinning_compat(self):
+        """Asserts that pipeline setup is compatible with `VarBinning`:
+        all stages need to apply to events (this precludes use with
+        any histogramming service, which requires a binning as apply_mode).
+
+        Raises
+        ------
+        ValueError
+            if at least one stage has apply_mode!='events'
+
+        """
+        incompat = []
+        for s in self.stages:
+            if not s.apply_mode == 'events':
+                incompat.append(s)
+        if len(incompat) >= 1:
+            str_incompat = ", ".join(
+                [f"{stage.stage_name}.{stage.service_name}" for stage in incompat]
+            )
+            raise ValueError(
+                "When a variable binning is used, all stages need to set "
+                f"apply_mode='events', but '{str_incompat}' of '{self.name}' "
+                "do(es) not!"
+            )
+
+    def assert_exclusive_varbinning(self, output_binning=None):
+        """Assert that `VarBinning` selections are mutually exclusive.
+        This is done individually for each `Container` in `self.data`.
+
+        Parameters
+        -----------
+        output_binning : None, MultiDimBinning, VarBinning
+
+        Raises
+        ------
+        ValueError
+            if a `VarBinning` is tested and at least two selections
+            (if applicable) are not mutually exclusive
+
+        """
+        if output_binning is None:
+            selections =  self.output_binning.selections
+            nselections = self.output_binning.nselections
+        else:
+            selections = output_binning.selections
+            nselections = output_binning.nselections
+        if isinstance(selections, list):
+            # list of selection-criteria strings
+            # perform and report sanity checks on selected event counts
+            # total count per selection across all containers
+            tot_sel_counts = {sel: 0 for sel in selections}
+            for c in self.data:
+                keep = np.zeros(c.size)
+                # Looping over all selections for a fixed container is
+                # sufficient to detect overlaps
+                for sel in selections:
+                    keep_mask = c.get_keep_mask(sel)
+                    keep += keep_mask
+                    # number of events selected from this container
+                    sel_count = np.sum(keep_mask)
+                    logging.debug(f"'{c.name}' selected by '{sel}': {sel_count}")
+                    tot_sel_counts[sel] += sel_count
+                if not np.all(keep <= 1):
+                    raise ValueError(
+                        f"Selections {selections} are not mutually exclusive for "
+                        f"'{c.name}' (at least) in pipeline '{self.name}'!"
+                    )
+            # Warn on empty selections (don't assume that this must be an error)
+            empty_sels = [sel for sel in selections if tot_sel_counts[sel] == 0]
+            if empty_sels:
+                empty_sels_str = ", ".join(empty_sels)
+                logging.warning(
+                    f"There are empty selections in pipeline '{self.name}': "
+                    f"'{empty_sels_str}'"
+                )
+
+    @property
+    def output_binning(self):
+        return self._output_binning
+
+    @output_binning.setter
+    def output_binning(self, binning):
+        if isinstance(binning, VarBinning):
+            self.assert_varbinning_compat()
+            self.assert_exclusive_varbinning(output_binning=binning)
+        self._output_binning = binning
+
 
 def test_Pipeline():
     """Unit tests for Pipeline class"""
-    # pylint: disable=line-too-long
-
     # TODO: make a test config file with hierarchy AND material selector,
     # uncomment / add in tests commented / removed below
 
@@ -661,7 +833,43 @@ def test_Pipeline():
         #current_hier = new_hier
         #current_mat = new_mat
 
+    #
+    # Test: a pipeline using a VarBinning
+    #
+    p = Pipeline("settings/pipeline/varbin_example.cfg")
+    out = p.get_outputs()
+    # a split into two event selections has to result in two MapSets
+    assert len(out) == 2
+    # a binned apply_mode has to result in a ValueError
+    # first get a pre-existing binning
+    binned_calc_mode = p.stages[2].calc_mode
+    assert isinstance(binned_calc_mode, MultiDimBinning)
+    p.stages[2].apply_mode = binned_calc_mode
+    try:
+        out = p.get_outputs()
+    except ValueError:
+        pass
+    else:
+        assert False
 
+    # also verify that pipeline correctly detects non-exclusive selections
+    p.stages[2].apply_mode = "events"
+    vb = p.output_binning
+    # define a selection string which will simply be repeated
+    assert vb.nselections > 1
+    sel = ["pid > 0"] * vb.nselections
+    invalid_vb = VarBinning(binnings=vb.binnings, selections=sel)
+    try:
+        p.output_binning = invalid_vb
+    except ValueError:
+        pass
+    else:
+        assert False
+
+    # pipeline should accept any empty selections
+    sel[-1] = "pid > np.inf"
+    invalid_vb = VarBinning(binnings=vb.binnings, selections=sel)
+    p.output_binning = invalid_vb
 
 # ----- Most of this below cang go (?) ---
 
@@ -833,9 +1041,9 @@ def main(return_outputs=False):
             pass
         if isinstance(stop_idx, str):
             stop_idx = pipeline.index(stop_idx)
-        outputs = pipeline.get_outputs(
+        outputs = pipeline.get_outputs( # pylint: disable=redefined-outer-name
             idx=stop_idx
-        )  # pylint: disable=redefined-outer-name
+        )
         if stop_idx is not None:
             stop_idx += 1
         indices = slice(0, stop_idx)
@@ -931,4 +1139,4 @@ def main(return_outputs=False):
 
 
 if __name__ == "__main__":
-    pipeline, outputs = main(return_outputs=True)  # pylint: disable=invalid-name
+    pipeline, outp = main(return_outputs=True)

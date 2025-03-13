@@ -195,6 +195,8 @@ def merge_mapsets_together(mapset_list=None):
     '''Handle merging of multiple MapSets, when they come in
     the shape of a dict
 
+    TODO: might not be required any longer (see various comments on
+    generalized_poisson_llh)
     '''
 
     if isinstance(mapset_list[0], Mapping):
@@ -647,16 +649,27 @@ class HypoFitResult():
             assert hypo_maker is not None, msg
             assert data_dist is not None, msg
             assert metric is not None, msg
+            # this passes through the setter method, but it should just pass through
+            # without actually doing anything
             if hypo_maker.__class__.__name__ == "Detectors":
-                # this passes through the setter method, but it should just pass through
-                # without actually doing anything
                 self.detailed_metric_info = [self.get_detailed_metric_info(
                     data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
                     params=hypo_maker.distribution_makers[i].params, metric=metric[i],
-                    other_metrics=other_metrics, detector_name=hypo_maker.det_names[i], hypo_maker=hypo_maker
+                    other_metrics=other_metrics, detector_name=hypo_maker.det_names[i], hypo_maker=hypo_maker,
                 ) for i in range(len(data_dist))]
-            else: # DistributionMaker object
-                if 'generalized_poisson_llh' == metric[0]:
+            elif isinstance(data_dist, list): # DistributionMaker object with variable binning
+                self.detailed_metric_info = [self.get_detailed_metric_info(
+                    data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
+                    params=hypo_maker.params, metric=metric[0],
+                    other_metrics=other_metrics, detector_name=hypo_maker.detector_name, hypo_maker=hypo_maker,
+                ) for i in range(len(data_dist))]
+            else: # DistributionMaker object with regular binning
+                if metric[0] == 'generalized_poisson_llh':
+                    raise NotImplementedError(
+                        "generalized_poisson_llh isn't correctly implemented any longer!"
+                    )
+                    # FIXME: these `output_mode` and `force_standard_output` kwargs were removed in
+                    # https://github.com/icecube/pisa/commit/7a4e875aa7bdc52ea64a5270e9808d866d1395f3
                     generalized_poisson_dist = hypo_maker.get_outputs(return_sum=False, force_standard_output=False)
                     generalized_poisson_dist = merge_mapsets_together(mapset_list=generalized_poisson_dist)
                 else:
@@ -665,7 +678,7 @@ class HypoFitResult():
                 self.detailed_metric_info = self.get_detailed_metric_info(
                     data_dist=data_dist, hypo_asimov_dist=self.hypo_asimov_dist, generalized_poisson_hypo=generalized_poisson_dist,
                     params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
-                    detector_name=hypo_maker.detector_name, hypo_maker=hypo_maker
+                    detector_name=hypo_maker.detector_name, hypo_maker=hypo_maker,
                 )
 
     def __getitem__(self, i):
@@ -810,6 +823,7 @@ class HypoFitResult():
                 detailed_metric_info[m] = name_vals_d
 
             else:
+                # TODO: remove this case?
                 if isinstance(hypo_asimov_dist, OrderedDict):
                     hypo_asimov_dist = hypo_asimov_dist['weights']
 
@@ -1180,17 +1194,6 @@ class BasicAnalysis():
 
         """
 
-        if isinstance(metric, str):
-            metric = [metric]
-
-        # Before starting any fit, check if we already have a perfect match between data and template
-        # This can happen if using pseudodata that was generated with the nominal values for parameters
-        # (which will also be the initial values in the fit) and blah...
-        # If this is the case, don't both to fit and return results right away.
-
-        if isinstance(metric, str):
-            metric = [metric]
-
         # Grab the hypo map
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
 
@@ -1201,12 +1204,20 @@ class BasicAnalysis():
             if len(metric) == 1: # One metric for all detectors
                 metric = list(metric) * len(hypo_maker.distribution_makers)
             elif len(metric) != len(hypo_maker.distribution_makers):
-                raise IndexError('Number of defined metrics does not match with number of detectors.')
-        else: # DistributionMaker object
-            assert len(metric) == 1
+                raise IndexError(f"Number of defined metrics does not match with number of detectors.")
+        elif isinstance(hypo_asimov_dist, MapSet) or isinstance(hypo_asimov_dist, list):
+            # DistributionMaker object (list means variable binning)
+            assert len(metric) == 1, f"Only one metric allowed for DistributionMaker"
+        else:
+            raise NotImplementedError(f"hypo_maker returned output of type {type(hypo_asimov_dist)}")
 
-        # Check if the hypo matches data
-        if hypo_maker.__class__.__name__ != "Detectors" and data_dist.allclose(hypo_asimov_dist) :
+        # Before starting any fit, check if we already have a perfect match
+        # between data and template. This can happen if using pseudodata that
+        # was generated with the nominal values for parameters (which will also
+        # be the initial values in the fit). If this is the case, don't bother
+        # to fit and return results right away. TODO: This speedup is currently
+        # only enabled for a DistributionMaker with regular binning.
+        if isinstance(data_dist, MapSet) and data_dist.allclose(hypo_asimov_dist):
 
             msg = 'Initial hypo matches data, no need for fit'
             logging.info(msg)
@@ -2756,12 +2767,18 @@ class BasicAnalysis():
         # Get the map set
         try:
             if metric[0] == 'generalized_poisson_llh':
+                raise NotImplementedError(
+                    "generalized_poisson_llh isn't correctly implemented any longer!"
+                )
+                # FIXME: these `output_mode` and `force_standard_output` kwargs were removed in
+                # https://github.com/icecube/pisa/commit/7a4e875aa7bdc52ea64a5270e9808d866d1395f3
                 hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False, output_mode='binned', force_standard_output=False)
                 hypo_asimov_dist = merge_mapsets_together(mapset_list=hypo_asimov_dist)
                 data_dist = data_dist.maps[0] # Extract the map from the MapSet
                 metric_kwargs = {'empty_bins':hypo_maker.empty_bin_indices}
             else:
                 hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+                # TODO: can be removed? (see same commit as above)
                 if isinstance(hypo_asimov_dist, OrderedDict):
                     hypo_asimov_dist = hypo_asimov_dist['weights']
                 metric_kwargs = {}
@@ -2785,11 +2802,17 @@ class BasicAnalysis():
                 metric_val = 0
                 for i in range(len(hypo_maker.distribution_makers)):
                     data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
-                                                  metric=metric[i], metric_kwargs=metric_kwargs)
+                                                     metric=metric[i], metric_kwargs=metric_kwargs)
                     metric_val += data
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
-            else: # DistributionMaker object
+            elif isinstance(hypo_asimov_dist, list): # DistributionMaker object with variable binning
+                metric_val = 0
+                for i in range(len(hypo_asimov_dist)):
+                    metric_val += data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
+                                                            metric=metric[0], metric_kwargs=metric_kwargs)
+                metric_val += hypo_maker.params.priors_penalty(metric=metric[0])
+            else: # DistributionMaker object with regular binning
                 if metric[0] == 'weighted_chi2':
                     actual_values = data_dist.hist['total']
                     expected_values = hypo_asimov_dist.hist['total']
@@ -3121,9 +3144,9 @@ class Analysis(BasicAnalysis):
             if len(metric) == 1: # One metric for all detectors
                 metric = list(metric) * len(hypo_maker.distribution_makers)
             elif len(metric) != len(hypo_maker.distribution_makers):
-                raise IndexError('Number of defined metrics does not match with number of detectors.')
-        else: # DistributionMaker object
-            assert len(metric) == 1
+                raise IndexError(f"Number of defined metrics does not match with number of detectors.")
+        else:
+            assert len(metric) == 1, f"Only one metric allowed for DistributionMaker"
 
         if check_ordering:
             if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
@@ -3209,9 +3232,12 @@ class Analysis(BasicAnalysis):
             if len(metric) == 1: # One metric for all detectors
                 metric = list(metric) * len(hypo_maker.distribution_makers)
             elif len(metric) != len(hypo_maker.distribution_makers):
-                raise IndexError('Number of defined metrics does not match with number of detectors.')
-        else: # DistributionMaker object
-            assert len(metric) == 1
+                raise IndexError(f"Number of defined metrics does not match with number of detectors.")
+        elif isinstance(hypo_asimov_dist, MapSet) or isinstance(hypo_asimov_dist, list):
+            # DistributionMaker object (list means variable binning)
+            assert len(metric) == 1, f"Only one metric allowed for DistributionMaker"
+        else:
+            raise NotImplementedError(f"hypo_maker returned output of type {type(hypo_asimov_dist)}")
         fit_info.metric = metric
 
         # Assess the fit: whether the data came from the hypo_asimov_dist
@@ -3223,10 +3249,19 @@ class Analysis(BasicAnalysis):
                     metric_val += data
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
-            else: # DistributionMaker object
+            elif isinstance(data_dist, list): # DistributionMaker object with VarBinning
+                metric_val = 0
+                for i in range(len(data_dist)):
+                    metric_val += data_dist[i].metric_total(expected_values=hypo_asimov_dist[i], metric=metric[0])
+                metric_val += hypo_maker.params.priors_penalty(metric=metric[0])
+            else: # DistributionMaker object with MultiDimBinning
 
                 if 'generalized_poisson_llh' == metric[0]:
-
+                    raise NotImplementedError(
+                        "generalized_poisson_llh isn't correctly implemented any longer!"
+                    )
+                    # FIXME: these `output_mode` and `force_standard_output` kwargs were removed in
+                    # https://github.com/icecube/pisa/commit/7a4e875aa7bdc52ea64a5270e9808d866d1395f3
                     hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False, output_mode='binned', force_standard_output=False)
                     hypo_asimov_dist = merge_mapsets_together(mapset_list=hypo_asimov_dist)
                     data_dist = data_dist.maps[0] # Extract the map from the MapSet
@@ -3271,9 +3306,20 @@ class Analysis(BasicAnalysis):
                 params=hypo_maker.distribution_makers[i].params, metric=metric[i],
                 other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
             ) for i in range(len(data_dist))]
-        else: # DistributionMaker object
+        elif isinstance(data_dist, list): # DistributionMaker object with VarBinning
+            fit_info.detailed_metric_info = [fit_info.get_detailed_metric_info(
+                data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
+                params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
+                detector_name=hypo_maker.detector_name
+            ) for i in range(len(data_dist))]
+        else: # DistributionMaker object with MultiDimBinning
 
             if 'generalized_poisson_llh' == metric[0]:
+                raise NotImplementedError(
+                    "generalized_poisson_llh isn't correctly implemented any longer!"
+                )
+                # FIXME: these `output_mode` and `force_standard_output` kwargs were removed in
+                # https://github.com/icecube/pisa/commit/7a4e875aa7bdc52ea64a5270e9808d866d1395f3
                 generalized_poisson_dist = hypo_maker.get_outputs(return_sum=False, force_standard_output=False)
                 generalized_poisson_dist = merge_mapsets_together(mapset_list=generalized_poisson_dist)
             else:
