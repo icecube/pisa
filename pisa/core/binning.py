@@ -3070,10 +3070,9 @@ class VarBinning():
 
     If a `OneDimBinning` is passed to `selections`, the corresponding
     dimension must not be a dimension of any `MultiDimBinning` in `binnings`.
-    Similarly, if a list of cut expressions is passed, none of its contained
-    variables may simultaneously serve as a `MultiDimBinning`'s dimension.
-    While such scenarios needn't always be dangerous, there are probably less
-    convoluted ways of achieving them.
+    If a list of cut expressions is passed instead, its contained
+    variables may simultaneously serve as a `MultiDimBinning`'s dimension
+    (not necessarily dangerous as long as you know what you are doing).
 
     A warning is issued when `selections` is of type `OneDimBinning` and
     all `binnings` entries are identical.
@@ -3091,11 +3090,12 @@ class VarBinning():
         all_equal = True
         for b in binnings:
             assert isinstance(b, MultiDimBinning)
-            # determine whether any variable is part of this binning
-            invalid_sel_vars = self._selection_vars_in_mdb(b, selections)
-            if invalid_sel_vars:
+            # Determine whether any variable is part of this binning
+            # and raise error when selections are given as OneDimBinning
+            sel_vars_in_mdb = self._selection_vars_in_mdb(b, selections)
+            if sel_vars_in_mdb and isinstance(selections, OneDimBinning):
                 raise ValueError(
-                    f"Selection variables {invalid_sel_vars} may not"
+                    f"Selection variables {sel_vars_in_mdb} may not"
                     " simultaneously be part of any MultiDimBinning!"
                 )
             all_equal = all_equal and b == binnings[0]
@@ -3655,7 +3655,13 @@ def test_VarBinning():
     selection = ['pid < 0.5', 'pid >= 0.5']
     varbin = VarBinning([mdb1, mdb2], selection)
 
+    # "energy" may be part of an expression
     selection = ['energy == 10', 'coszen < 0']
+    varbin = VarBinning([mdb1, mdb1], selection)
+
+    # but not the onedimbinning
+    selection = OneDimBinning(name='energy', num_bins=2, is_log=True,
+                       domain=[1, 80]*ureg.GeV)
     try:
         varbin = VarBinning([mdb1, mdb1], selection)
     except ValueError:
