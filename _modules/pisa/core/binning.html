@@ -3286,10 +3286,9 @@
 
 <span class="sd">    If a `OneDimBinning` is passed to `selections`, the corresponding</span>
 <span class="sd">    dimension must not be a dimension of any `MultiDimBinning` in `binnings`.</span>
-<span class="sd">    Similarly, if a list of cut expressions is passed, none of its contained</span>
-<span class="sd">    variables may simultaneously serve as a `MultiDimBinning`&#39;s dimension.</span>
-<span class="sd">    While such scenarios needn&#39;t always be dangerous, there are probably less</span>
-<span class="sd">    convoluted ways of achieving them.</span>
+<span class="sd">    If a list of cut expressions is passed instead, its contained</span>
+<span class="sd">    variables may simultaneously serve as a `MultiDimBinning`&#39;s dimension</span>
+<span class="sd">    (not necessarily dangerous as long as you know what you are doing).</span>
 
 <span class="sd">    A warning is issued when `selections` is of type `OneDimBinning` and</span>
 <span class="sd">    all `binnings` entries are identical.</span>
@@ -3307,12 +3306,14 @@
         <span class="n">all_equal</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">binnings</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
-            <span class="c1"># determine whether any variable is part of this binning</span>
-            <span class="n">invalid_sel_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selection_vars_in_mdb</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">selections</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">invalid_sel_vars</span><span class="p">:</span>
+            <span class="c1"># Determine whether any variable is part of this binning</span>
+            <span class="c1"># and raise error when selections are given as OneDimBinning</span>
+            <span class="n">sel_vars_in_mdb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selection_vars_in_mdb</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">selections</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sel_vars_in_mdb</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">selections</span><span class="p">,</span> <span class="n">OneDimBinning</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Selection variables </span><span class="si">{</span><span class="n">invalid_sel_vars</span><span class="si">}</span><span class="s2"> may not&quot;</span>
-                    <span class="s2">&quot; simultaneously be part of any MultiDimBinning!&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Selection variable </span><span class="si">{</span><span class="n">sel_vars_in_mdb</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="s2">&quot; (the OneDimBinning dimension) may not simultaneously be&quot;</span>
+                    <span class="s2">&quot; part of any MultiDimBinning!&quot;</span>
                 <span class="p">)</span>
             <span class="n">all_equal</span> <span class="o">=</span> <span class="n">all_equal</span> <span class="ow">and</span> <span class="n">b</span> <span class="o">==</span> <span class="n">binnings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -3880,7 +3881,13 @@
     <span class="n">selection</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pid &lt; 0.5&#39;</span><span class="p">,</span> <span class="s1">&#39;pid &gt;= 0.5&#39;</span><span class="p">]</span>
     <span class="n">varbin</span> <span class="o">=</span> <span class="n">VarBinning</span><span class="p">([</span><span class="n">mdb1</span><span class="p">,</span> <span class="n">mdb2</span><span class="p">],</span> <span class="n">selection</span><span class="p">)</span>
 
+    <span class="c1"># &quot;energy&quot; may be part of an expression</span>
     <span class="n">selection</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;energy == 10&#39;</span><span class="p">,</span> <span class="s1">&#39;coszen &lt; 0&#39;</span><span class="p">]</span>
+    <span class="n">varbin</span> <span class="o">=</span> <span class="n">VarBinning</span><span class="p">([</span><span class="n">mdb1</span><span class="p">,</span> <span class="n">mdb1</span><span class="p">],</span> <span class="n">selection</span><span class="p">)</span>
+
+    <span class="c1"># but not the onedimbinning</span>
+    <span class="n">selection</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">varbin</span> <span class="o">=</span> <span class="n">VarBinning</span><span class="p">([</span><span class="n">mdb1</span><span class="p">,</span> <span class="n">mdb1</span><span class="p">],</span> <span class="n">selection</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>

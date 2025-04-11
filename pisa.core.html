@@ -1865,10 +1865,9 @@ just apply MC cuts the regular way) and the same (one <cite>MultiDimBinning</cit
 per selection - we don’t attempt any array broadcasting).</p>
 <p>If a <cite>OneDimBinning</cite> is passed to <cite>selections</cite>, the corresponding
 dimension must not be a dimension of any <cite>MultiDimBinning</cite> in <cite>binnings</cite>.
-Similarly, if a list of cut expressions is passed, none of its contained
-variables may simultaneously serve as a <cite>MultiDimBinning</cite>’s dimension.
-While such scenarios needn’t always be dangerous, there are probably less
-convoluted ways of achieving them.</p>
+If a list of cut expressions is passed instead, its contained
+variables may simultaneously serve as a <cite>MultiDimBinning</cite>’s dimension
+(not necessarily dangerous as long as you know what you are doing).</p>
 <p>A warning is issued when <cite>selections</cite> is of type <cite>OneDimBinning</cite> and
 all <cite>binnings</cite> entries are identical.</p>
 <dl class="py property">
