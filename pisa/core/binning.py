@@ -3095,8 +3095,9 @@ class VarBinning():
             sel_vars_in_mdb = self._selection_vars_in_mdb(b, selections)
             if sel_vars_in_mdb and isinstance(selections, OneDimBinning):
                 raise ValueError(
-                    f"Selection variables {sel_vars_in_mdb} may not"
-                    " simultaneously be part of any MultiDimBinning!"
+                    f"Selection variable {sel_vars_in_mdb[0]}"
+                    " (the OneDimBinning dimension) may not simultaneously be"
+                    " part of any MultiDimBinning!"
                 )
             all_equal = all_equal and b == binnings[0]
 
