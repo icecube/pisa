@@ -112,7 +112,6 @@ class BarSep(object):
 
     """
     def __init__(self, val):
-        global __BAR_SSEP__
         self.old_val = __BAR_SSEP__
         self.new_val = val
 
@@ -151,7 +150,6 @@ def get_bar_ssep():
         Separator
 
     """
-    global __BAR_SSEP__
     return __BAR_SSEP__
 
 
@@ -226,7 +224,6 @@ class NuFlav(object):
                                 type(orig_val)))
 
     def __str__(self):
-        global __BAR_SSEP__
         fstr = [s for s, code in self.fstr2code.items() if code == self.__flav]
         fstr = fstr[0]
         fstr = fstr.replace('bar', __BAR_SSEP__+'bar')
