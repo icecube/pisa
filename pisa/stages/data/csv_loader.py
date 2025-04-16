@@ -11,6 +11,7 @@ from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.utils.resources import find_resource
 from pisa.core.container import Container
+from pisa.utils.format import split
 
 
 class csv_loader(Stage):  # pylint: disable=invalid-name
@@ -19,20 +20,56 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    events_file : csv file path
-    **kwargs
-        Passed to Stage
+
+    events_file : 
+        csv file path(s)
+
+    data_dict : str of a dict
+        Dictionary to specify what keys from the csv files to be loaded
+        under what name. Entries can be strings that point to the right
+        key in the csv file or lists of keys, and the data will be
+        stacked into a 2d array.
+        
+    output_names : sequence of str
+        Event categories to be recorded, needs to be a subset of names 
+        in `events_file`.
+
+    neutrinos : bool
+        Flag indicating whether data events represent neutrinos
+        In this case, special handling for e.g. nu/nubar, CC vs NC, ...
 
     """
     def __init__(
         self,
         events_file,
+        data_dict,
         output_names,
+        neutrinos=True,
         **std_kwargs,
     ):
 
         # instantiation args that should not change
-        self.events_file = find_resource(events_file)
+        self.events_file = split(events_file)
+        for i, f in enumerate(self.events_file):
+            self.events_file[i] = find_resource(f)
+
+        if isinstance(data_dict, str):
+            self.data_dict = eval(data_dict)
+        elif isinstance(data_dict, dict):
+            self.data_dict = data_dict
+        else:
+            raise ValueError(
+                f"Unsupported type {type(data_dict)} for data_dict."
+            )
+
+        self.output_names = output_names
+        if len(self.output_names) != len(set(self.output_names)):
+            raise ValueError(
+                'Found duplicates in `output_names`, but each name must be'
+                ' unique.'
+            )
+
+        self.neutrinos = neutrinos
 
         # init base class
         super().__init__(
@@ -41,48 +78,56 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
             **std_kwargs,
         )
 
-        self.output_names = output_names
-
 
     def setup_function(self):
 
-        raw_data = pd.read_csv(self.events_file)
+        raw_data = pd.concat([pd.read_csv(f) for f in self.events_file])
 
         # create containers from the events
         for name in self.output_names:
 
             # make container
             container = Container(name)
-            nubar = -1 if 'bar' in name else 1
-            if 'e' in name:
-                flav = 0
-            if 'mu' in name:
-                flav = 1
-            if 'tau' in name:
-                flav = 2
+            
+            if self.neutrinos:
+                nubar = -1 if 'bar' in name else 1
+                if 'e' in name:
+                    flav = 0
+                if 'mu' in name:
+                    flav = 1
+                if 'tau' in name:
+                    flav = 2
+                container.set_aux_data('nubar', nubar)
+                container.set_aux_data('flav', flav)
 
+                # cut out right part
+                pdg = nubar * (12 + 2 * flav)
+                if 'pdg_code' in raw_data:
+                    mask = raw_data['pdg_code'] == pdg
+                elif 'pdg' in raw_data:
+                    mask = raw_data['pdg'] == pdg
+                else:
+                    raise ValueError("Either 'pdg' or 'pdg_code' must be in file.")
 
-            # cut out right part
-            pdg = nubar * (12 + 2 * flav)
+                if 'cc' in name:
+                    mask = np.logical_and(mask, raw_data['type'] > 0)
+                else:
+                    mask = np.logical_and(mask, raw_data['type'] == 0)
 
-            mask = raw_data['pdg'] == pdg
-            if 'cc' in name:
-                mask = np.logical_and(mask, raw_data['type'] > 0)
+                events = raw_data[mask]
             else:
-                mask = np.logical_and(mask, raw_data['type'] == 0)
+                events = raw_data
 
-            events = raw_data[mask]
-
-            container['weighted_aeff'] = events['weight'].values.astype(FTYPE)
-            container['weights'] = np.ones(container.size, dtype=FTYPE)
-            container['initial_weights'] = np.ones(container.size, dtype=FTYPE)
-            container['true_energy'] = events['true_energy'].values.astype(FTYPE)
-            container['true_coszen'] = events['true_coszen'].values.astype(FTYPE)
-            container['reco_energy'] = events['reco_energy'].values.astype(FTYPE)
-            container['reco_coszen'] = events['reco_coszen'].values.astype(FTYPE)
-            container['pid'] = events['pid'].values.astype(FTYPE)
-            container.set_aux_data('nubar', nubar)
-            container.set_aux_data('flav', flav)
+            # fill container
+            container['initial_weights'] = np.ones(len(events))
+            container['weights'] = np.ones(len(events))
+            for key, val in self.data_dict.items():
+                container[key] = events[val].values.astype(FTYPE)
+            
+            ### HACK for verification sample golden events release!!!
+            if 'dis' in container.keys and np.max(container['dis']) > 1:
+                container['dis'] = (container['interaction'] == 3).astype(int)
+            ### End of HACK
 
             self.data.add_container(container)
 
@@ -93,6 +138,10 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
             )
 
     def apply_function(self):
+        # reset data representation to events
+        self.data.representation = "events"
+
+        # reset weights to initial weights prior to downstream stages running
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])
 
