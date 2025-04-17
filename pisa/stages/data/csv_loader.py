@@ -148,6 +148,14 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
 
 def init_test(**param_kwargs):
     """Initialisation example"""
+    data_dict = {'true_energy':'true_energy',
+                 'true_coszen':'true_coszen',
+                 'weighted_aeff':'weight',
+                 'reco_energy':'reco_energy',
+                 'reco_coszen':'reco_coszen',
+                 'pid':'pid'
+                }
     return csv_loader(events_file='events/IceCube_3y_oscillations/neutrino_mc.csv.bz2',
+                      data_dict=data_dict,
                       output_names=['nue_cc', 'numu_cc'],
                      )
