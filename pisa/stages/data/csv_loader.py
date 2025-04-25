@@ -38,6 +38,10 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
         Flag indicating whether data events represent neutrinos
         In this case, special handling for e.g. nu/nubar, CC vs NC, ...
 
+    dis_idx : int
+        If there is no dis key but an interaction key, you need to specify
+        what interaction is dis
+
     """
     def __init__(
         self,
@@ -45,6 +49,7 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
         data_dict,
         output_names,
         neutrinos=True,
+        dis_idx=None,
         **std_kwargs,
     ):
 
@@ -70,6 +75,7 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
             )
 
         self.neutrinos = neutrinos
+        self.dis_idx = int(dis_idx)
 
         # init base class
         super().__init__(
@@ -110,7 +116,7 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
                     raise ValueError("Either 'pdg' or 'pdg_code' must be in file.")
 
                 if 'cc' in name:
-                    mask = np.logical_and(mask, raw_data['type'] > 0)
+                    mask = np.logical_and(mask, raw_data['type'] == 1)
                 else:
                     mask = np.logical_and(mask, raw_data['type'] == 0)
 
@@ -124,10 +130,9 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
             for key, val in self.data_dict.items():
                 container[key] = events[val].values.astype(FTYPE)
             
-            ### HACK for verification sample golden events release!!!
-            if 'dis' in container.keys and np.max(container['dis']) > 1:
-                container['dis'] = (container['interaction'] == 3).astype(int)
-            ### End of HACK
+            # Convert interaction key to dis boolen (if needed)
+            if not 'dis' in container.keys and 'interaction' in container.keys and self.dis_idx is not None:
+                container['dis'] = (container['interaction'] == self.dis_idx).astype(int)
 
             self.data.add_container(container)
 

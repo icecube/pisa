@@ -17,7 +17,7 @@ from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.format import split
 
-__all__ = ["hypersurfaces",]
+__all__ = ["csv_hypersurfaces",]
 
 __author__ = "P. Eller, T. Ehrhardt, T. Stuttard, J.L. Lanfranchi, A. Trettin"
 
@@ -57,6 +57,9 @@ class csv_hypersurfaces(Stage):
     inter_param : str
         Parameter used for interpolation
 
+    propagate_uncertainty : bool, optional
+        Propagate the uncertainties from the hypersurface to the uncertainty of
+        the output
     """
     def __init__(
         self,
@@ -64,6 +67,7 @@ class csv_hypersurfaces(Stage):
         nominal_systematics,
         inter_param,
         links=None,
+        propagate_uncertainty=False,
         **std_kwargs,
     ):
         # -- Only allowed/implemented modes -- #
@@ -83,6 +87,7 @@ class csv_hypersurfaces(Stage):
             )
         
         self.inter_param = inter_param
+        self.propagate_uncertainty = propagate_uncertainty
 
         expected_container_keys = [
             'weights',
@@ -125,6 +130,17 @@ class csv_hypersurfaces(Stage):
         # create containers for scale factors
         for container in self.data:
             container["hs_scales"] = np.empty(container.size, dtype=FTYPE)
+            if self.propagate_uncertainty:
+                hs = self.hs[container.name]
+
+                # get uncertainty at nominal value of interpolation param
+                inter_param_value = self.params[self.inter_param].m
+                start_idx = np.argmin(np.abs(hs[self.inter_param] - inter_param_value))
+                _, c = np.unique(hs[self.inter_param], return_counts=True)
+                stop_idx = start_idx + c[0]
+
+                hs_scales_uncertainty = hs['intercept_sigma'][start_idx:stop_idx]
+                container["hs_scales_uncertainty"] = np.array(hs_scales_uncertainty).reshape(container.size)
 
         # Check map names match between data container and hypersurfaces
         for container in self.data:
@@ -208,7 +224,10 @@ class csv_hypersurfaces(Stage):
                 if self.data.representation=='events':
                     logging.trace('WARNING: running stage in events mode. Hypersurface error propagation will be IGNORED.')
 
-                container["errors"] *= container["hs_scales"]
+                elif self.propagate_uncertainty:
+                    container["errors"] = container["weights"] * container["hs_scales_uncertainty"]
+                else:
+                    container["errors"] *= container["hs_scales"]
                 container.mark_changed('errors')
 
                 if "bin_unc2" in container.keys:
