@@ -16,7 +16,6 @@ from pisa.utils import vectorizer
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging
 from pisa import FTYPE, TARGET
-from pisa.utils.numba_tools import WHERE
 
 class correct_charm_y(Stage):
     """
