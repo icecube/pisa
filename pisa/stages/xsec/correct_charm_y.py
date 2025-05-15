@@ -31,6 +31,13 @@ class correct_charm_y(Stage):
         self.correct_charm = correct_charm
         expected_params = ()
 
+        expected_container_keys = (
+            'true_energy',
+            'true_coszen',
+            'bjorken_y',
+            'weights',
+        )
+
         # init base class
         super(correct_charm_y, self).__init__(
             expected_params=expected_params,
