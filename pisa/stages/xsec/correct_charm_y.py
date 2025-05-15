@@ -19,8 +19,32 @@ from pisa import FTYPE, TARGET
 
 class correct_charm_y(Stage):
     """
-    blah
-    
+    This stage reweights inelasticity distribution
+    to remove the most obvious impact from charm
+    production bug in GENIE 2.12.8. The bug effectively 
+    kills most charm events.
+
+    Parameters:
+    -----------
+    correct_charm : bool
+      If true, weights will be updated to include reweighting
+      factor correcting inelasticity distribution to follow one
+      we would have if we had charm in our MC.
+
+
+    Notes:
+    ------
+    THIS STAGE IS FOR MC TESTING ONLY - do *NOT* use in real analysis!!!
+
+
+    References
+    ----------
+    Slides summarizing the bug (osc. call, 28 Nov 2022): 
+    https://drive.google.com/file/d/16tF_ofjI-YTxnxSsuZD4W2X52xND1CAM/view?usp=drive_link
+
+    Slides showing use for check with oscNext VS (osc. call, 19 Dec 2022): 
+    https://drive.google.com/file/d/14h0WYWPWn7yS7wLQpyMAPTenfKfFAq3k/view?usp=drive_link
+
     """
     def __init__(
             self,
