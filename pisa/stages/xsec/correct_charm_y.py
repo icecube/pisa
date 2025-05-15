@@ -41,6 +41,7 @@ class correct_charm_y(Stage):
         # init base class
         super(correct_charm_y, self).__init__(
             expected_params=expected_params,
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
 
