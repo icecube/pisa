@@ -24,14 +24,6 @@ class correct_charm_y(Stage):
     production bug in GENIE 2.12.8. The bug effectively 
     kills most charm events.
 
-    Parameters:
-    -----------
-    correct_charm : bool
-      If true, weights will be updated to include reweighting
-      factor correcting inelasticity distribution to follow one
-      we would have if we had charm in our MC.
-
-
     Notes:
     ------
     THIS STAGE IS FOR MC TESTING ONLY - do *NOT* use in real analysis!!!
@@ -48,11 +40,9 @@ class correct_charm_y(Stage):
     """
     def __init__(
             self,
-            correct_charm=False,
             **std_kwargs,
     ):
 
-        self.correct_charm = correct_charm
         expected_params = ()
 
         expected_container_keys = (
@@ -71,83 +61,81 @@ class correct_charm_y(Stage):
 
     def setup_function(self):
 
-        if self.correct_charm:
-            init_y_disrt_hists = from_file('cross_sections/charm_y_correction_2d_coszen_split.pckl')
+        init_y_disrt_hists = from_file('cross_sections/charm_y_correction_2d_coszen_split.pckl')
 
-            h_nucc_upg = init_y_disrt_hists['nu_cc_upg']
-            h_nubarcc_upg = init_y_disrt_hists['nubar_cc_upg']
-            h_nucc_oth = init_y_disrt_hists['nu_cc_oth']
-            h_nubarcc_oth = init_y_disrt_hists['nubar_cc_oth']
-            xed = init_y_disrt_hists['bins_lgE']
-            yed = init_y_disrt_hists['bins_y']
+        h_nucc_upg = init_y_disrt_hists['nu_cc_upg']
+        h_nubarcc_upg = init_y_disrt_hists['nubar_cc_upg']
+        h_nucc_oth = init_y_disrt_hists['nu_cc_oth']
+        h_nubarcc_oth = init_y_disrt_hists['nubar_cc_oth']
+        xed = init_y_disrt_hists['bins_lgE']
+        yed = init_y_disrt_hists['bins_y']
 
-            def eval_hist(lgE, y, coszen, nubar=False):
+        def eval_hist(lgE, y, coszen, nubar=False):
 
-                ind_x = np.digitize(lgE, bins=xed)
-                ind_y = np.digitize(y, bins=yed)
+            ind_x = np.digitize(lgE, bins=xed)
+            ind_y = np.digitize(y, bins=yed)
 
-                ind_x[ind_x==31] = 30
-                ind_y[ind_y==31] = 30
+            ind_x[ind_x==31] = 30
+            ind_y[ind_y==31] = 30
 
-                res = np.zeros_like(lgE)
-                mask_upg = coszen<-0.9
+            res = np.zeros_like(lgE)
+            mask_upg = coszen<-0.9
 
-                if not nubar:
-                    res[mask_upg] = h_nucc_upg[ind_x[mask_upg]-1, ind_y[mask_upg]-1]
-                    res[~mask_upg] = h_nucc_oth[ind_x[~mask_upg]-1, ind_y[~mask_upg]-1]
+            if not nubar:
+                res[mask_upg] = h_nucc_upg[ind_x[mask_upg]-1, ind_y[mask_upg]-1]
+                res[~mask_upg] = h_nucc_oth[ind_x[~mask_upg]-1, ind_y[~mask_upg]-1]
+            else:
+                res[mask_upg] = h_nubarcc_upg[ind_x[mask_upg]-1, ind_y[mask_upg]-1]
+                res[~mask_upg] = h_nubarcc_oth[ind_x[~mask_upg]-1, ind_y[~mask_upg]-1]
+
+            return res
+
+        # create empty containers for weight corrections
+        self.data.representation = self.apply_mode
+        for container in self.data:
+
+            # reweighting all CC events
+            if container.name.endswith('_cc'):
+
+                container["charm_y_distr_corr"] = np.ones(container.size, dtype=FTYPE)
+
+                true_lg_energy = np.log10(container["true_energy"])
+                true_y = container['bjorken_y']
+                true_coszen = container['true_coszen']
+
+                apply_mask = true_y >= 0
+                container["apply_mask"] = apply_mask
+
+                lgE_min = 0
+                valid_mask = true_lg_energy >= lgE_min
+                extrp_mask = ~valid_mask
+
+                valid_mask = valid_mask * apply_mask
+                extrp_mask = extrp_mask * apply_mask
+
+                # storing initial true inelasticity distribution 
+                # will later use to divide event weights by it
+                if container.name in ['nue_cc', 'numu_cc', 'nutau_cc']:
+                    is_nubar = False
+                elif container.name in ['nuebar_cc', 'numubar_cc', 'nutaubar_cc']:
+                    is_nubar = True
                 else:
-                    res[mask_upg] = h_nubarcc_upg[ind_x[mask_upg]-1, ind_y[mask_upg]-1]
-                    res[~mask_upg] = h_nubarcc_oth[ind_x[~mask_upg]-1, ind_y[~mask_upg]-1]
+                    raise ValueError('Incorrect container type "%s"' % container.name)
 
-                return res
+                distr_valid_erange = eval_hist(true_lg_energy[valid_mask],
+                                               true_y[valid_mask], true_coszen[valid_mask], nubar=is_nubar)
+                distr_extrap_erange = eval_hist(np.ones_like(true_y[extrp_mask])*lgE_min,
+                                                true_y[extrp_mask], true_coszen[extrp_mask], nubar=is_nubar)
 
-            # create empty containers for weight corrections
-            self.data.representation = self.apply_mode
-            for container in self.data:
-
-                # reweighting all CC events
-                if container.name.endswith('_cc'):
-
-                    container["charm_y_distr_corr"] = np.ones(container.size, dtype=FTYPE)
-
-                    true_lg_energy = np.log10(container["true_energy"])
-                    true_y = container['bjorken_y']
-                    true_coszen = container['true_coszen']
-
-                    apply_mask = true_y >= 0
-                    container["apply_mask"] = apply_mask
-
-                    lgE_min = 0
-                    valid_mask = true_lg_energy >= lgE_min
-                    extrp_mask = ~valid_mask
-
-                    valid_mask = valid_mask * apply_mask
-                    extrp_mask = extrp_mask * apply_mask
-
-                    # storing initial true inelasticity distribution 
-                    # will later use to divide event weights by it
-                    if container.name in ['nue_cc', 'numu_cc', 'nutau_cc']:
-                        is_nubar = False
-                    elif container.name in ['nuebar_cc', 'numubar_cc', 'nutaubar_cc']:
-                        is_nubar = True
-                    else:
-                        raise ValueError('Incorrect container type "%s"' % container.name)
-
-                    distr_valid_erange = eval_hist(true_lg_energy[valid_mask],
-                                                   true_y[valid_mask], true_coszen[valid_mask], nubar=is_nubar)
-                    distr_extrap_erange = eval_hist(np.ones_like(true_y[extrp_mask])*lgE_min,
-                                                    true_y[extrp_mask], true_coszen[extrp_mask], nubar=is_nubar)
-
-                    container["charm_y_distr_corr"][valid_mask] = distr_valid_erange
-                    container["charm_y_distr_corr"][extrp_mask] = distr_extrap_erange 
+                container["charm_y_distr_corr"][valid_mask] = distr_valid_erange
+                container["charm_y_distr_corr"][extrp_mask] = distr_extrap_erange 
 
     def apply_function(self):
         # modify weights
-        if self.correct_charm:
-            for container in self.data:
-                # reweighting all CC events
-                if container.name.endswith('_cc'):
-                    modif_weights = container["weights"] * container["charm_y_distr_corr"]
-                    container["weights"] = modif_weights
+        for container in self.data:
+            # reweighting all CC events
+            if container.name.endswith('_cc'):
+                modif_weights = container["weights"] * container["charm_y_distr_corr"]
+                container["weights"] = modif_weights
 
                     
