@@ -86,19 +86,11 @@ class correct_charm_y(Stage):
                 ind_x = np.digitize(lgE, bins=xed)
                 ind_y = np.digitize(y, bins=yed)
 
-                # TODO: replace hardcoded number of bins?
                 ind_x[ind_x==31] = 30
                 ind_y[ind_y==31] = 30
 
                 res = np.zeros_like(lgE)
                 mask_upg = coszen<-0.9
-
-#                 if coszen<-0.9:
-#                     h_nucc = h_nucc_upg
-#                     h_nubarcc = h_nubarcc_upg
-#                 else:
-#                     h_nucc = h_nucc_oth
-#                     h_nubarcc = h_nubarcc_oth
 
                 if not nubar:
                     res[mask_upg] = h_nucc_upg[ind_x[mask_upg]-1, ind_y[mask_upg]-1]
@@ -123,11 +115,9 @@ class correct_charm_y(Stage):
                     true_coszen = container['true_coszen']
 
                     apply_mask = true_y >= 0
-#                     dis_mask = container['dis'] > 0
-#                     apply_mask = apply_mask * dis_mask
                     container["apply_mask"] = apply_mask
 
-                    lgE_min = 0 #2. 
+                    lgE_min = 0
                     valid_mask = true_lg_energy >= lgE_min
                     extrp_mask = ~valid_mask
 
