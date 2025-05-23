@@ -77,7 +77,7 @@ __license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 
 SETUP_REQUIRES = [
     'pip>=1.8,<21.3',
-    'setuptools>18.5,<60.0', # versioneer requires >18.5
+    'setuptools>18.5', # versioneer requires >18.5
     'numpy>=1.17,<1.23',
     'scipy>=1.6,<1.14',
     'cython~=0.29.0', # needed for the setup and for the install
