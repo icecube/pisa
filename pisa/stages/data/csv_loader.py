@@ -75,7 +75,10 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
             )
 
         self.neutrinos = neutrinos
-        self.dis_idx = int(dis_idx)
+        if not dis_idx is None:
+            self.dis_idx = int(dis_idx)
+        else:
+            self.dis_idx = None
 
         # init base class
         super().__init__(
