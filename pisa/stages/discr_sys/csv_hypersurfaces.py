@@ -16,12 +16,13 @@ from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.format import split
+from pisa.utils.resources import find_resource
 
 __all__ = ["csv_hypersurfaces",]
 
-__author__ = "P. Eller, T. Ehrhardt, T. Stuttard, J.L. Lanfranchi, A. Trettin"
+__author__ = "B. Benkel, J. Weldert"
 
-__license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -121,7 +122,7 @@ class csv_hypersurfaces(Stage):
             k = f.split('/')[-1].split('.')[0]
             if k.startswith('hs_'):
                 k = k[3:]
-            self.hs[k] = pd.read_csv(f)
+            self.hs[k] = pd.read_csv(find_resource(f))
 
         if self.links is not None:
             for key, val in self.links.items():
@@ -148,7 +149,7 @@ class csv_hypersurfaces(Stage):
 
         self.data.unlink_containers()
         
-    def get_corr_factors(self, hs: pd.DataFrame, param_values: dict[str, float]):
+    def get_corr_factors(self, hs, param_values):
         """Get hypersurface correction factors."""
         # Get difference between param_values and nominal.
         diff = {k: v - self.nominal_systematics[k] for k, v in param_values.items()}
@@ -237,33 +238,37 @@ class csv_hypersurfaces(Stage):
             # Update weights according to hypersurfaces
             container["weights"] = np.clip(container["weights"] * container["hs_scales"], a_min=0, a_max=np.inf)
 
-'''
+
 def init_test(**param_kwargs):
     """Instantiation example"""
     param_set = ParamSet([
-        Param(name='opt_eff_overall', value=1.0, **param_kwargs),
-        Param(name='opt_eff_lateral', value=25, **param_kwargs),
-        Param(name='opt_eff_headon', value=0.0, **param_kwargs),
-        Param(name='ice_scattering', value=0.0, **param_kwargs),
-        Param(name='ice_absorption', value=0.0, **param_kwargs),
+        Param(name='dom_eff', value=1.0, **param_kwargs),
+        Param(name='hole_ice_p0', value=0.1, **param_kwargs),
+        Param(name='hole_ice_p1', value=-0.05, **param_kwargs),
+        Param(name='bulk_ice_scatter', value=1.05, **param_kwargs),
+        Param(name='bulk_ice_abs', value=1.0, **param_kwargs),
+        Param(name='dm31', value=3e-3*ureg.eV**2, **param_kwargs),
     ])
+    nominal_systematics = {"dom_eff"          :  1.00,
+                           "hole_ice_p0"      :  0.10,
+                           "hole_ice_p1"      : -0.05,
+                           "bulk_ice_abs"     :  1.00,
+                           "bulk_ice_scatter" :  1.00}
     dd_en = OneDimBinning(
-        'reco_energy', num_bins=8, is_log=True,
-        bin_edges=[5.62341325, 7.49894209, 10.0, 13.33521432, 17.7827941, 23.71373706, 31.6227766, 42.16965034, 56.23413252] * ureg.GeV,
+        'reco_energy', num_bins=10, is_log=True,
+        bin_edges=[6.31, 8.46, 11.34, 15.20, 20.38, 27.31, 36.61, 49.08, 65.79, 88.20, 158.49] * ureg.GeV,
         tex=r'E_{\rm reco}'
     )
     dd_cz = OneDimBinning(
-        'reco_coszen', num_bins=8, is_lin=True, domain=[-1,1], tex=r'\cos{\theta}_{\rm reco}'
+        'reco_coszen', num_bins=10, is_lin=True, domain=[-1, 0.1], tex=r'\cos{\theta}_{\rm reco}'
     )
-    dd_pid = OneDimBinning('pid', bin_edges=[-0.5, 0.5, 1.5], tex=r'{\rm PID}')
-    return hypersurfaces(
+    dd_pid = OneDimBinning('pid', bin_edges=[0.55, 0.75, 1.], tex=r'{\rm PID}')
+
+    return csv_hypersurfaces(
+        fit_results_file='events/hs_test.csv',
+        nominal_systematics=nominal_systematics,
+        inter_param='dm31',
+        links={'test':['test1_cc', 'test2_nc']},
         params=param_set,
-        fit_results_file='events/IceCube_3y_oscillations/hyperplanes_*.csv.bz2',
-        error_method='sumw2',
-        calc_mode=MultiDimBinning([dd_en, dd_cz, dd_pid], name='dragon_datarelease'),
-        links={
-            'nue_cc+nuebar_cc':['test1_cc', 'test2_nc'],
-            #TODO: not ideal, because I need to know what test_services fills ContainerSet with
-        }
+        calc_mode=MultiDimBinning([dd_en, dd_cz, dd_pid], name='oscNext_verification'),
     )
-'''
