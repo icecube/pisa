@@ -44,7 +44,7 @@ class two_nu_osc(Stage):  # pylint: disable=invalid-name
                 ):
 
         expected_params = (
-            'theta',
+            'theta23',
             'deltam31',
         )
 
@@ -66,7 +66,7 @@ class two_nu_osc(Stage):  # pylint: disable=invalid-name
     @profile
     def apply_function(self):
 
-        theta = self.params.theta.value.m_as('dimensionless')
+        theta = self.params.theta23.value.m_as('dimensionless')
         deltam31 = self.params.deltam31.value.m_as('eV**2')
 
         for container in self.data:
