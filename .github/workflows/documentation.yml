@@ -13,21 +13,20 @@ jobs:
   documentation:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python 3.10
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Install dependencies
       run: |
-        python -m pip install "pip<21.3"
         pip install .[develop]
     - name: Build the docs
       run: |
         sphinx-apidoc -f -o docs/source pisa
         cd docs && make html
     - name: Deploy to gh pages
-      uses: peaceiris/actions-gh-pages@v3.9.2
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: docs/build/html
