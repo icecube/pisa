@@ -42,8 +42,8 @@ from pisa.utils.log import logging, set_verbosity, tprofile
 
 __all__ = ['NAME_FIXES', 'NAME_SEPCHARS', 'NAME_FIXES_REGEXES',
            'basename', '_new_obj', 'is_binning',
-           'OneDimBinning', 'MultiDimBinning',
-           'test_OneDimBinning', 'test_MultiDimBinning']
+           'OneDimBinning', 'MultiDimBinning', 'VarBinning',
+           'test_OneDimBinning', 'test_MultiDimBinning', 'test_VarBinning']
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -139,7 +139,7 @@ def _new_obj(original_function):
     return new_function
 
 
-class OneDimBinning(object):
+class OneDimBinning():
     # pylint: disable=line-too-long
     """Histogram-oriented binning specialized to a single dimension.
 
@@ -1481,7 +1481,7 @@ class OneDimBinning(object):
         return not self.__eq__(other)
 
 
-class MultiDimBinning(object):
+class MultiDimBinning():
     # pylint: disable=line-too-long
     r"""
     Multi-dimensional binning object. This can contain one or more
@@ -1590,7 +1590,6 @@ class MultiDimBinning(object):
         # Handle masking
         self._init_mask(mask) 
 
-
     def _init_mask(self, mask) :
         '''
         Initialize the bin mask. This can either be specified as:
@@ -1639,12 +1638,10 @@ class MultiDimBinning(object):
         # Done, store the mask
         self._mask = mask
 
-
     @property
     def name(self):
         """Name of the dimension"""
         return self._name
-
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
@@ -3043,6 +3040,144 @@ class MultiDimBinning(object):
         return not self.__eq__(other)
 
 
+class VarBinning():
+    # pylint: disable=line-too-long
+    r"""Binning class that allows to use multiple different analysis binnings
+    or to split up an event sample with a given analysis binning into
+    non-overlapping sub-samples - which will be verified at analysis time -
+    defined by arbitrary cuts.
+
+    A use case is for example if you want to use a different 2d binning in
+    reconstructed energy and cosine zenith for each PID bin.
+
+    Parameters
+    ----------
+    binnings : list of MultiDimBinnings
+        The MultiDimBinnings that should be used for each selection.
+
+    selections : OneDimBinning or list of strings (cut expressions)
+        Selections for creating sub-samples and for which different binnings
+        can be used. Can either be a OneDimBinning of the selection variable
+        or an arbitray selection defined in a list of strings where each string
+        contains the respective selection cuts (similar to
+        data.simple_data_loader's `mc_cuts`).
+
+    Notes
+    -----
+    The lengths of `binnings` and `selections` are required to be > 1 (otherwise,
+    just apply MC cuts the regular way) and the same (one `MultiDimBinning`
+    per selection - we don't attempt any array broadcasting).
+
+    If a `OneDimBinning` is passed to `selections`, the corresponding
+    dimension must not be a dimension of any `MultiDimBinning` in `binnings`.
+    If a list of cut expressions is passed instead, its contained
+    variables may simultaneously serve as a `MultiDimBinning`'s dimension
+    (not necessarily dangerous as long as you know what you are doing).
+
+    A warning is issued when `selections` is of type `OneDimBinning` and
+    all `binnings` entries are identical.
+
+    """
+    # pylint: enable=line-too-long
+    def __init__(self, binnings, selections):
+
+        if not isinstance(selections, (OneDimBinning, list)):
+            raise ValueError(f"Selection type {type(selections)} not supported!")
+        # some "trivial" asserts
+        assert isinstance(binnings, list) and len(binnings) == len(selections)
+        assert len(binnings) > 1
+
+        all_equal = True
+        for b in binnings:
+            assert isinstance(b, MultiDimBinning)
+            # Determine whether any variable is part of this binning
+            # and raise error when selections are given as OneDimBinning
+            sel_vars_in_mdb = self._selection_vars_in_mdb(b, selections)
+            if sel_vars_in_mdb and isinstance(selections, OneDimBinning):
+                raise ValueError(
+                    f"Selection variable {sel_vars_in_mdb[0]}"
+                    " (the OneDimBinning dimension) may not simultaneously be"
+                    " part of any MultiDimBinning!"
+                )
+            all_equal = all_equal and b == binnings[0]
+
+        if isinstance(selections, OneDimBinning) and all_equal:
+            logging.warning(
+                f"All binnings are equal, namely {binnings[0]!s}. It will most"
+                " likely be advantageous to simply use the MultiDimBinning"
+                " class for the same analysis purpose."
+            )
+
+        self._binnings = binnings
+        self._selections = selections
+        self._nselections = len(selections)
+        self._names = None
+
+    def _selection_vars_in_mdb(self, binning, selections):
+        """Check which binning dimensions also appear in the selections.
+        """
+        if isinstance(selections, OneDimBinning):
+            if selections.name in binning.names:
+                return [selections.name]
+        elif isinstance(selections, Sequence):
+            # dumb way to find all cut variables in expressions (+ cut values)
+            vars_and_more = []
+            for cut_expr in selections:
+                vars_and_more.extend(re.findall(r"\b\w+\b", cut_expr))
+            # Return any dimension names that occur identically in any
+            # cut expression. Adapt the above if there is a false positive.
+            return [dim for dim in binning.names if dim in vars_and_more]
+        return []
+
+    @property
+    def binnings(self):
+        """list of MultiDimBinning : each binning in a list"""
+        return self._binnings
+
+    @property
+    def selections(self):
+        """list of strs or OneDimBinning : selections for which to use different binnings"""
+        return self._selections
+
+    @property
+    def nselections(self):
+        """int : number of selections with possibly different binnings"""
+        return self._nselections
+
+    @property
+    def names(self):
+        """list of strings : names of each (binning) dimension contained"""
+        if self._names is None:
+            self._names = []
+            for b in self.binnings:
+                self._names.append(b.names)
+        return self._names
+
+    def __pretty__(self, p, cycle):
+        """Method used by the `pretty` library for formatting"""
+        if cycle:
+            p.text('%s(...)' % self.__class__.__name__)
+        else:
+            p.begin_group(4, '%s([' % self.__class__.__name__)
+            for n, dim in enumerate(self):
+                p.breakable()
+                p.pretty(dim)
+                if n < len(self)-1:
+                    p.text(',')
+            p.end_group(4, '])')
+
+    def _repr_pretty_(self, p, cycle):
+        """Method used by e.g. ipython/Jupyter for formatting"""
+        return self.__pretty__(p, cycle)
+
+    def __iter__(self):
+        """Iterate over dimensions. Use `iterbins` to iterate over bins."""
+        return iter(self._binnings)
+
+    def __len__(self):
+        return self._nselections
+
+
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""
     # pylint: disable=line-too-long, wrong-import-position
@@ -3499,7 +3634,47 @@ def test_MultiDimBinning():
     logging.info('<< PASS : test_MultiDimBinning >>')
 
 
+def test_VarBinning():
+    """Unit tests for VarBinning class"""
+    # pylint: disable=wrong-import-position
+
+    b1 = OneDimBinning(name='energy', num_bins=40, is_log=True,
+                       domain=[1, 80]*ureg.GeV)
+    b2 = OneDimBinning(name='coszen', num_bins=40, is_lin=True,
+                       domain=[-1, 1])
+    mdb1 = MultiDimBinning([b1, b2])
+    b3 = OneDimBinning(name='energy', num_bins=20, is_log=True,
+                       domain=[1, 80]*ureg.GeV)
+    mdb2 = MultiDimBinning([b3, b2])
+
+    selection = OneDimBinning(name='pid', is_lin=True, num_bins=2, domain=[0, 1])
+    varbin = VarBinning([mdb1, mdb2], selection)
+    assert varbin.names[0] == varbin.names[1] == ['energy', 'coszen']
+    l = [isinstance(mdb, MultiDimBinning) for mdb in varbin]
+    assert len(l) == 2 and np.all(l)
+
+    selection = ['pid < 0.5', 'pid >= 0.5']
+    varbin = VarBinning([mdb1, mdb2], selection)
+
+    # "energy" may be part of an expression
+    selection = ['energy == 10', 'coszen < 0']
+    varbin = VarBinning([mdb1, mdb1], selection)
+
+    # but not the onedimbinning
+    selection = OneDimBinning(name='energy', num_bins=2, is_log=True,
+                       domain=[1, 80]*ureg.GeV)
+    try:
+        varbin = VarBinning([mdb1, mdb1], selection)
+    except ValueError:
+        pass
+    else:
+        assert False
+
+    logging.info('<< PASS : test_VarBinning >>')
+
+
 if __name__ == "__main__":
     set_verbosity(1)
     test_OneDimBinning()
     test_MultiDimBinning()
+    test_VarBinning()

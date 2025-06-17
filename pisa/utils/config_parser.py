@@ -239,6 +239,7 @@ from __future__ import absolute_import, division
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from collections import OrderedDict
+from collections.abc import Mapping
 from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
@@ -267,7 +268,7 @@ __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
 
 __author__ = 'P. Eller, J. Lanfranchi'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -471,7 +472,7 @@ def parse_param(config, section, selector, fullname, pname, value):
     param : pisa.core.param.Param
 
     """
-    # Note: imports placed here to avoid circular imports
+    # imports placed here to avoid circular imports
     from pisa.core.param import Param, DerivedParam
     from pisa.core.prior import Prior
     kwargs = dict(name=pname, is_fixed=True, prior=None, range=None)
@@ -573,6 +574,122 @@ def parse_param(config, section, selector, fullname, pname, value):
     return param
 
 
+def _parse_varbinning(config, binning, order, bin_split):
+    """Parse and initialize a `VarBinning` instance from config.
+
+    Returns
+    -------
+    VarBinning
+
+    """
+    # imports placed here to avoid circular imports
+    from pisa.core.binning import MultiDimBinning, OneDimBinning, VarBinning # pylint: disable=import-outside-toplevel
+    try:
+        bin_split = eval(bin_split) # pylint: disable=eval-used
+    except:
+        assert isinstance(bin_split, str)
+        # Just split original str into individual selection strs
+        bin_split = split(bin_split)
+    else:
+        assert isinstance(bin_split, Mapping)
+        # If input can be parsed as dict, split events according to
+        # the presumably contained OneDimBinning definition
+        bin_split = OneDimBinning(**bin_split)
+
+    nselections = len(bin_split)
+    # instantiate the OneDimBinnings corresponding to each selection
+    bins = [[] for i in range(nselections)]
+    for bin_name in order:
+        def_raw = config.get('binning', binning + '.' + bin_name)
+        kwargs = eval(def_raw) # pylint: disable=eval-used
+        if isinstance(kwargs, list):
+            # Dedicated OneDimBinning kwargs for each selection
+            assert len(kwargs) == nselections
+        else:
+            # Broadcast the universal OneDimBinning kwargs across
+            # all selections
+            kwargs = [kwargs] * nselections
+        for i, kw in enumerate(kwargs):
+            bins[i].append(OneDimBinning(name=bin_name, **kw))
+
+    mask = config['binning'].get(binning + '.mask', None)
+    if mask is not None:
+        mask = eval(mask) # pylint: disable=eval-used
+        if isinstance(mask[0], list):
+            # Dedicated mask for each selection
+            assert len(mask) == nselections
+        else:
+            # Broadcast the universal mask across all selections
+            mask = [mask] * nselections
+    else:
+        # No mask for any selection
+        mask = [None] * nselections
+
+    multibins = []
+    for i in range(nselections):
+        mb = MultiDimBinning(
+                dimensions=bins[i],
+                name=binning+f"_{i}",
+                mask=mask[i]
+            )
+        multibins.append(mb)
+
+    return VarBinning(binnings=multibins, selections=bin_split)
+
+def _parse_multidimbinning(config, binning, order):
+    """Parse and initialize a `MultiDimBinning` instance from config.
+
+    Returns
+    -------
+    MultiDimBinning
+
+    """
+    # imports placed here to avoid circular imports
+    from pisa.core.binning import MultiDimBinning, OneDimBinning # pylint: disable=import-outside-toplevel
+    bins = []
+    for bin_name in order:
+        try:
+            def_raw = config.get('binning', binning + '.' + bin_name)
+        except:
+            dims_defined = [
+                split(dim, sep='.')[1] for dim in
+                config['binning'].keys() if
+                dim.startswith(binning + '.') and not
+                dim.endswith('.order')
+            ]
+            logging.error(
+                "Failed to find definition of '%s' dimension of '%s'"
+                " binning entry. Only found definition(s) of: %s",
+                bin_name, binning, dims_defined
+            )
+            del dims_defined
+            raise
+        try:
+            kwargs = eval(def_raw) # pylint: disable=eval-used
+        except:
+            logging.error(
+                "Failed to evaluate definition of '%s' dimension of"
+                " '%s' binning entry:\n'%s'",
+                bin_name, binning, def_raw
+            )
+            raise
+        try:
+            bins.append(OneDimBinning(name=bin_name, **kwargs))
+        except:
+            logging.error(
+                "Failed to instantiate new `OneDimBinning` from '%s'"
+                " dimension of '%s' binning entry with definition:\n"
+                "'%s'\n", bin_name, binning, kwargs
+            )
+            raise
+    # Get the bin mask, if there is one
+    mask = config['binning'].get(binning + '.mask', None)
+    if mask is not None :
+        mask = eval(mask) # pylint: disable=eval-used
+    # Create the binning object
+    return MultiDimBinning(dimensions=bins, name=binning, mask=mask)
+
+
 def parse_pipeline_config(config):
     """Parse pipeline config.
 
@@ -590,8 +707,7 @@ def parse_pipeline_config(config):
 
     """
     # Note: imports placed here to avoid circular imports
-    from pisa.core.binning import MultiDimBinning, OneDimBinning
-    from pisa.core.param import ParamSelector, DerivedParam
+    from pisa.core.param import ParamSelector, DerivedParam # pylint: disable=import-outside-toplevel
 
     if isinstance(config, str):
         config = from_file(config)
@@ -618,49 +734,16 @@ def parse_pipeline_config(config):
             # dimension definitions...
             order = split(config.get('binning', name))
             binning, _ = split(name, sep='.')
-            bins = []
-            for bin_name in order:
-                try:
-                    def_raw = config.get('binning', binning + '.' + bin_name)
-                except:
-                    dims_defined = [
-                        split(dim, sep='.')[1] for dim in
-                        config['binning'].keys() if
-                        dim.startswith(binning + '.') and not
-                        dim.endswith('.order')
-                    ]
-                    logging.error(
-                        "Failed to find definition of '%s' dimension of '%s'"
-                        " binning entry. Only found definition(s) of: %s",
-                        bin_name, binning, dims_defined
-                    )
-                    del dims_defined
-                    raise
-                try:
-                    kwargs = eval(def_raw) # pylint: disable=eval-used
-                except:
-                    logging.error(
-                        "Failed to evaluate definition of '%s' dimension of"
-                        " '%s' binning entry:\n'%s'",
-                        bin_name, binning, def_raw
-                    )
-                    raise
-                try:
-                    bins.append(OneDimBinning(bin_name, **kwargs))
-                except:
-                    logging.error(
-                        "Failed to instantiate new `OneDimBinning` from '%s'"
-                        " dimension of '%s' binning entry with definition:\n"
-                        "'%s'\n", bin_name, binning, kwargs
-                    )
-                    raise
-            # Get the bin mask, if there is ome
-            mask = config['binning'].get(binning + '.mask', None)
-            if mask is not None :
-                mask = eval(mask)
-            # Create the binning object
-            binning_dict[binning] = MultiDimBinning(bins, name=binning, mask=mask)
 
+            bin_split = config['binning'].get(binning + '.split', None)
+            if bin_split is not None:
+                # User requested split into several event samples with their
+                # own MultiDimBinning definitions.
+                binning_dict[binning] = _parse_varbinning(config, binning, order, bin_split)
+
+            else:
+                # Requested only one single MultiDimBinning for all events
+                binning_dict[binning] = _parse_multidimbinning(config, binning, order)
 
     stage_dicts = OrderedDict()
 

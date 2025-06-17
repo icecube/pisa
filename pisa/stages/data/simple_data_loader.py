@@ -41,10 +41,26 @@ class simple_data_loader(Stage):  # pylint: disable=invalid-name
         Flag indicating whether data events represent neutrinos
         In this case, special handling for e.g. nu/nubar, CC vs NC, ...
 
-    fraction_events_to_keep : float
+    required_metadata : sequence of str, default: None
+        Optionally specify metadata keys to parse from the
+        `events_file` metadata.
+
+    fraction_events_to_keep : float, default: None
         Fraction of loaded events to use (use to downsample).
-        Must be in range [0.,1.], or disable by setting to `None`.
-        Default in None.
+        Must be in range [0.,1.]. Disabled by setting to `None`.
+
+    events_subsample_index : int >= 0, default: 0
+        If `fraction_events_to_keep` is not `None`, determines
+        which of the statistically independent sub-samples
+        (uniquely determined by the `seed` below) to select.
+
+    seed : int, default: 123456
+        If `fraction_events_to_keep` is not `None`, serves
+        as random seed for generating reproducible sub-samples.
+
+    output_names : sequence of str, default: None
+        Event categories to be recorded. If specified,
+        needs to be a subset of names in `events_file`.
 
     Notes
     -----

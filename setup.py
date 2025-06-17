@@ -52,7 +52,7 @@ __all__ = [
 
 __author__ = 'S. Boeser, J.L. Lanfranchi, P. Eller, M. Hieronymus'
 
-__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -76,8 +76,8 @@ __license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
 
 SETUP_REQUIRES = [
-    'pip>=1.8,<21.3',
-    'setuptools>18.5,<60.0', # versioneer requires >18.5
+    'pip>=1.8',
+    'setuptools>18.5', # versioneer requires >18.5
     'numpy>=1.17,<1.23',
     'scipy>=1.6,<1.14',
     'cython~=0.29.0', # needed for the setup and for the install

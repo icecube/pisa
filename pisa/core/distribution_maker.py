@@ -281,16 +281,15 @@ class DistributionMaker(object):
                 outputs.tex = sum_map_tex_name
                 outputs = MapSet(outputs) # final output must be a MapSet
 
-            # Case where the output of a pipeline is a dict of different MapSets
-            elif isinstance(outputs[0], OrderedDict):
-                output_dict = OrderedDict()
-                for key in outputs[0].keys():
-                    output_dict[key] = sum([sum(A[key]) for A in outputs]) # This produces a Map objects
-                    output_dict[key].name = sum_map_name
-                    output_dict[key].tex = sum_map_tex_name
-                    output_dict[key] = MapSet(output_dict[key])
-
-                outputs = output_dict
+            # Case where the output of a pipeline is a list of different MapSets
+            elif isinstance(outputs[0], list):
+                outs = []
+                for i in range(len(outputs[0])):
+                    o = sum([sum(x) for x in np.array(outputs)[:, i]])
+                    o.name = sum_map_name
+                    o.tex = sum_map_tex_name
+                    outs.append(MapSet(o))
+                outputs = outs
 
         return outputs
 

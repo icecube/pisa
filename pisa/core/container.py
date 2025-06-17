@@ -11,6 +11,7 @@ from collections.abc import Sequence
 from collections import defaultdict
 
 import numpy as np
+import re
 
 from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
@@ -276,7 +277,7 @@ class Container():
     """
 
     default_translation_mode = "average"
-    translation_modes = ("average", "sum", None)
+    translation_modes = ("average", "sum")
     array_representations = ("events", "log_events")
 
 
@@ -590,6 +591,18 @@ class Container():
             else:
                 raise NotImplementedError(f"translating {src_representation} to {dest_representation}")
                 
+        elif self.tranlation_modes[key] == 'sum':
+            if from_map and to_map:
+                raise NotImplementedError("Map to Map in sum mode needs to integrate over bins.")
+
+            elif to_map:
+                out = self.array_to_binned(key, src_representation, dest_representation, averaged=False)
+                self.representation = dest_representation
+                self[key] = out
+
+            else:
+                raise NotImplementedError()
+
         else:
             raise NotImplementedError()
             
@@ -611,13 +624,13 @@ class Container():
 
         precedence = np.inf
         representation = None
-        
+
         for h in validity.keys():
             if validity[h]:
                 if self.precedence[h] < precedence:
                     precedence = self.precedence[h]
                     representation = self._representations[h]
-                    
+
         return representation
         
     def resample(self, key, src_representation, dest_representation):
@@ -723,6 +736,33 @@ class Container():
             hist_binning = src_representation
    
         return lookup(sample, weights, hist_binning)
+
+    def get_keep_mask(self, keep_criteria):
+        """Returns a mask that only keeps the events that survive the given cut(s).
+
+        Parameters
+        ----------
+        keep_criteria : str
+            Any string interpretable as numpy boolean expression.
+
+        Examples
+        --------
+        Keep events with true energies in [1, 80] GeV (note that units are not
+        recognized, so have to be handled outside this method)
+
+        >>> mask = container.get_keep_mask("(true_energy >= 1) & (true_energy <= 80)")
+
+        """
+        assert isinstance(keep_criteria, str)
+
+        for var in self.keys:
+            # using word boundary \b to replace whole words only
+            keep_criteria = re.sub(
+                r'\b{}\b'.format(var),
+                'self["%s"]'%(var),
+                keep_criteria
+            )
+        return eval(keep_criteria)  # pylint: disable=eval-used
 
 
 
