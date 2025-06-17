@@ -31,10 +31,7 @@ import copy
 
 # Handle change over time in `collections` module
 from collections import OrderedDict
-try :
-    from collections.abc import Mapping, Sequence # Required as of py3.10
-except Exception as e :
-    from collections import Mapping, Sequence # Works for py<3.10
+from collections.abc import Mapping, Sequence # Required as of py3.10
 
 import numpy as np
 from iminuit import Minuit

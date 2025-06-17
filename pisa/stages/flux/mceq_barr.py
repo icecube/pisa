@@ -36,7 +36,17 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    table_file : pickle file containing pre-generated tables from MCEq
+    table_file : str
+        pickle file containing pre-generated tables from MCEq
+    include_nutau_flux : bool
+        Flag indicating if nutau flux should be loaded from MCEq pickle file. Since there is no conventional 
+        atmospheric nutau flux, this only makes sense if the pickle file contains a prompt flux.
+    use_honda_nominal_flux : bool
+        Use the Honda et al 2015 flux as the nominal flux (instead of the nominal flux from MCEq)
+    use_relative_gradients : bool 
+        If True, gradients from Barr params are scaled by the ratio of the chosen nominal flux to the MCEq 
+        nominal flux (since MCEq isued to derive these gradients). This is only relevent if using a 
+        different nominal flux, e.g. Honda et al 2025
 
     params : ParamSet
         Must exclusively have parameters: .. ::
@@ -323,7 +333,6 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             )
 
             # nutau(bar)
-            # Currently setting to 0 #TODO include nutau flux (e.g. prompt) in splines
             if self.include_nutau_flux :
                 nu_flux_mceq[:, 2] = self.spline_tables_dict[arb_gradient_param_key]["nutau" if nubar > 0 else "nutaubar"](
                     true_abs_coszen,

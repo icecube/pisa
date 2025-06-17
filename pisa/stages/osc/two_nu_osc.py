@@ -36,7 +36,7 @@ class two_nu_osc(Stage):  # pylint: disable=invalid-name
     Notes
     -----
     For two-neutrino model, there is only one mass-splitting term
-    Atmospheric mixing angle is aproximated by theta (sin^2(2*theta))
+    Atmospheric mixing angle is approximated by theta (sin^2(2*theta))
 
     """
     def __init__(self,
@@ -134,7 +134,7 @@ def apply_probs_vectorized(flux, t23, dm31, true_energy, true_coszen, nuflav, ou
 def init_test(**param_kwargs):
     """Instantiation example"""
     param_set = ParamSet([
-        Param(name='theta', value=45*ureg.degree, **param_kwargs),
+        Param(name='theta23', value=45*ureg.degree, **param_kwargs),
         Param(name='deltam31', value=2.5e-3*ureg.eV**2, **param_kwargs),
     ])
     return two_nu_osc(params=param_set)
