@@ -183,15 +183,15 @@ class csv_hypersurfaces(Stage):
                 
             # Get inter_param bin length.
             inter_param_bins = hs[self.inter_param].unique()
-            binlen = inter_param_bins[1] - inter_param_bins[0]
+            binlen = (inter_param_bins[-1] - inter_param_bins[0]) / (len(inter_param_bins)-1)
 
-            # Get hypersurface below and above dm31.
+            # Get hypersurface below and above.
             hs_lower = hs.loc[(inter_param_value - binlen < hs[self.inter_param]) & (hs[self.inter_param] < inter_param_value)].reset_index()
             hs_upper = hs.loc[(inter_param_value < hs[self.inter_param]) & (hs[self.inter_param] < inter_param_value + binlen)].reset_index()
 
             # Create the interpolated hypersurface.
             hs_interpolated = hs_lower.copy()
-            for p in param_values.keys():
+            for p in ['intercept']+list(param_values.keys()):
                 grad = (np.array(hs_upper[p]) - np.array(hs_lower[p])) / binlen
                 hs_interpolated[p] = grad * (inter_param_value - hs_lower[self.inter_param][0]) + hs_lower[p]
 
