@@ -150,4 +150,10 @@ class correct_charm_y(Stage):
                 modif_weights = container["weights"] * container["charm_y_distr_corr"]
                 container["weights"] = modif_weights
 
-                    
+    def init_test(**param_kwargs):
+    """Instantiation example that enables actual testing on toy containers from test_services.py"""
+        return correct_charm_y(
+            nu_cc_container_keys=["test1_cc"],
+            nubar_cc_container_keys=["test2_nc"]
+        )
+        
