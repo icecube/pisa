@@ -97,8 +97,11 @@
 
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+
+<span class="c1"># Handle change over time in `collections` module</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span> <span class="c1"># Required as of py3.10</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">iminuit</span><span class="w"> </span><span class="kn">import</span> <span class="n">Minuit</span>
@@ -262,7 +265,7 @@
 
 
 <span class="c1"># Container holding all possible functions</span>
-<span class="n">HYPERSURFACE_PARAM_FUNCTIONS</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+<span class="n">HYPERSURFACE_PARAM_FUNCTIONS</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
 <span class="n">HYPERSURFACE_PARAM_FUNCTIONS</span><span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">linear_hypersurface_func</span>
 <span class="n">HYPERSURFACE_PARAM_FUNCTIONS</span><span class="p">[</span><span class="s2">&quot;quadratic&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quadratic_hypersurface_func</span>
 <span class="n">HYPERSURFACE_PARAM_FUNCTIONS</span><span class="p">[</span><span class="s2">&quot;exponential&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">exponential_hypersurface_func</span>
@@ -331,7 +334,7 @@
         <span class="c1"># Store args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initial_intercept</span> <span class="o">=</span> <span class="n">initial_intercept</span>
         <span class="c1"># Store params as dict for ease of lookup</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">param</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="s2">&quot;Duplicate param name found : </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="o">.</span><span class="n">name</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span>
@@ -607,17 +610,17 @@
 
         <span class="c1"># Check nominal dataset definition</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nominal_map</span><span class="p">,</span> <span class="n">Map</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nominal_param_values</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nominal_param_values</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">nominal_param_values</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Params mismatch : </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">nominal_param_values</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">nominal_param_values</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
         <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">nominal_param_values</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
         <span class="c1"># Check systematic dataset definitions</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_maps</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_param_values</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_maps</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_param_values</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_maps</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_param_values</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">sys_map</span><span class="p">,</span> <span class="n">sys_param_vals</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sys_maps</span><span class="p">,</span> <span class="n">sys_param_values</span><span class="p">):</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_map</span><span class="p">,</span> <span class="n">Map</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_param_vals</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_param_vals</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;self.param_names: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="si">}</span><span class="se">\n</span><span class="s2"> sys_param_vals.keys(): </span><span class="si">{</span><span class="n">sys_param_vals</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">sys_param_vals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">),</span> <span class="n">msg</span>
             <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sys_param_vals</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
@@ -885,7 +888,7 @@
                                 <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
 
                         <span class="c1"># Unflatten sys param values</span>
-                        <span class="n">params_unflattened</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+                        <span class="n">params_unflattened</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
                         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)):</span>
                             <span class="n">param_name</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">i</span><span class="p">]</span>
                             <span class="n">params_unflattened</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -1084,7 +1087,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_info_stored</span><span class="p">,</span> <span class="s2">&quot;Cannot get fit dataset nominal values, fit info not stored</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="s2">&quot; (using legacy data)&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_legacy_data</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">nominal_value</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">())])</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">nominal_value</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">())])</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit_param_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1094,7 +1097,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_info_stored</span><span class="p">,</span> <span class="s2">&quot;Cannot get fit dataset param values, fit info not stored</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="s2">&quot; (using legacy data)&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_legacy_data</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">fit_param_values</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">())])</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">fit_param_values</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">())])</span>
 
 <div class="viewcode-block" id="Hypersurface.get_nominal_mask">
 <a class="viewcode-back" href="../../../../pisa.utils.hypersurface.html#pisa.utils.hypersurface.hypersurface.Hypersurface.get_nominal_mask">[docs]</a>
@@ -1267,7 +1270,7 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_serializable_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># TODO always redo?</span>
 
-            <span class="n">state</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
 
             <span class="n">state</span><span class="p">[</span><span class="s2">&quot;_initialized&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span>
             <span class="n">state</span><span class="p">[</span><span class="s2">&quot;binning&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">serializable_state</span>
@@ -1286,7 +1289,7 @@
             <span class="n">state</span><span class="p">[</span><span class="s2">&quot;fit_pipeline_param_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_pipeline_param_values</span>
             <span class="n">state</span><span class="p">[</span><span class="s2">&quot;using_legacy_data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_legacy_data</span>
 
-            <span class="n">state</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+            <span class="n">state</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
                 <span class="n">state</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">serializable_state</span>
 
@@ -1317,7 +1320,7 @@
 
         <span class="c1"># If it is not already a a state, alternativey try to load it in case a JSON</span>
         <span class="c1"># file was passed</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
             <span class="n">state</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 
         <span class="c1">#</span>
@@ -1635,7 +1638,7 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_serializable_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># TODO always redo?</span>
 
-            <span class="n">state</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
             <span class="n">state</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
             <span class="n">state</span><span class="p">[</span><span class="s2">&quot;func_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_name</span>
             <span class="n">state</span><span class="p">[</span><span class="s2">&quot;num_fit_coeffts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_fit_coeffts</span>
@@ -1786,19 +1789,19 @@
     <span class="c1">#</span>
 
     <span class="c1"># Check types</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_datasets</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys_datasets</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1"># Check formatting of datasets is as expected</span>
     <span class="n">all_datasets</span> <span class="o">=</span> <span class="p">[</span><span class="n">nominal_dataset</span><span class="p">]</span> <span class="o">+</span> <span class="n">sys_datasets</span>
     <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">all_datasets</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
         <span class="k">assert</span> <span class="s2">&quot;pipeline_cfg&quot;</span> <span class="ow">in</span> <span class="n">dataset</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">],</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Mapping</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;pipeline_cfg&quot;</span><span class="p">],</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">))</span>
         <span class="k">assert</span> <span class="s2">&quot;sys_params&quot;</span> <span class="ow">in</span> <span class="n">dataset</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;sys_params&quot;</span><span class="p">],</span> <span class="n">collections</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;sys_params&quot;</span><span class="p">],</span> <span class="n">Mapping</span><span class="p">)</span>
 
     <span class="c1"># Check params</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span>
@@ -1914,7 +1917,7 @@
     <span class="c1">#</span>
 
     <span class="c1"># Create the container to fill</span>
-    <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
 
     <span class="c1"># Loop over maps</span>
     <span class="k">for</span> <span class="n">map_name</span> <span class="ow">in</span> <span class="n">nominal_dataset</span><span class="p">[</span><span class="s2">&quot;mapset&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
@@ -2029,7 +2032,7 @@
 
         <span class="c1"># Load file</span>
         <span class="n">input_data</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading file complete, generating hypersurfaces...&quot;</span><span class="p">)</span>
 
         <span class="c1"># Testing various cases to support older files as well as modern ones...</span>
@@ -2042,7 +2045,7 @@
         <span class="k">else</span><span class="p">:</span>
 
             <span class="c1"># Otherwise assume file is using the modern format</span>
-            <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+            <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">map_name</span><span class="p">,</span> <span class="n">hypersurface_state</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
                 <span class="n">hypersurfaces</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Hypersurface</span><span class="o">.</span><span class="n">from_state</span><span class="p">(</span>
                     <span class="n">hypersurface_state</span><span class="p">)</span>
@@ -2086,7 +2089,7 @@
 <span class="sd">    User should not use this directly, instead call `load_hypersurfaces`.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
 
     <span class="c1">#</span>
     <span class="c1"># Loop over map names</span>
@@ -2188,7 +2191,7 @@
 
     <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-    <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">hypersurfaces</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
 
     <span class="c1">#</span>
     <span class="c1"># Check inputs</span>

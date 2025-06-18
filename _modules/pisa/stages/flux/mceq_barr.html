@@ -83,6 +83,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">bz2</span><span class="w"> </span><span class="kn">import</span> <span class="n">BZ2File</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -107,7 +108,17 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    table_file : pickle file containing pre-generated tables from MCEq</span>
+<span class="sd">    table_file : str</span>
+<span class="sd">        pickle file containing pre-generated tables from MCEq</span>
+<span class="sd">    include_nutau_flux : bool</span>
+<span class="sd">        Flag indicating if nutau flux should be loaded from MCEq pickle file. Since there is no conventional </span>
+<span class="sd">        atmospheric nutau flux, this only makes sense if the pickle file contains a prompt flux.</span>
+<span class="sd">    use_honda_nominal_flux : bool</span>
+<span class="sd">        Use the Honda et al 2015 flux as the nominal flux (instead of the nominal flux from MCEq)</span>
+<span class="sd">    use_relative_gradients : bool </span>
+<span class="sd">        If True, gradients from Barr params are scaled by the ratio of the chosen nominal flux to the MCEq </span>
+<span class="sd">        nominal flux (since MCEq isued to derive these gradients). This is only relevent if using a </span>
+<span class="sd">        different nominal flux, e.g. Honda et al 2025</span>
 
 <span class="sd">    params : ParamSet</span>
 <span class="sd">        Must exclusively have parameters: .. ::</span>
@@ -166,6 +177,7 @@
         <span class="n">table_file</span><span class="p">,</span>
         <span class="n">include_nutau_flux</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">use_honda_nominal_flux</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">use_relative_gradients</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 
@@ -252,6 +264,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">table_file</span> <span class="o">=</span> <span class="n">table_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">include_nutau_flux</span> <span class="o">=</span> <span class="n">include_nutau_flux</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_honda_nominal_flux</span> <span class="o">=</span> <span class="n">use_honda_nominal_flux</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_relative_gradients</span> <span class="o">=</span> <span class="n">use_relative_gradients</span>
 
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -305,6 +318,9 @@
             <span class="c1"># Would rather use multi-dim arrays here but limited by fact that</span>
             <span class="c1"># numba only supports 1/2D versions of numpy functions</span>
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
+                <span class="n">flux_container_shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span>
+            <span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux_mceq&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
                 <span class="n">flux_container_shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span>
             <span class="p">)</span>
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">flux_container_shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
@@ -361,6 +377,7 @@
             <span class="n">true_log_energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">])</span>
             <span class="n">true_abs_coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_coszen&quot;</span><span class="p">])</span>
             <span class="n">nu_flux_nominal</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">]</span>
+            <span class="n">nu_flux_mceq</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux_mceq&quot;</span><span class="p">]</span>
             <span class="n">gradients</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]</span>
             <span class="n">nubar</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">]</span>
 
@@ -368,40 +385,42 @@
             <span class="c1"># Nominal flux</span>
             <span class="c1">#</span>
 
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_honda_nominal_flux</span> <span class="p">:</span>
+            <span class="c1"># Evaluate splines to get nominal flux</span>
+            <span class="c1"># Need to correctly map nu/nubar and flavor to the output arrays</span>
 
-                <span class="c1"># Evaluate splines to get nominal flux</span>
-                <span class="c1"># Need to correctly map nu/nubar and flavor to the output arrays</span>
+            <span class="c1"># Note that nominal flux is stored multiple times (once per Barr parameter)</span>
+            <span class="c1"># Choose an arbitrary one to get the nominal fluxes</span>
+            <span class="n">arb_gradient_param_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_param_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-                <span class="c1"># Note that nominal flux is stored multiple times (once per Barr parameter)</span>
-                <span class="c1"># Choose an arbitrary one to get the nominal fluxes</span>
-                <span class="n">arb_gradient_param_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_param_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># nue(bar)</span>
+            <span class="n">nu_flux_mceq</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline_tables_dict</span><span class="p">[</span><span class="n">arb_gradient_param_key</span><span class="p">][</span><span class="s2">&quot;nue&quot;</span> <span class="k">if</span> <span class="n">nubar</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;nuebar&quot;</span><span class="p">](</span>
+                <span class="n">true_abs_coszen</span><span class="p">,</span>
+                <span class="n">true_log_energy</span><span class="p">,</span>
+                <span class="n">grid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
 
-                <span class="c1"># nue(bar)</span>
-                <span class="n">nu_flux_nominal</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline_tables_dict</span><span class="p">[</span><span class="n">arb_gradient_param_key</span><span class="p">][</span><span class="s2">&quot;nue&quot;</span> <span class="k">if</span> <span class="n">nubar</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;nuebar&quot;</span><span class="p">](</span>
+            <span class="c1"># numu(bar)</span>
+            <span class="n">nu_flux_mceq</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline_tables_dict</span><span class="p">[</span><span class="n">arb_gradient_param_key</span><span class="p">][</span><span class="s2">&quot;numu&quot;</span> <span class="k">if</span> <span class="n">nubar</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;numubar&quot;</span><span class="p">](</span>
+                <span class="n">true_abs_coszen</span><span class="p">,</span>
+                <span class="n">true_log_energy</span><span class="p">,</span>
+                <span class="n">grid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># nutau(bar)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_nutau_flux</span> <span class="p">:</span>
+                <span class="n">nu_flux_mceq</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline_tables_dict</span><span class="p">[</span><span class="n">arb_gradient_param_key</span><span class="p">][</span><span class="s2">&quot;nutau&quot;</span> <span class="k">if</span> <span class="n">nubar</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;nutaubar&quot;</span><span class="p">](</span>
                     <span class="n">true_abs_coszen</span><span class="p">,</span>
                     <span class="n">true_log_energy</span><span class="p">,</span>
                     <span class="n">grid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="p">)</span>
-
-                <span class="c1"># numu(bar)</span>
-                <span class="n">nu_flux_nominal</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline_tables_dict</span><span class="p">[</span><span class="n">arb_gradient_param_key</span><span class="p">][</span><span class="s2">&quot;numu&quot;</span> <span class="k">if</span> <span class="n">nubar</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;numubar&quot;</span><span class="p">](</span>
-                    <span class="n">true_abs_coszen</span><span class="p">,</span>
-                    <span class="n">true_log_energy</span><span class="p">,</span>
-                    <span class="n">grid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="p">)</span>
-
-                <span class="c1"># nutau(bar)</span>
-                <span class="c1"># Currently setting to 0 #TODO include nutau flux (e.g. prompt) in splines</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_nutau_flux</span> <span class="p">:</span>
-                    <span class="n">nu_flux_nominal</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline_tables_dict</span><span class="p">[</span><span class="n">arb_gradient_param_key</span><span class="p">][</span><span class="s2">&quot;nutau&quot;</span> <span class="k">if</span> <span class="n">nubar</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;nutaubar&quot;</span><span class="p">](</span>
-                        <span class="n">true_abs_coszen</span><span class="p">,</span>
-                        <span class="n">true_log_energy</span><span class="p">,</span>
-                        <span class="n">grid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                    <span class="p">)</span>
 
             <span class="c1"># Tell the smart arrays we&#39;ve changed the nominal flux values on the host</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;nu_flux_mceq&quot;</span><span class="p">)</span>
+
+            <span class="c1"># If not using Honda as the nominal flux, will use MCEq for the nominal</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_honda_nominal_flux</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">nu_flux_mceq</span><span class="p">)</span> <span class="c1">#TODO do we actually need a copy? this variable is not modified, so perhaps could just point to it</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">)</span>
 
 
             <span class="c1">#</span>
@@ -543,16 +562,31 @@
             <span class="k">else</span> <span class="p">:</span>
                 <span class="n">nominal_flux_key</span> <span class="o">=</span> <span class="s2">&quot;nu_flux_nominal&quot;</span>
 
-            <span class="n">apply_sys_loop</span><span class="p">(</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">],</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_coszen&quot;</span><span class="p">],</span>
-                <span class="n">FTYPE</span><span class="p">(</span><span class="n">delta_index</span><span class="p">),</span>
-                <span class="n">FTYPE</span><span class="p">(</span><span class="n">energy_pivot</span><span class="p">),</span>
-                <span class="n">container</span><span class="p">[</span><span class="n">nominal_flux_key</span><span class="p">],</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">],</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">gradient_params</span><span class="p">,</span>
-                <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">],</span>
-            <span class="p">)</span>
+            <span class="c1"># Do the main flux re-weighting calculation</span>
+            <span class="c1"># There are slightly different versions of this based on whether user wants to use relative weighting (recommended)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_relative_gradients</span> <span class="p">:</span>
+                <span class="n">apply_sys_loop_rel</span><span class="p">(</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">],</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_coszen&quot;</span><span class="p">],</span>
+                    <span class="n">FTYPE</span><span class="p">(</span><span class="n">delta_index</span><span class="p">),</span>
+                    <span class="n">FTYPE</span><span class="p">(</span><span class="n">energy_pivot</span><span class="p">),</span>
+                    <span class="n">container</span><span class="p">[</span><span class="n">nominal_flux_key</span><span class="p">],</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux_mceq&quot;</span><span class="p">],</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">gradient_params</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="n">apply_sys_loop</span><span class="p">(</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">],</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_coszen&quot;</span><span class="p">],</span>
+                    <span class="n">FTYPE</span><span class="p">(</span><span class="n">delta_index</span><span class="p">),</span>
+                    <span class="n">FTYPE</span><span class="p">(</span><span class="n">energy_pivot</span><span class="p">),</span>
+                    <span class="n">container</span><span class="p">[</span><span class="n">nominal_flux_key</span><span class="p">],</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">gradient_params</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">],</span>
+                <span class="p">)</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">)</span>
 
             <span class="c1"># Check for negative results from spline</span>
@@ -619,6 +653,58 @@
             <span class="n">out</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">=</span> <span class="n">nu_flux_nominal</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">*</span> <span class="n">spec_scale</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gradient_params</span><span class="p">)):</span>
                 <span class="n">out</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">+=</span> <span class="n">gradients</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">gradient_params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+
+<span class="nd">@myjit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_sys_loop_rel</span><span class="p">(</span>
+    <span class="n">true_energy</span><span class="p">,</span>
+    <span class="n">true_coszen</span><span class="p">,</span>
+    <span class="n">delta_index</span><span class="p">,</span>
+    <span class="n">energy_pivot</span><span class="p">,</span>
+    <span class="n">nu_flux_nominal</span><span class="p">,</span>
+    <span class="n">nu_flux_mceq</span><span class="p">,</span>
+    <span class="n">gradients</span><span class="p">,</span>
+    <span class="n">gradient_params</span><span class="p">,</span>
+    <span class="n">out</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculation:</span>
+<span class="sd">      1) Start from nominal flux</span>
+<span class="sd">      2) Apply spectral index shift</span>
+<span class="sd">      3) Add contributions from MCEq-computed gradients</span>
+
+<span class="sd">    Array dimensions :</span>
+<span class="sd">        true_energy : [A]</span>
+<span class="sd">        true_coszen : [A]</span>
+<span class="sd">        nubar : scalar integer</span>
+<span class="sd">        delta_index : scalar float</span>
+<span class="sd">        energy_pivot : scalar float</span>
+<span class="sd">        nu_flux_nominal : [A,B]</span>
+<span class="sd">        gradients : [A,B,C]</span>
+<span class="sd">        gradient_params : [C]</span>
+<span class="sd">        out : [A,B] (sys flux)</span>
+<span class="sd">    where:</span>
+<span class="sd">        A = num events</span>
+<span class="sd">        B = num flavors in flux (=3, e.g. e, mu, tau)</span>
+<span class="sd">        C = num gradients</span>
+
+<span class="sd">    The gradients are computed using MCEq. If the nominal flux is NOT based on MCEq, need to </span>
+<span class="sd">    correct the gradients for this.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#TODO merge with apply_sys_loop (toggle)</span>
+
+    <span class="n">n_evts</span><span class="p">,</span> <span class="n">n_flavs</span> <span class="o">=</span> <span class="n">nu_flux_nominal</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_evts</span><span class="p">):</span>
+        <span class="n">spec_scale</span> <span class="o">=</span> <span class="n">spectral_index_scale</span><span class="p">(</span><span class="n">true_energy</span><span class="p">[</span><span class="n">event</span><span class="p">],</span> <span class="n">energy_pivot</span><span class="p">,</span> <span class="n">delta_index</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">flav</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_flavs</span><span class="p">):</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">=</span> <span class="n">nu_flux_nominal</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">*</span> <span class="n">spec_scale</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gradient_params</span><span class="p">)):</span>
+                <span class="n">rel_grad</span> <span class="o">=</span> <span class="n">gradients</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">nu_flux_mceq</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">*</span> <span class="n">spec_scale</span><span class="p">)</span> <span class="c1">#TODO could this be spped up by corecting the gradients only once during setup?</span>
+                <span class="n">abs_grad</span> <span class="o">=</span> <span class="n">nu_flux_nominal</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">*</span> <span class="n">rel_grad</span>
+                <span class="n">out</span><span class="p">[</span><span class="n">event</span><span class="p">,</span> <span class="n">flav</span><span class="p">]</span> <span class="o">+=</span> <span class="n">abs_grad</span> <span class="o">*</span> <span class="n">gradient_params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
 
 
 <div class="viewcode-block" id="init_test">
