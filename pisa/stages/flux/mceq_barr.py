@@ -13,6 +13,7 @@ from __future__ import absolute_import, print_function, division
 from bz2 import BZ2File
 import collections
 import pickle
+import copy
 
 import numpy as np
 
@@ -35,7 +36,17 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    table_file : pickle file containing pre-generated tables from MCEq
+    table_file : str
+        pickle file containing pre-generated tables from MCEq
+    include_nutau_flux : bool
+        Flag indicating if nutau flux should be loaded from MCEq pickle file. Since there is no conventional 
+        atmospheric nutau flux, this only makes sense if the pickle file contains a prompt flux.
+    use_honda_nominal_flux : bool
+        Use the Honda et al 2015 flux as the nominal flux (instead of the nominal flux from MCEq)
+    use_relative_gradients : bool 
+        If True, gradients from Barr params are scaled by the ratio of the chosen nominal flux to the MCEq 
+        nominal flux (since MCEq isued to derive these gradients). This is only relevent if using a 
+        different nominal flux, e.g. Honda et al 2025
 
     params : ParamSet
         Must exclusively have parameters: .. ::
@@ -94,6 +105,7 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
         table_file,
         include_nutau_flux=False,
         use_honda_nominal_flux=True,
+        use_relative_gradients=False,
         **std_kwargs,
     ):
 
@@ -180,6 +192,7 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
         self.table_file = table_file
         self.include_nutau_flux = include_nutau_flux
         self.use_honda_nominal_flux = use_honda_nominal_flux
+        self.use_relative_gradients = use_relative_gradients
 
         # init base class
         super().__init__(
@@ -231,6 +244,9 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             # Would rather use multi-dim arrays here but limited by fact that
             # numba only supports 1/2D versions of numpy functions
             container["nu_flux_nominal"] = np.full(
+                flux_container_shape, np.NaN, dtype=FTYPE
+            )
+            container["nu_flux_mceq"] = np.full(
                 flux_container_shape, np.NaN, dtype=FTYPE
             )
             container["nu_flux"] = np.full(flux_container_shape, np.NaN, dtype=FTYPE)
@@ -287,6 +303,7 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             true_log_energy = np.log(container["true_energy"])
             true_abs_coszen = np.abs(container["true_coszen"])
             nu_flux_nominal = container["nu_flux_nominal"]
+            nu_flux_mceq = container["nu_flux_mceq"]
             gradients = container["gradients"]
             nubar = container["nubar"]
 
@@ -294,40 +311,42 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             # Nominal flux
             #
 
-            if not self.use_honda_nominal_flux :
+            # Evaluate splines to get nominal flux
+            # Need to correctly map nu/nubar and flavor to the output arrays
 
-                # Evaluate splines to get nominal flux
-                # Need to correctly map nu/nubar and flavor to the output arrays
+            # Note that nominal flux is stored multiple times (once per Barr parameter)
+            # Choose an arbitrary one to get the nominal fluxes
+            arb_gradient_param_key = self.gradient_param_names[0]
 
-                # Note that nominal flux is stored multiple times (once per Barr parameter)
-                # Choose an arbitrary one to get the nominal fluxes
-                arb_gradient_param_key = self.gradient_param_names[0]
+            # nue(bar)
+            nu_flux_mceq[:, 0] = self.spline_tables_dict[arb_gradient_param_key]["nue" if nubar > 0 else "nuebar"](
+                true_abs_coszen,
+                true_log_energy,
+                grid=False,
+            )
 
-                # nue(bar)
-                nu_flux_nominal[:, 0] = self.spline_tables_dict[arb_gradient_param_key]["nue" if nubar > 0 else "nuebar"](
+            # numu(bar)
+            nu_flux_mceq[:, 1] = self.spline_tables_dict[arb_gradient_param_key]["numu" if nubar > 0 else "numubar"](
+                true_abs_coszen,
+                true_log_energy,
+                grid=False,
+            )
+
+            # nutau(bar)
+            if self.include_nutau_flux :
+                nu_flux_mceq[:, 2] = self.spline_tables_dict[arb_gradient_param_key]["nutau" if nubar > 0 else "nutaubar"](
                     true_abs_coszen,
                     true_log_energy,
                     grid=False,
                 )
-
-                # numu(bar)
-                nu_flux_nominal[:, 1] = self.spline_tables_dict[arb_gradient_param_key]["numu" if nubar > 0 else "numubar"](
-                    true_abs_coszen,
-                    true_log_energy,
-                    grid=False,
-                )
-
-                # nutau(bar)
-                # Currently setting to 0 #TODO include nutau flux (e.g. prompt) in splines
-                if self.include_nutau_flux :
-                    nu_flux_nominal[:, 2] = self.spline_tables_dict[arb_gradient_param_key]["nutau" if nubar > 0 else "nutaubar"](
-                        true_abs_coszen,
-                        true_log_energy,
-                        grid=False,
-                    )
 
             # Tell the smart arrays we've changed the nominal flux values on the host
-            container.mark_changed("nu_flux_nominal")
+            container.mark_changed("nu_flux_mceq")
+
+            # If not using Honda as the nominal flux, will use MCEq for the nominal
+            if not self.use_honda_nominal_flux:
+                container["nu_flux_nominal"] = copy.deepcopy(nu_flux_mceq) #TODO do we actually need a copy? this variable is not modified, so perhaps could just point to it
+                container.mark_changed("nu_flux_nominal")
 
 
             #
@@ -463,16 +482,31 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             else :
                 nominal_flux_key = "nu_flux_nominal"
 
-            apply_sys_loop(
-                container["true_energy"],
-                container["true_coszen"],
-                FTYPE(delta_index),
-                FTYPE(energy_pivot),
-                container[nominal_flux_key],
-                container["gradients"],
-                self.gradient_params,
-                out=container["nu_flux"],
-            )
+            # Do the main flux re-weighting calculation
+            # There are slightly different versions of this based on whether user wants to use relative weighting (recommended)
+            if self.use_relative_gradients :
+                apply_sys_loop_rel(
+                    container["true_energy"],
+                    container["true_coszen"],
+                    FTYPE(delta_index),
+                    FTYPE(energy_pivot),
+                    container[nominal_flux_key],
+                    container["nu_flux_mceq"],
+                    container["gradients"],
+                    self.gradient_params,
+                    out=container["nu_flux"],
+                )
+            else :
+                apply_sys_loop(
+                    container["true_energy"],
+                    container["true_coszen"],
+                    FTYPE(delta_index),
+                    FTYPE(energy_pivot),
+                    container[nominal_flux_key],
+                    container["gradients"],
+                    self.gradient_params,
+                    out=container["nu_flux"],
+                )
             container.mark_changed("nu_flux")
 
             # Check for negative results from spline
@@ -537,6 +571,58 @@ def apply_sys_loop(
             out[event, flav] = nu_flux_nominal[event, flav] * spec_scale
             for i in range(len(gradient_params)):
                 out[event, flav] += gradients[event, flav, i] * gradient_params[i]
+
+
+@myjit
+def apply_sys_loop_rel(
+    true_energy,
+    true_coszen,
+    delta_index,
+    energy_pivot,
+    nu_flux_nominal,
+    nu_flux_mceq,
+    gradients,
+    gradient_params,
+    out,
+):
+    """
+    Calculation:
+      1) Start from nominal flux
+      2) Apply spectral index shift
+      3) Add contributions from MCEq-computed gradients
+
+    Array dimensions :
+        true_energy : [A]
+        true_coszen : [A]
+        nubar : scalar integer
+        delta_index : scalar float
+        energy_pivot : scalar float
+        nu_flux_nominal : [A,B]
+        gradients : [A,B,C]
+        gradient_params : [C]
+        out : [A,B] (sys flux)
+    where:
+        A = num events
+        B = num flavors in flux (=3, e.g. e, mu, tau)
+        C = num gradients
+
+    The gradients are computed using MCEq. If the nominal flux is NOT based on MCEq, need to 
+    correct the gradients for this.
+    """
+
+    #TODO merge with apply_sys_loop (toggle)
+
+    n_evts, n_flavs = nu_flux_nominal.shape
+
+    for event in range(n_evts):
+        spec_scale = spectral_index_scale(true_energy[event], energy_pivot, delta_index)
+        for flav in range(n_flavs):
+            out[event, flav] = nu_flux_nominal[event, flav] * spec_scale
+            for i in range(len(gradient_params)):
+                rel_grad = gradients[event, flav, i] / (nu_flux_mceq[event, flav] * spec_scale) #TODO could this be spped up by corecting the gradients only once during setup?
+                abs_grad = nu_flux_nominal[event, flav] * rel_grad
+                out[event, flav] += abs_grad * gradient_params[i]
+
 
 
 def init_test(**param_kwargs):

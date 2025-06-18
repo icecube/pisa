@@ -27,8 +27,11 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 
 import os
-import collections
 import copy
+
+# Handle change over time in `collections` module
+from collections import OrderedDict
+from collections.abc import Mapping, Sequence # Required as of py3.10
 
 import numpy as np
 from iminuit import Minuit
@@ -192,7 +195,7 @@ class logarithmic_hypersurface_func(object):
 
 
 # Container holding all possible functions
-HYPERSURFACE_PARAM_FUNCTIONS = collections.OrderedDict()
+HYPERSURFACE_PARAM_FUNCTIONS = OrderedDict()
 HYPERSURFACE_PARAM_FUNCTIONS["linear"] = linear_hypersurface_func
 HYPERSURFACE_PARAM_FUNCTIONS["quadratic"] = quadratic_hypersurface_func
 HYPERSURFACE_PARAM_FUNCTIONS["exponential"] = exponential_hypersurface_func
@@ -259,7 +262,7 @@ class Hypersurface(object):
         # Store args
         self.initial_intercept = initial_intercept
         # Store params as dict for ease of lookup
-        self.params = collections.OrderedDict()
+        self.params = OrderedDict()
         for param in params:
             assert param.name not in self.params, "Duplicate param name found : %s" % param.name
             self.params[param.name] = param
@@ -530,17 +533,17 @@ class Hypersurface(object):
 
         # Check nominal dataset definition
         assert isinstance(nominal_map, Map)
-        assert isinstance(nominal_param_values, collections.abc.Mapping)
+        assert isinstance(nominal_param_values, Mapping)
         assert set(nominal_param_values.keys()) == set(self.param_names), f"Params mismatch : {set(nominal_param_values.keys())} != {set(self.param_names)}"
         assert all([isinstance(k, str) for k in nominal_param_values.keys()])
         assert all([np.isscalar(v) for v in nominal_param_values.values()])
         # Check systematic dataset definitions
-        assert isinstance(sys_maps, collections.abc.Sequence)
-        assert isinstance(sys_param_values, collections.abc.Sequence)
+        assert isinstance(sys_maps, Sequence)
+        assert isinstance(sys_param_values, Sequence)
         assert len(sys_maps) == len(sys_param_values)
         for sys_map, sys_param_vals in zip(sys_maps, sys_param_values):
             assert isinstance(sys_map, Map)
-            assert isinstance(sys_param_vals, collections.abc.Mapping)
+            assert isinstance(sys_param_vals, Mapping)
             msg = f"self.param_names: {self.param_names}\n sys_param_vals.keys(): {sys_param_vals.keys()}"
             assert set(sys_param_vals.keys()) == set(self.param_names), msg
             assert all([isinstance(k, str) for k in sys_param_vals.keys()])
@@ -808,7 +811,7 @@ class Hypersurface(object):
                                 i += 1
 
                         # Unflatten sys param values
-                        params_unflattened = collections.OrderedDict()
+                        params_unflattened = OrderedDict()
                         for i in range(len(self.params)):
                             param_name = list(self.params.keys())[i]
                             params_unflattened[param_name] = x[i]
@@ -1006,7 +1009,7 @@ class Hypersurface(object):
         '''
         assert self.fit_info_stored, "Cannot get fit dataset nominal values, fit info not stored%s" % (
             " (using legacy data)" if self.using_legacy_data else "")
-        return collections.OrderedDict([(name, param.nominal_value) for name, param in list(self.params.items())])
+        return OrderedDict([(name, param.nominal_value) for name, param in list(self.params.items())])
 
     @property
     def fit_param_values(self):
@@ -1016,7 +1019,7 @@ class Hypersurface(object):
         '''
         assert self.fit_info_stored, "Cannot get fit dataset param values, fit info not stored%s" % (
             " (using legacy data)" if self.using_legacy_data else "")
-        return collections.OrderedDict([(name, param.fit_param_values) for name, param in list(self.params.items())])
+        return OrderedDict([(name, param.fit_param_values) for name, param in list(self.params.items())])
 
     def get_nominal_mask(self):
         '''
@@ -1180,7 +1183,7 @@ class Hypersurface(object):
 
         if self._serializable_state is None:  # TODO always redo?
 
-            state = collections.OrderedDict()
+            state = OrderedDict()
 
             state["_initialized"] = self._initialized
             state["binning"] = self.binning.serializable_state
@@ -1199,7 +1202,7 @@ class Hypersurface(object):
             state["fit_pipeline_param_values"] = self.fit_pipeline_param_values
             state["using_legacy_data"] = self.using_legacy_data
 
-            state["params"] = collections.OrderedDict()
+            state["params"] = OrderedDict()
             for name, param in list(self.params.items()):
                 state["params"][name] = param.serializable_state
 
@@ -1228,7 +1231,7 @@ class Hypersurface(object):
 
         # If it is not already a a state, alternativey try to load it in case a JSON
         # file was passed
-        if not isinstance(state, collections.abc.Mapping):
+        if not isinstance(state, Mapping):
             state = from_json(state)
 
         #
@@ -1527,7 +1530,7 @@ class HypersurfaceParam(object):
 
         if self._serializable_state is None:  # TODO always redo?
 
-            state = collections.OrderedDict()
+            state = OrderedDict()
             state["name"] = self.name
             state["func_name"] = self.func_name
             state["num_fit_coeffts"] = self.num_fit_coeffts
@@ -1672,19 +1675,19 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     #
 
     # Check types
-    assert isinstance(sys_datasets, collections.Sequence)
-    assert isinstance(params, collections.Sequence)
+    assert isinstance(sys_datasets, Sequence)
+    assert isinstance(params, Sequence)
     assert isinstance(output_dir, str)
     assert isinstance(tag, str)
 
     # Check formatting of datasets is as expected
     all_datasets = [nominal_dataset] + sys_datasets
     for dataset in all_datasets:
-        assert isinstance(dataset, collections.Mapping)
+        assert isinstance(dataset, Mapping)
         assert "pipeline_cfg" in dataset
-        assert isinstance(dataset["pipeline_cfg"], (str, collections.Mapping))
+        assert isinstance(dataset["pipeline_cfg"], (str, Mapping))
         assert "sys_params" in dataset
-        assert isinstance(dataset["sys_params"], collections.Mapping)
+        assert isinstance(dataset["sys_params"], Mapping)
 
     # Check params
     assert len(params) >= 1
@@ -1800,7 +1803,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     #
 
     # Create the container to fill
-    hypersurfaces = collections.OrderedDict()
+    hypersurfaces = OrderedDict()
 
     # Loop over maps
     for map_name in nominal_dataset["mapset"].names:
@@ -1912,7 +1915,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
 
         # Load file
         input_data = from_json(input_file)
-        assert isinstance(input_data, collections.Mapping)
+        assert isinstance(input_data, Mapping)
         logging.info(f"Reading file complete, generating hypersurfaces...")
 
         # Testing various cases to support older files as well as modern ones...
@@ -1925,7 +1928,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
         else:
 
             # Otherwise assume file is using the modern format
-            hypersurfaces = collections.OrderedDict()
+            hypersurfaces = OrderedDict()
             for map_name, hypersurface_state in list(input_data.items()):
                 hypersurfaces[map_name] = Hypersurface.from_state(
                     hypersurface_state)
@@ -1968,7 +1971,7 @@ def _load_hypersurfaces_legacy(input_data):
     User should not use this directly, instead call `load_hypersurfaces`.
     '''
 
-    hypersurfaces = collections.OrderedDict()
+    hypersurfaces = OrderedDict()
 
     #
     # Loop over map names
@@ -2070,7 +2073,7 @@ def _load_hypersurfaces_data_release(input_file_prototype, binning):
 
     import pandas as pd
 
-    hypersurfaces = collections.OrderedDict()
+    hypersurfaces = OrderedDict()
 
     #
     # Check inputs
