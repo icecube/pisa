@@ -1,5 +1,5 @@
 """
-Stage to apply simple DIS corrections. 
+Stage to apply simple parameterized DIS corrections. 
 """
 
 from __future__ import absolute_import, print_function, division
@@ -27,7 +27,17 @@ def BY_correction(x, y, flav):
 
 class dis_cor(Stage): # pylint: disable=invalid-name
     """
-    Stage to apply simple DIS corrections. 
+    Stage to apply simple DIS cross-section corrections based on NuTeV data.
+        https://doi.org/10.1103/PhysRevD.74.012008
+    A simple polynomial using Bjorken-x is used to adjust the event weights.
+    This is based on the work of the LEGS group.
+        https://wiki.icecube.wisc.edu/index.php/Legs
+
+    The stage can also apply changes to the Bodek-Yang (BY) correction.
+        https://doi.org/10.1063/1.1594324
+    Similarly, a polynomial using Bjorken-x and -y is used to adjust the event 
+    weights. Note that this polynomial cannot fully account for the difference 
+    between BY being on and off.
 
     Parameters
     ----------
