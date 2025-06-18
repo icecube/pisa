@@ -10,7 +10,7 @@ from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
 
-__all__ = ['dis_correction', 'BY_correction', 'DIS_cor', 'init_test']
+__all__ = ['dis_correction', 'BY_correction', 'dis_cor', 'init_test']
 
 def dis_correction(x, flav):
     if 'bar' in flav:
