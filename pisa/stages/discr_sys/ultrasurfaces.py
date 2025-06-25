@@ -3,11 +3,12 @@ PISA stage to apply ultrasurface fits from discrete systematics parameterization
 """
 
 import collections
+import os
 
 import numpy as np
 from numba import njit
 
-from pisa import FTYPE
+from pisa import FTYPE, CACHE_DIR
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
@@ -229,8 +230,12 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
             X_pisa = np.zeros((n_container, len(self.varnames)), dtype=X_pandas.dtype)
             for i, vname in enumerate(self.varnames):
                 X_pisa[:, i] = container[vname]
+
             # Query the tree for the single nearest neighbor
-            dists, ind = tree.query(X_pisa, k=1) # pylint: disable=possibly-used-before-assignment
+            dists, ind = tree.query( # pylint: disable=possibly-used-before-assignment
+                X_pisa, k=1, return_distance=True, dualtree=False,
+                breadth_first=False
+            )
             n_outside_tol = np.sum(dists > self.distance_tol)
             if n_outside_tol:
                 max_dist = np.max(dists)
@@ -242,11 +247,15 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
                     f"{self.distance_tol:.2g}. The maximum distance to a "
                     f"nearest neighbor is {max_dist:.2g}."
                 )
-            # TODO: since we read out all gradients we could loop over the
-            # parameters outside and then over the containers inside
             for gradient_name in self.gradient_names:
                 grads = df[gradient_name].to_numpy()
                 container[gradient_name] = grads[ind.ravel()]
+
+            if self.debug_mode:
+                outfile = os.path.join(
+                    CACHE_DIR, f"ultrasurfaces_{container.name}_debug_data.npz"
+                )
+                np.savez_compressed(file=outfile, dists=dists, inds=ind, grads=grads)
 
     @profile
     def compute_function(self):
@@ -359,9 +368,7 @@ def grad_shift_inplace(grads, shift, out):
 
 def init_test(**param_kwargs):
     """Instantiation example"""
-    import os
     import pandas as pd
-    from pisa import CACHE_DIR
     from pisa.utils.random_numbers import get_random_state
 
     p1, p2 = 'opt_eff_overall', 'ice_scattering'
