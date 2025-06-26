@@ -44,19 +44,27 @@ def get_us_grouping_from_container_name(name, groupings_set):
     belonged during the ultrasurface classification/fitting procedure.
     This function therefore connects this stage with those separate
     scripts. It assumes that groups of CC events have the naming format
-    "numu_numubar_cc", and that there is just one grouping of all NC events
+    "numu_numubar_cc", and that there is one grouping of all NC events
     (e.g. "nu_nc", fine as long as it ends with "nc").
 
     Parameters
     ----------
     name : str
+        name of a single event type
     groupings_set : set of str
         set of grouping names (assumes e.g. "numu_numubar_cc")
+
+    Returns
+    -------
+    associated_grouping : str
+        the grouping among `groupings_set` which is found to contain the
+        input event type `name`
+
     """
-    # allow only single NC grouping
-    assert len([group for group in groupings_set if group.endswith("nc")]) == 1
+    # require exactly one NC grouping
+    assert len([group for group in groupings_set if group.lower().endswith("nc")]) == 1
     # split e.g. numu_cc -> "numu", "cc"
-    flav, int_type = name.split("_")
+    flav, int_type = name.lower().split("_")
     associated_grouping = None
     for group in groupings_set:
         if int_type == "cc":
