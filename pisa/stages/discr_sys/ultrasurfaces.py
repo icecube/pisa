@@ -210,27 +210,46 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         if self.event_grouping_key is not None:
             groupings_array = df[self.event_grouping_key].to_numpy()
             groupings_set = set(groupings_array) # unique groupings
+            logging.debug(
+                "Event grouping information for ultrasurfaces evaluation taken"
+                " from data frame entry '%s'. Found groupings '%s'.",
+                self.event_grouping_key, groupings_set
+            )
         else:
             # without groupings, create one tree containing all events
+            logging.debug("Events will not be grouped for ultrasurfaces evaluation")
             tree = KDTree(X_pandas)
         # We will use a nearest-neighbor tree to search for matching events in the
         # DataFrame. Ideally, these should actually be the exact same events with a
         # distance of zero. We will raise a warning if we had to approximate an
         # event by its nearest neighbor with a distance > tolerance.
         for container in self.data:
-            if self.event_grouping_key is not None:
-                assoc_grouping = get_us_grouping_from_container_name(
-                    name=container.name,
-                    groupings_set=groupings_set
-                )
-                tree = KDTree(X_pandas[np.where(groupings_array == assoc_grouping)])
             n_container = len(container["true_energy"])
             # It's important to match the datatype of the loaded DataFrame (single prec.)
-            # so that matches will be exact.
+            # so that matches will be exact (TODO: but matches aren't necessarily exact)
             X_pisa = np.zeros((n_container, len(self.varnames)), dtype=X_pandas.dtype)
             for i, vname in enumerate(self.varnames):
                 X_pisa[:, i] = container[vname]
 
+            if self.event_grouping_key is None:
+                logging.debug(
+                    "Looking for nearest neighbors of %d '%s' events among all"
+                    " %d events in data frame.",
+                    container.size, container.name, len(X_pandas)
+                )
+            else:
+                # produce a dedicated KDTree in case of associated event grouping
+                assoc_grouping = get_us_grouping_from_container_name(
+                    name=container.name,
+                    groupings_set=groupings_set
+                )
+                where = np.where(groupings_array == assoc_grouping)
+                tree = KDTree(X_pandas[where])
+                logging.debug(
+                    "Looking for nearest neighbors of %d '%s' events among all"
+                    " %d '%s' events in data frame.",
+                    container.size, container.name, len(X_pandas[where]), assoc_grouping
+                )
             # Query the tree for the single nearest neighbor
             dists, ind = tree.query( # pylint: disable=possibly-used-before-assignment
                 X_pisa, k=1, return_distance=True, dualtree=False,
@@ -255,7 +274,12 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
                 outfile = os.path.join(
                     CACHE_DIR, f"ultrasurfaces_{container.name}_debug_data.npz"
                 )
-                np.savez_compressed(file=outfile, dists=dists, inds=ind, grads=grads)
+                np.savez_compressed(
+                    file=outfile, dists=dists, inds=ind, grads=grads,
+                    fit_results_file=self.fit_results_file
+                )
+                logging.debug("Stored '%s' ultrasurfaces debug data in %s.",
+                              container.name, CACHE_DIR)
 
     @profile
     def compute_function(self):
