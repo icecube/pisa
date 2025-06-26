@@ -283,8 +283,8 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
                     CACHE_DIR, f"ultrasurfaces_{container.name}_debug_data.npz"
                 )
                 np.savez_compressed(
-                    file=outfile, dists=dists, inds=ind, grads=grads,
-                    fit_results_file=self.fit_results_file
+                    file=outfile, dists=dists.ravel(), inds=ind.ravel(),
+                    grads=grads, fit_results_file=self.fit_results_file
                 )
                 logging.debug("Stored '%s' ultrasurfaces debug data in %s.",
                               container.name, CACHE_DIR)
