@@ -140,7 +140,33 @@ Keys must be a sub-set of the loaded hypersurfaces.</p></li>
 </section>
 <section id="module-pisa.stages.discr_sys.ultrasurfaces">
 <span id="pisa-stages-discr-sys-ultrasurfaces-module"></span><h2>pisa.stages.discr_sys.ultrasurfaces module<a class="headerlink" href="#module-pisa.stages.discr_sys.ultrasurfaces" title="Link to this heading"></a></h2>
-<p>PISA pi stage to apply ultrasurface fits from discrete systematics parameterizations</p>
+<p>PISA stage to apply ultrasurface fits from discrete systematics parameterizations</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.discr_sys.ultrasurfaces.get_us_grouping_from_container_name">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.discr_sys.ultrasurfaces.</span></span><span class="sig-name descname"><span class="pre">get_us_grouping_from_container_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groupings_set</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/ultrasurfaces.html#get_us_grouping_from_container_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.ultrasurfaces.get_us_grouping_from_container_name" title="Link to this definition"></a></dt>
+<dd><p>Find the event grouping to which a given event type (of a container)
+belonged during the ultrasurface classification/fitting procedure.
+This function therefore connects this stage with those separate
+scripts. It assumes that groups of CC events have the naming format
+“numu_numubar_cc”, and that there is one grouping of all NC events
+(e.g. “nu_nc”, fine as long as it ends with “nc”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – name of a single event type</p></li>
+<li><p><strong>groupings_set</strong> (<em>set</em><em> of </em><em>str</em>) – set of grouping names (assumes e.g. “numu_numubar_cc”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>associated_grouping</strong> – the grouping among <cite>groupings_set</cite> which is found to contain the
+input event type <cite>name</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.discr_sys.ultrasurfaces.init_test">
 <span class="sig-prename descclassname"><span class="pre">pisa.stages.discr_sys.ultrasurfaces.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/ultrasurfaces.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.ultrasurfaces.init_test" title="Link to this definition"></a></dt>
@@ -149,7 +175,7 @@ Keys must be a sub-set of the loaded hypersurfaces.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.discr_sys.ultrasurfaces.</span></span><span class="sig-name descname"><span class="pre">ultrasurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_results_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nominal_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varnames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['pid',</span> <span class="pre">'true_coszen',</span> <span class="pre">'reco_coszen',</span> <span class="pre">'true_energy',</span> <span class="pre">'reco_energy']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approx_exponential</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">support</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'continue'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/ultrasurfaces.html#ultrasurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.discr_sys.ultrasurfaces.</span></span><span class="sig-name descname"><span class="pre">ultrasurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_results_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nominal_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varnames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['pid',</span> <span class="pre">'true_coszen',</span> <span class="pre">'reco_coszen',</span> <span class="pre">'true_energy',</span> <span class="pre">'reco_energy']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_grouping_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'event_category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approx_exponential</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">support</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'continue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/ultrasurfaces.html#ultrasurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>Service to apply ultrasurface parameterisation stored in a feather file.</p>
 <dl class="field-list simple">
@@ -160,6 +186,9 @@ Keys must be a sub-set of the loaded hypersurfaces.</p></li>
 {‘parameter_name’: &lt;nominal value&gt;} containing the nominal value for each
 parameter that was used to fit the gradients with.</p></li>
 <li><p><strong>varnames</strong> (<em>list</em><em> of </em><em>str</em>) – List of variables to match the pisa events to the pre-fitted events.</p></li>
+<li><p><strong>event_grouping_key</strong> (<em>str</em>) – The name of the variable under which the name of the grouping for each
+pre-fitted event is found. If <cite>None</cite>, will not restrict gradient lookups
+to event groupings (allows reproducing the service’s original behavior).</p></li>
 <li><p><strong>approx_exponential</strong> (<em>bool</em>) – Approximate the exponential using exp(x) = 1 + x. This is appropriate when
 gradients have been fit with the purely linear <cite>hardmax</cite> activation function.
 (If you don’t know what that is, just leave it at <cite>False</cite>.)</p></li>
@@ -173,6 +202,8 @@ Options are <cite>continue</cite>, <cite>linear</cite> and <cite>constant</cite>
 features are simply extended at the risk of weights getting out of control.
 If <cite>linear</cite>, second order features are extrapolated using their derivative at
 the closest bound. If <cite>constant</cite>, the value at the closest boundary is returned.</p></li>
+<li><p><strong>distance_tol</strong> (<em>float</em>) – Numerical tolerance for distances to nearest neighbors above which a warning
+will be issued. Default is 0.</p></li>
 <li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – Note that the params required to be in <cite>params</cite> are determined from
 those listed in the <cite>systematics</cite>.</p></li>
 </ul>

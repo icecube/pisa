@@ -116,12 +116,10 @@
 
 <span class="sd">    debug_mode : None, bool, or string</span>
 <span class="sd">        If None, False, or empty string, the stage runs normally.</span>
-
-<span class="sd">        Otherwise, the stage runs in debug mode. This disables caching</span>
-<span class="sd">        (TODO: where or how?).</span>
-<span class="sd">        Services that subclass from the `Stage` class can then implement</span>
-<span class="sd">        further custom behavior when this mode is set by reading the value of</span>
-<span class="sd">        the `self.debug_mode` attribute.</span>
+<span class="sd">        Otherwise, the stage runs in debug mode: services that subclass</span>
+<span class="sd">        from the `Stage` class can then implement further custom behavior</span>
+<span class="sd">        when this mode is set by reading the value of the `self.debug_mode`</span>
+<span class="sd">        attribute.</span>
 
 <span class="sd">    error_method : None or string (not enforced)</span>
 <span class="sd">        An option to define one or more dedicated error calculation methods</span>
