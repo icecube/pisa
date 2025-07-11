@@ -100,7 +100,7 @@ Study done by Maria Liubarska &amp; Juan Pablo Yanez, more information available
 ToDo: tech note being written, link here as soon as available</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.xsec.dis_sys.dis_sys">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.dis_sys.</span></span><span class="sig-name descname"><span class="pre">dis_sys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extrapolation_type='constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolation_energy_threshold=&lt;Quantity(100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'gigaelectron_volt')&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/dis_sys.html#dis_sys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.dis_sys.dis_sys" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.dis_sys.</span></span><span class="sig-name descname"><span class="pre">dis_sys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extrapolation_type='constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolation_energy_threshold=&lt;Quantity(100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'gigaelectron_volt')&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine_components=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/dis_sys.html#dis_sys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.dis_sys.dis_sys" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>Stage to apply pre-calculated DIS systematics.</p>
 <dl class="field-list simple">
@@ -108,7 +108,9 @@ ToDo: tech note being written, link here as soon as available</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong></p></li>
 <li><p><strong>params</strong> – <dl class="simple">
-<dt>Must contain ::</dt><dd><p>dis_csms : quantity (dimensionless)</p>
+<dt>Must contain ::</dt><dd><p>dis_csms : quantity (dimensionless)  [if combine_components=True]
+or
+dis_csms_tot, dis_csms_diff : quantity (dimensionless)  [if combine_components=False]</p>
 </dd>
 </dl>
 <p>Expected container keys are ..</p>
@@ -120,10 +122,17 @@ ToDo: tech note being written, link here as soon as available</p>
 </pre></div>
 </div>
 </p></li>
-<li><p><strong>extrapolation_type</strong> (<em>string</em>) – choice of [‘constant’, ‘linear’, ‘higher’]</p></li>
-<li><p><strong>extrapolation_energy_threshold</strong> (<em>float</em>) – Below what energy (in GeV) to extrapolate
-Defaults to 100. CSMS not considered reliable below 50-100 GeV</p></li>
 </ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>combine_components<span class="classifier">bool</span></dt><dd><p>False -&gt; allow the total and differential components to fit individually (params will then be: dis_csms_tot, dis_csms_diff)
+True -&gt; vary the total and differential components together (param will then be: dis_csms)</p>
+</dd>
+<dt>extrapolation_type<span class="classifier">string</span></dt><dd><p>choice of [‘constant’, ‘linear’, ‘higher’]</p>
+</dd>
+<dt>extrapolation_energy_threshold<span class="classifier">float</span></dt><dd><p>Below what energy (in GeV) to extrapolate
+Defaults to 100. CSMS not considered reliable below 50-100 GeV</p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>

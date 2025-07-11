@@ -99,7 +99,9 @@
 <span class="sd">    data</span>
 <span class="sd">    params</span>
 <span class="sd">        Must contain ::</span>
-<span class="sd">            dis_csms : quantity (dimensionless)</span>
+<span class="sd">            dis_csms : quantity (dimensionless)  [if combine_components=True]</span>
+<span class="sd">            or</span>
+<span class="sd">            dis_csms_tot, dis_csms_diff : quantity (dimensionless)  [if combine_components=False]</span>
 
 <span class="sd">        Expected container keys are .. ::</span>
 
@@ -108,6 +110,12 @@
 <span class="sd">            &quot;dis&quot;</span>
 <span class="sd">            &quot;nubar&quot;</span>
 <span class="sd">            &quot;weights&quot;</span>
+
+
+
+<span class="sd">    combine_components : bool</span>
+<span class="sd">        False -&gt; allow the total and differential components to fit individually (params will then be: dis_csms_tot, dis_csms_diff)</span>
+<span class="sd">        True -&gt; vary the total and differential components together (param will then be: dis_csms)</span>
 
 <span class="sd">    extrapolation_type : string</span>
 <span class="sd">        choice of [&#39;constant&#39;, &#39;linear&#39;, &#39;higher&#39;]</span>
@@ -131,11 +139,19 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">extrapolation_type</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
         <span class="n">extrapolation_energy_threshold</span><span class="o">=</span><span class="mi">100</span><span class="o">*</span><span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;GeV&quot;</span><span class="p">],</span>
+        <span class="n">combine_components</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;dis_csms&#39;</span><span class="p">,</span>
-        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">combine_components</span> <span class="p">:</span>
+            <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s1">&#39;dis_csms&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s1">&#39;dis_csms_tot&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;dis_csms_diff&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
             <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
@@ -154,6 +170,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_type</span> <span class="o">=</span> <span class="n">extrapolation_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_energy_threshold</span> <span class="o">=</span> <span class="n">extrapolation_energy_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">combine_components</span> <span class="o">=</span> <span class="n">combine_components</span>
 
 <div class="viewcode-block" id="dis_sys.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.dis_sys.dis_sys.setup_function">[docs]</a>
@@ -248,13 +265,22 @@
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.dis_sys.dis_sys.apply_function">[docs]</a>
     <span class="nd">@profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">dis_csms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
 
+        <span class="c1"># Get total and differential steering param value(s), depending on user settings</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">combine_components</span> <span class="p">:</span>
+            <span class="n">dis_csms_tot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+            <span class="n">dis_csms_diff</span> <span class="o">=</span> <span class="n">dis_csms_tot</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dis_csms_tot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms_tot</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+            <span class="n">dis_csms_diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms_diff</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Apply DIS sys for all containers</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">apply_dis_sys</span><span class="p">(</span>
                 <span class="n">container</span><span class="p">[</span><span class="s1">&#39;dis_correction_total&#39;</span><span class="p">],</span>
                 <span class="n">container</span><span class="p">[</span><span class="s1">&#39;dis_correction_diff&#39;</span><span class="p">],</span>
-                <span class="n">FTYPE</span><span class="p">(</span><span class="n">dis_csms</span><span class="p">),</span>
+                <span class="n">FTYPE</span><span class="p">(</span><span class="n">dis_csms_tot</span><span class="p">),</span>
+                <span class="n">FTYPE</span><span class="p">(</span><span class="n">dis_csms_diff</span><span class="p">),</span>
                 <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">],</span>
             <span class="p">)</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span></div>
@@ -264,14 +290,15 @@
 
 <span class="n">FX</span> <span class="o">=</span> <span class="s1">&#39;f8&#39;</span> <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="k">else</span> <span class="s1">&#39;f4&#39;</span>
 
-<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span><span class="p">],</span> <span class="s1">&#39;(),(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
+<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span><span class="p">],</span> <span class="s1">&#39;(),(),(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">apply_dis_sys</span><span class="p">(</span>
     <span class="n">dis_correction_total</span><span class="p">,</span>
     <span class="n">dis_correction_diff</span><span class="p">,</span>
-    <span class="n">dis_csms</span><span class="p">,</span>
+    <span class="n">dis_csms_tot</span><span class="p">,</span>
+    <span class="n">dis_csms_diff</span><span class="p">,</span>
     <span class="n">out</span><span class="p">,</span>
 <span class="p">):</span>
-    <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">dis_correction_total</span> <span class="o">*</span> <span class="n">dis_csms</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">dis_correction_diff</span> <span class="o">*</span> <span class="n">dis_csms</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">dis_correction_total</span> <span class="o">*</span> <span class="n">dis_csms_tot</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">dis_correction_diff</span> <span class="o">*</span> <span class="n">dis_csms_diff</span><span class="p">)</span> <span class="p">)</span>
 
 
 <div class="viewcode-block" id="init_test">
