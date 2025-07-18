@@ -10,6 +10,7 @@ import os
 from os.path import basename, splitext
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 from pisa import FTYPE, CACHE_DIR
 from pisa.core.binning import MultiDimBinning
@@ -18,7 +19,8 @@ from pisa.core.events_pi import EventsPi
 from pisa.core.stage import Stage
 from pisa.utils.flux_weights import load_2d_table
 from pisa.utils.random_numbers import get_random_state
-from pisa.scripts.add_flux_to_events_file import add_fluxes_to_file
+from pisa.utils.resources import find_resource
+from pisa.scripts.add_flux_to_events_file import add_beam_fluxes_to_file, add_fluxes_to_file
 from pisa.scripts.make_toy_events import make_toy_events
 
 __all__ = ['toy_event_generator', 'init_test']
@@ -123,7 +125,38 @@ class toy_event_generator(Stage):  # pylint: disable=invalid-name
                 label=flux_file_bname
             )
             bname, ext = splitext(basename(self.events_file))
-            self.events_file = os.path.join(CACHE_DIR, '{}__with_fluxes_{}{}'.format(bname, flux_file_bname, ext))
+            self.events_file = os.path.join(CACHE_DIR, f'{bname}__with_fluxes_{flux_file_bname}{ext}')
+        elif self.add_fluxes == "beam":
+            def get_xy(lis):
+                x, y = [], []
+                for i in range(len(lis)):
+                    x.append(lis[i][0])
+                    y.append(lis[i][1])
+                return x, y
+            numu_flux = np.loadtxt(find_resource("flux/beam/numu.csv"), delimiter=",")
+            numu_flux_interp = interp1d(*get_xy(numu_flux))
+            numu_bar_flux = np.loadtxt(find_resource("flux/beam/numu_bar.csv"), delimiter=",")
+            numu_bar_flux_interp = interp1d(*get_xy(numu_bar_flux))
+            nue_flux = np.loadtxt(find_resource("flux/beam/nue.csv"), delimiter=",")
+            nue_flux_interp = interp1d(*get_xy(nue_flux))
+            nue_bar_flux = np.loadtxt(find_resource("flux/beam/nue_bar.csv"), delimiter=",")
+            nue_bar_flux_interp = interp1d(*get_xy(nue_bar_flux))
+
+            add_beam_fluxes_to_file(
+                data_file_path=self.events_file,
+                nue_flux_interp=nue_flux_interp,
+                nue_bar_flux_interp=nue_bar_flux_interp,
+                numu_flux_interp=numu_flux_interp,
+                numu_bar_flux_interp=numu_bar_flux_interp,
+                flux_name='nominal',
+                outdir=CACHE_DIR,
+                label="beam"
+            )
+            bname, ext = splitext(basename(self.events_file))
+            self.events_file = os.path.join(CACHE_DIR, f'{bname}__with_fluxes_beam{ext}')
+        else:
+            logging.info("No fluxes will be added during toy event generation."
+                         " Make sure to add a dedicated flux stage.")
 
         self.load_events()
 
@@ -223,54 +256,10 @@ class toy_event_generator(Stage):  # pylint: disable=invalid-name
         '''
         self.record_event_properties()
 
-    """
-    def setup_function(self):
-
-        for name in self.output_names:
-
-            container = Container(name, representation=self.calc_mode)
-
-            nubar = -1 if 'bar' in name else 1
-            if 'e' in name:
-                flav = 0
-            if 'mu' in name:
-                flav = 1
-            if 'tau' in name:
-                flav = 2
-
-            if not isinstance(self.calc_mode, MultiDimBinning):
-                # add events explicitly in the array representation
-                container['true_energy'] = np.power(10, self.random_state.rand(self.n_events).astype(FTYPE) * 3)
-                container['true_coszen'] = self.random_state.rand(self.n_events).astype(FTYPE) * 2 - 1
-
-            size = container.size
-
-            # make some initial weights
-            if self.random:
-                container['initial_weights'] = self.random_state.rand(size).astype(FTYPE)
-            else:
-                container['initial_weights'] = np.ones(size, dtype=FTYPE)
-
-            # other necessary info
-            container.set_aux_data('nubar', nubar)
-            container.set_aux_data('flav', flav)
-            container['weights'] = np.ones(size, dtype=FTYPE)
-            container['weighted_aeff'] = np.ones(size, dtype=FTYPE)
-
-            flux_nue = np.zeros(size, dtype=FTYPE)
-            flux_numu = np.ones(size, dtype=FTYPE)
-            flux = np.stack([flux_nue, flux_numu], axis=1)
-
-            container['nu_flux_nominal'] = flux
-            container['nubar_flux_nominal'] = flux
-
-            self.data.add_container(container)
-    """
 
     def apply_function(self):
 
         # reset data representation to events
-        #TODO This should be fixed more generally at the Pipeline level, see XXX
         self.data.representation = "events"
 
         # reset weights to initial weights prior to downstream stages running

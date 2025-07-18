@@ -36,6 +36,59 @@ __license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
  See the License for the specific language governing permissions and
  limitations under the License.'''
 
+
+def add_beam_fluxes_to_file(data_file_path, nue_flux_interp, nue_bar_flux_interp,
+                            numu_flux_interp, numu_bar_flux_interp, flux_name,
+                            outdir=None, label="beam", overwrite=False):
+    bname, ext = splitext(basename(data_file_path))
+    assert ext.lstrip('.') in HDF5_EXTS
+    data = from_file(find_resource(data_file_path))
+
+    if outdir is None:
+        outdir = dirname(data_file_path)
+
+    if label is None:
+        label = ''
+    else:
+        assert isinstance(label, str)
+        label = '_' + label
+
+    outpath = join(outdir, f'{bname}__with_fluxes{label}{ext}')
+
+    if not overwrite and isfile(outpath):
+        logging.warning('Output path "%s" already exists, not regenerating',
+                        outpath)
+        return
+
+    mkdir(outdir, warn=False)
+
+    # Loop over the top-level keys
+    for primary, primary_node in data.items():
+        # Only handling neutrnio fluxes here, skip past e.g. muon or noise MC events
+        if primary.startswith("nu"):
+            logging.info('Adding fluxes to "%s" events', primary)
+            # Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]),
+            # or for older files there maybe be a second layer (e.g. [numu][cc]).
+            # Handling either case here...
+            if "true_energy" in primary_node:
+                secondary_nodes = [primary_node]
+            else :
+                secondary_nodes = primary_node.values()
+            for secondary_node in secondary_nodes:
+                true_e = secondary_node['true_energy']
+                # calculate all 4 fluxes (nue, nuebar, numu and numubar)
+                for (flav, interp) in [
+                    ('nue', nue_flux_interp), ('nuebar', nue_bar_flux_interp),
+                    ('numu', numu_flux_interp), ('numubar', numu_bar_flux_interp)
+                ]:
+                    flux = interp(true_e) / (0.25 * 365.25 * 24 * 60 * 60) #TODO: time normalisation?
+                    keyname = flux_name + '_' + flav + '_flux'
+                    secondary_node[keyname] = flux
+
+    to_file(data, outpath, attrs=data.attrs, overwrite=overwrite)
+    logging.info('--> Wrote file including fluxes to "%s"', outpath)
+
+
 def add_fluxes_to_file(data_file_path, flux_table, flux_name,
                        outdir=None, label=None, overwrite=False):
     """Add fluxes to PISA events file (e.g. for use by an mc stage)
