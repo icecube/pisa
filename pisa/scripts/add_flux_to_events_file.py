@@ -8,7 +8,7 @@ each event.
 
 from __future__ import absolute_import, division, print_function
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import glob
 from os import listdir
 from os.path import basename, dirname, isdir, isfile, join, splitext
@@ -22,7 +22,7 @@ from pisa.utils.resources import find_resource
 
 __all__ = ['add_fluxes_to_file', 'main']
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ def add_fluxes_to_file(data_file_path, flux_table, flux_name,
         If None, output is to the same directory as `data_file_path`
     overwrite : bool, optional
     """
-    data, attrs = from_file(find_resource(data_file_path), return_attrs=True)
+    data = from_file(find_resource(data_file_path))
     bname, ext = splitext(basename(data_file_path))
     assert ext.lstrip('.') in HDF5_EXTS
 
@@ -102,13 +102,14 @@ def add_fluxes_to_file(data_file_path, flux_table, flux_name,
                     keyname = flux_name + '_' + table + '_flux'
                     secondary_node[keyname] = flux
 
-    to_file(data, outpath, attrs=attrs, overwrite=overwrite)
+    to_file(data, outpath, attrs=data.attrs, overwrite=overwrite)
     logging.info('--> Wrote file including fluxes to "%s"', outpath)
 
 
 def parse_args(description=__doc__):
     """Parse command-line arguments"""
-    parser = ArgumentParser(description=description)
+    parser = ArgumentParser(description=description,
+                            formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '--input', metavar='(H5_FILE|DIR)', nargs='+', type=str, required=True,
         help='''Path to a PISA events HDF5 file or a directory containing HDF5
