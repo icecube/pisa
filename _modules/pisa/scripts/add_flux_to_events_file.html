@@ -71,14 +71,13 @@
 <span></span><span class="ch">#! /usr/bin/env python</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Add neutrino fluxes (and neutrino weights(osc*flux*sim_weight) if needed) for</span>
-<span class="sd">each event.</span>
+<span class="sd">Add neutrino fluxes for each event.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ArgumentDefaultsHelpFormatter</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="kn">import</span> <span class="n">listdir</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">basename</span><span class="p">,</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">isdir</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">join</span><span class="p">,</span> <span class="n">splitext</span>
@@ -92,7 +91,7 @@
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;add_fluxes_to_file&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">]</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2025, The IceCube Collaboration</span>
 
 <span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
@@ -111,17 +110,20 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">add_fluxes_to_file</span><span class="p">(</span><span class="n">data_file_path</span><span class="p">,</span> <span class="n">flux_table</span><span class="p">,</span> <span class="n">flux_name</span><span class="p">,</span>
                        <span class="n">outdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Add fluxes to PISA events file (e.g. for use by an mc stage)</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    -----------</span>
-<span class="sd">    data_file_path : string</span>
-<span class="sd">    flux_table</span>
-<span class="sd">    flux_name</span>
-<span class="sd">    outdir : string or None</span>
+<span class="sd">    data_file_path : str</span>
+<span class="sd">        path to events file without fluxes</span>
+<span class="sd">    flux_table : str</span>
+<span class="sd">        path to flux table, e.g. Honda 2d</span>
+<span class="sd">    flux_name : str</span>
+<span class="sd">        will be part of flux entry, e.g. &quot;nominal&quot;: &quot;nominal_nue_flux&quot;</span>
+<span class="sd">    outdir : str or None</span>
 <span class="sd">        If None, output is to the same directory as `data_file_path`</span>
 <span class="sd">    overwrite : bool, optional</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">data</span><span class="p">,</span> <span class="n">attrs</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">find_resource</span><span class="p">(</span><span class="n">data_file_path</span><span class="p">),</span> <span class="n">return_attrs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">find_resource</span><span class="p">(</span><span class="n">data_file_path</span><span class="p">))</span>
     <span class="n">bname</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">splitext</span><span class="p">(</span><span class="n">basename</span><span class="p">(</span><span class="n">data_file_path</span><span class="p">))</span>
     <span class="k">assert</span> <span class="n">ext</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">HDF5_EXTS</span>
 
@@ -134,7 +136,7 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
         <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">label</span>
 
-    <span class="n">outpath</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">__with_fluxes</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bname</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">ext</span><span class="p">))</span>
+    <span class="n">outpath</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">bname</span><span class="si">}</span><span class="s1">__with_fluxes</span><span class="si">{</span><span class="n">label</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span> <span class="ow">and</span> <span class="n">isfile</span><span class="p">(</span><span class="n">outpath</span><span class="p">):</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Output path &quot;</span><span class="si">%s</span><span class="s1">&quot; already exists, not regenerating&#39;</span><span class="p">,</span>
@@ -151,7 +153,7 @@
 
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Adding fluxes to &quot;</span><span class="si">%s</span><span class="s1">&quot; events&#39;</span><span class="p">,</span> <span class="n">primary</span><span class="p">)</span>
 
-            <span class="c1"># Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]), </span>
+            <span class="c1"># Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]),</span>
             <span class="c1"># or for older files there maybe be a second layer (e.g. [numu][cc]).</span>
             <span class="c1"># Handling either case here...</span>
             <span class="k">if</span> <span class="s2">&quot;true_energy&quot;</span> <span class="ow">in</span> <span class="n">primary_node</span> <span class="p">:</span>
@@ -174,14 +176,15 @@
                     <span class="n">keyname</span> <span class="o">=</span> <span class="n">flux_name</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">table</span> <span class="o">+</span> <span class="s1">&#39;_flux&#39;</span>
                     <span class="n">secondary_node</span><span class="p">[</span><span class="n">keyname</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux</span>
 
-    <span class="n">to_file</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">outpath</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="n">attrs</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
+    <span class="n">to_file</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">outpath</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;--&gt; Wrote file including fluxes to &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">outpath</span><span class="p">)</span></div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command-line arguments&quot;&quot;&quot;</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+                            <span class="n">formatter_class</span><span class="o">=</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s1">&#39;--input&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;(H5_FILE|DIR)&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Path to a PISA events HDF5 file or a directory containing HDF5</span>
@@ -248,12 +251,11 @@
         <span class="n">bname</span> <span class="o">=</span> <span class="n">basename</span><span class="p">(</span><span class="n">firstpart</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">bname</span> <span class="ow">in</span> <span class="n">basenames</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Found files with duplicate basename &quot;</span><span class="si">%s</span><span class="s1">&quot; (despite files&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;Found files with duplicate basename &quot;</span><span class="si">{</span><span class="n">bname</span><span class="si">}</span><span class="s1">&quot; (despite files&#39;</span>
                 <span class="s1">&#39; having different paths); resolve the ambiguous names and&#39;</span>
-                <span class="s1">&#39; re-run. Offending files are:</span><span class="se">\n</span><span class="s1">  &quot;</span><span class="si">%s</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">  &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="n">bname</span><span class="p">,</span>
-                   <span class="n">paths_to_process</span><span class="p">[</span><span class="n">basenames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bname</span><span class="p">)],</span>
-                   <span class="n">input_path</span><span class="p">)</span>
+                <span class="s1">&#39; re-run. Offending files are:</span><span class="se">\n</span><span class="s1">&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39; &quot;</span><span class="si">{</span><span class="n">paths_to_process</span><span class="p">[</span><span class="n">basenames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bname</span><span class="p">)]</span><span class="si">}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39; &quot;</span><span class="si">{</span><span class="n">input_path</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
             <span class="p">)</span>
 
         <span class="n">basenames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bname</span><span class="p">)</span>

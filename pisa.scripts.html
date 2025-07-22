@@ -93,8 +93,7 @@
 </section>
 <section id="module-pisa.scripts.add_flux_to_events_file">
 <span id="pisa-scripts-add-flux-to-events-file-module"></span><h2>pisa.scripts.add_flux_to_events_file module<a class="headerlink" href="#module-pisa.scripts.add_flux_to_events_file" title="Link to this heading"></a></h2>
-<p>Add neutrino fluxes (and neutrino weights(osc*flux*sim_weight) if needed) for
-each event.</p>
+<p>Add neutrino fluxes for each event.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.add_flux_to_events_file.add_fluxes_to_file">
 <span class="sig-prename descclassname"><span class="pre">pisa.scripts.add_flux_to_events_file.</span></span><span class="sig-name descname"><span class="pre">add_fluxes_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/add_flux_to_events_file.html#add_fluxes_to_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.add_flux_to_events_file.add_fluxes_to_file" title="Link to this definition"></a></dt>
@@ -102,10 +101,10 @@ each event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data_file_path</strong> (<em>string</em>)</p></li>
-<li><p><strong>flux_table</strong></p></li>
-<li><p><strong>flux_name</strong></p></li>
-<li><p><strong>outdir</strong> (<em>string</em><em> or </em><em>None</em>) – If None, output is to the same directory as <cite>data_file_path</cite></p></li>
+<li><p><strong>data_file_path</strong> (<em>str</em>) – path to events file without fluxes</p></li>
+<li><p><strong>flux_table</strong> (<em>str</em>) – path to flux table, e.g. Honda 2d</p></li>
+<li><p><strong>flux_name</strong> (<em>str</em>) – will be part of flux entry, e.g. “nominal”: “nominal_nue_flux”</p></li>
+<li><p><strong>outdir</strong> (<em>str</em><em> or </em><em>None</em>) – If None, output is to the same directory as <cite>data_file_path</cite></p></li>
 <li><p><strong>overwrite</strong> (<em>bool</em><em>, </em><em>optional</em>)</p></li>
 </ul>
 </dd>
