@@ -615,7 +615,7 @@ def sample_truncated_dist(dist, size, trunc_low=-np.inf, trunc_high=np.inf,
 
 def generate_mc_events(num_events, energy_range, coszen_range, spec_ind,
                        aeff_energy_param_source, aeff_coszen_param_source,
-                       random_state=None):
+                       random_state=None, multiply_solid_angle=True):
     """Instantiates an Events object populated with toy Monte Carlo events.
 
     This generates MC-true variables ('true_energy' and 'true_coszen'), as well
@@ -631,6 +631,7 @@ def generate_mc_events(num_events, energy_range, coszen_range, spec_ind,
     aeff_energy_param_source
     aeff_coszen_param_source
     random_state
+    multiply_solid_angle
 
     Returns
     -------
@@ -720,9 +721,9 @@ def generate_mc_events(num_events, energy_range, coszen_range, spec_ind,
                 # normalise
                 weights *= weight_mod * num_events / np.sum(weight_mod)
 
-        az_vol = 2*np.pi
+        solid_angle = 2 * np_pi * (cz_max - cz_min) if multiply_solid_angle else 1
         mc_events[flavint]['weighted_aeff'] = (
-            weights * energy_weights * az_vol * (cz_max - cz_min)
+            weights * energy_weights * solid_angle
         ).astype(FTYPE)
 
     return mc_events
@@ -952,7 +953,8 @@ def mcgen_random_state(num_events, set_index):
 
 def make_toy_events(outdir, num_events, energy_range, spectral_index,
                     coszen_range, num_sets, first_set, aeff_energy_param,
-                    aeff_coszen_param, reco_param, pid_param, pid_dist):
+                    aeff_coszen_param, reco_param, pid_param, pid_dist,
+                    multiply_solid_angle=True):
     """Make toy events and store to a file.
 
     Parameters
@@ -969,6 +971,7 @@ def make_toy_events(outdir, num_events, energy_range, spectral_index,
     reco_param : string
     pid_param : string
     pid_dist : string
+    multiply_solid_angle : bool
 
     Returns
     -------
@@ -1035,7 +1038,8 @@ def make_toy_events(outdir, num_events, energy_range, spectral_index,
             spec_ind=spectral_index,
             aeff_energy_param_source=aeff_energy_param,
             aeff_coszen_param_source=aeff_coszen_param,
-            random_state=random_state
+            random_state=random_state,
+            multiply_solid_angle=multiply_solid_angle
         )
         populate_reco_observables(
             mc_events=mc_events,

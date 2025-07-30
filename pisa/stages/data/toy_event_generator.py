@@ -98,7 +98,7 @@ class toy_event_generator(Stage):  # pylint: disable=invalid-name
             expected_container_keys=(),
             **std_kwargs,
         )
-
+        multiply_solid_angle = not self.add_fluxes == "beam"
         self.events_file = make_toy_events(
             outdir=CACHE_DIR,
             num_events=self.n_events,
@@ -111,7 +111,8 @@ class toy_event_generator(Stage):  # pylint: disable=invalid-name
             aeff_coszen_param=self.aeff_coszen_param,
             reco_param=self.reco_param,
             pid_param=self.pid_param,
-            pid_dist=self.pid_dist
+            pid_dist=self.pid_dist,
+            multiply_solid_angle=multiply_solid_angle
         )[0]
         if self.add_fluxes == "honda":
             flux_file = "flux/honda-2015-spl-solmin-aa.d"
