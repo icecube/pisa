@@ -181,17 +181,20 @@ class csv_hypersurfaces(Stage):
             if inter_param_value < hs[self.inter_param].min() or hs[self.inter_param].max() < inter_param_value:
                 raise ValueError("%s of %f is outside of interpolation range."%(self.inter_param, inter_param_value))
                 
-            # Get inter_param bin length.
+            # Get inter_param bins
             inter_param_bins = hs[self.inter_param].unique()
-            binlen = (inter_param_bins[-1] - inter_param_bins[0]) / (len(inter_param_bins)-1)
 
             # Get hypersurface below and above.
-            hs_lower = hs.loc[(inter_param_value - binlen < hs[self.inter_param]) & (hs[self.inter_param] < inter_param_value)].reset_index()
-            hs_upper = hs.loc[(inter_param_value < hs[self.inter_param]) & (hs[self.inter_param] < inter_param_value + binlen)].reset_index()
+            lower_val = inter_param_bins[inter_param_bins <= inter_param_value].max()
+            upper_val = inter_param_bins[inter_param_bins > inter_param_value].min()
+
+            hs_lower = hs.loc[hs[self.inter_param] == lower_val].reset_index()
+            hs_upper = hs.loc[hs[self.inter_param] == upper_val].reset_index()
 
             # Create the interpolated hypersurface.
             hs_interpolated = hs_lower.copy()
             for p in ['intercept']+list(param_values.keys()):
+                binlen = hs_upper[self.inter_param][0] - hs_lower[self.inter_param][0]
                 grad = (np.array(hs_upper[p]) - np.array(hs_lower[p])) / binlen
                 hs_interpolated[p] = grad * (inter_param_value - hs_lower[self.inter_param][0]) + hs_lower[p]
 
