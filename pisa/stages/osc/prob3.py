@@ -278,11 +278,14 @@ class prob3(Stage):  # pylint: disable=invalid-name
         # setup the layers
         #if self.params.earth_model.value is not None:
         earth_model = find_resource(self.params.earth_model.value)
+        self.earth_model = earth_model
         self.YeI = self.params.YeI.value.m_as('dimensionless')
         self.YeO = self.params.YeO.value.m_as('dimensionless')
         self.YeM = self.params.YeM.value.m_as('dimensionless')
         prop_height = self.params.prop_height.value.m_as('km')
+        self.prop_height = prop_height
         detector_depth = self.params.detector_depth.value.m_as('km')
+        self.detector_depth = detector_depth
         self.layers = Layers(earth_model, detector_depth, prop_height)
         self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
 
@@ -298,6 +301,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
 
         for container in self.data:
             self.layers.calcLayers(container['true_coszen'])
+            #print("layers density:", self.layers.density)
             container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
             container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
 
@@ -358,13 +362,19 @@ class prob3(Stage):  # pylint: disable=invalid-name
         YeO = self.params.YeO.value.m_as('dimensionless')
         YeM = self.params.YeM.value.m_as('dimensionless')
 
+        #print("YeM vs. self.YeM:", YeM, self.YeM)
         if YeI != self.YeI or YeO != self.YeO or YeM != self.YeM:
             self.YeI = YeI; self.YeO = YeO; self.YeM = YeM
+            # new Layers instance (workaround)
+            self.layers = Layers(self.earth_model, self.detector_depth, self.prop_height)
             self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
             for container in self.data:
                 self.layers.calcLayers(container['true_coszen'])
+                #print("layers density:", self.layers.density)
                 container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
                 container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
+        #else:
+        #    print("not recalculating layers!")
 
 
         # some safety checks on units
