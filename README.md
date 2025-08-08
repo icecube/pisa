@@ -85,6 +85,9 @@ outputs['nutau_cc'].plot(ax=axes[2], cmap='RdYlBu_r', vmin=0, vmax=1);
 
 ![png](README_files/README_10_0.png)
 
+# Containerization
+
+PISA includes a Dockerfile that can be used to containerize the software (e.g. with docker or singularity). More information on how to do this can be found in [Documentation](https://github.com/icecube/wg-oscillations-fridge/blob/master/docs/CONTAINER_INSTRUCTIONS.md)
 
 # Contributions
 
