@@ -1,10 +1,11 @@
 """
-PISA pi stage to apply hypersurface fits from discrete systematics parameterizations
+PISA stage to apply hypersurface fits from discrete systematics parameterizations
 """
 
 
 from __future__ import absolute_import, print_function, division
 
+import os
 import ast
 from collections.abc import Mapping
 import numpy as np
@@ -39,13 +40,13 @@ __license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
 
 class csv_hypersurfaces(Stage):
     """
-    Service to apply hypersurface parameterisation produced by
-    `scripts.fit_discrete_sys_nd`
+    Service to apply hypersurface parameterisation for hypersurfaces stored in csv files,
+    which are used for data releases.
 
     Parameters
     ----------
     fit_results_file : str
-        Path to hypersurface fit results file(s)
+        Path to hypersurface fit result file(s). Must be .csv files.
 
     links : dict
         A dictionary defining how containers should be linked. Keys are the names of
@@ -53,14 +54,14 @@ class csv_hypersurfaces(Stage):
         Keys must be a sub-set of the loaded hypersurfaces.
 
     nominal_systematics : dict
-        Systematics and their nominal values
+        Systematics and their nominal values.
         
     inter_param : str
-        Parameter used for interpolation
+        Parameter used for interpolation.
 
     propagate_uncertainty : bool, optional
         Propagate the uncertainties from the hypersurface to the uncertainty of
-        the output
+        the output.
     """
     def __init__(
         self,
@@ -68,12 +69,10 @@ class csv_hypersurfaces(Stage):
         nominal_systematics,
         inter_param,
         links=None,
-        propagate_uncertainty=False,
+        propagate_uncertainty=True,
         **std_kwargs,
     ):
-        # -- Only allowed/implemented modes -- #
-        assert isinstance(std_kwargs['calc_mode'], MultiDimBinning)
-        # -- Load hypersurfaces -- #
+        self.hs = {}
 
         # Store args
         self.fit_results_file = split(fit_results_file)
@@ -93,14 +92,19 @@ class csv_hypersurfaces(Stage):
         expected_container_keys = [
             'weights',
         ]
-        if 'error_method' in std_kwargs:
-            if std_kwargs['error_method']:
+        if 'error_method' in std_kwargs and std_kwargs['error_method']:
                 expected_container_keys.append('errors')
+
+        supported_reps = {
+            'calc_mode':  [MultiDimBinning],
+            'apply_mode': [MultiDimBinning, 'events'],
+        }
 
         # -- Initialize base class -- #
         super().__init__(
             expected_params=list(self.nominal_systematics.keys()) + [self.inter_param],
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
         
@@ -113,15 +117,16 @@ class csv_hypersurfaces(Stage):
 
     # pylint: disable=line-too-long
     def setup_function(self):
-        """Load the fit results from the file and make some check compatibility"""
+        """Load the fit results from the file and check compatibility with container names"""
 
         self.data.representation = self.calc_mode
-        
-        self.hs = {}
+
         for f in self.fit_results_file:
-            k = f.split('/')[-1].split('.')[0]
-            if k.startswith('hs_'):
+            k = os.path.splitext(os.path.basename(f))[0]
+            if k.startswith('hs_'): # naming convention
                 k = k[3:]
+            if k in self.hs:
+                raise ValueError(f"{k} already exists in HS dict.")
             self.hs[k] = pd.read_csv(find_resource(f))
 
         if self.links is not None:
@@ -143,27 +148,22 @@ class csv_hypersurfaces(Stage):
                 hs_scales_uncertainty = hs['intercept_sigma'][start_idx:stop_idx]
                 container["hs_scales_uncertainty"] = np.array(hs_scales_uncertainty).reshape(container.size)
 
-        # Check map names match between data container and hypersurfaces
-        for container in self.data:
-            assert container.name in self.hs, f"No match for map {container.name} found in the hypersurfaces"
+            # Check if hypersurface exists for this container
+            assert container.name in self.hs, f"No match for {container.name} found in the hypersurfaces."
 
         self.data.unlink_containers()
         
     def get_corr_factors(self, hs, param_values):
-        """Get hypersurface correction factors."""
-        # Get difference between param_values and nominal.
-        diff = {k: v - self.nominal_systematics[k] for k, v in param_values.items()}
+        """Get hypersurface correction factors. These are the scaling factors for each bin 
+        and depend on the shift in each systematic parameter."""
+        # Get differences between (current) param_values and nominal values.
+        diffs = {k: v - self.nominal_systematics[k] for k, v in param_values.items()}
 
-        # Return correction factor.
-        return hs["intercept"] + sum([hs[k] * v for k, v in diff.items()])
+        return hs["intercept"] + sum([hs[p] * d for p, d in diffs.items()])
 
-    # the linter thinks that "logging" refers to Python's built-in
-    # pylint: disable=line-too-long, logging-not-lazy, deprecated-method
+    # pylint: disable=line-too-long
     def compute_function(self):
 
-        self.data.representation = self.calc_mode
-
-        # Link containers
         if self.links is not None:
             for key, val in self.links.items():
                 self.data.link_containers(key, val)
@@ -173,7 +173,6 @@ class csv_hypersurfaces(Stage):
                         for sys_param_name in self.nominal_systematics}
         inter_param_value = self.params[self.inter_param].m
 
-        # Loop over types
         for container in self.data:
 
             # Get the hypersurfaces
@@ -181,7 +180,7 @@ class csv_hypersurfaces(Stage):
             if inter_param_value < hs[self.inter_param].min() or hs[self.inter_param].max() < inter_param_value:
                 raise ValueError("%s of %f is outside of interpolation range."%(self.inter_param, inter_param_value))
                 
-            # Get inter_param bins
+            # Get the values of the inter_param where we have hypersurfaces.
             inter_param_bins = hs[self.inter_param].unique()
 
             # Get hypersurface below and above.
@@ -205,9 +204,8 @@ class csv_hypersurfaces(Stage):
             # Where there are no scales (e.g. empty bins), set scale factor to 1
             empty_bins_mask = ~np.isfinite(scales)
             num_empty_bins = np.sum(empty_bins_mask)
-            if num_empty_bins > 0. and not self.warning_issued:
-                logging.warn("%i empty bins found in hypersurface" % num_empty_bins)
-                self.warning_issued = True
+            if num_empty_bins > 0.:
+                logging.warning("%i empty bins found in hypersurface for %s"%(num_empty_bins, container.name))
             scales[empty_bins_mask] = 1.
 
             # Add to container
@@ -225,8 +223,8 @@ class csv_hypersurfaces(Stage):
 
                 # If computing uncertainties in events mode, warn that
                 # hs error propagation will be skipped
-                if self.data.representation=='events':
-                    logging.trace('WARNING: running stage in events mode. Hypersurface error propagation will be IGNORED.')
+                if self.data.representation == 'events':
+                    logging.warning('WARNING: running stage in events mode. Hypersurface error propagation will be IGNORED.')
 
                 elif self.propagate_uncertainty:
                     container["errors"] = container["weights"] * container["hs_scales_uncertainty"]
