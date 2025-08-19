@@ -4,6 +4,14 @@ pisa.stages.xsec package
 Submodules
 ----------
 
+pisa.stages.xsec.correct\_charm\_y module
+-----------------------------------------
+
+.. automodule:: pisa.stages.xsec.correct_charm_y
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pisa.stages.xsec.dis\_sys module
 --------------------------------
 

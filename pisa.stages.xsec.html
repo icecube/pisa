@@ -92,6 +92,57 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
+<section id="module-pisa.stages.xsec.correct_charm_y">
+<span id="pisa-stages-xsec-correct-charm-y-module"></span><h2>pisa.stages.xsec.correct_charm_y module<a class="headerlink" href="#module-pisa.stages.xsec.correct_charm_y" title="Link to this heading"></a></h2>
+<p>This stage corrects inelasticity distribution
+to remove the most obvious impact from charm
+production bug in GENIE.</p>
+<p>Maria Liubarska</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.stages.xsec.correct_charm_y.correct_charm_y">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.correct_charm_y.</span></span><span class="sig-name descname"><span class="pre">correct_charm_y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nu_cc_container_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['nue_cc',</span> <span class="pre">'numu_cc',</span> <span class="pre">'nutau_cc']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nubar_cc_container_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['nuebar_cc',</span> <span class="pre">'numubar_cc',</span> <span class="pre">'nutaubar_cc']</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/correct_charm_y.html#correct_charm_y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.correct_charm_y.correct_charm_y" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
+<p>This stage reweights inelasticity distribution
+to remove the most obvious impact from charm
+production bug in GENIE 2.12.8. The bug effectively
+kills most charm events.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nu_cc_container_keys</strong> (<em>list</em><em> of </em><em>strings</em>) – list of all neutrino charged current container keys</p></li>
+<li><p><strong>nubar_cc_container_keys</strong> (<em>list</em><em> of </em><em>strings</em>) – list of all anti-neutrino charged current container keys</p></li>
+<li><p><strong>Notes</strong></p></li>
+<li><p><strong>------</strong></p></li>
+<li><p><strong>analysis!!!</strong> (<em>THIS STAGE IS FOR MC TESTING ONLY - do NOT use in real</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Slides summarizing the bug (osc. call, 28 Nov 2022):
+<a class="reference external" href="https://drive.google.com/file/d/16tF_ofjI-YTxnxSsuZD4W2X52xND1CAM/view?usp=drive_link">https://drive.google.com/file/d/16tF_ofjI-YTxnxSsuZD4W2X52xND1CAM/view?usp=drive_link</a></p>
+<p>Slides showing use for check with oscNext VS (osc. call, 19 Dec 2022):
+<a class="reference external" href="https://drive.google.com/file/d/14h0WYWPWn7yS7wLQpyMAPTenfKfFAq3k/view?usp=drive_link">https://drive.google.com/file/d/14h0WYWPWn7yS7wLQpyMAPTenfKfFAq3k/view?usp=drive_link</a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.xsec.correct_charm_y.correct_charm_y.apply_function">
+<span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/correct_charm_y.html#correct_charm_y.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.correct_charm_y.correct_charm_y.apply_function" title="Link to this definition"></a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.xsec.correct_charm_y.correct_charm_y.setup_function">
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/correct_charm_y.html#correct_charm_y.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.correct_charm_y.correct_charm_y.setup_function" title="Link to this definition"></a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.xsec.correct_charm_y.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.correct_charm_y.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/correct_charm_y.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.correct_charm_y.init_test" title="Link to this definition"></a></dt>
+<dd><p>Instantiation example that enables actual testing on toy containers from test_services.py</p>
+</dd></dl>
+
+</section>
 <section id="module-pisa.stages.xsec.dis_sys">
 <span id="pisa-stages-xsec-dis-sys-module"></span><h2>pisa.stages.xsec.dis_sys module<a class="headerlink" href="#module-pisa.stages.xsec.dis_sys" title="Link to this heading"></a></h2>
 <p>Stage to apply pre-calculated DIS uncertainties
