@@ -6,9 +6,18 @@ These stages apply parameterized systematics to the templates.
 
 ### hypersurfaces
 
-This service applies the results obtained from fits to discrete samples. The fitting parameters are computed and stored in a fit results file by the script
-`$PISA/pisa/scripts/fit_hypersurfaces.py` (command-line alias `pisa-fit_hypersurfaces`). This has to be executed together with a dedicated fit configuration file
-(see script's documentation).
+This service applies the results obtained from fits to bin-count expectations given "discrete" MC event simulation samples,
+i.e. one per choice of detector-response settings (such as a particular overall DOM efficiency correction).
+
+Fits may be performed for different assumptions of non-detector model parameters, such as oscillation parameters, and then interpolated by this service.
+The fitting parameters are computed and stored in a fit results file by the script `$PISA/pisa/scripts/fit_hypersurfaces.py` (command-line alias `pisa-fit_hypersurfaces`).
+This has to be executed together with a dedicated fit configuration file (see script's documentation).
+
+The method itself is described and illustrated in the paper ["Measurement of Atmospheric Neutrino Mixing with Improved IceCube DeepCore
+Calibration and Data Processing"](https://inspirehep.net/literature/2653713) (Sec. VI A).
+
+The "hyperplanes" predecessor method presented in the ["Measurement of atmospheric tau neutrino appearance
+with IceCube DeepCore"](https://inspirehep.net/literature/1714067) (Sec. V E) is also incorporated.
 
 ### csv_hypersurfaces
 
