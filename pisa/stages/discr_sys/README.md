@@ -12,6 +12,7 @@ This service applies the results obtained from fits to discrete samples. The fit
 
 ### csv_hypersurfaces
 
+Service to load and apply (pre-generated) hypersurfaces stored in csv files. This file format is usually used for data releases. Currently, the service expects hypersurfaces in the form of `pisa_examples/resources/events/hs_test.csv`.
 
 ### ultrasurfaces
 
