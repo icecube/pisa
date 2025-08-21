@@ -21,10 +21,10 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
     Parameters
     ----------
 
-    events_file : 
+    events_file : str or sequence of str
         csv file path(s)
 
-    data_dict : str of a dict
+    data_dict : (str of a) dict
         Dictionary to specify what keys from the csv files to be loaded
         under what name. Entries can be strings that point to the right
         key in the csv file or lists of keys, and the data will be
@@ -34,15 +34,20 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
         Event categories to be recorded, needs to be a subset of names 
         in `events_file`.
 
-    neutrinos : bool
+    neutrinos : bool, default: True
         Flag indicating whether data events represent neutrinos
         In this case, special handling for e.g. nu/nubar, CC vs NC, ...
 
-    dis_idx : int
-        If there is no dis key but an interaction key, you need to specify
-        what interaction is dis
+    dis_idx : int, default: None
+        The deep inelastic scattering (DIS) systematic stage in PISA expects a
+        key identifiying if an event is a dis event. This key should be 1 for all
+        dis events and 0 otherwise. However, your csv file might only contain an
+        `interaction` key that assings integers to different interaction types (e.g.
+        dis=1, qel=2, res=3, ...). In that case you need to specify which integer
+        corresponds to dis. It is preferred to specify a dedicated `dis` key in the
+        data_dict.
         
-    scale_aeff : bool
+    scale_aeff : bool, default: False
         Convert effective area from cm^2 to m^2 (PISA flux tables are stored in m^2)
         if given in cm^2.
 
@@ -80,7 +85,7 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
             )
 
         self.neutrinos = neutrinos
-        if not dis_idx is None:
+        if dis_idx is not None:
             self.dis_idx = int(dis_idx)
         else:
             self.dis_idx = None
@@ -143,7 +148,7 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
                 container['weighted_aeff'] *= 1.e-4
             
             # Convert interaction key to dis boolen (if needed)
-            if not 'dis' in container.keys and 'interaction' in container.keys and self.dis_idx is not None:
+            if 'dis' not in container.keys and 'interaction' in container.keys and self.dis_idx is not None:
                 container['dis'] = (container['interaction'] == self.dis_idx).astype(int)
 
             self.data.add_container(container)

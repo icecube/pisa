@@ -93,7 +93,7 @@ class csv_hypersurfaces(Stage):
             'weights',
         ]
         if 'error_method' in std_kwargs and std_kwargs['error_method']:
-                expected_container_keys.append('errors')
+            expected_container_keys.append('errors')
 
         supported_reps = {
             'calc_mode':  [MultiDimBinning],
@@ -205,7 +205,7 @@ class csv_hypersurfaces(Stage):
             empty_bins_mask = ~np.isfinite(scales)
             num_empty_bins = np.sum(empty_bins_mask)
             if num_empty_bins > 0.:
-                logging.warning("%i empty bins found in hypersurface for %s"%(num_empty_bins, container.name))
+                logging.warning("%i empty bins found in hypersurface for %s", num_empty_bins, container.name)
             scales[empty_bins_mask] = 1.
 
             # Add to container
