@@ -1,5 +1,5 @@
 """
-PISA pi stage to apply hypersurface fits from discrete systematics parameterizations
+PISA stage to apply hypersurface fits from discrete systematics parameterizations
 """
 
 #TODO Currently have to defined the `links` value in the stage config to match what the `combine_regex` does in
@@ -42,29 +42,33 @@ __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 class hypersurfaces(Stage): # pylint: disable=invalid-name
     """
     Service to apply hypersurface parameterisation produced by
-    `scripts.fit_discrete_sys_nd`
+    `scripts.fit_hypersurfaces`
 
     Parameters
     ----------
     fit_results_file : str
-        Path to hypersurface fit results file, i.e. the JSON file produced by the
-        `pisa.scripts.fit_discrete_sys_nd.py` script
+        Path to hypersurface fit results file, e.g. the file produced by
+        `pisa.scripts.fit_hypersurfaces.py`
 
-    propagate_uncertainty : bool, optional
+    propagate_uncertainty : bool, default: False
         Propagate the uncertainties from the hypersurface to the uncertainty of
-        the output
+        the output.
 
     params : ParamSet
         Note that the params required to be in `params` are determined from
         those listed in the `fit_results_file`.
     
-    interpolated : bool
+    interpolated : bool, default: False
         If `True`, indicates that the hypersurfaces to be loaded are interpolated.
     
-    links : dict
+    links : dict, default: None
         A dictionary defining how containers should be linked. Keys are the names of
         the merged containers, values are lists of containers being linked together.
         Keys must be a sub-set of the loaded hypersurfaces.
+
+    fluctuate : bool, default: False
+
+    fluctuate_seed : int, default: 12345
 
     """
     def __init__(
