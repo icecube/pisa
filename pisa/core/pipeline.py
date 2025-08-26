@@ -761,7 +761,7 @@ class Pipeline():
         self._output_binning = binning
         if isinstance(binning, MultiDimBinning):
             for s in self.stages:
-                if s.service_name == 'hist':
+                if isinstance(s.apply_mode, MultiDimBinning):
                     s.apply_mode = binning
             self.setup()
 
