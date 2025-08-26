@@ -451,29 +451,34 @@ class Pipeline():
 
     def _get_outputs(self, output_binning=None, output_key=None):
         """Get MapSet output"""
-
-        self.run()
+        original_binning = None
 
         if output_binning is None:
+            self.run()
             output_binning = self.output_binning
+        elif isinstance(output_binning, MultiDimBinning):
+            original_binning = self.output_binning
+            self.output_binning = output_binning
+            self.run()
         elif isinstance(output_binning, VarBinning):
             # Only have to check exclusivity in case external output binning
             # is requested
             self.assert_exclusive_varbinning(output_binning=output_binning)
-        if isinstance(output_binning, VarBinning):
-            # Any contained stages' apply_modes could have changed, whether
-            # an external output binning is specified here or not
-            self.assert_varbinning_compat()
+
         if output_key is None:
             output_key = self.output_key
 
         assert(isinstance(output_binning, (MultiDimBinning, VarBinning)))
-
         if isinstance(output_binning, MultiDimBinning):
             outputs = self._get_outputs_multdimbinning(output_binning, output_key)
-        else:
-            assert isinstance(output_binning, VarBinning)
+        elif isinstance(output_binning, VarBinning):
+            # Any contained stages' apply_modes could have changed, whether
+            # an external output binning is specified here or not
+            self.assert_varbinning_compat()
             outputs = self._get_outputs_varbinning(output_binning, output_key)
+
+        if original_binning is not None:
+            self.output_binning = original_binning
 
         return outputs
 
@@ -754,6 +759,11 @@ class Pipeline():
             self.assert_varbinning_compat()
             self.assert_exclusive_varbinning(output_binning=binning)
         self._output_binning = binning
+        if isinstance(binning, MultiDimBinning):
+            for s in self.stages:
+                if s.service_name == 'hist':
+                    s.apply_mode = binning
+            self.setup()
 
 
 def test_Pipeline():
