@@ -1,14 +1,13 @@
 #! /usr/bin/env python
 
 """
-Add neutrino fluxes (and neutrino weights(osc*flux*sim_weight) if needed) for
-each event.
+Add neutrino fluxes for each event.
 """
 
 
 from __future__ import absolute_import, division, print_function
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import glob
 from os import listdir
 from os.path import basename, dirname, isdir, isfile, join, splitext
@@ -22,7 +21,7 @@ from pisa.utils.resources import find_resource
 
 __all__ = ['add_fluxes_to_file', 'main']
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -39,17 +38,20 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 def add_fluxes_to_file(data_file_path, flux_table, flux_name,
                        outdir=None, label=None, overwrite=False):
     """Add fluxes to PISA events file (e.g. for use by an mc stage)
-    
+
     Parameters
     -----------
-    data_file_path : string
-    flux_table
-    flux_name
-    outdir : string or None
+    data_file_path : str
+        path to events file without fluxes
+    flux_table : str
+        path to flux table, e.g. Honda 2d
+    flux_name : str
+        will be part of flux entry, e.g. "nominal": "nominal_nue_flux"
+    outdir : str or None
         If None, output is to the same directory as `data_file_path`
     overwrite : bool, optional
     """
-    data, attrs = from_file(find_resource(data_file_path), return_attrs=True)
+    data = from_file(find_resource(data_file_path))
     bname, ext = splitext(basename(data_file_path))
     assert ext.lstrip('.') in HDF5_EXTS
 
@@ -62,7 +64,7 @@ def add_fluxes_to_file(data_file_path, flux_table, flux_name,
         assert isinstance(label, str)
         label = '_' + label
 
-    outpath = join(outdir, '{}__with_fluxes{}{}'.format(bname, label, ext))
+    outpath = join(outdir, f'{bname}__with_fluxes{label}{ext}')
 
     if not overwrite and isfile(outpath):
         logging.warning('Output path "%s" already exists, not regenerating',
@@ -79,7 +81,7 @@ def add_fluxes_to_file(data_file_path, flux_table, flux_name,
 
             logging.info('Adding fluxes to "%s" events', primary)
 
-            # Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]), 
+            # Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]),
             # or for older files there maybe be a second layer (e.g. [numu][cc]).
             # Handling either case here...
             if "true_energy" in primary_node :
@@ -102,13 +104,14 @@ def add_fluxes_to_file(data_file_path, flux_table, flux_name,
                     keyname = flux_name + '_' + table + '_flux'
                     secondary_node[keyname] = flux
 
-    to_file(data, outpath, attrs=attrs, overwrite=overwrite)
+    to_file(data, outpath, attrs=data.attrs, overwrite=overwrite)
     logging.info('--> Wrote file including fluxes to "%s"', outpath)
 
 
 def parse_args(description=__doc__):
     """Parse command-line arguments"""
-    parser = ArgumentParser(description=description)
+    parser = ArgumentParser(description=description,
+                            formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '--input', metavar='(H5_FILE|DIR)', nargs='+', type=str, required=True,
         help='''Path to a PISA events HDF5 file or a directory containing HDF5
@@ -173,12 +176,11 @@ def main():
         bname = basename(firstpart)
         if bname in basenames:
             raise ValueError(
-                'Found files with duplicate basename "%s" (despite files'
+                f'Found files with duplicate basename "{bname}" (despite files'
                 ' having different paths); resolve the ambiguous names and'
-                ' re-run. Offending files are:\n  "%s"\n  "%s"'
-                % (bname,
-                   paths_to_process[basenames.index(bname)],
-                   input_path)
+                ' re-run. Offending files are:\n'
+                f' "{paths_to_process[basenames.index(bname)]}"\n'
+                f' "{input_path}"'
             )
 
         basenames.append(bname)
