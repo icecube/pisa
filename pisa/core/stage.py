@@ -44,12 +44,10 @@ class Stage():
 
     debug_mode : None, bool, or string
         If None, False, or empty string, the stage runs normally.
-
-        Otherwise, the stage runs in debug mode. This disables caching
-        (TODO: where or how?).
-        Services that subclass from the `Stage` class can then implement
-        further custom behavior when this mode is set by reading the value of
-        the `self.debug_mode` attribute.
+        Otherwise, the stage runs in debug mode: services that subclass
+        from the `Stage` class can then implement further custom behavior
+        when this mode is set by reading the value of the `self.debug_mode`
+        attribute.
 
     error_method : None or string (not enforced)
         An option to define one or more dedicated error calculation methods

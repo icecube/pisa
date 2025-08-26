@@ -27,7 +27,9 @@ class dis_sys(Stage): # pylint: disable=invalid-name
     data
     params
         Must contain ::
-            dis_csms : quantity (dimensionless)
+            dis_csms : quantity (dimensionless)  [if combine_components=True]
+            or
+            dis_csms_tot, dis_csms_diff : quantity (dimensionless)  [if combine_components=False]
 
         Expected container keys are .. ::
 
@@ -36,6 +38,12 @@ class dis_sys(Stage): # pylint: disable=invalid-name
             "dis"
             "nubar"
             "weights"
+
+
+
+    combine_components : bool
+        False -> allow the total and differential components to fit individually (params will then be: dis_csms_tot, dis_csms_diff)
+        True -> vary the total and differential components together (param will then be: dis_csms)
 
     extrapolation_type : string
         choice of ['constant', 'linear', 'higher']
@@ -59,11 +67,19 @@ class dis_sys(Stage): # pylint: disable=invalid-name
         self,
         extrapolation_type='constant',
         extrapolation_energy_threshold=100*ureg["GeV"],
+        combine_components=True,
         **std_kwargs,
     ):
-        expected_params = (
-            'dis_csms',
-        )
+
+        if combine_components :
+            expected_params = (
+                'dis_csms',
+            )
+        else :
+            expected_params = (
+                'dis_csms_tot',
+                'dis_csms_diff',
+            )
 
         expected_container_keys = (
             'true_energy',
@@ -82,6 +98,7 @@ class dis_sys(Stage): # pylint: disable=invalid-name
 
         self.extrapolation_type = extrapolation_type
         self.extrapolation_energy_threshold = extrapolation_energy_threshold
+        self.combine_components = combine_components
 
     @profile
     def setup_function(self):
@@ -171,13 +188,22 @@ class dis_sys(Stage): # pylint: disable=invalid-name
 
     @profile
     def apply_function(self):
-        dis_csms = self.params.dis_csms.m_as('dimensionless')
 
+        # Get total and differential steering param value(s), depending on user settings
+        if self.combine_components :
+            dis_csms_tot = self.params.dis_csms.m_as('dimensionless')
+            dis_csms_diff = dis_csms_tot
+        else:
+            dis_csms_tot = self.params.dis_csms_tot.m_as('dimensionless')
+            dis_csms_diff = self.params.dis_csms_diff.m_as('dimensionless')
+
+        # Apply DIS sys for all containers
         for container in self.data:
             apply_dis_sys(
                 container['dis_correction_total'],
                 container['dis_correction_diff'],
-                FTYPE(dis_csms),
+                FTYPE(dis_csms_tot),
+                FTYPE(dis_csms_diff),
                 out=container['weights'],
             )
             container.mark_changed('weights')
@@ -185,14 +211,15 @@ class dis_sys(Stage): # pylint: disable=invalid-name
 
 FX = 'f8' if FTYPE == np.float64 else 'f4'
 
-@guvectorize([f'({FX}, {FX}, {FX}, {FX}[:])'], '(),(),()->()', target=TARGET)
+@guvectorize([f'({FX}, {FX}, {FX}, {FX}, {FX}[:])'], '(),(),(),()->()', target=TARGET)
 def apply_dis_sys(
     dis_correction_total,
     dis_correction_diff,
-    dis_csms,
+    dis_csms_tot,
+    dis_csms_diff,
     out,
 ):
-    out[0] *= max(0, (1. + dis_correction_total * dis_csms) * (1. + dis_correction_diff * dis_csms) )
+    out[0] *= max(0, (1. + dis_correction_total * dis_csms_tot) * (1. + dis_correction_diff * dis_csms_diff) )
 
 
 def init_test(**param_kwargs):

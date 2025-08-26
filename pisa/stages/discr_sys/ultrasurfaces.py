@@ -1,13 +1,14 @@
 """
-PISA pi stage to apply ultrasurface fits from discrete systematics parameterizations
+PISA stage to apply ultrasurface fits from discrete systematics parameterizations
 """
 
 import collections
+import os
 
 import numpy as np
 from numba import njit
 
-from pisa import FTYPE
+from pisa import FTYPE, CACHE_DIR
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
@@ -15,13 +16,14 @@ from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 
 __all__ = [
+    "get_us_grouping_from_container_name",
     "ultrasurfaces",
     "init_test"
 ]
 
-__author__ = "A. Trettin, L. Fischer"
+__author__ = "A. Trettin, L. Fischer, T. Ehrhardt"
 
-__license__ = """Copyright (c) 2014-2022, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -35,6 +37,54 @@ __license__ = """Copyright (c) 2014-2022, The IceCube Collaboration
  See the License for the specific language governing permissions and
  limitations under the License."""
 
+
+def get_us_grouping_from_container_name(name, groupings_set):
+    """
+    Find the event grouping to which a given event type (of a container)
+    belonged during the ultrasurface classification/fitting procedure.
+    This function therefore connects this stage with those separate
+    scripts. It assumes that groups of CC events have the naming format
+    "numu_numubar_cc", and that there is one grouping of all NC events
+    (e.g. "nu_nc", fine as long as it ends with "nc").
+
+    Parameters
+    ----------
+    name : str
+        name of a single event type
+    groupings_set : set of str
+        set of grouping names (assumes e.g. "numu_numubar_cc")
+
+    Returns
+    -------
+    associated_grouping : str
+        the grouping among `groupings_set` which is found to contain the
+        input event type `name`
+
+    """
+    # require exactly one NC grouping
+    assert len([group for group in groupings_set if group.lower().endswith("nc")]) == 1
+    # split e.g. numu_cc -> "numu", "cc"
+    flav, int_type = name.lower().split("_")
+    associated_grouping = None
+    for group in groupings_set:
+        if int_type == "cc":
+            # Detection when e.g. "numu_" is part of group name and if it ends
+            # with "cc"
+            if (f"{flav}_" in group.lower() and
+                group.lower().endswith(int_type)):
+                associated_grouping = group
+                break
+        elif int_type == "nc":
+            # Detection if group name ends with "nc"
+            if group.lower().endswith(int_type):
+                associated_grouping = group
+                break
+    if associated_grouping is None:
+        raise ValueError(
+            f"Unable to find event grouping associated with {name}"
+            f" among the groups {groupings_set}!"
+        )
+    return associated_grouping
 
 class ultrasurfaces(Stage):  # pylint: disable=invalid-name
     """
@@ -50,6 +100,10 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         parameter that was used to fit the gradients with.
     varnames : list of str
         List of variables to match the pisa events to the pre-fitted events.
+    event_grouping_key : str
+        The name of the variable under which the name of the grouping for each
+        pre-fitted event is found. If `None`, will not restrict gradient lookups
+        to event groupings (allows reproducing the service's original behavior).
     approx_exponential : bool
         Approximate the exponential using exp(x) = 1 + x. This is appropriate when
         gradients have been fit with the purely linear `hardmax` activation function.
@@ -66,19 +120,24 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         features are simply extended at the risk of weights getting out of control.
         If `linear`, second order features are extrapolated using their derivative at
         the closest bound. If `constant`, the value at the closest boundary is returned.
+    distance_tol : float
+        Numerical tolerance for distances to nearest neighbors above which a warning
+        will be issued. Default is 0.
     params : ParamSet
         Note that the params required to be in `params` are determined from
         those listed in the `systematics`.
     """
 
-    def __init__(
+    def __init__( # pylint: disable=dangerous-default-value
         self,
         fit_results_file,
         nominal_points,
         varnames=["pid", "true_coszen", "reco_coszen", "true_energy", "reco_energy"],
+        event_grouping_key="event_category",
         approx_exponential=False,
         support=None,
         extrapolation="continue",
+        distance_tol=0,
         **std_kwargs,
     ):
         # evaluation only works on event-by-event basis
@@ -87,7 +146,11 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         # Store args
         self.fit_results_file = find_resource(fit_results_file)
         self.varnames = varnames
+        assert isinstance(event_grouping_key, str) or event_grouping_key is None
+        self.event_grouping_key = event_grouping_key
         self.approx_exponential = approx_exponential
+        assert isinstance(distance_tol, (int, float))
+        self.distance_tol = distance_tol
 
         if isinstance(nominal_points, str):
             self.nominal_points = eval(nominal_points)
@@ -105,6 +168,7 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         else:
             raise ValueError("Unknown input format for `support`.")
 
+        assert extrapolation in ["continue", "linear", "constant"]
         self.extrapolation = extrapolation
 
         param_names = list(self.nominal_points.keys())
@@ -116,7 +180,7 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
 
         expected_container_keys = varnames + ['weights']
         # 'true_energy' is hard-coded to get sample size
-        if not 'true_energy' in expected_container_keys:
+        if 'true_energy' not in expected_container_keys:
             expected_container_keys.append('true_energy')
 
         # -- Initialize base class -- #
@@ -149,42 +213,81 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
             for gradient_name in self.gradient_names:
                 container[gradient_name] = np.empty(container.size, dtype=FTYPE)
 
-        # Convert the variable columns to an array
+        # convert the variable columns as well as the event groupings to an array
         X_pandas = df[self.varnames].to_numpy()
+        if self.event_grouping_key is not None:
+            groupings_array = df[self.event_grouping_key].to_numpy()
+            groupings_set = set(groupings_array) # unique groupings
+            logging.debug(
+                "Event grouping information for ultrasurfaces evaluation taken"
+                " from data frame entry '%s'. Found groupings '%s'.",
+                self.event_grouping_key, groupings_set
+            )
+        else:
+            # without groupings, create one tree containing all events
+            logging.debug("Events will not be grouped for ultrasurfaces evaluation")
+            tree = KDTree(X_pandas)
         # We will use a nearest-neighbor tree to search for matching events in the
         # DataFrame. Ideally, these should actually be the exact same events with a
         # distance of zero. We will raise a warning if we had to approximate an
-        # event by its nearest neighbor with a distance > 0.
-
-        # At least in theory, this should always pick out the one exact event from the
-        # correct event category. If an event is not exactly matched, however, it's
-        # possible that the gradient for a numu_cc event might get picked from
-        # a nu_nc event, for example. We don't have any safeguards against that
-        # at this time, even though the information is in the DataFrame to do it.
-
-        # TODO: Ensure event category of nearest neighbor matches that of query
-        tree = KDTree(X_pandas)
+        # event by its nearest neighbor with a distance > tolerance.
         for container in self.data:
             n_container = len(container["true_energy"])
             # It's important to match the datatype of the loaded DataFrame (single prec.)
-            # so that matches will be exact.
+            # so that matches will be exact (TODO: but matches aren't necessarily exact)
             X_pisa = np.zeros((n_container, len(self.varnames)), dtype=X_pandas.dtype)
             for i, vname in enumerate(self.varnames):
                 X_pisa[:, i] = container[vname]
-            # Query the tree for the single nearest neighbor
-            dists, ind = tree.query(X_pisa, k=1)
-            if np.any(dists > 0):
-                logging.warn(
-                    f"Could not find exact match for {np.sum(dists > 0)} {container.name} "
-                    f"events ({float(np.sum(dists > 0)) * 100 / n_container:.4f}%) "
-                    "in the loaded DataFrame. Their "
-                    "gradients will be taken from the nearest neighbor."
+
+            if self.event_grouping_key is None:
+                logging.debug(
+                    "Looking for nearest neighbors of %d '%s' events among all"
+                    " %d events in data frame.",
+                    container.size, container.name, len(X_pandas)
                 )
-            # TODO: since we read out all gradients we could loop over the
-            # parameters outside and then over the containers inside
+            else:
+                # produce a dedicated KDTree in case of associated event grouping
+                assoc_grouping = get_us_grouping_from_container_name(
+                    name=container.name,
+                    groupings_set=groupings_set
+                )
+                where = np.where(groupings_array == assoc_grouping)
+                tree = KDTree(X_pandas[where])
+                logging.debug(
+                    "Looking for nearest neighbors of %d '%s' events among all"
+                    " %d '%s' events in data frame.",
+                    container.size, container.name, len(X_pandas[where]), assoc_grouping
+                )
+            # Query the tree for the single nearest neighbor
+            dists, ind = tree.query( # pylint: disable=possibly-used-before-assignment
+                X_pisa, k=1, return_distance=True, dualtree=False,
+                breadth_first=False
+            )
+            n_outside_tol = np.sum(dists > self.distance_tol)
+            if n_outside_tol:
+                max_dist = np.max(dists)
+                frac = float(n_outside_tol) * 100 / n_container
+                logging.warning(
+                    f"For {n_outside_tol} {container.name} events ({frac:.2g}%),"
+                    " the nearest neighbor, from which each gradient will be "
+                    "taken, is at a distance beyond the pre-set tolerance of "
+                    f"{self.distance_tol:.2g}. The maximum distance to a "
+                    f"nearest neighbor is {max_dist:.2g}."
+                )
             for gradient_name in self.gradient_names:
                 grads = df[gradient_name].to_numpy()
                 container[gradient_name] = grads[ind.ravel()]
+
+            if self.debug_mode:
+                outfile = os.path.join(
+                    CACHE_DIR, f"ultrasurfaces_{container.name}_debug_data.npz"
+                )
+                np.savez_compressed(
+                    file=outfile, dists=dists.ravel(), inds=ind.ravel(),
+                    grads=grads, fit_results_file=self.fit_results_file
+                )
+                logging.debug("Stored '%s' ultrasurfaces debug data in %s.",
+                              container.name, CACHE_DIR)
 
     @profile
     def compute_function(self):
@@ -195,7 +298,7 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         # If requested, these feature may be extrapolated using the strategy defined
         # by `self.extrapolation`.
 
-        delta_p_dict = dict()
+        delta_p_dict = {}
 
         # The gradients may be of arbitrary order and have interaction
         # terms. For example, if the gradient's name is
@@ -297,9 +400,7 @@ def grad_shift_inplace(grads, shift, out):
 
 def init_test(**param_kwargs):
     """Instantiation example"""
-    import os
     import pandas as pd
-    from pisa import CACHE_DIR
     from pisa.utils.random_numbers import get_random_state
 
     p1, p2 = 'opt_eff_overall', 'ice_scattering'
@@ -328,5 +429,6 @@ def init_test(**param_kwargs):
 
     return ultrasurfaces(
         params=param_set, fit_results_file=fpath, varnames=varnames,
-        nominal_points=nominal_points, calc_mode='events'
+        nominal_points=nominal_points, calc_mode='events',
+        event_grouping_key=None
     )
