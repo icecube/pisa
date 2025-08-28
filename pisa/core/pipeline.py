@@ -880,7 +880,6 @@ def test_Pipeline():
     binned_apply_mode = pipeline.output_binning
     assert isinstance(binned_apply_mode, MultiDimBinning)
     pipeline.stages[1].apply_mode = binned_apply_mode
-    print([s.apply_mode for s in pipeline.stages])
     try:
         out = pipeline.get_outputs()
     except ValueError:
@@ -897,7 +896,6 @@ def test_Pipeline():
     # first get the original event distribution as reference
     out = pipeline.get_outputs()
     counts_tot = sum(out.num_entries.values())
-    print(counts_tot)
     # use an oversampled output binning instead and ensure identical total count
     out2 = pipeline.get_outputs(output_binning=pipeline.output_binning.oversample(2))
     counts_tot2 = sum(out2.num_entries.values())
