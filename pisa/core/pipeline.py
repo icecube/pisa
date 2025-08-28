@@ -113,11 +113,14 @@ class Pipeline():
         self._stages = []
         self._config = config
         self._init_stages()
+        self._apply_modes = [s.apply_mode for s in self.stages]
         self._source_code_hash = None
 
         if isinstance(self._output_binning, VarBinning):
             self.assert_varbinning_compat()
             self.assert_exclusive_varbinning()
+        else:
+            self.assert_apply_modes_consistency()
 
         # check in case someone decided to add a non-daemonflux parameter with daemon_
         # in it, which would potentially make penalty calculation incorrect
@@ -536,6 +539,10 @@ class Pipeline():
 
     def run(self):
         """Wrapper around `_run_function`"""
+        apply_modes = [s.apply_mode for s in self.stages]
+        if apply_modes != self._apply_modes:
+            # possible that stage apply_modes got manipulated in between runs
+            self.assert_apply_modes_consistency()
         if self.profile:
             start_t = time()
             self._run_function()
@@ -543,6 +550,8 @@ class Pipeline():
             self._run_times.append(end_t - start_t)
         else:
             self._run_function()
+        # record apply_modes for this run so we can detect potential changes
+        self._apply_modes = apply_modes
 
     def _run_function(self):
         """Run the pipeline to compute"""
@@ -672,6 +681,28 @@ class Pipeline():
 
     def __hash__(self):
         return self.hash
+
+    def assert_apply_modes_consistency(self):
+        """Asserts that pipeline setup does not result in non-sensical
+        transformations between Maps or from Maps to events
+        (cf. Container.translate: rebinning without averaging is not
+        implemented because of lacking benefits, and similarly going
+        from a histogram to events).
+        """
+        ref_binning = None
+        ref_name = None
+        for s in self.stages:
+            # it suffices to start from the first occurrence of a MultiDimBinning
+            if isinstance(s.apply_mode, MultiDimBinning) and ref_binning is None:
+                ref_binning = s.apply_mode
+                ref_name = f"{s.stage_name}.{s.service_name}"
+            elif ref_binning is not None and s.apply_mode != ref_binning:
+                raise ValueError(
+                    f"Stage {s.stage_name}.{s.service_name} has '{s.apply_mode}'"
+                    " as apply_mode, which deviates from a previously detected "
+                    f"MultiDimBinning apply_mode, of stage {ref_name}. This "
+                    "configuration would result in an unreliable pipeline output."
+                )
 
     def assert_varbinning_compat(self):
         """Asserts that pipeline setup is compatible with `VarBinning`:
@@ -842,6 +873,35 @@ def test_Pipeline():
 
         #current_hier = new_hier
         #current_mat = new_mat
+
+    #
+    # Test: detection of inconsistent apply_mode combinations
+    #
+    binned_apply_mode = pipeline.output_binning
+    assert isinstance(binned_apply_mode, MultiDimBinning)
+    pipeline.stages[1].apply_mode = binned_apply_mode
+    print([s.apply_mode for s in pipeline.stages])
+    try:
+        out = pipeline.get_outputs()
+    except ValueError:
+        # Needs to fail: going from a binned output (after flux) to events
+        # (after osc.)
+        pass
+    else:
+        assert False
+
+    #
+    # Test: passing a custom output binning to get_outputs
+    #
+    pipeline.stages[1].apply_mode = "events"
+    # first get the original event distribution as reference
+    out = pipeline.get_outputs()
+    counts_tot = sum(out.num_entries.values())
+    print(counts_tot)
+    # use an oversampled output binning instead and ensure identical total count
+    out2 = pipeline.get_outputs(output_binning=pipeline.output_binning.oversample(2))
+    counts_tot2 = sum(out2.num_entries.values())
+    assert np.isclose(counts_tot2, counts_tot)
 
     #
     # Test: a pipeline using a VarBinning
