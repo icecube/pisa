@@ -5717,6 +5717,16 @@ So we go to the first stage we find that has one of the original parameters and 
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.assert_apply_modes_consistency">
+<span class="sig-name descname"><span class="pre">assert_apply_modes_consistency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/pipeline.html#Pipeline.assert_apply_modes_consistency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.pipeline.Pipeline.assert_apply_modes_consistency" title="Link to this definition"></a></dt>
+<dd><p>Asserts that pipeline setup does not result in non-sensical
+transformations between Maps or from Maps to events
+(cf. Container.translate: rebinning without averaging is not
+implemented because of lacking benefits, and similarly going
+from a histogram to events).</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.assert_exclusive_varbinning">
 <span class="sig-name descname"><span class="pre">assert_exclusive_varbinning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_binning</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/pipeline.html#Pipeline.assert_exclusive_varbinning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.pipeline.Pipeline.assert_exclusive_varbinning" title="Link to this definition"></a></dt>
 <dd><p>Assert that <cite>VarBinning</cite> selections are mutually exclusive.

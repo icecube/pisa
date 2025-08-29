@@ -60,14 +60,6 @@ pisa.stages.utils.kfold module
    :undoc-members:
    :show-inheritance:
 
-pisa.stages.utils.resample module
----------------------------------
-
-.. automodule:: pisa.stages.utils.resample
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 pisa.stages.utils.set\_variance module
 --------------------------------------
 
