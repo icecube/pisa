@@ -274,17 +274,27 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
                     f"{self.distance_tol:.2g}. The maximum distance to a "
                     f"nearest neighbor is {max_dist:.2g}."
                 )
-            for gradient_name in self.gradient_names:
-                grads = df[gradient_name].to_numpy()
-                container[gradient_name] = grads[ind.ravel()]
 
             if self.debug_mode:
                 outfile = os.path.join(
                     CACHE_DIR, f"ultrasurfaces_{container.name}_debug_data.npz"
                 )
+                grads_list = []
+
+            for gradient_name in self.gradient_names:
+                grads = df[gradient_name].to_numpy()
+                if self.event_grouping_key:
+                    # indices apply to the array of events of the grouping
+                    grads = grads[where]
+                container[gradient_name] = grads[ind.ravel()]
+                if self.debug_mode:
+                    grads_list.append(container[gradient_name])
+
+            if self.debug_mode:
                 np.savez_compressed(
                     file=outfile, dists=dists.ravel(), inds=ind.ravel(),
-                    grads=grads, fit_results_file=self.fit_results_file
+                    grads=grads_list, fit_results_file=self.fit_results_file,
+                    gradient_names=self.gradient_names
                 )
                 logging.debug("Stored '%s' ultrasurfaces debug data in %s.",
                               container.name, CACHE_DIR)
