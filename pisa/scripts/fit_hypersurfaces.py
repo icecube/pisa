@@ -4,14 +4,14 @@
 Fit a hypersurface to discrete systematics datasets -- as specified by a fit config
 file -- and produce a fit file usable by, e.g., the `discr_sys.hypersurfaces` service.
 
-For more details, see `pisa/utils/hypersurface.pu`
+For more details, see `pisa/utils/hypersurface/`.
 
 A script for making plots from the fit results produced by this file can be found in the
 Fridge (private repository) at
 
   fridge/analysis/common/scripts/plotting/plot_hypersurface_fits.py
 
-See example fit config files in directory `pisa_examples/resources/discr_sys/`.
+See example fit config files in directory `pisa_examples/resources/settings/discr_sys/`.
 
 
 Config file syntax

@@ -1878,7 +1878,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
 
     Returns a dict with the format: { map_0_key : map_0_hypersurface, ..., map_N_key : map_N_hypersurface, }
 
-    Hnadling the following input files cases:
+    Handling the following input files cases:
         1) Load files produced using this code (recommended)
         2) Load files producing using older versions of PISA
         3) Load public data releases csv formatted files
@@ -1963,7 +1963,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
 
 def _load_hypersurfaces_legacy(input_data):
     '''
-    Load an old hyperpane (not surface) fit file from older PISA version.
+    Load an old hyperplane (not surface) fit file from older PISA version.
 
     Put the results into an instance the new `Hypersurface` class so can use the
     resulting hypersurface in modern code.

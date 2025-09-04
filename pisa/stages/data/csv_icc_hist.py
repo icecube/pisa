@@ -50,7 +50,10 @@ class csv_icc_hist(Stage):  # pylint: disable=invalid-name
 
         container['count'] = events['count'].values.astype(FTYPE)
         container['weights'] = np.ones(container.size, dtype=FTYPE)
-        container['errors'] = events['abs_uncert'].values.astype(FTYPE)
+        if 'abs_uncert' in events:
+            container['errors'] = events['abs_uncert'].values.astype(FTYPE)
+        else:
+            container['errors'] = events['abs_uncertainty'].values.astype(FTYPE)
         container['reco_energy'] = events['reco_energy'].values.astype(FTYPE)
         container['reco_coszen'] = events['reco_coszen'].values.astype(FTYPE)
         container['pid'] = events['pid'].values.astype(FTYPE)
