@@ -351,17 +351,27 @@
                     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">distance_tol</span><span class="si">:</span><span class="s2">.2g</span><span class="si">}</span><span class="s2">. The maximum distance to a &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;nearest neighbor is </span><span class="si">{</span><span class="n">max_dist</span><span class="si">:</span><span class="s2">.2g</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
-            <span class="k">for</span> <span class="n">gradient_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span><span class="p">:</span>
-                <span class="n">grads</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
-                <span class="n">container</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">grads</span><span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">ravel</span><span class="p">()]</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
                 <span class="n">outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
                     <span class="n">CACHE_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;ultrasurfaces_</span><span class="si">{</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_debug_data.npz&quot;</span>
                 <span class="p">)</span>
+                <span class="n">grads_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">gradient_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span><span class="p">:</span>
+                <span class="n">grads</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_grouping_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># indices apply to the array of events of the grouping</span>
+                    <span class="n">grads</span> <span class="o">=</span> <span class="n">grads</span><span class="p">[</span><span class="n">where</span><span class="p">]</span>
+                <span class="n">container</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">grads</span><span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">ravel</span><span class="p">()]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
+                    <span class="n">grads_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="n">gradient_name</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span>
                     <span class="n">file</span><span class="o">=</span><span class="n">outfile</span><span class="p">,</span> <span class="n">dists</span><span class="o">=</span><span class="n">dists</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">inds</span><span class="o">=</span><span class="n">ind</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span>
-                    <span class="n">grads</span><span class="o">=</span><span class="n">grads</span><span class="p">,</span> <span class="n">fit_results_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span>
+                    <span class="n">grads</span><span class="o">=</span><span class="n">grads_list</span><span class="p">,</span> <span class="n">fit_results_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span><span class="p">,</span>
+                    <span class="n">gradient_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span>
                 <span class="p">)</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Stored &#39;</span><span class="si">%s</span><span class="s2">&#39; ultrasurfaces debug data in </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span>
                               <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">CACHE_DIR</span><span class="p">)</span></div>
