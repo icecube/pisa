@@ -159,14 +159,30 @@
 <p>A Stage to load data from a CSV datarelease format file into a PISA pi ContainerSet</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.data.csv_loader.csv_loader">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.csv_loader.</span></span><span class="sig-name descname"><span class="pre">csv_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/csv_loader.html#csv_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.csv_loader.csv_loader" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.csv_loader.</span></span><span class="sig-name descname"><span class="pre">csv_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neutrinos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dis_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_aeff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/csv_loader.html#csv_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.csv_loader.csv_loader" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>CSV file loader PISA Pi class</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>events_file</strong> (<em>csv file path</em>)</p></li>
-<li><p><strong>**kwargs</strong> – Passed to Stage</p></li>
+<li><p><strong>events_file</strong> (<em>str</em><em> or </em><em>sequence</em><em> of </em><em>str</em>) – csv file path(s)</p></li>
+<li><p><strong>data_dict</strong> (<em>(</em><em>str</em><em> of </em><em>a</em><em>) </em><em>dict</em>) – Dictionary to specify what keys from the csv files to be loaded
+under what name. Entries can be strings that point to the right
+key in the csv file or lists of keys, and the data will be
+stacked into a 2d array.</p></li>
+<li><p><strong>output_names</strong> (<em>sequence</em><em> of </em><em>str</em>) – Event categories to be recorded, needs to be a subset of names
+in <cite>events_file</cite>.</p></li>
+<li><p><strong>neutrinos</strong> (<em>bool</em><em>, </em><em>default: True</em>) – Flag indicating whether data events represent neutrinos
+In this case, special handling for e.g. nu/nubar, CC vs NC, …</p></li>
+<li><p><strong>dis_idx</strong> (<em>int</em><em>, </em><em>default: None</em>) – The deep inelastic scattering (DIS) systematic stage in PISA expects a
+key identifiying if an event is a dis event. This key should be 1 for all
+dis events and 0 otherwise. However, your csv file might only contain an
+<cite>interaction</cite> key that assings integers to different interaction types (e.g.
+dis=1, qel=2, res=3, …). In that case you need to specify which integer
+corresponds to dis. It is preferred to specify a dedicated <cite>dis</cite> key in the
+data_dict.</p></li>
+<li><p><strong>scale_aeff</strong> (<em>bool</em><em>, </em><em>default: False</em>) – Convert effective area from cm^2 to m^2 (PISA flux tables are stored in m^2)
+if given in cm^2.</p></li>
 </ul>
 </dd>
 </dl>

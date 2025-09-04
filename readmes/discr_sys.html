@@ -71,36 +71,24 @@
   <p># Stage: Discrete Systematics</p>
 <p>These stages apply parameterized systematics to the templates.</p>
 <p>## Services</p>
-<p>### Hypersurfaces</p>
-<p>#### fits</p>
-<p>This service applies the results obtained from fits to discrete samples.</p>
-<p>The fitting parameters are at the moment extracted by an external
-script, that saves them in a json file, see below.</p>
-<p>Any parameterized systematic needs to be added to the <cite>[stage:sys]</cite> section of the pipeline config.
-There the associated nuisance parameters (can be N different ones), e.g. <cite>hole_ice</cite> are specified together with a parameter <cite>hole_ice_file</cite> pointing to the <cite>.json</cite> file with the fit info.</p>
-<p>#### generating the fit values</p>
-<p>To generate the fit file, the script <cite>$PISA/pisa/scripts/fit_discrerte_sys.py</cite> (command-line alias <cite>pisa-fit_discrete_sys</cite>) can be executed together with a special configuration file.</p>
-<p>This config file specifies the discrete datasets for the fits, here an example:</p>
-<p><code class="docutils literal notranslate"><span class="pre">`ini</span>
-<span class="pre">[dom_eff]</span>
-<span class="pre">nominal</span> <span class="pre">=</span> <span class="pre">1.0</span>
-<span class="pre">degree</span> <span class="pre">=</span> <span class="pre">1</span>
-<span class="pre">force_through_nominal</span> <span class="pre">=</span> <span class="pre">True</span>
-<span class="pre">smooth</span> <span class="pre">=</span> <span class="pre">gauss</span>
-<span class="pre">#</span> <span class="pre">discrete</span> <span class="pre">sets</span> <span class="pre">for</span> <span class="pre">param</span> <span class="pre">values</span>
-<span class="pre">runs</span> <span class="pre">=</span> <span class="pre">[1.0,</span> <span class="pre">0.88,</span> <span class="pre">0.94,</span> <span class="pre">0.97,</span> <span class="pre">1.03,</span> <span class="pre">1.06,</span> <span class="pre">1.12]</span>
-<span class="pre">`</span></code></p>
-<p>That means the systematic <cite>dom_eff</cite> is parametrized from 7 discrete datasets, with the nominal point being at <cite>dom_eff=1.0</cite>, parametrized with a linear fit that is forced through the nominal point, and gaussian smoothing is applied.</p>
-<p>All 7 datasets must be specified in a separate section.</p>
-<p>At the moment different fits are generated for <cite>cscd</cite> and <cite>trck</cite> maps only (they are added together for the fit).
-Systematics listed under <cite>sys_list</cite> are considered in the fit.
-This will generate N different <cite>.json</cite> for N systematics.
-All the info from the fit, including the fit function itself is stored in that file.
-Plotting is also available via <a href="#id1"><span class="problematic" id="id2">`</span></a>-p/–plot’ and is HIGHLY recomended to inspect the fit results.</p>
-<p>### Ultrasurfaces</p>
-<p>Treatment of detector systematics via likelihood-free inference. Polynomial coefficients, assigned to every event, allow continuous re-weighting as a function of detector uncertainties in a way that is fully decoupled from flux and oscillation effects. The results are stored in a feather file containing all events of the nominal MC set and their associated polynomial coefficients.</p>
+<p>### hypersurfaces</p>
+<p>This service applies the results obtained from fits to bin-count expectations given “discrete” MC event simulation samples,
+i.e. one per choice of detector-response settings (such as a particular overall DOM efficiency correction).</p>
+<p>Fits may be performed for different assumptions of non-detector model parameters, such as oscillation parameters, and then interpolated by this service.
+The fitting parameters are computed and stored in a fit results file by the script <cite>$PISA/pisa/scripts/fit_hypersurfaces.py</cite> (command-line alias <cite>pisa-fit_hypersurfaces</cite>).
+This has to be executed together with a dedicated fit configuration file (see script’s documentation).</p>
+<p>The method itself is described and illustrated in the paper [“Measurement of Atmospheric Neutrino Mixing with Improved IceCube DeepCore
+Calibration and Data Processing”](<a class="reference external" href="https://inspirehep.net/literature/2653713">https://inspirehep.net/literature/2653713</a>) (Sec. VI A).</p>
+<p>The “hyperplanes” predecessor method presented in the [“Measurement of atmospheric tau neutrino appearance
+with IceCube DeepCore”](<a class="reference external" href="https://inspirehep.net/literature/1714067">https://inspirehep.net/literature/1714067</a>) (Sec. V E) is also incorporated.</p>
+<p>### csv_hypersurfaces</p>
+<p>Service to load and apply (pre-generated) hypersurfaces stored in csv files. This file format is usually used for data releases. Currently, the service expects hypersurfaces in the form of <cite>pisa_examples/resources/events/hs_test.csv</cite>.</p>
+<p>### ultrasurfaces</p>
+<p>Treatment of detector systematics via likelihood-free inference as described in <a class="reference external" href="https://inspirehep.net/literature/2656204">https://inspirehep.net/literature/2656204</a>.
+Polynomial coefficients, assigned to every event, allow continuous re-weighting as a function of detector uncertainties in a way that is fully decoupled
+from flux and oscillation effects. The results are stored in a feather file containing all events of the nominal MC set and their associated polynomial coefficients.</p>
 <p>To use this in a PISA analysis pipeline, you will need to set up an ultrasurface config file looking like this:</p>
-<p><a href="#id3"><span class="problematic" id="id4">``</span></a><a href="#id5"><span class="problematic" id="id6">`</span></a>ini
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>ini
 [discr_sys.ultrasurfaces]</p>
 <p>calc_mode = events
 apply_mode = events</p>
@@ -137,8 +125,10 @@ param.bulk_ice_scatter.tex = rm{ice , scattering}</p>
 # and might not agree with the nominal points of the parameter prior.
 nominal_points = {“dom_eff”: 1.0, “hole_ice_p0”: 0.101569, “hole_ice_p1”: -0.049344, “bulk_ice_abs”: 1.0, “bulk_ice_scatter”: 1.0}</p>
 <p>fit_results_file = /path/to/ultrasurface_fits/genie_all_knn_200pc_weight_weighted_aeff_poly_2.feather
-<a href="#id7"><span class="problematic" id="id8">``</span></a><a href="#id9"><span class="problematic" id="id10">`</span></a></p>
-<p>Here you specify the detector systematic parameters to be varied in the fit, with their nominal values and allowed ranges. Additionally, you have to specify the nominal point at which the ultrasurfaces were fit (<cite>nominal_points</cite>), since this might be different from the nominal point used in your analysis. Finally, you have to point to the file where the polynomial coefficients are stored (<cite>fit_results_file</cite>).</p>
+<a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>Here you specify the detector systematic parameters to be varied in the fit, with their nominal values and allowed ranges.
+Additionally, you have to specify the nominal point at which the ultrasurfaces were fit (<cite>nominal_points</cite>), since this might be different from the nominal point used in your analysis.
+Finally, you have to point to the file where the polynomial coefficients are stored (<cite>fit_results_file</cite>).</p>
 <p>Your pipeline’s order could then look like this:</p>
 <p><code class="docutils literal notranslate"><span class="pre">`ini</span>
 <span class="pre">order</span> <span class="pre">=</span> <span class="pre">data.simple_data_loader,</span> <span class="pre">flux.honda_ip,</span> <span class="pre">flux.mceq_barr,</span> <span class="pre">osc.prob3,</span> <span class="pre">xsec.genie_sys,</span> <span class="pre">xsec.dis_sys,</span> <span class="pre">aeff.aeff,</span> <span class="pre">discr_sys.ultrasurfaces,</span> <span class="pre">utils.hist</span>

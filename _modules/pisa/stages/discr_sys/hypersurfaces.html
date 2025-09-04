@@ -69,7 +69,7 @@
              
   <h1>Source code for pisa.stages.discr_sys.hypersurfaces</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">PISA pi stage to apply hypersurface fits from discrete systematics parameterizations</span>
+<span class="sd">PISA stage to apply hypersurface fits from discrete systematics parameterizations</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="c1">#TODO Currently have to defined the `links` value in the stage config to match what the `combine_regex` does in</span>
@@ -114,29 +114,33 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">hypersurfaces</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Service to apply hypersurface parameterisation produced by</span>
-<span class="sd">    `scripts.fit_discrete_sys_nd`</span>
+<span class="sd">    `scripts.fit_hypersurfaces`</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    fit_results_file : str</span>
-<span class="sd">        Path to hypersurface fit results file, i.e. the JSON file produced by the</span>
-<span class="sd">        `pisa.scripts.fit_discrete_sys_nd.py` script</span>
+<span class="sd">        Path to hypersurface fit results file, e.g. the file produced by</span>
+<span class="sd">        `pisa.scripts.fit_hypersurfaces.py`</span>
 
-<span class="sd">    propagate_uncertainty : bool, optional</span>
+<span class="sd">    propagate_uncertainty : bool, default: False</span>
 <span class="sd">        Propagate the uncertainties from the hypersurface to the uncertainty of</span>
-<span class="sd">        the output</span>
+<span class="sd">        the output.</span>
 
 <span class="sd">    params : ParamSet</span>
 <span class="sd">        Note that the params required to be in `params` are determined from</span>
 <span class="sd">        those listed in the `fit_results_file`.</span>
 <span class="sd">    </span>
-<span class="sd">    interpolated : bool</span>
+<span class="sd">    interpolated : bool, default: False</span>
 <span class="sd">        If `True`, indicates that the hypersurfaces to be loaded are interpolated.</span>
 <span class="sd">    </span>
-<span class="sd">    links : dict</span>
+<span class="sd">    links : dict, default: None</span>
 <span class="sd">        A dictionary defining how containers should be linked. Keys are the names of</span>
 <span class="sd">        the merged containers, values are lists of containers being linked together.</span>
 <span class="sd">        Keys must be a sub-set of the loaded hypersurfaces.</span>
+
+<span class="sd">    fluctuate : bool, default: False</span>
+
+<span class="sd">    fluctuate_seed : int, default: 12345</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>

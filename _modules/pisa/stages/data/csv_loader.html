@@ -81,6 +81,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.container</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">split</span>
 
 
 <div class="viewcode-block" id="csv_loader">
@@ -91,20 +92,76 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    events_file : csv file path</span>
-<span class="sd">    **kwargs</span>
-<span class="sd">        Passed to Stage</span>
+
+<span class="sd">    events_file : str or sequence of str</span>
+<span class="sd">        csv file path(s)</span>
+
+<span class="sd">    data_dict : (str of a) dict</span>
+<span class="sd">        Dictionary to specify what keys from the csv files to be loaded</span>
+<span class="sd">        under what name. Entries can be strings that point to the right</span>
+<span class="sd">        key in the csv file or lists of keys, and the data will be</span>
+<span class="sd">        stacked into a 2d array.</span>
+<span class="sd">        </span>
+<span class="sd">    output_names : sequence of str</span>
+<span class="sd">        Event categories to be recorded, needs to be a subset of names </span>
+<span class="sd">        in `events_file`.</span>
+
+<span class="sd">    neutrinos : bool, default: True</span>
+<span class="sd">        Flag indicating whether data events represent neutrinos</span>
+<span class="sd">        In this case, special handling for e.g. nu/nubar, CC vs NC, ...</span>
+
+<span class="sd">    dis_idx : int, default: None</span>
+<span class="sd">        The deep inelastic scattering (DIS) systematic stage in PISA expects a</span>
+<span class="sd">        key identifiying if an event is a dis event. This key should be 1 for all</span>
+<span class="sd">        dis events and 0 otherwise. However, your csv file might only contain an</span>
+<span class="sd">        `interaction` key that assings integers to different interaction types (e.g.</span>
+<span class="sd">        dis=1, qel=2, res=3, ...). In that case you need to specify which integer</span>
+<span class="sd">        corresponds to dis. It is preferred to specify a dedicated `dis` key in the</span>
+<span class="sd">        data_dict.</span>
+<span class="sd">        </span>
+<span class="sd">    scale_aeff : bool, default: False</span>
+<span class="sd">        Convert effective area from cm^2 to m^2 (PISA flux tables are stored in m^2)</span>
+<span class="sd">        if given in cm^2.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">events_file</span><span class="p">,</span>
+        <span class="n">data_dict</span><span class="p">,</span>
         <span class="n">output_names</span><span class="p">,</span>
+        <span class="n">neutrinos</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">dis_idx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">scale_aeff</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 
         <span class="c1"># instantiation args that should not change</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">events_file</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">events_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_file</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">events_file</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span> <span class="o">=</span> <span class="n">data_dict</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unsupported type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span><span class="si">}</span><span class="s2"> for data_dict.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="o">=</span> <span class="n">output_names</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Found duplicates in `output_names`, but each name must be&#39;</span>
+                <span class="s1">&#39; unique.&#39;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span> <span class="o">=</span> <span class="n">neutrinos</span>
+        <span class="k">if</span> <span class="n">dis_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dis_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dis_idx</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dis_idx</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_aeff</span> <span class="o">=</span> <span class="n">scale_aeff</span>
 
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -113,50 +170,60 @@
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="o">=</span> <span class="n">output_names</span>
-
 
 <div class="viewcode-block" id="csv_loader.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_loader.csv_loader.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="n">raw_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">)</span>
+        <span class="n">raw_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">])</span>
 
         <span class="c1"># create containers from the events</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">:</span>
 
             <span class="c1"># make container</span>
             <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s1">&#39;bar&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">flav</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="s1">&#39;mu&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">flav</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="s1">&#39;tau&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">flav</span> <span class="o">=</span> <span class="mi">2</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">:</span>
+                <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s1">&#39;bar&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">flav</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="s1">&#39;mu&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">flav</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="s1">&#39;tau&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">flav</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;nubar&#39;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;flav&#39;</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
 
+                <span class="c1"># cut out right part</span>
+                <span class="n">pdg</span> <span class="o">=</span> <span class="n">nubar</span> <span class="o">*</span> <span class="p">(</span><span class="mi">12</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">flav</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;pdg_code&#39;</span> <span class="ow">in</span> <span class="n">raw_data</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;pdg_code&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">pdg</span>
+                <span class="k">elif</span> <span class="s1">&#39;pdg&#39;</span> <span class="ow">in</span> <span class="n">raw_data</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;pdg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">pdg</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either &#39;pdg&#39; or &#39;pdg_code&#39; must be in file.&quot;</span><span class="p">)</span>
 
-            <span class="c1"># cut out right part</span>
-            <span class="n">pdg</span> <span class="o">=</span> <span class="n">nubar</span> <span class="o">*</span> <span class="p">(</span><span class="mi">12</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">flav</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;cc&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
 
-            <span class="n">mask</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;pdg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">pdg</span>
-            <span class="k">if</span> <span class="s1">&#39;cc&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">events</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">events</span> <span class="o">=</span> <span class="n">raw_data</span>
 
-            <span class="n">events</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
-
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weighted_aeff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s1">&#39;reco_energy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;nubar&#39;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;flav&#39;</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
+            <span class="c1"># fill container</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">))</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">container</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="n">val</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+                
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_aeff</span> <span class="ow">and</span> <span class="s1">&#39;weighted_aeff&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weighted_aeff&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">1.e-4</span>
+            
+            <span class="c1"># Convert interaction key to dis boolen (if needed)</span>
+            <span class="k">if</span> <span class="s1">&#39;dis&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="ow">and</span> <span class="s1">&#39;interaction&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dis_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;dis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;interaction&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dis_idx</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
 
@@ -170,6 +237,10 @@
 <div class="viewcode-block" id="csv_loader.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_loader.csv_loader.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># reset data representation to events</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+
+        <span class="c1"># reset weights to initial weights prior to downstream stages running</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
 </div>
@@ -180,7 +251,15 @@
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_loader.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
+    <span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;true_energy&#39;</span><span class="p">:</span><span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;true_coszen&#39;</span><span class="p">:</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;weighted_aeff&#39;</span><span class="p">:</span><span class="s1">&#39;weight&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;reco_energy&#39;</span><span class="p">:</span><span class="s1">&#39;reco_energy&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;reco_coszen&#39;</span><span class="p">:</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;pid&#39;</span><span class="p">:</span><span class="s1">&#39;pid&#39;</span>
+                <span class="p">}</span>
     <span class="k">return</span> <span class="n">csv_loader</span><span class="p">(</span><span class="n">events_file</span><span class="o">=</span><span class="s1">&#39;events/IceCube_3y_oscillations/neutrino_mc.csv.bz2&#39;</span><span class="p">,</span>
+                      <span class="n">data_dict</span><span class="o">=</span><span class="n">data_dict</span><span class="p">,</span>
                       <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">],</span>
                      <span class="p">)</span></div>
 

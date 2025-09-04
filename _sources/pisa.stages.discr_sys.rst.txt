@@ -4,6 +4,14 @@ pisa.stages.discr\_sys package
 Submodules
 ----------
 
+pisa.stages.discr\_sys.csv\_hypersurfaces module
+------------------------------------------------
+
+.. automodule:: pisa.stages.discr_sys.csv_hypersurfaces
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pisa.stages.discr\_sys.hypersurfaces module
 -------------------------------------------
 

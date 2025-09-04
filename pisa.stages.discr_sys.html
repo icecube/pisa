@@ -92,28 +92,81 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
+<section id="module-pisa.stages.discr_sys.csv_hypersurfaces">
+<span id="pisa-stages-discr-sys-csv-hypersurfaces-module"></span><h2>pisa.stages.discr_sys.csv_hypersurfaces module<a class="headerlink" href="#module-pisa.stages.discr_sys.csv_hypersurfaces" title="Link to this heading"></a></h2>
+<p>PISA stage to apply hypersurface fits from discrete systematics parameterizations</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.discr_sys.csv_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">csv_hypersurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_results_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nominal_systematics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inter_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">propagate_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/csv_hypersurfaces.html#csv_hypersurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
+<p>Service to apply hypersurface parameterisation for hypersurfaces stored in csv files,
+which are used for data releases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fit_results_file</strong> (<em>str</em>) – Path to hypersurface fit result file(s). Must be .csv files.</p></li>
+<li><p><strong>links</strong> (<em>dict</em>) – A dictionary defining how containers should be linked. Keys are the names of
+the merged containers, values are lists of containers being linked together.
+Keys must be a sub-set of the loaded hypersurfaces.</p></li>
+<li><p><strong>nominal_systematics</strong> (<em>dict</em>) – Systematics and their nominal values.</p></li>
+<li><p><strong>inter_param</strong> (<em>str</em>) – Parameter used for interpolation.</p></li>
+<li><p><strong>propagate_uncertainty</strong> (<em>bool</em><em>, </em><em>optional</em>) – Propagate the uncertainties from the hypersurface to the uncertainty of
+the output.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.apply_function">
+<span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/csv_hypersurfaces.html#csv_hypersurfaces.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.apply_function" title="Link to this definition"></a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.compute_function">
+<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/csv_hypersurfaces.html#csv_hypersurfaces.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.compute_function" title="Link to this definition"></a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.get_corr_factors">
+<span class="sig-name descname"><span class="pre">get_corr_factors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/csv_hypersurfaces.html#csv_hypersurfaces.get_corr_factors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.get_corr_factors" title="Link to this definition"></a></dt>
+<dd><p>Get hypersurface correction factors. These are the scaling factors for each bin
+and depend on the shift in each systematic parameter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.setup_function">
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/csv_hypersurfaces.html#csv_hypersurfaces.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.setup_function" title="Link to this definition"></a></dt>
+<dd><p>Load the fit results from the file and check compatibility with container names</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-pisa.stages.discr_sys.hypersurfaces">
 <span id="pisa-stages-discr-sys-hypersurfaces-module"></span><h2>pisa.stages.discr_sys.hypersurfaces module<a class="headerlink" href="#module-pisa.stages.discr_sys.hypersurfaces" title="Link to this heading"></a></h2>
-<p>PISA pi stage to apply hypersurface fits from discrete systematics parameterizations</p>
+<p>PISA stage to apply hypersurface fits from discrete systematics parameterizations</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.discr_sys.hypersurfaces.hypersurfaces">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.discr_sys.hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">hypersurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_results_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">propagate_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fluctuate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fluctuate_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12345</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/hypersurfaces.html#hypersurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.hypersurfaces.hypersurfaces" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>Service to apply hypersurface parameterisation produced by
-<cite>scripts.fit_discrete_sys_nd</cite></p>
+<cite>scripts.fit_hypersurfaces</cite></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fit_results_file</strong> (<em>str</em>) – Path to hypersurface fit results file, i.e. the JSON file produced by the
-<cite>pisa.scripts.fit_discrete_sys_nd.py</cite> script</p></li>
-<li><p><strong>propagate_uncertainty</strong> (<em>bool</em><em>, </em><em>optional</em>) – Propagate the uncertainties from the hypersurface to the uncertainty of
-the output</p></li>
+<li><p><strong>fit_results_file</strong> (<em>str</em>) – Path to hypersurface fit results file, e.g. the file produced by
+<cite>pisa.scripts.fit_hypersurfaces.py</cite></p></li>
+<li><p><strong>propagate_uncertainty</strong> (<em>bool</em><em>, </em><em>default: False</em>) – Propagate the uncertainties from the hypersurface to the uncertainty of
+the output.</p></li>
 <li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – Note that the params required to be in <cite>params</cite> are determined from
 those listed in the <cite>fit_results_file</cite>.</p></li>
-<li><p><strong>interpolated</strong> (<em>bool</em>) – If <cite>True</cite>, indicates that the hypersurfaces to be loaded are interpolated.</p></li>
-<li><p><strong>links</strong> (<em>dict</em>) – A dictionary defining how containers should be linked. Keys are the names of
+<li><p><strong>interpolated</strong> (<em>bool</em><em>, </em><em>default: False</em>) – If <cite>True</cite>, indicates that the hypersurfaces to be loaded are interpolated.</p></li>
+<li><p><strong>links</strong> (<em>dict</em><em>, </em><em>default: None</em>) – A dictionary defining how containers should be linked. Keys are the names of
 the merged containers, values are lists of containers being linked together.
 Keys must be a sub-set of the loaded hypersurfaces.</p></li>
+<li><p><strong>fluctuate</strong> (<em>bool</em><em>, </em><em>default: False</em>)</p></li>
+<li><p><strong>fluctuate_seed</strong> (<em>int</em><em>, </em><em>default: 12345</em>)</p></li>
 </ul>
 </dd>
 </dl>
