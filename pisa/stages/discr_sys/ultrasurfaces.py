@@ -283,7 +283,7 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
 
             for gradient_name in self.gradient_names:
                 grads = df[gradient_name].to_numpy()
-                if self.event_grouping_key:
+                if self.event_grouping_key is not None:
                     # indices apply to the array of events of the grouping
                     grads = grads[where]
                 container[gradient_name] = grads[ind.ravel()]
