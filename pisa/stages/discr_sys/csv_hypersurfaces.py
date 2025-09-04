@@ -135,6 +135,9 @@ class csv_hypersurfaces(Stage):
 
         # create containers for scale factors
         for container in self.data:
+             # Check if hypersurface exists for this container
+            assert container.name in self.hs, f"No match for {container.name} found in the hypersurfaces."
+
             container["hs_scales"] = np.empty(container.size, dtype=FTYPE)
             if self.propagate_uncertainty:
                 hs = self.hs[container.name]
@@ -147,9 +150,6 @@ class csv_hypersurfaces(Stage):
 
                 hs_scales_uncertainty = hs['intercept_sigma'][start_idx:stop_idx]
                 container["hs_scales_uncertainty"] = np.array(hs_scales_uncertainty).reshape(container.size)
-
-            # Check if hypersurface exists for this container
-            assert container.name in self.hs, f"No match for {container.name} found in the hypersurfaces."
 
         self.data.unlink_containers()
         
