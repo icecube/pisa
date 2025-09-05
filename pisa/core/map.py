@@ -721,11 +721,14 @@ class Map(object):
             else:
                 mkdir(outdir, warn=False)
 
-        if ax is None:
-            fig, ax = plt.subplots(**fig_kw)
+        if full_ax is not None:
+            fig = full_ax.figure
+        elif ax is not None:
+            fig = ax.figure
             full_ax = ax
         else:
-            fig = full_ax.figure
+            fig, ax = plt.subplots(**fig_kw)
+            full_ax = ax
 
         # 2D by arraying them as 1D slices in the smallest dimension(s)
         if len(self.binning) == 3:
