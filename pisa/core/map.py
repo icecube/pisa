@@ -701,17 +701,6 @@ class Map(object):
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-        cmap_seq = mpl.cm.get_cmap("Spectral_r").copy()
-        cmap_seq.set_bad(color=(0.0, 0.2, 0.0), alpha=1)
-
-        cmap_div = mpl.cm.get_cmap("RdBu_r").copy()
-        cmap_div.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
-
-        # TODO: use https://matplotlib.org/users/colormapnorms.html
-        # to allow for both symm and logz (and to implement logz in the first
-        # place!)
-        assert not(symm and logz)
-
         # Setup default values for vars.
         if title is None:
             title = '$%s$' % (self.name if self.tex is None else self.tex)
@@ -763,9 +752,12 @@ class Map(object):
                     ax=small_axes[bin_idx], cmap=cmap, clabel=clabel,
                     clabelsize=clabelsize, xlabelsize=xlabelsize,
                     ylabelsize=ylabelsize, titlesize=titlesize,
-                    pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw, colorbar_label_kw=colorbar_label_kw,
-                    binlabel_format=binlabel_format, binlabel_colors=["white", "black"],
-                    binlabel_color_thresh=binlabel_color_thresh, binlabel_stripzeros=binlabel_stripzeros,
+                    pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw,
+                    colorbar_label_kw=colorbar_label_kw,
+                    binlabel_format=binlabel_format,
+                    binlabel_colors=["white", "black"],
+                    binlabel_color_thresh=binlabel_color_thresh,
+                    binlabel_stripzeros=binlabel_stripzeros,
                     bin_id=bin_idx, full_ax=full_ax
                 )
 
@@ -787,8 +779,17 @@ class Map(object):
             fname = get_valid_filename(to_plot.name)
 
         hist = valid_nominal_values(to_plot.hist)
+        
+        # Set cmap.
         if symm:
-            if cmap is None: cmap = cmap_div
+            cmap = mpl.cm.get_cmap("RdBu_r").copy()
+            cmap.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
+        else:
+            cmap = mpl.cm.get_cmap("Spectral_r").copy()
+            cmap.set_bad(color=(0.0, 0.2, 0.0), alpha=1)
+
+        # Set cmap range.
+        if symm: # symm = True.
             if vmin is None and vmax is None:
                 vmax = np.nanmax(np.abs(hist))
             elif vmin is None and vmax is not None:
@@ -806,12 +807,10 @@ class Map(object):
                 if vmax != -vmin:
                     raise ValueError("Symmetric plots require vmin = -vmax.")
             vmin = -vmax
-        elif logz:
-            if cmap is None: cmap = cmap_seq
+        elif logz: # symm = False, logz = True.
             if vmin is None: vmin = hist[hist > 0].min()
             if vmax is None: vmax = np.nanmax(hist)
-        else:
-            if cmap is None: cmap = cmap_seq
+        else: # symm = False, logz = False.
             if vmin is None: vmin = np.nanmin(hist)
             if vmax is None: vmax = np.nanmax(hist)
 
@@ -846,8 +845,12 @@ class Map(object):
         if not logz:
             defaults["vmin"] = vmin
             defaults["vmax"] = vmax
-        else:
+        elif logz and not symm:
             defaults["norm"] = mpl.colors.LogNorm(vmin, vmax, clip=True)
+        else:
+            defaults["norm"] = mpl.colors.SymLogNorm(
+                linthresh=0.03, linscale=0.03, vmin=vmin, vmax=vmax
+            )
 
         for key, dflt_val in defaults.items():
             if key not in pcolormesh_kw:
@@ -881,14 +884,30 @@ class Map(object):
                                 color=txtcolor,
                                 fontsize=10)
 
-        # only plot colorbar once
+        # Plot colorbar.
         if bin_id == 0 or bin_id is None:
-            colorbar = fig.colorbar(mappable=pcmesh, ax=full_ax, **colorbar_kw)
+            if symm and logz:
+                # Generate logarithmic ticks
+                maxlog = int(np.ceil(np.log10(vmax)))
+                tick_locs = (
+                    [-(10**x) for x in np.linspace(0, maxlog, maxlog+1)][::-1] +
+                    [0.] +
+                    [(10**x) for x in np.linspace(0, maxlog, maxlog+1)]
+                )
+                colorbar = fig.colorbar(
+                    mappable=pcmesh, ax=full_ax, **colorbar_kw, ticks=tick_locs,
+                    format=mpl.ticker.LogFormatterMathtext()
+                )
+            else:
+                colorbar = fig.colorbar(
+                    mappable=pcmesh, ax=full_ax, **colorbar_kw
+                )
             colorbar.ax.tick_params(labelsize='large')
 
             if clabel is not None:
-                colorbar.set_label(label=clabel, size=clabelsize, **colorbar_label_kw)
-
+                colorbar.set_label(
+                    label=clabel, size=clabelsize, **colorbar_label_kw
+                )
         else:
             colorbar = None
 
