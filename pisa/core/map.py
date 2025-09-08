@@ -862,14 +862,18 @@ class Map(object):
         if binlabel_format is not None:
             X_mid = np.true_divide(X[1:, 1:] + X[1:, :-1], 2)
             Y_mid = np.true_divide(Y[1:, 1:] + Y[:-1, 1:], 2)
-            for xi, yi, zi in zip(np.ravel(X_mid), np.ravel(Y_mid), np.ravel(hist.T)):
+            for xi, yi, zi in zip(
+                np.ravel(X_mid), np.ravel(Y_mid), np.ravel(hist.T)
+            ):
                 if binlabel_color_thresh is not None:
-                    assert len(binlabel_colors) == 2, "must give two colors with thresh"
+                    if len(binlabel_colors) != 2:
+                        raise ValueError("binlabel_colors requires two colors.")
                     if binlabel_color_thresh == "auto":
                         thresh = np.mean([np.nanmax(hist), np.nanmin(hist)])
                     else:
                         thresh = binlabel_color_thresh
-                    txtcolor = binlabel_colors[0] if zi < thresh else binlabel_colors[1]
+                    if zi < thresh: txtcolor = binlabel_colors[0]
+                    else:           txtcolor = binlabel_colors[1]
                 else:
                     try:
                         txtcolor = binlabel_colors[-1]
