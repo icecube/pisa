@@ -780,14 +780,19 @@ class Map(object):
             fname = get_valid_filename(to_plot.name)
 
         hist = valid_nominal_values(to_plot.hist)
-        
+    
         # Set cmap.
-        if symm:
-            cmap = mpl.cm.get_cmap("RdBu_r").copy()
-            cmap.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
-        else:
-            cmap = mpl.cm.get_cmap("Spectral_r").copy()
-            cmap.set_bad(color=(0.0, 0.2, 0.0), alpha=1)
+        if cmap is None:
+            if symm:
+                cmap = mpl.cm.get_cmap("RdBu_r").copy()
+                cmap.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
+            else:
+                cmap = mpl.cm.get_cmap("Spectral_r").copy()
+                cmap.set_bad(color=(0.0, 0.2, 0.0), alpha=1)
+        if isinstance(cmap, str):
+            cmap = mpl.cm.get_cmap(cmap)
+        if bad_color is not None:
+            cmap.set_bad(bad_color)
 
         # Set cmap range.
         if symm: # symm = True.
@@ -831,12 +836,6 @@ class Map(object):
             yticks = 2**(np.arange(np.ceil(np.log2(min(y))),
                                    np.floor(np.log2(max(y)))+1))
             y = np.log10(y)
-
-        # If user specified a "bad" color, set this on the cmap.
-        if bad_color is not None:
-            if isinstance(cmap, str):
-                cmap = plt.get_cmap(cmap) 
-            cmap.set_bad(bad_color)
 
         # Setup colormesh parameters.
         defaults = {}
