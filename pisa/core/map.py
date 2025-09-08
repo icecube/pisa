@@ -719,9 +719,9 @@ class Map(object):
         if fname is None:
             fname = get_valid_filename(self.name)
 
-        if fig_kw is None:            fig_kw = {}
-        if pcolormesh_kw is None:     pcolormesh_kw = {}
-        if colorbar_kw is None:       colorbar_kw = {}
+        if fig_kw            is None: fig_kw            = {}
+        if pcolormesh_kw     is None: pcolormesh_kw     = {}
+        if colorbar_kw       is None: colorbar_kw       = {}
         if colorbar_label_kw is None: colorbar_label_kw = {}
 
         if fmt is not None:
@@ -777,7 +777,6 @@ class Map(object):
 
             return fig, full_ax, pcmesh, colorbar
 
-
         if len(self.binning) == 2:
             to_plot = self
         else:
@@ -795,12 +794,12 @@ class Map(object):
             elif vmin is None and vmax is not None:
                 if vmax <= 0:
                     raise ValueError(
-                        "Negative vmax doesn't make sense for a symmetric plot."
+                        "vmax should be positive for a symmetric plot."
                     )
             elif vmin is not None and vmax is None:
                 if vmin >= 0:
                     raise ValueError(
-                        "Positive vmin doesn't make sense for a symmetric plot."
+                        "vmin should be negative for a symmetric plot."
                     )
                 vmax = np.abs(vmin)
             else: # Both vmin and vmax are defined.
@@ -818,7 +817,7 @@ class Map(object):
 
         # Assert that vmin and vmax make sense.
         if vmin > vmax:
-            print("[Warning] vmax is lesser than vmin, plot will be empty.")
+            print("[Warning] vmax is smaller than vmin, plot will be empty.")
             vmax = vmin
 
         x = to_plot.binning.dims[0].bin_edges.magnitude
@@ -833,22 +832,22 @@ class Map(object):
                                    np.floor(np.log2(max(y)))+1))
             y = np.log10(y)
 
-        # If user specified a "bad" color, set this.
-        # Need a cmap object, so if we just have a string name then get the
-        #     actual cmap object first.
-        if bad_color is not None :
-            if isinstance(cmap, str) : # Need a cmap
+        # If user specified a "bad" color, set this on the cmap.
+        if bad_color is not None:
+            if isinstance(cmap, str):
                 cmap = plt.get_cmap(cmap) 
             cmap.set_bad(bad_color)
 
-        defaults = dict(
-            vmin=vmin, vmax=vmax, cmap=cmap,
-            shading='flat', edgecolors='face'
-        )
-        if logz:
-            defaults['norm'] = mpl.colors.LogNorm(
-                vmin, vmax, clip=True
-            )
+        # Setup colormesh parameters.
+        defaults = {}
+        defaults["cmap"]       = cmap
+        defaults["shading"]    = "flat"
+        defaults["edgecolors"] = "face"
+        if not logz:
+            defaults["vmin"] = vmin
+            defaults["vmax"] = vmax
+        else:
+            defaults["norm"] = mpl.colors.LogNorm(vmin, vmax, clip=True)
 
         for key, dflt_val in defaults.items():
             if key not in pcolormesh_kw:
