@@ -742,32 +742,22 @@ class Map(object):
             fig, ax = plt.subplots(**fig_kw)
             full_ax = ax
 
-        # 2D by arraying them as 1D slices in the smallest dimension(s)
+        # 2D by arraying them as 1D slices in the smallest dimension(s).
         if len(self.binning) == 3:
-
             smallest_dim = self.binning.names[np.argmin(self.binning.shape)]
-
-            # we need to set the vmin and vmax now by hand:
-            if vmin is None:
-                vmin = np.nanmin(unp.nominal_values(self.hist))
-
-            if vmax is None:
-                vmax = np.nanmax(unp.nominal_values(self.hist))
-
-            if symm:
-                v = np.max([-vmin, vmax])
-                vmin = -v
-                vmax = v
-
             divider = make_axes_locatable(ax)
 
-            # prepare some smaller axes:
+            # Prepare smaller axes:
             small_axes = [ax]
             for bin_idx in range(1, self.binning[smallest_dim].num_bins):
-                small_axes.append(divider.append_axes("right", size="100%", pad=0.1, sharey=ax))
+                small_axes.append(divider.append_axes(
+                    "right", size="100%", pad=0.1, sharey=ax
+                ))
                 small_axes[-1].yaxis.set_visible(False)
 
-            for bin_idx, to_plot in enumerate(self.split(smallest_dim, pure_bin_names=pure_bin_names)):
+            for bin_idx, to_plot in enumerate(self.split(
+                smallest_dim, pure_bin_names=pure_bin_names
+            )):
                 _, _, pcmesh, colorbar = to_plot.plot(
                     symm=symm, logz=logz, vmin=vmin, vmax=vmax,
                     ax=small_axes[bin_idx], cmap=cmap, clabel=clabel,
@@ -777,7 +767,7 @@ class Map(object):
                     binlabel_format=binlabel_format, binlabel_colors=["white", "black"],
                     binlabel_color_thresh=binlabel_color_thresh, binlabel_stripzeros=binlabel_stripzeros,
                     bin_id=bin_idx, full_ax=full_ax
-                    )
+                )
 
             if fmt is not None:
                 for fmt_ in fmt:
@@ -799,25 +789,37 @@ class Map(object):
 
         hist = valid_nominal_values(to_plot.hist)
         if symm:
-            cmap = cmap_div if cmap is None else cmap
+            if cmap is None: cmap = cmap_div
             if vmin is None and vmax is None:
-                vmax_ = np.nanmax(np.abs(hist))
+                vmax = np.nanmax(np.abs(hist))
             elif vmin is None and vmax is not None:
-                vmax_ = np.abs(vmax)
+                if vmax <= 0:
+                    raise ValueError(
+                        "Negative vmax doesn't make sense for a symmetric plot."
+                    )
             elif vmin is not None and vmax is None:
-                vmax_ = np.abs(vmin)
-            else:  # neither vmax nor vmin are None
-                assert vmax > vmin and vmax == -vmin
-                vmax_ = vmax
-            vmin_ = -vmax_
+                if vmin >= 0:
+                    raise ValueError(
+                        "Positive vmin doesn't make sense for a symmetric plot."
+                    )
+                vmax = np.abs(vmin)
+            else: # Both vmin and vmax are defined.
+                if vmax != -vmin:
+                    raise ValueError("Symmetric plots require vmin = -vmax.")
+            vmin = -vmax
         elif logz:
-            cmap = cmap_seq if cmap is None else cmap
-            vmin_ = vmin if vmin is not None else hist[hist > 0].min()
-            vmax_ = vmax if vmax is not None else np.nanmax(hist)
+            if cmap is None: cmap = cmap_seq
+            if vmin is None: vmin = hist[hist > 0].min()
+            if vmax is None: vmax = np.nanmax(hist)
         else:
-            cmap = cmap_seq if cmap is None else cmap
-            vmin_ = vmin if vmin is not None else np.nanmin(hist)
-            vmax_ = vmax if vmax is not None else np.nanmax(hist)
+            if cmap is None: cmap = cmap_seq
+            if vmin is None: vmin = np.nanmin(hist)
+            if vmax is None: vmax = np.nanmax(hist)
+
+        # Assert that vmin and vmax make sense.
+        if vmin > vmax:
+            print("[Warning] vmax is lesser than vmin, plot will be empty.")
+            vmax = vmin
 
         x = to_plot.binning.dims[0].bin_edges.magnitude
         y = to_plot.binning.dims[1].bin_edges.magnitude
@@ -840,12 +842,12 @@ class Map(object):
             cmap.set_bad(bad_color)
 
         defaults = dict(
-            vmin=vmin_, vmax=vmax_, cmap=cmap,
+            vmin=vmin, vmax=vmax, cmap=cmap,
             shading='flat', edgecolors='face'
         )
         if logz:
             defaults['norm'] = mpl.colors.LogNorm(
-                vmin_, vmax_, clip=True
+                vmin, vmax, clip=True
             )
 
         for key, dflt_val in defaults.items():
