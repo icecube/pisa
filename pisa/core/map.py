@@ -603,8 +603,9 @@ class Map(object):
             a new figure and axis are created.
 
         title : string, optional
-            Set the title to this value; if None is specified, the title is
-            taken from the name of this Map.
+            Set the title of one subplot to this value; if None is specified,
+            the title is taken from the name of this Map. If the figure has more
+            than one subplot, this parameter is ignored.
 
         cmap : string or matplotlib.colors.Colormap, optional
 
