@@ -149,11 +149,11 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         for container in self.data:
             nubar = container['nubar']
 
-            nue_flux   = evaluate_flux_map(flux_map_nuebar if nubar>0 else flux_map_nue,
+            nue_flux   = evaluate_flux_map(flux_map_nuebar if nubar<0 else flux_map_nue,
                                            container['true_energy'],
                                            container['true_coszen'])
 
-            numu_flux  = evaluate_flux_map(flux_map_numubar if nubar>0 else flux_map_numu,
+            numu_flux  = evaluate_flux_map(flux_map_numubar if nubar<0 else flux_map_numu,
                                            container['true_energy'],
                                            container['true_coszen'])
 
