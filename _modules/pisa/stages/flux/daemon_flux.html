@@ -226,11 +226,11 @@
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">nubar</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">]</span>
 
-            <span class="n">nue_flux</span>   <span class="o">=</span> <span class="n">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map_nuebar</span> <span class="k">if</span> <span class="n">nubar</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="n">flux_map_nue</span><span class="p">,</span>
+            <span class="n">nue_flux</span>   <span class="o">=</span> <span class="n">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map_nuebar</span> <span class="k">if</span> <span class="n">nubar</span><span class="o">&lt;</span><span class="mi">0</span> <span class="k">else</span> <span class="n">flux_map_nue</span><span class="p">,</span>
                                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">],</span>
                                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
 
-            <span class="n">numu_flux</span>  <span class="o">=</span> <span class="n">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map_numubar</span> <span class="k">if</span> <span class="n">nubar</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="n">flux_map_numu</span><span class="p">,</span>
+            <span class="n">numu_flux</span>  <span class="o">=</span> <span class="n">evaluate_flux_map</span><span class="p">(</span><span class="n">flux_map_numubar</span> <span class="k">if</span> <span class="n">nubar</span><span class="o">&lt;</span><span class="mi">0</span> <span class="k">else</span> <span class="n">flux_map_numu</span><span class="p">,</span>
                                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">],</span>
                                            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
 
