@@ -780,7 +780,7 @@ class Map(object):
             fname = get_valid_filename(to_plot.name)
 
         hist = valid_nominal_values(to_plot.hist)
-    
+
         # Set cmap.
         if cmap is None:
             if symm:
@@ -1585,14 +1585,11 @@ class Map(object):
         total_llh : float or binned_llh if binned=True
 
         """
-        expected_values = reduceToHist(expected_values)
+        exp_hist = reduceToHist(expected_values)
+        result = stats.llh(actual_values=self.hist, expected_values=exp_hist)
 
-        if binned:
-            return stats.llh(actual_values=self.hist,
-                             expected_values=expected_values)
-
-        return np.sum(stats.llh(actual_values=self.hist,
-                                expected_values=expected_values))
+        if binned: return result
+        else:      return np.sum(result)
 
     def mcllh_mean(self, expected_values, binned=False):
         """Calculate the total LMean log-likelihood value between this map and the
@@ -1611,15 +1608,12 @@ class Map(object):
         total_llh : float or binned_llh if binned=True
 
         """
-        expected_values = reduceToHist(expected_values)
+        exp_hist = reduceToHist(expected_values)
+        result = stats.mcllh_mean(actual_values=self.hist,
+                                  expected_values=exp_hist)
 
-        if binned:
-            return stats.mcllh_mean(actual_values=self.hist,
-                             expected_values=expected_values)
-
-        return np.sum(stats.mcllh_mean(actual_values=self.hist,
-                                expected_values=expected_values))
-
+        if binned: return result
+        else:      return np.sum(result)
 
     def mcllh_eff(self, expected_values, binned=False):
         """Calculate the total LEff log-likelihood value between this map and the
@@ -1638,14 +1632,12 @@ class Map(object):
         total_llh : float or binned_llh if binned=True
 
         """
-        expected_values = reduceToHist(expected_values)
+        exp_hist = reduceToHist(expected_values)
+        result = stats.mcllh_eff(actual_values=self.hist,
+                                 expected_values=exp_hist)
 
-        if binned:
-            return stats.mcllh_eff(actual_values=self.hist,
-                             expected_values=expected_values)
-
-        return np.sum(stats.mcllh_eff(actual_values=self.hist,
-                                expected_values=expected_values))
+        if binned: return result
+        else:      return np.sum(result)
 
     def conv_llh(self, expected_values, binned=False):
         """Calculate the total convoluted log-likelihood value between this map
@@ -1664,14 +1656,12 @@ class Map(object):
         total_conv_llh : float or binned_conv_llh if binned=True
 
         """
-        expected_values = reduceToHist(expected_values)
+        exp_hist = reduceToHist(expected_values)
+        result = stats.conv_llh(actual_values=self.hist,
+                                expected_values=exp_hist)
 
-        if binned:
-            return stats.conv_llh(actual_values=self.hist,
-                                  expected_values=expected_values)
-
-        return np.sum(stats.conv_llh(actual_values=self.hist,
-                                     expected_values=expected_values))
+        if binned: return result
+        else:      return np.sum(result)
 
     def barlow_llh(self, expected_values, binned=False):
         """Calculate the total barlow log-likelihood value between this map and
@@ -1694,16 +1684,15 @@ class Map(object):
         # TODO: should this handle reduceToHist / expected_values as other
         # methods do, or should they handle these the way this method does?
         if isinstance(expected_values, (np.ndarray, Map, MapSet)):
-            expected_values = reduceToHist(expected_values)
+            exp_hist = reduceToHist(expected_values)
         elif isinstance(expected_values, Iterable):
-            expected_values = [reduceToHist(x) for x in expected_values]
+            exp_hist = [reduceToHist(x) for x in expected_values]
 
-        if binned:
-            return stats.barlow_llh(actual_values=self.hist,
-                                    expected_values=expected_values)
+        result = stats.barlow_llh(actual_values=self.hist,
+                                  expected_values=exp_hist)
 
-        return np.sum(stats.barlow_llh(actual_values=self.hist,
-                                       expected_values=expected_values))
+        if binned: return result
+        else:      return np.sum(result)
 
     def mod_chi2(self, expected_values, binned=False):
         """Calculate the total modified chi2 value between this map and the map
@@ -1722,14 +1711,12 @@ class Map(object):
         total_mod_chi2 : float or binned_mod_chi2 if binned=True
 
         """
-        expected_values = reduceToHist(expected_values)
+        exp_hist = reduceToHist(expected_values)
+        result = stats.mod_chi2(actual_values=self.hist,
+                                expected_values=exp_hist)
 
-        if binned:
-            return stats.mod_chi2(actual_values=self.hist,
-                                  expected_values=expected_values)
-
-        return np.sum(stats.mod_chi2(actual_values=self.hist,
-                                     expected_values=expected_values))
+        if binned: return result
+        else:      return np.sum(result)
 
     def correct_chi2(self, expected_values, binned=False):
         """Calculate the total correct chi2 value between this map and the map
@@ -1748,14 +1735,12 @@ class Map(object):
         total_correct_chi2 : float or binned_correct_chi2 if binned=True
 
         """
-        expected_values = reduceToHist(expected_values)
+        exp_hist = reduceToHist(expected_values)
+        result = stats.correct_chi2(actual_values=self.hist,
+                                    expected_values=exp_hist)
 
-        if binned:
-            return stats.correct_chi2(actual_values=self.hist,
-                                  expected_values=expected_values)
-
-        return np.sum(stats.correct_chi2(actual_values=self.hist,
-                                     expected_values=expected_values))
+        if binned: return result
+        else:      return np.sum(result)
 
     def chi2(self, expected_values, binned=False):
         """Calculate the total chi-squared value between this map and the map
@@ -1774,16 +1759,14 @@ class Map(object):
         total_chi2 : float or binned_chi2 if binned=True
 
         """
-        expected_values = reduceToHist(expected_values)
+        exp_hist = reduceToHist(expected_values)
+        result = stats.chi2(actual_values=self.hist,
+                            expected_values=exp_hist)
 
-        if binned:
-            return stats.chi2(actual_values=self.hist,
-                              expected_values=expected_values)
+        if binned: return result
+        else:      return np.sum(result)
 
-        return np.sum(stats.chi2(actual_values=self.hist,
-                                 expected_values=expected_values))
-
-    def signed_sqrt_mod_chi2(self, expected_values):
+    def signed_sqrt_mod_chi2(self, expected_values, binned=False):
         """Calculate the binwise (signed) square-root of the modified chi2 value
         between this map and the map described by `expected_values`; self is
         taken to be the "actual values" (or (pseudo)data), and `expected_values`
@@ -1793,16 +1776,19 @@ class Map(object):
         ----------
         expected_values : numpy.ndarray or Map of same dimension as this.
 
+        binned : bool
+
         Returns
         -------
         m_pulls : signed_sqrt_mod_chi2
 
         """
-        expected_values = reduceToHist(expected_values)
+        exp_hist = reduceToHist(expected_values)
+        result = stats.signed_sqrt_mod_chi2(actual_values=self.hist,
+                                            expected_values=exp_hist)
 
-        return stats.signed_sqrt_mod_chi2(actual_values=self.hist,
-                                          expected_values=expected_values)
-
+        if binned: return result
+        else:      return np.sum(result)
 
     def generalized_poisson_llh(self, expected_values=None, empty_bins=None, binned=False):
         '''compute the likelihood of this map's count to originate from
@@ -1821,15 +1807,13 @@ class Map(object):
 
         '''
 
-        llh_per_bin = stats.generalized_poisson_llh(actual_values=self.hist,
-                                                    expected_values=expected_values,
-                                                    empty_bins=empty_bins)
+        llh_per_bin = stats.generalized_poisson_llh(
+            actual_values=self.hist, expected_values=expected_values,
+            empty_bins=empty_bins
+        )
 
-        if binned:
-            return llh_per_bin
-        else:
-            return np.sum(llh_per_bin)
-
+        if binned: return llh_per_bin
+        else:      return np.sum(llh_per_bin)
 
     def metric_total(self, expected_values, metric, metric_kwargs=None):
         ''' Compute the optimization metric on the bins of a Map
@@ -1842,7 +1826,7 @@ class Map(object):
         metric: str (name of the optimization metric)
 
         metric_kwargs: None or Dict (special arguments to pass to
-                                     a special metric - right now just 
+                                     a special metric - right now just
                                      useful for generalized_poisson_llh)
 
         Returns:
@@ -2711,7 +2695,7 @@ class MapSet(object):
 
     def __eq__(self, other):
         return recursiveEquality(self.hashable_state, other.hashable_state)
-    
+
     def __deepcopy__(self, memo):
         return MapSet([deepcopy(m, memo) for m in self],
                       name=self.name, tex=self.tex, hash=self.hash,
@@ -3113,9 +3097,9 @@ class MapSet(object):
         '''Compute the binned optimization metric on all maps of a mapset,
            then sum it up.
 
-           metric_kwargs allows to pass extra arguments to the metric, like 
+           metric_kwargs allows to pass extra arguments to the metric, like
                          the number of empty bins for the generalized poisson llh
-                         (Not yet implemented for Mapset) 
+                         (Not yet implemented for Mapset)
         '''
         return np.sum(list(self.metric_per_map(expected_values, metric).values()))
 
@@ -3141,10 +3125,10 @@ class MapSet(object):
         return MapSet(maps=new_maps, name=self.name, tex=self.tex, hash=None,
                       collate_by_name=self.collate_by_name)
 
-    def llh_per_map(self, expected_values):  
+    def llh_per_map(self, expected_values):
         return self.apply_to_maps('llh', expected_values)
 
-    def llh_total(self, expected_values):   
+    def llh_total(self, expected_values):
         return np.sum(self.llh(expected_values))
 
     def set_poisson_errors(self):
@@ -3215,7 +3199,7 @@ def test_Map():
     for m in [m1_seed0, m1_seed1, m1_seed0_reprod]:
         # The full comparison has to be ON for all maps, otherwise we would only
         # compare the hash value, which doesn't change when maps are fluctuated.
-        # Because the value of full_comparison is included in the comparison, two 
+        # Because the value of full_comparison is included in the comparison, two
         # maps will not be considered equal if only one of them has
         # `full_comparison=True`.
         # TODO: How does this make sense?
@@ -3226,10 +3210,10 @@ def test_Map():
     logging.debug(m1_seed1)
     logging.debug("Fluctuated map with seed 0, reproduced:")
     logging.debug(m1_seed0_reprod)
-    
+
     assert m1_seed0 == m1_seed0_reprod
     assert not (m1_seed0 == m1_seed1)
-    
+
     # Test sum()
     m1 = Map(
         name='x',
@@ -3401,7 +3385,7 @@ def test_MapSet():
     m2 = Map(name='twos', hist=2*np.ones(binning.shape), binning=binning,
              hash='xyz')
     ms01 = MapSet([m1, m2])
-    
+
     # Test fluctuate
     _ = ms01.fluctuate(method="poisson")  # just ensure that None random_state is handled
     ms01_seed0 = ms01.fluctuate(method="poisson", random_state=0)
@@ -3416,7 +3400,7 @@ def test_MapSet():
 
     assert ms01_seed0 == ms01_seed0_reprod
     assert not (ms01_seed0 == ms01_seed1)
-    
+
     # Test rebin
     _ = ms01.rebin(m1.binning.downsample(3))
     ms01_rebinned = ms01.rebin(m1.binning.downsample(6, 3))
@@ -3579,7 +3563,7 @@ def test_MapSet():
     ms01 += 1.
     # make sure that the copy is indeed decoupled from the original
     assert not (ms_copy == ms01)
-    
+
     # Test reorder_dimensions (this just tests that it succeeds on the map set;
     # correctness of the reordering is tested in the unit test for Map)
     for ms in [ms01, ms02, ms1, ms2, ms3, ms4]:
