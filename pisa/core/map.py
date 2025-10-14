@@ -1681,13 +1681,7 @@ class Map(object):
         total_barlow_llh : float or binned_barlow_llh if binned=True
 
         """
-        # TODO: should this handle reduceToHist / expected_values as other
-        # methods do, or should they handle these the way this method does?
-        if isinstance(expected_values, (np.ndarray, Map, MapSet)):
-            exp_hist = reduceToHist(expected_values)
-        elif isinstance(expected_values, Iterable):
-            exp_hist = [reduceToHist(x) for x in expected_values]
-
+        exp_hist = reduceToHist(expected_values)
         result = stats.barlow_llh(actual_values=self.hist,
                                   expected_values=exp_hist)
 
