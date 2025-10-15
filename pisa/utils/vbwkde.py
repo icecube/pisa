@@ -636,8 +636,8 @@ def test_fbwkde():
         for _ in range(3):
             enuerr = np.random.noncentral_chisquare(df=3, nonc=1, size=n_samp)
             t0 = time()
-           fbwkde(data=enuerr, n_dct=n_dct, evaluate_at=x)
-           times.append(time() - t0)
+            fbwkde(data=enuerr, n_dct=n_dct, evaluate_at=x)
+            times.append(time() - t0)
         tprofile.debug(
             'median time to run fbwkde, %d samples %d dct, eval. at %d points: %f'
             ' ms', n_samp, n_dct, n_eval, np.median(times)*1000
