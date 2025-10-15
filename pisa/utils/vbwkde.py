@@ -43,7 +43,7 @@ from pisa.utils.log import logging, set_verbosity, tprofile
 
 
 __all__ = ['OPT_TYPE', 'FIXED_POINT_IMPL',
-           'fbwkde', 'vbwkde', 'isj_bandwidth', 'test_fbwkde', 'test_vbwkde']
+           'fbwkde', 'vbwkde', 'isj_bandwidth'] #, 'test_fbwkde', 'test_vbwkde']
 
 __author__ = 'Z. Botev, J.L. Lanfranchi'
 
