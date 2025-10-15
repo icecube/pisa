@@ -1568,221 +1568,89 @@ class Map(object):
 
         return MapSet(maps=maps, name=mapset_name, tex=mapset_tex)
 
+    def metric(self, expected_values, metric, binned=False):
+        """Compute the optimization metric value between this map and the map
+        described by `expected_values`. self is taken to be the "actual values"
+        or (pseudo)data, and `expected_values` are the expectation values for
+        each bin.
+
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimensions as this
+
+        metric : str (name of the optimization metric)
+
+        binned : bool
+
+        Returns
+        -------
+        metric_total : float or binned metric if binned=True
+        """
+        if metric not in stats.ALL_METRICS:
+            raise ValueError("`metric` \"%s\" not recognized; use one of %s."
+                             % (metric, stats.ALL_METRICS))
+
+        exp_hist = reduceToHist(expected_values)
+        result = getattr(stats, metric)(actual_values=self.hist,
+                                        expected_values=exp_hist)
+
+        if binned: return result
+        else:      return np.sum(result)
+
     def llh(self, expected_values, binned=False):
         """Calculate the total log-likelihood value between this map and the
-        map described by `expected_values`; self is taken to be the "actual
-        values" (or (pseudo)data), and `expected_values` are the expectation
-        values for each bin.
-
-        Parameters
-        ----------
-        expected_values : numpy.ndarray or Map of same dimension as this
-
-        binned : bool
-
-        Returns
-        -------
-        total_llh : float or binned_llh if binned=True
-
+        map described by `expected_values`. See metric() for details.
         """
-        exp_hist = reduceToHist(expected_values)
-        result = stats.llh(actual_values=self.hist, expected_values=exp_hist)
-
-        if binned: return result
-        else:      return np.sum(result)
+        return self.metric(expected_values, "llh", binned)
 
     def mcllh_mean(self, expected_values, binned=False):
-        """Calculate the total LMean log-likelihood value between this map and the
-        map described by `expected_values`; self is taken to be the "actual
-        values" (or (pseudo)data), and `expected_values` are the expectation
-        values for each bin.
-
-        Parameters
-        ----------
-        expected_values : numpy.ndarray or Map of same dimension as this
-
-        binned : bool
-
-        Returns
-        -------
-        total_llh : float or binned_llh if binned=True
-
+        """Calculate the total LMean log-likelihood value between this map and
+        the map described by `expected_values`. See metric() for details.
         """
-        exp_hist = reduceToHist(expected_values)
-        result = stats.mcllh_mean(actual_values=self.hist,
-                                  expected_values=exp_hist)
-
-        if binned: return result
-        else:      return np.sum(result)
+        return self.metric(expected_values, "mcllh_mean", binned)
 
     def mcllh_eff(self, expected_values, binned=False):
-        """Calculate the total LEff log-likelihood value between this map and the
-        map described by `expected_values`; self is taken to be the "actual
-        values" (or (pseudo)data), and `expected_values` are the expectation
-        values for each bin.
-
-        Parameters
-        ----------
-        expected_values : numpy.ndarray or Map of same dimension as this
-
-        binned : bool
-
-        Returns
-        -------
-        total_llh : float or binned_llh if binned=True
-
+        """Calculate the total LEff log-likelihood value between this map and
+        the map described by `expected_values`. See metric() for details.
         """
-        exp_hist = reduceToHist(expected_values)
-        result = stats.mcllh_eff(actual_values=self.hist,
-                                 expected_values=exp_hist)
-
-        if binned: return result
-        else:      return np.sum(result)
+        return self.metric(expected_values, "mcllh_eff", binned)
 
     def conv_llh(self, expected_values, binned=False):
         """Calculate the total convoluted log-likelihood value between this map
-        and the map described by `expected_values`; self is taken to be the
-        "actual values" (or (pseudo)data), and `expected_values` are the
-        expectation values for each bin.
-
-        Parameters
-        ----------
-        expected_values : numpy.ndarray or Map of same dimension as this
-
-        binned : bool
-
-        Returns
-        -------
-        total_conv_llh : float or binned_conv_llh if binned=True
-
+        and the map described by `expected_values`. See metric() for details.
         """
-        exp_hist = reduceToHist(expected_values)
-        result = stats.conv_llh(actual_values=self.hist,
-                                expected_values=exp_hist)
-
-        if binned: return result
-        else:      return np.sum(result)
+        return self.metric(expected_values, "conv_llh", binned)
 
     def barlow_llh(self, expected_values, binned=False):
         """Calculate the total barlow log-likelihood value between this map and
-        the map described by `expected_values`; self is taken to be the "actual
-        values" (or (pseudo)data), and `expected_values` are the expectation
-        values for each bin. I assumes at the moment some things that are not
-        true, namely that the weights are uniform
-
-        Parameters
-        ----------
-        expected_values : numpy.ndarray or Map of same dimension as this
-
-        binned : bool
-
-        Returns
-        -------
-        total_barlow_llh : float or binned_barlow_llh if binned=True
-
+        the map described by `expected_values`. See metric() for details.
         """
-        exp_hist = reduceToHist(expected_values)
-        result = stats.barlow_llh(actual_values=self.hist,
-                                  expected_values=exp_hist)
-
-        if binned: return result
-        else:      return np.sum(result)
+        return self.metric(expected_values, "barlow_llh", binned)
 
     def mod_chi2(self, expected_values, binned=False):
         """Calculate the total modified chi2 value between this map and the map
-        described by `expected_values`; self is taken to be the "actual values"
-        (or (pseudo)data), and `expected_values` are the expectation values for
-        each bin.
-
-        Parameters
-        ----------
-        expected_values : numpy.ndarray or Map of same dimension as this.
-
-        binned : bool
-
-        Returns
-        -------
-        total_mod_chi2 : float or binned_mod_chi2 if binned=True
-
+        described by `expected_values`. See metric() for details.
         """
-        exp_hist = reduceToHist(expected_values)
-        result = stats.mod_chi2(actual_values=self.hist,
-                                expected_values=exp_hist)
-
-        if binned: return result
-        else:      return np.sum(result)
+        return self.metric(expected_values, "mod_chi2", binned)
 
     def correct_chi2(self, expected_values, binned=False):
         """Calculate the total correct chi2 value between this map and the map
-        described by `expected_values`; self is taken to be the "actual values"
-        (or (pseudo)data), and `expected_values` are the expectation values for
-        each bin.
-
-        Parameters
-        ----------
-        expected_values : numpy.ndarray or Map of same dimension as this.
-
-        binned : bool
-
-        Returns
-        -------
-        total_correct_chi2 : float or binned_correct_chi2 if binned=True
-
+        described by `expected_values`. See metric() for details.
         """
-        exp_hist = reduceToHist(expected_values)
-        result = stats.correct_chi2(actual_values=self.hist,
-                                    expected_values=exp_hist)
-
-        if binned: return result
-        else:      return np.sum(result)
+        return self.metric(expected_values, "correct_chi2", binned)
 
     def chi2(self, expected_values, binned=False):
         """Calculate the total chi-squared value between this map and the map
-        described by `expected_values`; self is taken to be the "actual values"
-        (or (pseudo)data), and `expected_values` are the expectation values for
-        each bin.
-
-        Parameters
-        ----------
-        expected_values : numpy.ndarray or Map of same dimension as this
-
-        binned : bool
-
-        Returns
-        -------
-        total_chi2 : float or binned_chi2 if binned=True
-
+        described by `expected_values`. See metric() for details.
         """
-        exp_hist = reduceToHist(expected_values)
-        result = stats.chi2(actual_values=self.hist,
-                            expected_values=exp_hist)
-
-        if binned: return result
-        else:      return np.sum(result)
+        return self.metric(expected_values, "chi2", binned)
 
     def signed_sqrt_mod_chi2(self, expected_values, binned=False):
         """Calculate the binwise (signed) square-root of the modified chi2 value
-        between this map and the map described by `expected_values`; self is
-        taken to be the "actual values" (or (pseudo)data), and `expected_values`
-        are the expectation values for each bin.
-
-        Parameters
-        ----------
-        expected_values : numpy.ndarray or Map of same dimension as this.
-
-        binned : bool
-
-        Returns
-        -------
-        m_pulls : signed_sqrt_mod_chi2
-
+        between this map and the map described by `expected_values`. See
+        metric() for details.
         """
-        exp_hist = reduceToHist(expected_values)
-        result = stats.signed_sqrt_mod_chi2(actual_values=self.hist,
-                                            expected_values=exp_hist)
-
-        if binned: return result
-        else:      return np.sum(result)
+        return self.metric(expected_values, "signed_sqrt_mod_chi2", binned)
 
     def generalized_poisson_llh(self, expected_values=None, empty_bins=None, binned=False):
         '''compute the likelihood of this map's count to originate from
@@ -1809,33 +1677,31 @@ class Map(object):
         if binned: return llh_per_bin
         else:      return np.sum(llh_per_bin)
 
-    def metric_total(self, expected_values, metric, metric_kwargs=None):
-        ''' Compute the optimization metric on the bins of a Map
+    def metric_total(self, expected_values, metric, metric_kwargs={}):
+        """Compute the optimization metric on the bins between this map and the
+        map described by `expected_values`. self is taken to be the "actual
+        values" or (pseudo)data, and `expected_Values` are the expectation
+        values for each bin.
 
-        Inputs
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimensions as this
+
+        metric : str (name of the optimization metric)
+
+        metric_kwargs: Dict (special arguments to pass to a special metric -
+                             currently only useful for generalized_poisson_llh)
+
+        Returns
         -------
-
-        expected_values: Map (the data/pseudo-data binned counts)
-
-        metric: str (name of the optimization metric)
-
-        metric_kwargs: None or Dict (special arguments to pass to
-                                     a special metric - right now just
-                                     useful for generalized_poisson_llh)
-
-        Returns:
-        ------
-        float (sum of the metric over all bins of expected_values)
-
-        '''
-        # TODO: should this use reduceToHist as in chi2 and llh above?
-        if metric_kwargs is None:
-            metric_kwargs={}
-        if metric in stats.ALL_METRICS:
-            return getattr(self, metric)(expected_values, **metric_kwargs)
-        else:
-            raise ValueError('`metric` "%s" not recognized; use one of %s.'
+        metric_total : float (sum of the metric over all bins)
+        """
+        if metric not in stats.ALL_METRICS:
+            raise ValueError("`metric` \"%s\" not recognized; use one of %s."
                              % (metric, stats.ALL_METRICS))
+
+        exp_hist = reduceToHist(expected_values)
+        return getattr(self, metric)(exp_hist, **metric_kwargs)
 
     def __setitem__(self, idx, val):
         return setitem(self.hist, idx, val)
