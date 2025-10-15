@@ -2992,7 +2992,7 @@ class MapSet(object):
         return self.apply_to_maps('llh', expected_values)
 
     def llh_total(self, expected_values):
-        return np.sum(self.llh(expected_values))
+        return np.sum(self.llh_per_map(expected_values))
 
     def set_poisson_errors(self):
         return self.apply_to_maps('set_poisson_errors')
