@@ -1595,10 +1595,12 @@ class Map(object):
                                         expected_values=exp_hist)
 
         # All metrics in utils.stats already check and return errors for nan
-        #     values, so any nan values that remain here are from incorrect
-        #     handling of bin masks bin masking.
-        if binned: return result
-        else:      return np.nansum(result)
+        # values, so any nan values that remain here are from incorrect handling
+        # of bin masks bin masking.
+        if binned:
+            return result
+        else:
+            return np.nansum(result)
 
     def llh(self, expected_values, binned=False):
         """Calculate the total log-likelihood value between this map and the
@@ -1677,8 +1679,10 @@ class Map(object):
             empty_bins=empty_bins
         )
 
-        if binned: return llh_per_bin
-        else:      return np.sum(llh_per_bin)
+        if binned:
+            return llh_per_bin
+        else:
+            return np.sum(llh_per_bin)
 
     def metric_total(self, expected_values, metric, metric_kwargs={}):
         """Compute the optimization metric on the bins between this map and the
