@@ -40,7 +40,8 @@ __license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
 """A small positive number with which to replace numbers smaller than it"""
 
-CHI2_METRICS = ['chi2', 'mod_chi2', 'correct_chi2', 'weighted_chi2']
+CHI2_METRICS = ['chi2', 'mod_chi2', 'correct_chi2', 'weighted_chi2',
+'signed_sqrt_mod_chi2']
 """Metrics defined that result in measures of chi squared"""
 
 LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean',
@@ -93,7 +94,6 @@ def maperror_logmsg(m):
         msg += '    num > 0 : %s\n' %np.sum(m > 0)
         msg += '    num nan : %s\n' %np.sum(np.isnan(m))
     return msg
-
 
 def chi2(actual_values, expected_values):
     """
@@ -165,7 +165,6 @@ def chi2(actual_values, expected_values):
     chi2_val = np.square(delta) / expected_values
     assert np.all(chi2_val >= 0), str(chi2_val[chi2_val < 0])
     return chi2_val
-
 
 def llh(actual_values, expected_values):
     """
@@ -294,7 +293,6 @@ def mcllh_mean(actual_values, expected_values):
 
     return llh_val
 
-
 def mcllh_eff(actual_values, expected_values):
     """Compute the log-likelihood (llh) based on eq. 3.16 - https://doi.org/10.1007/JHEP06(2019)030
     accounting for finite MC statistics.
@@ -351,7 +349,6 @@ def mcllh_eff(actual_values, expected_values):
     return llh_val
 
 
-
 def log_poisson(k, l):
     r"""Calculate the log of a poisson pdf
 
@@ -370,7 +367,6 @@ def log_poisson(k, l):
 
     """
     return k*np.log(l) -l - gammaln(k+1)
-
 
 def log_smear(x, sigma):
     r"""Calculate the log of a normal pdf
@@ -391,7 +387,6 @@ def log_smear(x, sigma):
     return (
         -np.log(sigma) - 0.5*np.log(2*np.pi) - x**2 / (2*sigma**2)
     )
-
 
 def conv_poisson(k, l, s, nsigma=3, steps=50):
     r"""Poisson pdf
@@ -443,7 +438,6 @@ def conv_poisson(k, l, s, nsigma=3, steps=50):
     norm = np.sum(np.exp(conv_y))
     return conv.sum()/norm
 
-
 def norm_conv_poisson(k, l, s, nsigma=3, steps=50):
     """Convoluted poisson likelihood normalized so that the value at k=l
     (asimov) does not change
@@ -472,7 +466,6 @@ def norm_conv_poisson(k, l, s, nsigma=3, steps=50):
     n1 = np.exp(log_poisson(l, l))
     n2 = conv_poisson(l, l, s, nsigma=nsigma, steps=steps)
     return cp*n1/n2
-
 
 def conv_llh(actual_values, expected_values):
     """
@@ -797,7 +790,6 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
 
     return llh_per_bin
 
-
 def approximate_poisson_normal(data_count, alphas=None, betas=None, use_c=False):
     '''
     Compute the likelihood of a marginalized poisson-gamma
@@ -851,8 +843,6 @@ def approximate_poisson_normal(data_count, alphas=None, betas=None, use_c=False)
 
     LH = max(SMALL_POS,LH)
     return np.log(LH)
-
-
 
 def approximate_poisson_normal_python(lamb, k, A, B):
 
