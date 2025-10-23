@@ -4,6 +4,7 @@ Stage for resolution improvement studies
 """
 
 from __future__ import absolute_import, print_function, division
+import numpy as np
 
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
@@ -28,7 +29,8 @@ class resolutions(Stage):  # pylint: disable=invalid-name
             coszen_improvement : quantity (dimensionless)
                 scale the reco error down by this fraction
             pid_improvement : quantity (dimensionless)
-                applies a shift to the classification parameter
+                applies a shift to the classification parameter [if relative_pid=False]
+                scales the pid error down by this fraction [if relative_pid=True]
 
         Expected container keys are .. ::
 
@@ -41,8 +43,10 @@ class resolutions(Stage):  # pylint: disable=invalid-name
     """
     def __init__(
         self,
+        relative_pid=False,
         **std_kwargs
     ):
+
         expected_params = (
             'energy_improvement',
             'coszen_improvement',
@@ -64,6 +68,7 @@ class resolutions(Stage):  # pylint: disable=invalid-name
             **std_kwargs,
         )
 
+        self.relative_pid = relative_pid
 
     def setup_function(self):
 
@@ -76,14 +81,20 @@ class resolutions(Stage):  # pylint: disable=invalid-name
 
             logging.info('Changing coszen resolutions')
             container['reco_coszen'] += (container['true_coszen'] - container['reco_coszen']) * self.params.coszen_improvement.m_as('dimensionless')
+            container['reco_coszen'] = np.clip(container['reco_coszen'], -1, 1)
             container.mark_changed('reco_coszen')
-            # TODO: make sure coszen is within -1/1 ?
 
             logging.info('Changing PID resolutions')
             if container.name in ['numu_cc', 'numubar_cc']:
-                container['pid'] += self.params.pid_improvement.m_as('dimensionless')
+                if self.relative_pid:
+                    container['pid'] += (1 - container['pid']) * self.params.pid_improvement.m_as('dimensionless')
+                else:
+                    container['pid'] += self.params.pid_improvement.m_as('dimensionless')
             else:
-                container['pid'] -= self.params.pid_improvement.m_as('dimensionless')
+                if self.relative_pid:
+                    container['pid'] += (0 - container['pid']) * self.params.pid_improvement.m_as('dimensionless')
+                else:
+                    container['pid'] -= self.params.pid_improvement.m_as('dimensionless')
             container.mark_changed('pid')
 
 

@@ -12,8 +12,7 @@ Directories are PISA stages, and within each directory can be found the services
 * `flux/` - All stages relating to the atmospheric neutrino flux.
 * `likelihood/` - A stage that pre-computes some quantities needed for the "generalized likelihood"
 * `osc/` - All stages relating to neutrino oscillations. 
-* `pid/` - All stages relating to particle identification.
-* `reco/` - All stages relating to applying reconstruction kernels.
+* `reco/` - All stages relating to applying reconstruction kernels (including pid).
 * `utils/` - All "utility" stages (not representing physics effects).
 * `xsec/` - All stages relating to cross sections.
 * `GLOBALS.md` - File that describes globally available variables within PISA together with the services that implement them.
