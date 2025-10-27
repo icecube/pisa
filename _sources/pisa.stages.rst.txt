@@ -15,7 +15,6 @@ Subpackages
    pisa.stages.flux
    pisa.stages.likelihood
    pisa.stages.osc
-   pisa.stages.pid
    pisa.stages.reco
    pisa.stages.utils
    pisa.stages.xsec

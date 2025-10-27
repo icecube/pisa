@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="pisa.stages.utils package" href="pisa.stages.utils.html" />
-    <link rel="prev" title="pisa.stages.pid package" href="pisa.stages.pid.html" /> 
+    <link rel="prev" title="pisa.stages.osc.prob3numba package" href="pisa.stages.osc.prob3numba.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -103,7 +103,7 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.reco.resolutions.resolutions">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.resolutions.</span></span><span class="sig-name descname"><span class="pre">resolutions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/resolutions.html#resolutions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.resolutions.resolutions" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.resolutions.</span></span><span class="sig-name descname"><span class="pre">resolutions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">relative_pid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/resolutions.html#resolutions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.resolutions.resolutions" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>stage to change the reconstructed information by a given amount
 This can be used to esimate the impact of improved recosntruction
@@ -116,7 +116,8 @@ resolutions for instance</p>
 <span class="n">coszen_improvement</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
     <span class="n">scale</span> <span class="n">the</span> <span class="n">reco</span> <span class="n">error</span> <span class="n">down</span> <span class="n">by</span> <span class="n">this</span> <span class="n">fraction</span>
 <span class="n">pid_improvement</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
-    <span class="n">applies</span> <span class="n">a</span> <span class="n">shift</span> <span class="n">to</span> <span class="n">the</span> <span class="n">classification</span> <span class="n">parameter</span>
+    <span class="n">applies</span> <span class="n">a</span> <span class="n">shift</span> <span class="n">to</span> <span class="n">the</span> <span class="n">classification</span> <span class="n">parameter</span> <span class="p">[</span><span class="k">if</span> <span class="n">relative_pid</span><span class="o">=</span><span class="kc">False</span><span class="p">]</span>
+    <span class="n">scales</span> <span class="n">the</span> <span class="n">pid</span> <span class="n">error</span> <span class="n">down</span> <span class="n">by</span> <span class="n">this</span> <span class="n">fraction</span> <span class="p">[</span><span class="k">if</span> <span class="n">relative_pid</span><span class="o">=</span><span class="kc">True</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Expected container keys are ..</p>
@@ -396,7 +397,7 @@ or stochastics, but either way not reproducing this here.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pisa.stages.pid.html" class="btn btn-neutral float-left" title="pisa.stages.pid package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pisa.stages.osc.prob3numba.html" class="btn btn-neutral float-left" title="pisa.stages.osc.prob3numba package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="pisa.stages.utils.html" class="btn btn-neutral float-right" title="pisa.stages.utils package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
