@@ -29,6 +29,9 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
     Parameters
     ----------
 
+    calibration_file: str
+        Path to the calibration file to be used
+    
     params: ParamSet
         Must have parameters: .. ::
 
@@ -67,9 +70,13 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
 
     def __init__(
         self,
+        calibration_file = None,
         **std_kwargs,
     ):
 
+        self.cal_file = calibration_file
+        print('Calibration file', self.cal_file)        
+        
         # first have to check daemonflux package version is >=0.8.0
         # (have to do this to ensure chi2 prior penalty is calculated correctly)
         if Version(daemon_version) < Version("0.8.0"):
@@ -77,7 +84,8 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             raise Exception('detected daemonflux version < 0.8.0')
 
         # create daemonflux Flux object
-        self.flux_obj = Flux(location='IceCube', use_calibration=True)
+        self.flux_obj = Flux(location='IceCube', use_calibration=True,
+                             cal_file = self.cal_file)
 
         # get parameter names from daemonflux
         self.daemon_names = self.flux_obj.params.known_parameters
@@ -198,7 +206,7 @@ def init_test(**param_kwargs):
     """Initialisation example"""
     param_set = []
     random_state = get_random_state(random_state=666)
-    for i, pname in enumerate(Flux(location='IceCube', use_calibration=True).params.known_parameters):
+    for i, pname in enumerate(Flux(location='IceCube', use_calibration=True, cal_file = self.cal_file).params.known_parameters):
         param = Param(
             name='daemon_' + pname.replace('pi+','pi').replace('pi-','antipi').replace('K+','K').replace('K-','antiK'),
             value=2 * random_state.rand() - 1,
