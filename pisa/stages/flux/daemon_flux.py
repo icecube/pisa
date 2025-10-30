@@ -206,7 +206,7 @@ def init_test(**param_kwargs):
     """Initialisation example"""
     param_set = []
     random_state = get_random_state(random_state=666)
-    for i, pname in enumerate(Flux(location='IceCube', use_calibration=True, cal_file = self.cal_file).params.known_parameters):
+    for i, pname in enumerate(Flux(location='IceCube', use_calibration=True).params.known_parameters):
         param = Param(
             name='daemon_' + pname.replace('pi+','pi').replace('pi-','antipi').replace('K+','K').replace('K-','antiK'),
             value=2 * random_state.rand() - 1,
