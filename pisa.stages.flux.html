@@ -266,12 +266,14 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 <p>Maria Liubarska, J.P. Yanez 2023</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.flux.daemon_flux.daemon_flux">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">daemon_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#daemon_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.daemon_flux" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">daemon_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calibration_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#daemon_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.daemon_flux" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>DAEMON flux stage</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters: ..</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>calibration_file</strong> (<em>str</em>) – Path to the calibration file to be used</p></li>
+<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters: ..</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">daemon_K_158G</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
 <span class="n">daemon_K_2P</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
 <span class="n">daemon_K_31G</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
@@ -304,7 +306,8 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 <span class="s2">&quot;nubar&quot;</span>
 </pre></div>
 </div>
-</p>
+</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
