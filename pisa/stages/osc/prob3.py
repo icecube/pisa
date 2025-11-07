@@ -23,15 +23,52 @@ from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
 from pisa.utils.resources import find_resource
 
-__all__ = ['prob3', 'init_test']
+__all__ = ['prob3', 'init_test',
+           'LRI_TYPES', 'NSI_TYPES', 'TOMOGRAPHY_TYPES']
+
+LRI_TYPES = ['emu-symmetry', 'etau-symmetry', 'mutau-symmetry']
+
+NSI_TYPES = ['standard', 'vacuum-like']
+
+TOMOGRAPHY_TYPES = ['mass_of_earth', 'mass_of_core_w_constrain', 'mass_of_core_wo_constrain']
 
 
 class prob3(Stage):  # pylint: disable=invalid-name
     """
-    Prob3-like oscillation PISA Pi class
+    Extended Prob3-like oscillations class
 
     Parameters
     ----------
+
+    include_nlo : bool (default: `False`)
+        Whether to include a +2.0% NLO correction to the SM CC
+        matter potential, as per
+        https://inspirehep.net/literature/2914951.
+
+    nsi_type : str or `None` (default: `None`)
+        Choice of propagation/NC NSI parameterization.
+        If string, either 'standard' or 'vacuum-like'.
+
+    reparam_mix_matrix : bool (default: `False`)
+        Whether to rephase the parameterization of the
+        leptonic mixing matrix from its PDG default by
+        diag(e^(i*delta_CP), 1, 1). This has no impact on
+        oscillation probabilities in the *absence* of NSI.
+        TODO: motivation
+
+    neutrino_decay : bool (default: `False`)
+        Whether to invoke neutrino decay with oscillations.
+        TODO: details
+
+    tomography_type : str or `None` (default: `None`)
+        If string, either 'mass_of_earth', 'mass_of_core_w_constrain',
+        or 'mass_of_core_wo_constrain'.
+
+    lri_type : str or `None` (default: `None`)
+        Choice of model/parameterisation of long-range interactions.
+        If string, either 'emu-symmetry', 'etau-symmetry',
+        or 'mutau-symmetry'.
+
     params
         Expected params .. ::
 
@@ -88,6 +125,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
 
     def __init__(
       self,
+      include_nlo=False,
       nsi_type=None,
       reparam_mix_matrix=False,
       neutrino_decay=False,
@@ -120,10 +158,13 @@ class prob3(Stage):  # pylint: disable=invalid-name
             'weights'
         )
 
+        self.include_nlo = include_nlo
+        """Whether to include a +2.0% NLO correction to the
+        SM CC matter potential."""
 
         # Check whether and if so with which NSI parameters we are to work.
         if nsi_type is not None:
-            choices = ['standard', 'vacuum-like']
+            choices = NSI_TYPES
             nsi_type = nsi_type.strip().lower()
             if not nsi_type in choices:
                 raise ValueError(
@@ -132,7 +173,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
                 )
         self.nsi_type = nsi_type
         """Type of NSI to assume."""
-        self.tomography_type = tomography_type
+
         self.reparam_mix_matrix = reparam_mix_matrix
         """Use a PMNS mixing matrix parameterisation that differs from
            the standard one by an overall phase matrix
@@ -178,7 +219,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
             decay_params = ()
 
         if lri_type is not None:
-            choices = ['emu-symmetry', 'etau-symmetry', 'mutau-symmetry']
+            choices = LRI_TYPES
             lri_type = lri_type.strip().lower()
             if not lri_type in choices:
                 raise ValueError(
@@ -193,17 +234,26 @@ class prob3(Stage):  # pylint: disable=invalid-name
             lri_params = ('v_lri',)
 
 
-        if self.tomography_type is None:
+        if tomography_type is None:
             tomography_params = ()
-        elif self.tomography_type == 'mass_of_earth':
-            tomography_params = ('density_scale',)
-        elif self.tomography_type == 'mass_of_core_w_constrain':
-            tomography_params = ('core_density_scale',)
-        elif self.tomography_type == 'mass_of_core_wo_constrain':
-            tomography_params = ('core_density_scale',
-                                 'innermantle_density_scale',
-                                 'middlemantle_density_scale'
-            )
+        else:
+            tomography_type = tomography_type.strip().lower()
+            choices = TOMOGRAPHY_TYPES
+            if not tomography_type in choices:
+                raise ValueError(
+                    'Chosen tomography type "%s" not available! Choose one of %s.'
+                    % (tomography_type, choices)
+                )
+            if tomography_type == 'mass_of_earth':
+                tomography_params = ('density_scale',)
+            elif tomography_type == 'mass_of_core_w_constrain':
+                tomography_params = ('core_density_scale',)
+            elif tomography_type == 'mass_of_core_wo_constrain':
+                tomography_params = ('core_density_scale',
+                                     'innermantle_density_scale',
+                                     'middlemantle_density_scale'
+                )
+        self.tomography_type = tomography_type
 
 
         expected_params = (expected_params + nsi_params + decay_params
@@ -215,7 +265,6 @@ class prob3(Stage):  # pylint: disable=invalid-name
             expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
-
 
         self.layers = None
         self.osc_params = None
@@ -231,9 +280,9 @@ class prob3(Stage):  # pylint: disable=invalid-name
         # (NSI), which is why we can simply treat it as a constant here.
         self.gen_mat_pot_matrix_complex = None
         """Interaction Hamiltonian without the factor sqrt(2)*G_F*N_e."""
-        self.YeI = None
-        self.YeO = None
-        self.YeM = None
+        self.YeI = None # pylint: disable=invalid-name
+        self.YeO = None # pylint: disable=invalid-name
+        self.YeM = None # pylint: disable=invalid-name
 
     def setup_function(self):
 
@@ -241,7 +290,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
         self.osc_params = OscParams()
         if self.reparam_mix_matrix:
             logging.debug(
-                'Working with reparameterizated version of mixing matrix.'
+                'Working with reparameterized version of mixing matrix.'
             )
         else:
             logging.debug(
@@ -265,13 +314,13 @@ class prob3(Stage):  # pylint: disable=invalid-name
 
 
         if self.tomography_type == "mass_of_earth":
-            logging.debug('Working with a single density scaling factor.')
+            logging.debug('Working with tomography with a single density scaling factor.')
             self.tomography_params = Mass_scaling()
         elif self.tomography_type == "mass_of_core_w_constrain":
-            logging.debug('Working with different scaling for different layers.')
+            logging.debug('Working with tomography with different scaling for different layers.')
             self.tomography_params = Core_scaling_w_constrain()
         elif self.tomography_type == "mass_of_core_wo_constrain":
-            logging.debug('Working without any external constraints')
+            logging.debug('Working with tomography without any external constraints.')
             self.tomography_params = Core_scaling_wo_constrain()
 
 
@@ -326,10 +375,8 @@ class prob3(Stage):  # pylint: disable=invalid-name
         else:
             mix_matrix = self.osc_params.mix_matrix_complex
 
-        logging.debug('matter potential:\n%s'
-                          % self.gen_mat_pot_matrix_complex)
-        logging.debug('decay matrix:\n%s'
-                          % self.decay_matix)
+        logging.debug('matter potential:\n%s', self.gen_mat_pot_matrix_complex)
+        logging.debug('decay matrix:\n%s', self.decay_matix)
 
         propagate_array(self.osc_params.dm_matrix, # pylint: disable = unexpected-keyword-arg, no-value-for-parameter
                         mix_matrix,
@@ -430,24 +477,29 @@ class prob3(Stage):  # pylint: disable=invalid-name
 
         # now we can proceed to calculate the generalised matter potential matrix
         std_mat_pot_matrix = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3, 3), dtype=FTYPE)
-        std_mat_pot_matrix[0, 0] += 1.0
+        if not self.include_nlo:
+            logging.debug("Proceeding with *tree-level* standard CC matter potential....")
+            std_mat_pot_matrix[0, 0] += 1.0
+        else:
+            logging.debug("Proceeding with *NLO* standard CC matter potential....")
+            std_mat_pot_matrix[0, 0] += 1.020
 
         # add effective nsi coupling matrix
         if self.nsi_type is not None:
-            logging.debug('NSI matrix:\n%s' % self.nsi_params.eps_matrix)
+            logging.debug('NSI matrix:\n%s', self.nsi_params.eps_matrix)
             self.gen_mat_pot_matrix_complex = (
                 std_mat_pot_matrix + self.nsi_params.eps_matrix
             )
-            logging.debug('Using generalised matter potential:\n%s'
-                          % self.gen_mat_pot_matrix_complex)
+            logging.debug('Using generalised matter potential:\n%s',
+                          self.gen_mat_pot_matrix_complex)
         else:
             self.gen_mat_pot_matrix_complex = std_mat_pot_matrix
-            logging.debug('Using standard matter potential:\n%s'
-                          % self.gen_mat_pot_matrix_complex)
+            logging.debug('Using standard matter potential:\n%s',
+                          self.gen_mat_pot_matrix_complex)
 
         if self.neutrino_decay:
             self.decay_matix = self.decay_params.decay_matrix
-            logging.debug('Decay matrix:\n%s' % self.decay_params.decay_matrix)
+            logging.debug('Decay matrix:\n%s', self.decay_params.decay_matrix)
         else :
             self.decay_matix = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3, 3), dtype=FTYPE)
 
