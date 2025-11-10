@@ -3347,24 +3347,7 @@ equality of this map with another. See <cite>__eq__</cite> method.</p></li>
 <dt class="sig sig-object py" id="pisa.core.map.Map.barlow_llh">
 <span class="sig-name descname"><span class="pre">barlow_llh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.barlow_llh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.barlow_llh" title="Link to this definition"></a></dt>
 <dd><p>Calculate the total barlow log-likelihood value between this map and
-the map described by <cite>expected_values</cite>; self is taken to be the “actual
-values” (or (pseudo)data), and <cite>expected_values</cite> are the expectation
-values for each bin. I assumes at the moment some things that are not
-true, namely that the weights are uniform</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimension as this</em>)</p></li>
-<li><p><strong>binned</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>total_barlow_llh</strong></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or binned_barlow_llh if binned=True</p>
-</dd>
-</dl>
+the map described by <cite>expected_values</cite>. See metric() for details.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -3382,23 +3365,7 @@ true, namely that the weights are uniform</p>
 <dt class="sig sig-object py" id="pisa.core.map.Map.chi2">
 <span class="sig-name descname"><span class="pre">chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.chi2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.chi2" title="Link to this definition"></a></dt>
 <dd><p>Calculate the total chi-squared value between this map and the map
-described by <cite>expected_values</cite>; self is taken to be the “actual values”
-(or (pseudo)data), and <cite>expected_values</cite> are the expectation values for
-each bin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimension as this</em>)</p></li>
-<li><p><strong>binned</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>total_chi2</strong></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or binned_chi2 if binned=True</p>
-</dd>
-</dl>
+described by <cite>expected_values</cite>. See metric() for details.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -3436,46 +3403,14 @@ matter.</p>
 <dt class="sig sig-object py" id="pisa.core.map.Map.conv_llh">
 <span class="sig-name descname"><span class="pre">conv_llh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.conv_llh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.conv_llh" title="Link to this definition"></a></dt>
 <dd><p>Calculate the total convoluted log-likelihood value between this map
-and the map described by <cite>expected_values</cite>; self is taken to be the
-“actual values” (or (pseudo)data), and <cite>expected_values</cite> are the
-expectation values for each bin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimension as this</em>)</p></li>
-<li><p><strong>binned</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>total_conv_llh</strong></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or binned_conv_llh if binned=True</p>
-</dd>
-</dl>
+and the map described by <cite>expected_values</cite>. See metric() for details.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.map.Map.correct_chi2">
 <span class="sig-name descname"><span class="pre">correct_chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.correct_chi2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.correct_chi2" title="Link to this definition"></a></dt>
 <dd><p>Calculate the total correct chi2 value between this map and the map
-described by <cite>expected_values</cite>; self is taken to be the “actual values”
-(or (pseudo)data), and <cite>expected_values</cite> are the expectation values for
-each bin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimension as this.</em>)</p></li>
-<li><p><strong>binned</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>total_correct_chi2</strong></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or binned_correct_chi2 if binned=True</p>
-</dd>
-</dl>
+described by <cite>expected_values</cite>. See metric() for details.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -3634,23 +3569,7 @@ indexing directly into to the parent map (or to a similar map).</p>
 <dt class="sig sig-object py" id="pisa.core.map.Map.llh">
 <span class="sig-name descname"><span class="pre">llh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.llh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.llh" title="Link to this definition"></a></dt>
 <dd><p>Calculate the total log-likelihood value between this map and the
-map described by <cite>expected_values</cite>; self is taken to be the “actual
-values” (or (pseudo)data), and <cite>expected_values</cite> are the expectation
-values for each bin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimension as this</em>)</p></li>
-<li><p><strong>binned</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>total_llh</strong></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or binned_llh if binned=True</p>
-</dd>
-</dl>
+map described by <cite>expected_values</cite>. See metric() for details.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -3684,90 +3603,70 @@ values for each bin.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.map.Map.mcllh_eff">
 <span class="sig-name descname"><span class="pre">mcllh_eff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.mcllh_eff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.mcllh_eff" title="Link to this definition"></a></dt>
-<dd><p>Calculate the total LEff log-likelihood value between this map and the
-map described by <cite>expected_values</cite>; self is taken to be the “actual
-values” (or (pseudo)data), and <cite>expected_values</cite> are the expectation
-values for each bin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimension as this</em>)</p></li>
-<li><p><strong>binned</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>total_llh</strong></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or binned_llh if binned=True</p>
-</dd>
-</dl>
+<dd><p>Calculate the total LEff log-likelihood value between this map and
+the map described by <cite>expected_values</cite>. See metric() for details.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.map.Map.mcllh_mean">
 <span class="sig-name descname"><span class="pre">mcllh_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.mcllh_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.mcllh_mean" title="Link to this definition"></a></dt>
-<dd><p>Calculate the total LMean log-likelihood value between this map and the
-map described by <cite>expected_values</cite>; self is taken to be the “actual
-values” (or (pseudo)data), and <cite>expected_values</cite> are the expectation
-values for each bin.</p>
+<dd><p>Calculate the total LMean log-likelihood value between this map and
+the map described by <cite>expected_values</cite>. See metric() for details.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.map.Map.metric">
+<span class="sig-name descname"><span class="pre">metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.metric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.metric" title="Link to this definition"></a></dt>
+<dd><p>Compute the optimization metric value between this map and the map
+described by <cite>expected_values</cite>. self is taken to be the “actual values”
+or (pseudo)data, and <cite>expected_values</cite> are the expectation values for
+each bin.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimension as this</em>)</p></li>
+<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimensions as this</em>)</p></li>
+<li><p><strong>metric</strong> (<em>str</em><em> (</em><em>name</em><em> of </em><em>the optimization metric</em><em>)</em>)</p></li>
 <li><p><strong>binned</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>total_llh</strong></p>
+<dd class="field-even"><p><strong>metric_total</strong></p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or binned_llh if binned=True</p>
+<dd class="field-odd"><p>float or binned metric if binned=True</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.map.Map.metric_total">
-<span class="sig-name descname"><span class="pre">metric_total</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.metric_total"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.metric_total" title="Link to this definition"></a></dt>
-<dd><p>Compute the optimization metric on the bins of a Map</p>
-<section id="id16">
-<h3>Inputs<a class="headerlink" href="#id16" title="Link to this heading"></a></h3>
-<p>expected_values: Map (the data/pseudo-data binned counts)</p>
-<p>metric: str (name of the optimization metric)</p>
-<dl class="simple">
-<dt>metric_kwargs: None or Dict (special arguments to pass to</dt><dd><p>a special metric - right now just
-useful for generalized_poisson_llh)</p>
+<span class="sig-name descname"><span class="pre">metric_total</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.metric_total"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.metric_total" title="Link to this definition"></a></dt>
+<dd><p>Compute the optimization metric on the bins between this map and the
+map described by <cite>expected_values</cite>. self is taken to be the “actual
+values” or (pseudo)data, and <cite>expected_Values</cite> are the expectation
+values for each bin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimensions as this</em>)</p></li>
+<li><p><strong>metric</strong> (<em>str</em><em> (</em><em>name</em><em> of </em><em>the optimization metric</em><em>)</em>)</p></li>
+<li><p><strong>metric_kwargs</strong> (<em>Dict</em><em> (</em><em>special arguments to pass to a special metric -</em>) – currently only useful for generalized_poisson_llh)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>metric_total</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float (sum of the metric over all bins)</p>
 </dd>
 </dl>
-</section>
-<section id="returns">
-<h3>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h3>
-<p>float (sum of the metric over all bins of expected_values)</p>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.map.Map.mod_chi2">
 <span class="sig-name descname"><span class="pre">mod_chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.mod_chi2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.mod_chi2" title="Link to this definition"></a></dt>
 <dd><p>Calculate the total modified chi2 value between this map and the map
-described by <cite>expected_values</cite>; self is taken to be the “actual values”
-(or (pseudo)data), and <cite>expected_values</cite> are the expectation values for
-each bin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimension as this.</em>)</p></li>
-<li><p><strong>binned</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>total_mod_chi2</strong></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or binned_mod_chi2 if binned=True</p>
-</dd>
-</dl>
+described by <cite>expected_values</cite>. See metric() for details.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -4015,22 +3914,10 @@ If None is passed, any errors present are removed, making
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.map.Map.signed_sqrt_mod_chi2">
-<span class="sig-name descname"><span class="pre">signed_sqrt_mod_chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.signed_sqrt_mod_chi2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.signed_sqrt_mod_chi2" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">signed_sqrt_mod_chi2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.signed_sqrt_mod_chi2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.signed_sqrt_mod_chi2" title="Link to this definition"></a></dt>
 <dd><p>Calculate the binwise (signed) square-root of the modified chi2 value
-between this map and the map described by <cite>expected_values</cite>; self is
-taken to be the “actual values” (or (pseudo)data), and <cite>expected_values</cite>
-are the expectation values for each bin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>expected_values</strong> (<em>numpy.ndarray</em><em> or </em><a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> of </em><em>same dimension as this.</em>)</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>m_pulls</strong></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>signed_sqrt_mod_chi2</p>
-</dd>
-</dl>
+between this map and the map described by <cite>expected_values</cite>. See
+metric() for details.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -4944,7 +4831,7 @@ several orders of magnitude.</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>In the case of a free (<a href="#id17"><span class="problematic" id="id18">`</span></a>is_fixed`=False) parameter, a valid range for the
+<p>In the case of a free (<a href="#id16"><span class="problematic" id="id17">`</span></a>is_fixed`=False) parameter, a valid range for the
 parameter should be spicfied and a prior must be assigned to compute llh
 and chi2 values.</p>
 <p class="rubric">Examples</p>

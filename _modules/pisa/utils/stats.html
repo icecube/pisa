@@ -110,7 +110,8 @@
 <span class="n">SMALL_POS</span> <span class="o">=</span> <span class="mf">1e-10</span> <span class="c1">#if FTYPE == np.float64 else FTYPE_PREC</span>
 <span class="sd">&quot;&quot;&quot;A small positive number with which to replace numbers smaller than it&quot;&quot;&quot;</span>
 
-<span class="n">CHI2_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;correct_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;weighted_chi2&#39;</span><span class="p">]</span>
+<span class="n">CHI2_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;correct_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;weighted_chi2&#39;</span><span class="p">,</span>
+<span class="s1">&#39;signed_sqrt_mod_chi2&#39;</span><span class="p">]</span>
 <span class="sd">&quot;&quot;&quot;Metrics defined that result in measures of chi squared&quot;&quot;&quot;</span>
 
 <span class="n">LLH_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;llh&#39;</span><span class="p">,</span> <span class="s1">&#39;conv_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;barlow_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;mcllh_mean&#39;</span><span class="p">,</span>
@@ -165,7 +166,6 @@
         <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;    num &gt; 0 : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;    num nan : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">msg</span></div>
-
 
 
 <div class="viewcode-block" id="chi2">
@@ -240,7 +240,6 @@
     <span class="n">chi2_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span> <span class="o">/</span> <span class="n">expected_values</span>
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">chi2_val</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chi2_val</span><span class="p">[</span><span class="n">chi2_val</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">chi2_val</span></div>
-
 
 
 <div class="viewcode-block" id="llh">
@@ -376,7 +375,6 @@
     <span class="k">return</span> <span class="n">llh_val</span></div>
 
 
-
 <div class="viewcode-block" id="mcllh_eff">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.mcllh_eff">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">mcllh_eff</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
@@ -436,7 +434,6 @@
 
 
 
-
 <div class="viewcode-block" id="log_poisson">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.log_poisson">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">log_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">):</span>
@@ -457,7 +454,6 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">-</span><span class="n">l</span> <span class="o">-</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span></div>
-
 
 
 <div class="viewcode-block" id="log_smear">
@@ -481,7 +477,6 @@
     <span class="k">return</span> <span class="p">(</span>
         <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
     <span class="p">)</span></div>
-
 
 
 <div class="viewcode-block" id="conv_poisson">
@@ -537,7 +532,6 @@
     <span class="k">return</span> <span class="n">conv</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="n">norm</span></div>
 
 
-
 <div class="viewcode-block" id="norm_conv_poisson">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.norm_conv_poisson">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">norm_conv_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
@@ -568,7 +562,6 @@
     <span class="n">n1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_poisson</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l</span><span class="p">))</span>
     <span class="n">n2</span> <span class="o">=</span> <span class="n">conv_poisson</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="n">nsigma</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">cp</span><span class="o">*</span><span class="n">n1</span><span class="o">/</span><span class="n">n2</span></div>
-
 
 
 <div class="viewcode-block" id="conv_llh">
@@ -912,7 +905,6 @@
     <span class="k">return</span> <span class="n">llh_per_bin</span></div>
 
 
-
 <span class="k">def</span><span class="w"> </span><span class="nf">approximate_poisson_normal</span><span class="p">(</span><span class="n">data_count</span><span class="p">,</span> <span class="n">alphas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_c</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Compute the likelihood of a marginalized poisson-gamma</span>
@@ -966,8 +958,6 @@
 
     <span class="n">LH</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">SMALL_POS</span><span class="p">,</span><span class="n">LH</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">LH</span><span class="p">)</span>
-
-
 
 <span class="k">def</span><span class="w"> </span><span class="nf">approximate_poisson_normal_python</span><span class="p">(</span><span class="n">lamb</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
 

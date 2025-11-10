@@ -881,7 +881,7 @@
             <span class="n">fname</span> <span class="o">=</span> <span class="n">get_valid_filename</span><span class="p">(</span><span class="n">to_plot</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
         <span class="n">hist</span> <span class="o">=</span> <span class="n">valid_nominal_values</span><span class="p">(</span><span class="n">to_plot</span><span class="o">.</span><span class="n">hist</span><span class="p">)</span>
-    
+
         <span class="c1"># Set cmap.</span>
         <span class="k">if</span> <span class="n">cmap</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">symm</span><span class="p">:</span>
@@ -1712,267 +1712,123 @@
         <span class="k">return</span> <span class="n">MapSet</span><span class="p">(</span><span class="n">maps</span><span class="o">=</span><span class="n">maps</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">mapset_name</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="n">mapset_tex</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Map.llh">
-<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.llh">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total log-likelihood value between this map and the</span>
-<span class="sd">        map described by `expected_values`; self is taken to be the &quot;actual</span>
-<span class="sd">        values&quot; (or (pseudo)data), and `expected_values` are the expectation</span>
-<span class="sd">        values for each bin.</span>
+<div class="viewcode-block" id="Map.metric">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.metric">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the optimization metric value between this map and the map</span>
+<span class="sd">        described by `expected_values`. self is taken to be the &quot;actual values&quot;</span>
+<span class="sd">        or (pseudo)data, and `expected_values` are the expectation values for</span>
+<span class="sd">        each bin.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        expected_values : numpy.ndarray or Map of same dimension as this</span>
+<span class="sd">        expected_values : numpy.ndarray or Map of same dimensions as this</span>
+
+<span class="sd">        metric : str (name of the optimization metric)</span>
 
 <span class="sd">        binned : bool</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        total_llh : float or binned_llh if binned=True</span>
-
+<span class="sd">        metric_total : float or binned metric if binned=True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metric</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stats</span><span class="o">.</span><span class="n">ALL_METRICS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`metric` </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> not recognized; use one of </span><span class="si">%s</span><span class="s2">.&quot;</span>
+                             <span class="o">%</span> <span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">stats</span><span class="o">.</span><span class="n">ALL_METRICS</span><span class="p">))</span>
 
+        <span class="n">exp_hist</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">stats</span><span class="p">,</span> <span class="n">metric</span><span class="p">)(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
+                                        <span class="n">expected_values</span><span class="o">=</span><span class="n">exp_hist</span><span class="p">)</span>
+
+        <span class="c1"># All metrics in utils.stats already check and return errors for nan</span>
+        <span class="c1"># values, so any nan values that remain here are from incorrect handling</span>
+        <span class="c1"># of bin masks bin masking.</span>
         <span class="k">if</span> <span class="n">binned</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">llh</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                             <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
 
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">llh</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Map.llh">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.llh">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total log-likelihood value between this map and the</span>
+<span class="sd">        map described by `expected_values`. See metric() for details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="s2">&quot;llh&quot;</span><span class="p">,</span> <span class="n">binned</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.mcllh_mean">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.mcllh_mean">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">mcllh_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total LMean log-likelihood value between this map and the</span>
-<span class="sd">        map described by `expected_values`; self is taken to be the &quot;actual</span>
-<span class="sd">        values&quot; (or (pseudo)data), and `expected_values` are the expectation</span>
-<span class="sd">        values for each bin.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        expected_values : numpy.ndarray or Map of same dimension as this</span>
-
-<span class="sd">        binned : bool</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        total_llh : float or binned_llh if binned=True</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total LMean log-likelihood value between this map and</span>
+<span class="sd">        the map described by `expected_values`. See metric() for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">binned</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">mcllh_mean</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                             <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">mcllh_mean</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">))</span></div>
-
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="s2">&quot;mcllh_mean&quot;</span><span class="p">,</span> <span class="n">binned</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.mcllh_eff">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.mcllh_eff">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">mcllh_eff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total LEff log-likelihood value between this map and the</span>
-<span class="sd">        map described by `expected_values`; self is taken to be the &quot;actual</span>
-<span class="sd">        values&quot; (or (pseudo)data), and `expected_values` are the expectation</span>
-<span class="sd">        values for each bin.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        expected_values : numpy.ndarray or Map of same dimension as this</span>
-
-<span class="sd">        binned : bool</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        total_llh : float or binned_llh if binned=True</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total LEff log-likelihood value between this map and</span>
+<span class="sd">        the map described by `expected_values`. See metric() for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">binned</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">mcllh_eff</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                             <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">mcllh_eff</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="s2">&quot;mcllh_eff&quot;</span><span class="p">,</span> <span class="n">binned</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.conv_llh">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.conv_llh">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">conv_llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total convoluted log-likelihood value between this map</span>
-<span class="sd">        and the map described by `expected_values`; self is taken to be the</span>
-<span class="sd">        &quot;actual values&quot; (or (pseudo)data), and `expected_values` are the</span>
-<span class="sd">        expectation values for each bin.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        expected_values : numpy.ndarray or Map of same dimension as this</span>
-
-<span class="sd">        binned : bool</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        total_conv_llh : float or binned_conv_llh if binned=True</span>
-
+<span class="sd">        and the map described by `expected_values`. See metric() for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">binned</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">conv_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                  <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">conv_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                     <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="s2">&quot;conv_llh&quot;</span><span class="p">,</span> <span class="n">binned</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.barlow_llh">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.barlow_llh">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">barlow_llh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total barlow log-likelihood value between this map and</span>
-<span class="sd">        the map described by `expected_values`; self is taken to be the &quot;actual</span>
-<span class="sd">        values&quot; (or (pseudo)data), and `expected_values` are the expectation</span>
-<span class="sd">        values for each bin. I assumes at the moment some things that are not</span>
-<span class="sd">        true, namely that the weights are uniform</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        expected_values : numpy.ndarray or Map of same dimension as this</span>
-
-<span class="sd">        binned : bool</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        total_barlow_llh : float or binned_barlow_llh if binned=True</span>
-
+<span class="sd">        the map described by `expected_values`. See metric() for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: should this handle reduceToHist / expected_values as other</span>
-        <span class="c1"># methods do, or should they handle these the way this method does?</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Map</span><span class="p">,</span> <span class="n">MapSet</span><span class="p">)):</span>
-            <span class="n">expected_values</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
-            <span class="n">expected_values</span> <span class="o">=</span> <span class="p">[</span><span class="n">reduceToHist</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">binned</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">barlow_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                    <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">barlow_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                       <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="s2">&quot;barlow_llh&quot;</span><span class="p">,</span> <span class="n">binned</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.mod_chi2">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.mod_chi2">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">mod_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total modified chi2 value between this map and the map</span>
-<span class="sd">        described by `expected_values`; self is taken to be the &quot;actual values&quot;</span>
-<span class="sd">        (or (pseudo)data), and `expected_values` are the expectation values for</span>
-<span class="sd">        each bin.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        expected_values : numpy.ndarray or Map of same dimension as this.</span>
-
-<span class="sd">        binned : bool</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        total_mod_chi2 : float or binned_mod_chi2 if binned=True</span>
-
+<span class="sd">        described by `expected_values`. See metric() for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">binned</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                  <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                     <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="s2">&quot;mod_chi2&quot;</span><span class="p">,</span> <span class="n">binned</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.correct_chi2">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.correct_chi2">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">correct_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total correct chi2 value between this map and the map</span>
-<span class="sd">        described by `expected_values`; self is taken to be the &quot;actual values&quot;</span>
-<span class="sd">        (or (pseudo)data), and `expected_values` are the expectation values for</span>
-<span class="sd">        each bin.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        expected_values : numpy.ndarray or Map of same dimension as this.</span>
-
-<span class="sd">        binned : bool</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        total_correct_chi2 : float or binned_correct_chi2 if binned=True</span>
-
+<span class="sd">        described by `expected_values`. See metric() for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">binned</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">correct_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                  <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">correct_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                     <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="s2">&quot;correct_chi2&quot;</span><span class="p">,</span> <span class="n">binned</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.chi2">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.chi2">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the total chi-squared value between this map and the map</span>
-<span class="sd">        described by `expected_values`; self is taken to be the &quot;actual values&quot;</span>
-<span class="sd">        (or (pseudo)data), and `expected_values` are the expectation values for</span>
-<span class="sd">        each bin.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        expected_values : numpy.ndarray or Map of same dimension as this</span>
-
-<span class="sd">        binned : bool</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        total_chi2 : float or binned_chi2 if binned=True</span>
-
+<span class="sd">        described by `expected_values`. See metric() for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">binned</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                              <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                 <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="s2">&quot;chi2&quot;</span><span class="p">,</span> <span class="n">binned</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.signed_sqrt_mod_chi2">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.signed_sqrt_mod_chi2">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">signed_sqrt_mod_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">signed_sqrt_mod_chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">binned</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the binwise (signed) square-root of the modified chi2 value</span>
-<span class="sd">        between this map and the map described by `expected_values`; self is</span>
-<span class="sd">        taken to be the &quot;actual values&quot; (or (pseudo)data), and `expected_values`</span>
-<span class="sd">        are the expectation values for each bin.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        expected_values : numpy.ndarray or Map of same dimension as this.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        m_pulls : signed_sqrt_mod_chi2</span>
-
+<span class="sd">        between this map and the map described by `expected_values`. See</span>
+<span class="sd">        metric() for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">signed_sqrt_mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                          <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span></div>
-
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="s2">&quot;signed_sqrt_mod_chi2&quot;</span><span class="p">,</span> <span class="n">binned</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.generalized_poisson_llh">
@@ -1994,9 +1850,10 @@
 
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="n">llh_per_bin</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">generalized_poisson_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span>
-                                                    <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">,</span>
-                                                    <span class="n">empty_bins</span><span class="o">=</span><span class="n">empty_bins</span><span class="p">)</span>
+        <span class="n">llh_per_bin</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">generalized_poisson_llh</span><span class="p">(</span>
+            <span class="n">actual_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">,</span> <span class="n">expected_values</span><span class="o">=</span><span class="n">expected_values</span><span class="p">,</span>
+            <span class="n">empty_bins</span><span class="o">=</span><span class="n">empty_bins</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">binned</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">llh_per_bin</span>
@@ -2004,36 +1861,33 @@
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">llh_per_bin</span><span class="p">)</span></div>
 
 
-
 <div class="viewcode-block" id="Map.metric_total">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.Map.metric_total">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">metric_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">metric_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39; Compute the optimization metric on the bins of a Map</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">metric_kwargs</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the optimization metric on the bins between this map and the</span>
+<span class="sd">        map described by `expected_values`. self is taken to be the &quot;actual</span>
+<span class="sd">        values&quot; or (pseudo)data, and `expected_Values` are the expectation</span>
+<span class="sd">        values for each bin.</span>
 
-<span class="sd">        Inputs</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        expected_values : numpy.ndarray or Map of same dimensions as this</span>
+
+<span class="sd">        metric : str (name of the optimization metric)</span>
+
+<span class="sd">        metric_kwargs: Dict (special arguments to pass to a special metric -</span>
+<span class="sd">                             currently only useful for generalized_poisson_llh)</span>
+
+<span class="sd">        Returns</span>
 <span class="sd">        -------</span>
+<span class="sd">        metric_total : float (sum of the metric over all bins)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">metric</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stats</span><span class="o">.</span><span class="n">ALL_METRICS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`metric` </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> not recognized; use one of </span><span class="si">%s</span><span class="s2">.&quot;</span>
+                             <span class="o">%</span> <span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">stats</span><span class="o">.</span><span class="n">ALL_METRICS</span><span class="p">))</span>
 
-<span class="sd">        expected_values: Map (the data/pseudo-data binned counts)</span>
-
-<span class="sd">        metric: str (name of the optimization metric)</span>
-
-<span class="sd">        metric_kwargs: None or Dict (special arguments to pass to</span>
-<span class="sd">                                     a special metric - right now just </span>
-<span class="sd">                                     useful for generalized_poisson_llh)</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">        ------</span>
-<span class="sd">        float (sum of the metric over all bins of expected_values)</span>
-
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="c1"># TODO: should this use reduceToHist as in chi2 and llh above?</span>
-        <span class="k">if</span> <span class="n">metric_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">metric_kwargs</span><span class="o">=</span><span class="p">{}</span>
-        <span class="k">if</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">stats</span><span class="o">.</span><span class="n">ALL_METRICS</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">)(</span><span class="n">expected_values</span><span class="p">,</span> <span class="o">**</span><span class="n">metric_kwargs</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`metric` &quot;</span><span class="si">%s</span><span class="s1">&quot; not recognized; use one of </span><span class="si">%s</span><span class="s1">.&#39;</span>
-                             <span class="o">%</span> <span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">stats</span><span class="o">.</span><span class="n">ALL_METRICS</span><span class="p">))</span></div>
+        <span class="n">exp_hist</span> <span class="o">=</span> <span class="n">reduceToHist</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">)(</span><span class="n">exp_hist</span><span class="p">,</span> <span class="o">**</span><span class="n">metric_kwargs</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
@@ -2924,7 +2778,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">)</span>
-    
+
     <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">MapSet</span><span class="p">([</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">memo</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">],</span>
                       <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tex</span><span class="p">,</span> <span class="nb">hash</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">,</span>
@@ -3373,9 +3227,9 @@
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Compute the binned optimization metric on all maps of a mapset,</span>
 <span class="sd">           then sum it up.</span>
 
-<span class="sd">           metric_kwargs allows to pass extra arguments to the metric, like </span>
+<span class="sd">           metric_kwargs allows to pass extra arguments to the metric, like</span>
 <span class="sd">                         the number of empty bins for the generalized poisson llh</span>
-<span class="sd">                         (Not yet implemented for Mapset) </span>
+<span class="sd">                         (Not yet implemented for Mapset)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_per_map</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span></div>
 
@@ -3413,14 +3267,14 @@
 
 <div class="viewcode-block" id="MapSet.llh_per_map">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.llh_per_map">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">llh_per_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>  
+    <span class="k">def</span><span class="w"> </span><span class="nf">llh_per_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_to_maps</span><span class="p">(</span><span class="s1">&#39;llh&#39;</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MapSet.llh_total">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.map.MapSet.llh_total">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">llh_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>   
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">llh</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">llh_total</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">llh_per_map</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="MapSet.set_poisson_errors">
@@ -3500,7 +3354,7 @@
     <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="p">[</span><span class="n">m1_seed0</span><span class="p">,</span> <span class="n">m1_seed1</span><span class="p">,</span> <span class="n">m1_seed0_reprod</span><span class="p">]:</span>
         <span class="c1"># The full comparison has to be ON for all maps, otherwise we would only</span>
         <span class="c1"># compare the hash value, which doesn&#39;t change when maps are fluctuated.</span>
-        <span class="c1"># Because the value of full_comparison is included in the comparison, two </span>
+        <span class="c1"># Because the value of full_comparison is included in the comparison, two</span>
         <span class="c1"># maps will not be considered equal if only one of them has</span>
         <span class="c1"># `full_comparison=True`.</span>
         <span class="c1"># TODO: How does this make sense?</span>
@@ -3511,10 +3365,10 @@
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">m1_seed1</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fluctuated map with seed 0, reproduced:&quot;</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">m1_seed0_reprod</span><span class="p">)</span>
-    
+
     <span class="k">assert</span> <span class="n">m1_seed0</span> <span class="o">==</span> <span class="n">m1_seed0_reprod</span>
     <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">m1_seed0</span> <span class="o">==</span> <span class="n">m1_seed1</span><span class="p">)</span>
-    
+
     <span class="c1"># Test sum()</span>
     <span class="n">m1</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
@@ -3689,7 +3543,7 @@
     <span class="n">m2</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;twos&#39;</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">binning</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">binning</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span>
              <span class="nb">hash</span><span class="o">=</span><span class="s1">&#39;xyz&#39;</span><span class="p">)</span>
     <span class="n">ms01</span> <span class="o">=</span> <span class="n">MapSet</span><span class="p">([</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">])</span>
-    
+
     <span class="c1"># Test fluctuate</span>
     <span class="n">_</span> <span class="o">=</span> <span class="n">ms01</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;poisson&quot;</span><span class="p">)</span>  <span class="c1"># just ensure that None random_state is handled</span>
     <span class="n">ms01_seed0</span> <span class="o">=</span> <span class="n">ms01</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;poisson&quot;</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -3704,7 +3558,7 @@
 
     <span class="k">assert</span> <span class="n">ms01_seed0</span> <span class="o">==</span> <span class="n">ms01_seed0_reprod</span>
     <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">ms01_seed0</span> <span class="o">==</span> <span class="n">ms01_seed1</span><span class="p">)</span>
-    
+
     <span class="c1"># Test rebin</span>
     <span class="n">_</span> <span class="o">=</span> <span class="n">ms01</span><span class="o">.</span><span class="n">rebin</span><span class="p">(</span><span class="n">m1</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">downsample</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
     <span class="n">ms01_rebinned</span> <span class="o">=</span> <span class="n">ms01</span><span class="o">.</span><span class="n">rebin</span><span class="p">(</span><span class="n">m1</span><span class="o">.</span><span class="n">binning</span><span class="o">.</span><span class="n">downsample</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
@@ -3867,7 +3721,7 @@
     <span class="n">ms01</span> <span class="o">+=</span> <span class="mf">1.</span>
     <span class="c1"># make sure that the copy is indeed decoupled from the original</span>
     <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">ms_copy</span> <span class="o">==</span> <span class="n">ms01</span><span class="p">)</span>
-    
+
     <span class="c1"># Test reorder_dimensions (this just tests that it succeeds on the map set;</span>
     <span class="c1"># correctness of the reordering is tested in the unit test for Map)</span>
     <span class="k">for</span> <span class="n">ms</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ms01</span><span class="p">,</span> <span class="n">ms02</span><span class="p">,</span> <span class="n">ms1</span><span class="p">,</span> <span class="n">ms2</span><span class="p">,</span> <span class="n">ms3</span><span class="p">,</span> <span class="n">ms4</span><span class="p">]:</span>
