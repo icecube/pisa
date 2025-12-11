@@ -373,11 +373,14 @@ class prob3(Stage):  # pylint: disable=invalid-name
         if self.tomography_type == "mass_of_earth":
             logging.debug('Working with tomography with a single density scaling factor.')
             self.tomography_params = Mass_scaling()
-        else:
+        elif self.tomography_type is not None:
             # not elegant but safe: external Earth model must correspond to internal hard-coded one
             assert self.layers.using_earth_model
-            radii_equal = np.allclose(np.add(self.layers.radii[::-1][:-1], 1), np.add(FIVE_LAYER_RADII, 1))
-            rhos_equal = np.allclose(np.add(self.layers.rhos_unweighted[::-1][:-1], 1), np.add(FIVE_LAYER_RHOS, 1))
+            radii_ext = self.layers.radii[::-1][:-1]
+            rhos_ext = self.layers.rhos_unweighted[::-1][:-1]
+            assert len(radii_ext) == len(FIVE_LAYER_RADII) and len(rhos_ext) == len(FIVE_LAYER_RHOS)
+            radii_equal = np.allclose(np.add(radii_ext, 1), np.add(FIVE_LAYER_RADII, 1))
+            rhos_equal = np.allclose(np.add(rhos_ext, 1), np.add(FIVE_LAYER_RHOS, 1))
             if not radii_equal or not rhos_equal:
                 raise ValueError(
                     "The Earth model provided needs to have the same layer radii"
