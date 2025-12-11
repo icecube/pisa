@@ -8,13 +8,19 @@ from pisa import FTYPE
 
 __all__ = [
     'Mass_scaling', 'Core_scaling_w_constrain', 'Core_scaling_wo_constrain',
-    'FIVE_LAYER_RADII', 'FIVE_LAYER_RHOS'
+    'FIVE_LAYER_RADII', 'FIVE_LAYER_RHOS', 'TOMOGRAPHY_ERROR_MSG'
 ]
 
 FIVE_LAYER_RADII = np.array([0.0, 1221.50, 3480.00, 5701.00, 6151.0, 6371.00], dtype=FTYPE)
 """Radii (km) of five Earth layers to assume for the last two types of tomography."""
+
 FIVE_LAYER_RHOS = np.array([13.0, 13.0, 10.96, 5.03, 3.7, 2.5], dtype=FTYPE)
 """Matter densities (g/cm^3) of five Earth layers to assume for the last two types of tomography."""
+
+TOMOGRAPHY_ERROR_MSG = ("You need to provide the appropriate 5-layer Earth model,"
+f" which has the same layer radii ({FIVE_LAYER_RADII}) and densities ({FIVE_LAYER_RHOS})"
+" as the one hard-coded for the chosen type of tomography internally.")
+"""An error message simultaneously explaining the state of the code."""
 
 
 class Mass_scaling():

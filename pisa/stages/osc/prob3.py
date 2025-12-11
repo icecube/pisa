@@ -18,7 +18,7 @@ from pisa.stages.osc.decay_params import DecayParams
 from pisa.stages.osc.lri_params import LRIParams
 from pisa.stages.osc.scaling_params import (
     Mass_scaling, Core_scaling_w_constrain, Core_scaling_wo_constrain,
-    FIVE_LAYER_RADII, FIVE_LAYER_RHOS
+    FIVE_LAYER_RADII, FIVE_LAYER_RHOS, TOMOGRAPHY_ERROR_MSG
 )
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
@@ -371,23 +371,27 @@ class prob3(Stage):  # pylint: disable=invalid-name
         self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
 
         if self.tomography_type == "mass_of_earth":
+            if not self.layers.using_earth_model:
+                # already fail here instead of in compute upon attempt to scale
+                # (to be on the safe side; not sure if this case can even happen)
+                raise ValueError(
+                    "You need to provide some Earth model, whose densities can"
+                    " be rescaled!"
+                )
             logging.debug('Working with tomography with a single density scaling factor.')
             self.tomography_params = Mass_scaling()
         elif self.tomography_type is not None:
             # not elegant but safe: external Earth model must correspond to internal hard-coded one
-            assert self.layers.using_earth_model
+            if not self.layers.using_earth_model:
+                raise ValueError(TOMOGRAPHY_ERROR_MSG)
             radii_ext = self.layers.radii[::-1][:-1]
             rhos_ext = self.layers.rhos_unweighted[::-1][:-1]
-            assert len(radii_ext) == len(FIVE_LAYER_RADII) and len(rhos_ext) == len(FIVE_LAYER_RHOS)
+            if not (len(radii_ext) == len(FIVE_LAYER_RADII) and len(rhos_ext) == len(FIVE_LAYER_RHOS)):
+                raise ValueError(TOMOGRAPHY_ERROR_MSG)
             radii_equal = np.allclose(np.add(radii_ext, 1), np.add(FIVE_LAYER_RADII, 1))
             rhos_equal = np.allclose(np.add(rhos_ext, 1), np.add(FIVE_LAYER_RHOS, 1))
             if not radii_equal or not rhos_equal:
-                raise ValueError(
-                    "The Earth model provided needs to have the same layer radii"
-                    " and densities as the one hard-coded for the chosen type of"
-                    f" tomography internally, namely radii {FIVE_LAYER_RADII} and"
-                    f" densities {FIVE_LAYER_RHOS}."
-                )
+                raise ValueError(TOMOGRAPHY_ERROR_MSG)
             if self.tomography_type == "mass_of_core_w_constrain":
                 logging.debug('Working with tomography with different scaling for different layers.')
                 self.tomography_params = Core_scaling_w_constrain()
