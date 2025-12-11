@@ -16,7 +16,10 @@ from pisa.stages.osc.nsi_params import StdNSIParams, VacuumLikeNSIParams
 from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.decay_params import DecayParams
 from pisa.stages.osc.lri_params import LRIParams
-from pisa.stages.osc.scaling_params import Mass_scaling, Core_scaling_w_constrain, Core_scaling_wo_constrain
+from pisa.stages.osc.scaling_params import (
+    Mass_scaling, Core_scaling_w_constrain, Core_scaling_wo_constrain,
+    FIVE_LAYER_RADII, FIVE_LAYER_RHOS
+)
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
 from pisa.utils.resources import find_resource
@@ -32,7 +35,7 @@ TOMOGRAPHY_TYPES = ['mass_of_earth', 'mass_of_core_w_constrain', 'mass_of_core_w
 
 
 class prob3(Stage):  # pylint: disable=invalid-name
-    """
+    r"""
     Extended Prob3-like oscillations class.
 
     Expected container keys are:
@@ -67,9 +70,9 @@ class prob3(Stage):  # pylint: disable=invalid-name
         as motivated in https://inspirehep.net/literature/1672932 (JHEP08(2018)180).
         In the *absence* of NSI, this has no observable impact on oscillation
         probabilities, but results in the CPT transformation being realised
-        by the transformations :math:`\Delta m^2_{31} \\to -\Delta m^2_{32},
-        \\theta_{12} \\to \pi/2 - \\theta_{12},
-        \delta_\mathrm{CP} \\to \pi - \delta_\mathrm{CP}`,
+        by the transformations :math:`\Delta m^2_{31} \to -\Delta m^2_{32},
+        \theta_{12} \to \pi/2 - \theta_{12},
+        \delta_\mathrm{CP} \to \pi - \delta_\mathrm{CP}`,
         which is accommodated by the parameters' usual ranges. These
         transformations are then part of the generalized mass ordering
         degeneracy in the presence of NSI (see same reference above).
@@ -79,14 +82,14 @@ class prob3(Stage):  # pylint: disable=invalid-name
         implemented assumes the (invisible) decay of the third mass eigenstate
         into a singlet that is lighter than all three active mass eigenstates.
         The decay is parameterized in a model-independent way via the parameter
-        :math:`\\alpha_3 = m_3/\\tau_3`, where :math:`m_3` is the mass and
-        :math:`\\tau_3` the lifetime in the rest frame. As a result, the vacuum
+        :math:`\alpha_3 = m_3/\tau_3`, where :math:`m_3` is the mass and
+        :math:`\tau_3` the lifetime in the rest frame. As a result, the vacuum
         Hamiltonian in the flavor basis then reads
-        :math:`U \mathrm{diag}(0, \Delta m^2_{21}, \Delta m^2_{31} - i \\alpha_3) U^\dagger/(2E)`,
+        :math:`U \mathrm{diag}(0, \Delta m^2_{21}, \Delta m^2_{31} - i \alpha_3) U^\dagger/(2E)`,
         which deviates from the standard expression by the imaginary subtrahend in the
         last entry. See e.g. https://inspirehep.net/literature/2870979
         (JHEP04(2025)105) for such an analysis in the literature.
-        The parameter :math:`\\alpha_3` is implemented by `decay_alpha3`.
+        The parameter :math:`\alpha_3` is implemented by `decay_alpha3`.
 
     tomography_type : str or `None` (default: `None`)
         Whether to allow for certain Earth matter density variations.
@@ -97,7 +100,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
         the assumed density profile.
         In case of 'mass_of_core_w_constrain', expects the single parameter
         `core_density_scale`, which acts as a density scaling factor for the
-        inner and outer core of the Earth in a 5-layer density model,
+        inner and outer core of the Earth in a pre-determined 5-layer density model,
         conserving the total mass and moment of inertia of the Earth by
         accordingly rescaling the densities of the "inner" and "middle" (but
         not the "outer") mantle.
@@ -115,10 +118,10 @@ class prob3(Stage):  # pylint: disable=invalid-name
         Implemented is the single parameter `v_lri`.
         In the case of :math:`e`-:math:`\mu` symmetry, it is added to the standard
         :math:`ee` matter potential entry and subtracted from the :math:`\mu\mu` one.
-        In the case of :math:`e`-:math:`\\tau` symmetry, it is added to the standard
-        :math:`ee` matter potential entry and subtracted from the :math:`\\tau\\tau` one.
-        In the case of :math:`\mu`-:math:`\\tau` symmetry, it is added to the standard
-        :math:`\mu\mu` matter potential entry and subtracted from the :math:`\\tau\\tau`
+        In the case of :math:`e`-:math:`\tau` symmetry, it is added to the standard
+        :math:`ee` matter potential entry and subtracted from the :math:`\tau\tau` one.
+        In the case of :math:`\mu`-:math:`\tau` symmetry, it is added to the standard
+        :math:`\mu\mu` matter potential entry and subtracted from the :math:`\tau\tau`
         one. See e.g. https://inspirehep.net/literature/2658147 (JHEP 08(2023)101)
         for such an analysis in the literature.
 
@@ -218,7 +221,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
         """Type of NSI to assume."""
 
         self.reparam_mix_matrix = reparam_mix_matrix
-        """Use a PMNS mixing matrix parameterisation that differs from
+        r"""Use a PMNS mixing matrix parameterisation that differs from
         the standard one by an overall phase matrix
         :math:`\mathrm{diag}(e^{i\delta_\mathrm{CP}}, 1, 1)`. This has no
         impact on oscillation probabilities in the *absence* of NSI."""
@@ -356,18 +359,6 @@ class prob3(Stage):  # pylint: disable=invalid-name
             logging.debug('Working with LRI')
             self.lri_params = LRIParams()
 
-
-        if self.tomography_type == "mass_of_earth":
-            logging.debug('Working with tomography with a single density scaling factor.')
-            self.tomography_params = Mass_scaling()
-        elif self.tomography_type == "mass_of_core_w_constrain":
-            logging.debug('Working with tomography with different scaling for different layers.')
-            self.tomography_params = Core_scaling_w_constrain()
-        elif self.tomography_type == "mass_of_core_wo_constrain":
-            logging.debug('Working with tomography without any external constraints.')
-            self.tomography_params = Core_scaling_wo_constrain()
-
-
         # setup the layers
         #if self.params.earth_model.value is not None:
         earth_model = find_resource(self.params.earth_model.value)
@@ -379,6 +370,27 @@ class prob3(Stage):  # pylint: disable=invalid-name
         self.layers = Layers(earth_model, detector_depth, prop_height)
         self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
 
+        if self.tomography_type == "mass_of_earth":
+            logging.debug('Working with tomography with a single density scaling factor.')
+            self.tomography_params = Mass_scaling()
+        else:
+            # not elegant but safe: external Earth model must correspond to internal hard-coded one
+            assert self.layers.using_earth_model
+            radii_equal = np.allclose(np.add(self.layers.radii[::-1][:-1], 1), np.add(FIVE_LAYER_RADII, 1))
+            rhos_equal = np.allclose(np.add(self.layers.rhos_unweighted[::-1][:-1], 1), np.add(FIVE_LAYER_RHOS, 1))
+            if not radii_equal or not rhos_equal:
+                raise ValueError(
+                    "The Earth model provided needs to have the same layer radii"
+                    " and densities as the one hard-coded for the chosen type of"
+                    f" tomography internally, namely radii {FIVE_LAYER_RADII} and"
+                    f" densities {FIVE_LAYER_RHOS}."
+                )
+            if self.tomography_type == "mass_of_core_w_constrain":
+                logging.debug('Working with tomography with different scaling for different layers.')
+                self.tomography_params = Core_scaling_w_constrain()
+            elif self.tomography_type == "mass_of_core_wo_constrain":
+                logging.debug('Working with tomography without any external constraints.')
+                self.tomography_params = Core_scaling_wo_constrain()
 
         # --- calculate the layers ---
         if self.is_map:
