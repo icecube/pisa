@@ -115,7 +115,7 @@ INSTALL_REQUIRES = [
 
 EXTRAS_REQUIRE = {
     'develop': [
-        'pylint>=1.7',
+        'pylint>=4.0',
         'recommonmark',
         'sphinx>=1.3',
         'sphinx_rtd_theme',
@@ -234,7 +234,7 @@ def do_setup():
         long_description = f.read()
 
     # Collect (build-able) external modules and package_data
-    ext_modules = [Extension('pisa.utils.llh_defs.poisson_gamma_mixtures', 
+    ext_modules = [Extension('pisa.utils.llh_defs.poisson_gamma_mixtures',
                                 sources = ['pisa/utils/llh_defs/poisson_gamma_mixtures.pyx',
                                            'pisa/utils/llh_defs/poisson_gamma.c'])
                   ]
