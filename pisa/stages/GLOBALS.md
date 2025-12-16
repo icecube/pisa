@@ -66,7 +66,6 @@ Also note that where a service implements `FTYPE` and relies on C extension code
 | `osc.nusquids`                | :heavy_minus_sign:    | :heavy_check_mark: | :heavy_check_mark:    |
 | `osc.prob3`                   | :heavy_check_mark:    | :heavy_check_mark: | :heavy_check_mark:    |
 | `osc.two_nu_osc`              | :heavy_check_mark:    | :heavy_check_mark: | :heavy_check_mark:    |
-| `pid.shift_scale_pid`         | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | `reco.resolutions`            | :heavy_minus_sign: | :heavy_minus_sign: | :heavy_minus_sign: |
 | `reco.simple_param`           | :heavy_minus_sign: | :heavy_minus_sign: | :heavy_check_mark: |
 | `utils.add_indices`           | :heavy_minus_sign:    | :heavy_minus_sign: | :heavy_minus_sign:    |

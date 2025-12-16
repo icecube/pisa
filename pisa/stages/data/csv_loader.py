@@ -130,7 +130,7 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
                     raise ValueError("Either 'pdg' or 'pdg_code' must be in file.")
 
                 if 'cc' in name:
-                    mask = np.logical_and(mask, raw_data['type'] == 1)
+                    mask = np.logical_and(mask, raw_data['type'] >= 1)
                 else:
                     mask = np.logical_and(mask, raw_data['type'] == 0)
 
