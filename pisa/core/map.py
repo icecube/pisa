@@ -1217,6 +1217,7 @@ class Map(object):
                     loc=orig_hist[valid_mask], scale=sigma[valid_mask],
                     random_state=random_state
                 )
+                gauss = np.clip(gauss, a_min=0, a_max=None)
 
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
                 hist_vals[valid_mask] = poisson.rvs(

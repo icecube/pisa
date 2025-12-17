@@ -125,10 +125,12 @@ class ContainerSet():
                 % (set(names) - set(self.names))
             )
         containers = [self.__getitem__(name) for name in link_names]
-        logging.trace('Linking containers %s into %s'%(link_names, key))
-        new_container = VirtualContainer(key, containers)
-        self.linked_containers.append(new_container)
-
+        if len(containers) > 0:
+            logging.trace('Linking containers %s into %s'%(link_names, key))
+            new_container = VirtualContainer(key, containers)
+            self.linked_containers.append(new_container)
+        else:
+            logging.warning("None of the containers exist, skipping %s"%(key))
 
     def unlink_containers(self):
         """Unlink all container"""
