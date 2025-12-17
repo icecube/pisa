@@ -205,10 +205,12 @@
                 <span class="o">%</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">))</span>
             <span class="p">)</span>
         <span class="n">containers</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">link_names</span><span class="p">]</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Linking containers </span><span class="si">%s</span><span class="s1"> into </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">link_names</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
-        <span class="n">new_container</span> <span class="o">=</span> <span class="n">VirtualContainer</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">containers</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_container</span><span class="p">)</span></div>
-
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">containers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Linking containers </span><span class="si">%s</span><span class="s1"> into </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">link_names</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+            <span class="n">new_container</span> <span class="o">=</span> <span class="n">VirtualContainer</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">containers</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linked_containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_container</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;None of the containers exist, skipping </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">key</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="ContainerSet.unlink_containers">
