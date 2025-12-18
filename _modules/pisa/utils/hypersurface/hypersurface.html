@@ -74,6 +74,9 @@
 
 <span class="sd">Hypersurfaces can be used to model systematic uncertainties derived from discrete</span>
 <span class="sd">simulation datasets, for example for detedctor uncertainties.</span>
+
+<span class="sd">Note: to execute this module as a script, due to the relative import below, run</span>
+<span class="sd">`python -m pisa.utils.hypersurface.hypersurface`</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Hypersurface&#39;</span><span class="p">,</span> <span class="s1">&#39;HypersurfaceParam&#39;</span><span class="p">,</span> <span class="s1">&#39;fit_hypersurfaces&#39;</span><span class="p">,</span>
@@ -2437,14 +2440,15 @@
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">asimov_true_points</span><span class="p">,</span> <span class="n">asimov_fit_points</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="n">ALLCLOSE_KW</span><span class="p">[</span><span class="s1">&#39;rtol&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">10.</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fluctuating maps and re-fitting...&quot;</span><span class="p">)</span>
     <span class="c1"># do several rounds of fluctuation, re-fit and storage of results</span>
-    <span class="n">n_rounds</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">n_rounds</span> <span class="o">=</span> <span class="mi">50</span>
     <span class="n">fluctuated_fit_points</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_rounds</span><span class="p">):</span>
         <span class="c1">#logging.info(&quot;Round %d/%d&quot; % (i+1, n_rounds))</span>
-        <span class="n">nom_map_fluct</span> <span class="o">=</span> <span class="n">nom_map</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;gauss&#39;</span><span class="p">)</span>
+        <span class="n">nom_map_fluct</span> <span class="o">=</span> <span class="n">nom_map</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;gauss&#39;</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">i</span><span class="o">*</span><span class="n">n_rounds</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">sys_maps</span><span class="p">))</span>
         <span class="n">sys_maps_fluct</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sys_maps</span><span class="p">:</span>
-            <span class="n">sys_maps_fluct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;gauss&#39;</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sys_maps</span><span class="p">):</span>
+            <span class="n">sys_maps_fluct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">fluctuate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;gauss&#39;</span><span class="p">,</span>
+                                              <span class="n">random_state</span><span class="o">=</span><span class="n">i</span><span class="o">*</span><span class="n">n_rounds</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">sys_maps</span><span class="p">)</span><span class="o">+</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">hypersurface</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
             <span class="n">nominal_map</span><span class="o">=</span><span class="n">nom_map_fluct</span><span class="p">,</span>
             <span class="n">nominal_param_values</span><span class="o">=</span><span class="n">nominal_param_values</span><span class="p">,</span>
@@ -2470,6 +2474,9 @@
                   <span class="nb">str</span><span class="p">(</span><span class="n">avg_fit_differences</span><span class="p">))</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Mean pulls per point:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">std_pulls</span><span class="p">))</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Mean pull: </span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">std_pulls</span><span class="p">))</span>
+    <span class="c1"># mean of 0.906 (0.916) in double (single) precision at time test succeeded</span>
+    <span class="c1"># If the pseudoexperiments above are modified, this condition</span>
+    <span class="c1"># will not necessarily hold any longer</span>
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">std_pulls</span><span class="p">)</span> <span class="o">-</span>
                   <span class="mf">1.</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;avg. pulls too far from expectation&quot;</span>
 
