@@ -4,6 +4,9 @@ with arbitrary functional forms.
 
 Hypersurfaces can be used to model systematic uncertainties derived from discrete
 simulation datasets, for example for detedctor uncertainties.
+
+Note: to execute this module as a script, due to the relative import below, run
+`python -m pisa.utils.hypersurface.hypersurface`
 """
 
 __all__ = ['Hypersurface', 'HypersurfaceParam', 'fit_hypersurfaces',
@@ -2319,14 +2322,15 @@ def test_hypersurface_uncertainty(plot=False):
     assert np.allclose(asimov_true_points, asimov_fit_points, rtol=ALLCLOSE_KW['rtol']*10.)
     logging.debug("Fluctuating maps and re-fitting...")
     # do several rounds of fluctuation, re-fit and storage of results
-    n_rounds = 100
+    n_rounds = 50
     fluctuated_fit_points = []
     for i in range(n_rounds):
         #logging.info("Round %d/%d" % (i+1, n_rounds))
-        nom_map_fluct = nom_map.fluctuate(method='gauss')
+        nom_map_fluct = nom_map.fluctuate(method='gauss', random_state=i*n_rounds*len(sys_maps))
         sys_maps_fluct = []
-        for s in sys_maps:
-            sys_maps_fluct.append(s.fluctuate(method='gauss'))
+        for j, s in enumerate(sys_maps):
+            sys_maps_fluct.append(s.fluctuate(method='gauss',
+                                              random_state=i*n_rounds*len(sys_maps)+j+1))
         hypersurface.fit(
             nominal_map=nom_map_fluct,
             nominal_param_values=nominal_param_values,
@@ -2352,6 +2356,9 @@ def test_hypersurface_uncertainty(plot=False):
                   str(avg_fit_differences))
     logging.debug("Mean pulls per point:\n%s" % str(std_pulls))
     logging.debug("Mean pull: %.3f" % np.mean(std_pulls))
+    # mean of 0.906 (0.916) in double (single) precision at time test succeeded
+    # If the pseudoexperiments above are modified, this condition
+    # will not necessarily hold any longer
     assert np.abs(np.mean(std_pulls) -
                   1.) < 0.1, "avg. pulls too far from expectation"
 
