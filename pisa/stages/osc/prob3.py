@@ -1,8 +1,6 @@
 """
-PISA pi stage for the calculation of earth layers and osc. probabilities
-
-Maybe it would amke sense to split this up into a separate earth layer stage
-and an osc. stage....todo
+Service for the calculation of three-flavour oscillation probabilities,
+allowing for various non-standard effects.
 
 """
 
@@ -18,22 +16,117 @@ from pisa.stages.osc.nsi_params import StdNSIParams, VacuumLikeNSIParams
 from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.decay_params import DecayParams
 from pisa.stages.osc.lri_params import LRIParams
-from pisa.stages.osc.scaling_params import Mass_scaling, Core_scaling_w_constrain, Core_scaling_wo_constrain
+from pisa.stages.osc.scaling_params import (
+    Mass_scaling, Core_scaling_w_constrain, Core_scaling_wo_constrain,
+    FIVE_LAYER_RADII, FIVE_LAYER_RHOS, TOMOGRAPHY_ERROR_MSG
+)
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
 from pisa.utils.resources import find_resource
 
-__all__ = ['prob3', 'init_test']
+__all__ = ['prob3', 'init_test',
+           'LRI_TYPES', 'NSI_TYPES', 'TOMOGRAPHY_TYPES']
+
+LRI_TYPES = ['emu-symmetry', 'etau-symmetry', 'mutau-symmetry']
+
+NSI_TYPES = ['standard', 'vacuum-like']
+
+TOMOGRAPHY_TYPES = ['mass_of_earth', 'mass_of_core_w_constrain', 'mass_of_core_wo_constrain']
 
 
 class prob3(Stage):  # pylint: disable=invalid-name
-    """
-    Prob3-like oscillation PISA Pi class
+    r"""
+    Extended Prob3-like oscillations class.
+
+    Expected container keys are:
+            "true_energy",
+            "true_coszen",
+            "nubar",
+            "flav",
+            "nu_flux",
+            "weights"
 
     Parameters
     ----------
+
+    include_nlo : bool (default: `False`)
+        Whether to include a +2.0% NLO correction to the SM CC matter potential,
+        as per https://inspirehep.net/literature/2914951 (PRD111(2025)11).
+
+    nsi_type : str or `None` (default: `None`)
+        Choice of propagation/NC NSI parameterization.
+        If string, either 'standard' or 'vacuum-like'
+        (see e.g. https://inspirehep.net/literature/1672932 (JHEP08(2018)180).
+        Parameters of the 'standard' parameterization are:
+        `eps_ee`, `eps_mumu`, `eps_tautau`, `eps_emu_magn`, `eps_emu_phase`,
+        `eps_etau_magn`, `eps_etau_phase`, `eps_mutau_magn`, `eps_mutau_phase`.
+        Parameters of the 'vacuum-like' one are:
+        `eps_scale`, `eps_prime`, `phi12`, `phi13`, `phi23`, `alpha1`, `alpha2`,
+        `deltansi`.
+
+    reparam_mix_matrix : bool (default: `False`)
+        Whether to rephase the parameterization of the leptonic mixing matrix
+        from its PDG default by :math:`\mathrm{diag}(e^{i\delta_\mathrm{CP}}, 1, 1)`,
+        as motivated in https://inspirehep.net/literature/1672932 (JHEP08(2018)180).
+        In the *absence* of NSI, this has no observable impact on oscillation
+        probabilities, but results in the CPT transformation being realised
+        by the transformations :math:`\Delta m^2_{31} \to -\Delta m^2_{32},
+        \theta_{12} \to \pi/2 - \theta_{12},
+        \delta_\mathrm{CP} \to \pi - \delta_\mathrm{CP}`,
+        which is accommodated by the parameters' usual ranges. These
+        transformations are then part of the generalized mass ordering
+        degeneracy in the presence of NSI (see same reference above).
+
+    neutrino_decay : bool (default: `False`)
+        Whether to invoke neutrino decay with oscillations. The model
+        implemented assumes the (invisible) decay of the third mass eigenstate
+        into a singlet that is lighter than all three active mass eigenstates.
+        The decay is parameterized in a model-independent way via the parameter
+        :math:`\alpha_3 = m_3/\tau_3`, where :math:`m_3` is the mass and
+        :math:`\tau_3` the lifetime in the rest frame. As a result, the vacuum
+        Hamiltonian in the flavor basis then reads
+        :math:`U \mathrm{diag}(0, \Delta m^2_{21}, \Delta m^2_{31} - i \alpha_3) U^\dagger/(2E)`,
+        which deviates from the standard expression by the imaginary subtrahend in the
+        last entry. See e.g. https://inspirehep.net/literature/2870979
+        (JHEP04(2025)105) for such an analysis in the literature.
+        The parameter :math:`\alpha_3` is implemented by `decay_alpha3`.
+
+    tomography_type : str or `None` (default: `None`)
+        Whether to allow for certain Earth matter density variations.
+        If string, either 'mass_of_earth', 'mass_of_core_w_constrain',
+        or 'mass_of_core_wo_constrain'.
+        In case of 'mass_of_earth', expects the single parameter
+        `density_scale`, which acts as an overall density scaling factor of
+        the assumed density profile.
+        In case of 'mass_of_core_w_constrain', expects the single parameter
+        `core_density_scale`, which acts as a density scaling factor for the
+        inner and outer core of the Earth in a pre-determined 5-layer density model,
+        conserving the total mass and moment of inertia of the Earth by
+        accordingly rescaling the densities of the "inner" and "middle" (but
+        not the "outer") mantle.
+        In case of 'mass_of_core_wo_constrain', expects the three parameters
+        `core_density_scale`, `innermantle_density_scale`,
+        `middlemantle_density_scale`. In this case, the corresponding densities
+        in the 5-layer model are independently scaled, in contrast to the choice
+        above.
+        See e.g. https://inspirehep.net/literature/3072379
+        (Eur.Phys.J.ST234(2025)16,5055-5064) for example analyses.
+
+    lri_type : str or `None` (default: `None`)
+        Choice of model/parameterization of long-range interactions (LRI).
+        If string, either 'emu-symmetry', 'etau-symmetry', or 'mutau-symmetry'.
+        Implemented is the single parameter `v_lri`.
+        In the case of :math:`e`-:math:`\mu` symmetry, it is added to the standard
+        :math:`ee` matter potential entry and subtracted from the :math:`\mu\mu` one.
+        In the case of :math:`e`-:math:`\tau` symmetry, it is added to the standard
+        :math:`ee` matter potential entry and subtracted from the :math:`\tau\tau` one.
+        In the case of :math:`\mu`-:math:`\tau` symmetry, it is added to the standard
+        :math:`\mu\mu` matter potential entry and subtracted from the :math:`\tau\tau`
+        one. See e.g. https://inspirehep.net/literature/2658147 (JHEP 08(2023)101)
+        for such an analysis in the literature.
+
     params
-        Expected params .. ::
+        expected params are .. ::
 
             detector_depth : float
             earth_model : PREM file path
@@ -71,23 +164,14 @@ class prob3(Stage):  # pylint: disable=invalid-name
             decay_alpha3 : quantity (energy^2)
             v_lri : quantity (eV)
 
-        Expected container keys are .. ::
-
-            "true_energy"
-            "true_coszen"
-            "nubar"
-            "flav"
-            "nu_flux"
-            "weights"
-
-    **kwargs
+    **std_kwargs
         Other kwargs are handled by Stage
-    -----
 
     """
 
     def __init__(
       self,
+      include_nlo=False,
       nsi_type=None,
       reparam_mix_matrix=False,
       neutrino_decay=False,
@@ -120,33 +204,35 @@ class prob3(Stage):  # pylint: disable=invalid-name
             'weights'
         )
 
+        self.include_nlo = include_nlo
+        """Whether to include a +2.0% NLO correction to the
+        SM CC matter potential."""
 
         # Check whether and if so with which NSI parameters we are to work.
         if nsi_type is not None:
-            choices = ['standard', 'vacuum-like']
+            choices = NSI_TYPES
             nsi_type = nsi_type.strip().lower()
             if not nsi_type in choices:
                 raise ValueError(
-                    'Chosen NSI type "%s" not available! Choose one of %s.'
-                    % (nsi_type, choices)
+                    f'Chosen NSI type "{nsi_type}" not available!'
+                    f' Choose one of {choices}.'
                 )
         self.nsi_type = nsi_type
         """Type of NSI to assume."""
-        self.tomography_type = tomography_type
+
         self.reparam_mix_matrix = reparam_mix_matrix
-        """Use a PMNS mixing matrix parameterisation that differs from
-           the standard one by an overall phase matrix
-           diag(e^(i*delta_CP), 1, 1). This has no impact on
-           oscillation probabilities in the *absence* of NSI."""
+        r"""Use a PMNS mixing matrix parameterisation that differs from
+        the standard one by an overall phase matrix
+        :math:`\mathrm{diag}(e^{i\delta_\mathrm{CP}}, 1, 1)`. This has no
+        impact on oscillation probabilities in the *absence* of NSI."""
 
         self.neutrino_decay = neutrino_decay
+        """Invoke neutrino decay with neutrino oscillation."""
 
         if neutrino_decay:
             self.decay_flag = 1
-        else :
+        else:
             self.decay_flag = -1
-        """Invoke neutrino decay with neutrino oscillation."""
-
 
         if self.nsi_type is None:
             nsi_params = ()
@@ -172,20 +258,21 @@ class prob3(Stage):  # pylint: disable=invalid-name
                           'eps_tautau'
             )
 
-        if self.neutrino_decay :
+        if self.neutrino_decay:
             decay_params = ('decay_alpha3',)
         else:
             decay_params = ()
 
         if lri_type is not None:
-            choices = ['emu-symmetry', 'etau-symmetry', 'mutau-symmetry']
+            choices = LRI_TYPES
             lri_type = lri_type.strip().lower()
             if not lri_type in choices:
                 raise ValueError(
-                    'Chosen LRI symmetry type "%s" not available! Choose one of %s.'
-                    % (lri_type, choices)
+                    f'Chosen LRI symmetry type "{lri_type}" not available!'
+                    f' Choose one of {choices}.'
                 )
         self.lri_type = lri_type
+        """Type of LRI to assume."""
 
         if self.lri_type is None:
             lri_params = ()
@@ -193,17 +280,27 @@ class prob3(Stage):  # pylint: disable=invalid-name
             lri_params = ('v_lri',)
 
 
-        if self.tomography_type is None:
+        if tomography_type is None:
             tomography_params = ()
-        elif self.tomography_type == 'mass_of_earth':
-            tomography_params = ('density_scale',)
-        elif self.tomography_type == 'mass_of_core_w_constrain':
-            tomography_params = ('core_density_scale',)
-        elif self.tomography_type == 'mass_of_core_wo_constrain':
-            tomography_params = ('core_density_scale',
-                                 'innermantle_density_scale',
-                                 'middlemantle_density_scale'
-            )
+        else:
+            tomography_type = tomography_type.strip().lower()
+            choices = TOMOGRAPHY_TYPES
+            if not tomography_type in choices:
+                raise ValueError(
+                    f'Chosen tomography type "{tomography_type}" not available!'
+                    f' Choose one of {choices}.'
+                )
+            if tomography_type == 'mass_of_earth':
+                tomography_params = ('density_scale',)
+            elif tomography_type == 'mass_of_core_w_constrain':
+                tomography_params = ('core_density_scale',)
+            elif tomography_type == 'mass_of_core_wo_constrain':
+                tomography_params = ('core_density_scale',
+                                     'innermantle_density_scale',
+                                     'middlemantle_density_scale'
+                )
+        self.tomography_type = tomography_type
+        """Type of Earth tomography to assume."""
 
 
         expected_params = (expected_params + nsi_params + decay_params
@@ -215,7 +312,6 @@ class prob3(Stage):  # pylint: disable=invalid-name
             expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
-
 
         self.layers = None
         self.osc_params = None
@@ -231,9 +327,9 @@ class prob3(Stage):  # pylint: disable=invalid-name
         # (NSI), which is why we can simply treat it as a constant here.
         self.gen_mat_pot_matrix_complex = None
         """Interaction Hamiltonian without the factor sqrt(2)*G_F*N_e."""
-        self.YeI = None
-        self.YeO = None
-        self.YeM = None
+        self.YeI = None # pylint: disable=invalid-name
+        self.YeO = None # pylint: disable=invalid-name
+        self.YeM = None # pylint: disable=invalid-name
 
     def setup_function(self):
 
@@ -241,7 +337,7 @@ class prob3(Stage):  # pylint: disable=invalid-name
         self.osc_params = OscParams()
         if self.reparam_mix_matrix:
             logging.debug(
-                'Working with reparameterizated version of mixing matrix.'
+                'Working with reparameterized version of mixing matrix.'
             )
         else:
             logging.debug(
@@ -263,18 +359,6 @@ class prob3(Stage):  # pylint: disable=invalid-name
             logging.debug('Working with LRI')
             self.lri_params = LRIParams()
 
-
-        if self.tomography_type == "mass_of_earth":
-            logging.debug('Working with a single density scaling factor.')
-            self.tomography_params = Mass_scaling()
-        elif self.tomography_type == "mass_of_core_w_constrain":
-            logging.debug('Working with different scaling for different layers.')
-            self.tomography_params = Core_scaling_w_constrain()
-        elif self.tomography_type == "mass_of_core_wo_constrain":
-            logging.debug('Working without any external constraints')
-            self.tomography_params = Core_scaling_wo_constrain()
-
-
         # setup the layers
         #if self.params.earth_model.value is not None:
         earth_model = find_resource(self.params.earth_model.value)
@@ -286,6 +370,34 @@ class prob3(Stage):  # pylint: disable=invalid-name
         self.layers = Layers(earth_model, detector_depth, prop_height)
         self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
 
+        if self.tomography_type == "mass_of_earth":
+            if not self.layers.using_earth_model:
+                # already fail here instead of in compute upon attempt to scale
+                # (to be on the safe side; not sure if this case can even happen)
+                raise ValueError(
+                    "You need to provide some Earth model, whose densities can"
+                    " be rescaled!"
+                )
+            logging.debug('Working with tomography with a single density scaling factor.')
+            self.tomography_params = Mass_scaling()
+        elif self.tomography_type is not None:
+            # not elegant but safe: external Earth model must correspond to internal hard-coded one
+            if not self.layers.using_earth_model:
+                raise ValueError(TOMOGRAPHY_ERROR_MSG)
+            radii_ext = self.layers.radii[::-1][:-1]
+            rhos_ext = self.layers.rhos_unweighted[::-1][:-1]
+            if not (len(radii_ext) == len(FIVE_LAYER_RADII) and len(rhos_ext) == len(FIVE_LAYER_RHOS)):
+                raise ValueError(TOMOGRAPHY_ERROR_MSG)
+            radii_equal = np.allclose(np.add(radii_ext, 1), np.add(FIVE_LAYER_RADII, 1))
+            rhos_equal = np.allclose(np.add(rhos_ext, 1), np.add(FIVE_LAYER_RHOS, 1))
+            if not radii_equal or not rhos_equal:
+                raise ValueError(TOMOGRAPHY_ERROR_MSG)
+            if self.tomography_type == "mass_of_core_w_constrain":
+                logging.debug('Working with tomography with different scaling for different layers.')
+                self.tomography_params = Core_scaling_w_constrain()
+            elif self.tomography_type == "mass_of_core_wo_constrain":
+                logging.debug('Working with tomography without any external constraints.')
+                self.tomography_params = Core_scaling_wo_constrain()
 
         # --- calculate the layers ---
         if self.is_map:
@@ -326,16 +438,14 @@ class prob3(Stage):  # pylint: disable=invalid-name
         else:
             mix_matrix = self.osc_params.mix_matrix_complex
 
-        logging.debug('matter potential:\n%s'
-                          % self.gen_mat_pot_matrix_complex)
-        logging.debug('decay matrix:\n%s'
-                          % self.decay_matix)
+        logging.debug('matter potential:\n%s', self.gen_mat_pot_matrix_complex)
+        logging.debug('decay matrix:\n%s', self.decay_matrix)
 
         propagate_array(self.osc_params.dm_matrix, # pylint: disable = unexpected-keyword-arg, no-value-for-parameter
                         mix_matrix,
                         self.gen_mat_pot_matrix_complex,
                         self.decay_flag,
-                        self.decay_matix,
+                        self.decay_matrix,
                         self.lri_pot,
                         nubar,
                         e_array,
@@ -359,7 +469,9 @@ class prob3(Stage):  # pylint: disable=invalid-name
         YeM = self.params.YeM.value.m_as('dimensionless')
 
         if YeI != self.YeI or YeO != self.YeO or YeM != self.YeM:
-            self.YeI = YeI; self.YeO = YeO; self.YeM = YeM
+            self.YeI = YeI
+            self.YeO = YeO
+            self.YeM = YeM
             self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
             for container in self.data:
                 self.layers.calcLayers(container['true_coszen'])
@@ -370,8 +482,9 @@ class prob3(Stage):  # pylint: disable=invalid-name
         # some safety checks on units
         # trying to avoid issue of angles with no dimension being assumed to be radians
         # here we enforce the user must speficy a valid angle unit
-        for angle_param in [self.params.theta12, self.params.theta13, self.params.theta23, self.params.deltacp] :
-            assert angle_param.value.units != ureg.dimensionless, "Param %s is dimensionless, but should have angle units [rad, degree]" % angle_param.name
+        for angle_param in [self.params.theta12, self.params.theta13, self.params.theta23, self.params.deltacp]:
+            if angle_param.value.units == ureg.dimensionless:
+                raise ValueError(f"{angle_param.name} is dimensionless, but needs units rad or deg!")
 
         # --- update mixing params ---
         self.osc_params.theta12 = self.params.theta12.value.m_as('rad')
@@ -430,26 +543,31 @@ class prob3(Stage):  # pylint: disable=invalid-name
 
         # now we can proceed to calculate the generalised matter potential matrix
         std_mat_pot_matrix = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3, 3), dtype=FTYPE)
-        std_mat_pot_matrix[0, 0] += 1.0
+        if not self.include_nlo:
+            logging.debug("Proceeding with *tree-level* standard CC matter potential....")
+            std_mat_pot_matrix[0, 0] += 1.0
+        else:
+            logging.debug("Proceeding with *NLO* standard CC matter potential....")
+            std_mat_pot_matrix[0, 0] += 1.020
 
         # add effective nsi coupling matrix
         if self.nsi_type is not None:
-            logging.debug('NSI matrix:\n%s' % self.nsi_params.eps_matrix)
+            logging.debug('NSI matrix:\n%s', self.nsi_params.eps_matrix)
             self.gen_mat_pot_matrix_complex = (
                 std_mat_pot_matrix + self.nsi_params.eps_matrix
             )
-            logging.debug('Using generalised matter potential:\n%s'
-                          % self.gen_mat_pot_matrix_complex)
+            logging.debug('Using generalised matter potential:\n%s',
+                          self.gen_mat_pot_matrix_complex)
         else:
             self.gen_mat_pot_matrix_complex = std_mat_pot_matrix
-            logging.debug('Using standard matter potential:\n%s'
-                          % self.gen_mat_pot_matrix_complex)
+            logging.debug('Using standard matter potential:\n%s',
+                          self.gen_mat_pot_matrix_complex)
 
         if self.neutrino_decay:
-            self.decay_matix = self.decay_params.decay_matrix
-            logging.debug('Decay matrix:\n%s' % self.decay_params.decay_matrix)
-        else :
-            self.decay_matix = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3, 3), dtype=FTYPE)
+            self.decay_matrix = self.decay_params.decay_matrix
+            logging.debug('Decay matrix:\n%s', self.decay_params.decay_matrix)
+        else:
+            self.decay_matrix = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3, 3), dtype=FTYPE)
 
         self.lri_pot = np.zeros((3, 3), dtype=FTYPE)
         types_lri = ['emu-symmetry', 'etau-symmetry', 'etau-symmetry']
@@ -525,4 +643,4 @@ def init_test(**param_kwargs):
         Param(name='deltam31', value=3e-3*ureg.eV**2, **param_kwargs),
         Param(name='deltacp', value=180*ureg.degree, **param_kwargs),
     ])
-    return prob3(params=param_set)
+    return prob3(include_nlo=True, params=param_set)
