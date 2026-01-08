@@ -16,6 +16,7 @@
       <script src="_static/documentation_options.js?v=0cd558ae"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -1160,9 +1161,8 @@ as diag(exp(i*deltacp), 0, 0) * U * diag(exp(-i*deltacp), 0, 0).</p>
 </section>
 <section id="module-pisa.stages.osc.prob3">
 <span id="pisa-stages-osc-prob3-module"></span><h2>pisa.stages.osc.prob3 module<a class="headerlink" href="#module-pisa.stages.osc.prob3" title="Link to this heading"></a></h2>
-<p>PISA pi stage for the calculation of earth layers and osc. probabilities</p>
-<p>Maybe it would amke sense to split this up into a separate earth layer stage
-and an osc. stage….todo</p>
+<p>Service for the calculation of three-flavour oscillation probabilities,
+allowing for various non-standard effects.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.osc.prob3.init_test">
 <span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3.init_test" title="Link to this definition"></a></dt>
@@ -1171,13 +1171,86 @@ and an osc. stage….todo</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.osc.prob3.prob3">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3.</span></span><span class="sig-name descname"><span class="pre">prob3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nsi_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reparam_mix_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neutrino_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tomography_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lri_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3.html#prob3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3.prob3" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.prob3.</span></span><span class="sig-name descname"><span class="pre">prob3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include_nlo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsi_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reparam_mix_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neutrino_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tomography_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lri_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3.html#prob3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3.prob3" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>Prob3-like oscillation PISA Pi class</p>
+<p>Extended Prob3-like oscillations class.</p>
+<dl class="simple">
+<dt>Expected container keys are:</dt><dd><p>“true_energy”,
+“true_coszen”,
+“nubar”,
+“flav”,
+“nu_flux”,
+“weights”</p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>params</strong> – <p>Expected params ..</p>
+<li><p><strong>include_nlo</strong> (bool (default: <cite>False</cite>)) – Whether to include a +2.0% NLO correction to the SM CC matter potential,
+as per <a class="reference external" href="https://inspirehep.net/literature/2914951">https://inspirehep.net/literature/2914951</a> (PRD111(2025)11).</p></li>
+<li><p><strong>nsi_type</strong> (str or <cite>None</cite> (default: <cite>None</cite>)) – Choice of propagation/NC NSI parameterization.
+If string, either ‘standard’ or ‘vacuum-like’
+(see e.g. <a class="reference external" href="https://inspirehep.net/literature/1672932">https://inspirehep.net/literature/1672932</a> (JHEP08(2018)180).
+Parameters of the ‘standard’ parameterization are:
+<cite>eps_ee</cite>, <cite>eps_mumu</cite>, <cite>eps_tautau</cite>, <cite>eps_emu_magn</cite>, <cite>eps_emu_phase</cite>,
+<cite>eps_etau_magn</cite>, <cite>eps_etau_phase</cite>, <cite>eps_mutau_magn</cite>, <cite>eps_mutau_phase</cite>.
+Parameters of the ‘vacuum-like’ one are:
+<cite>eps_scale</cite>, <cite>eps_prime</cite>, <cite>phi12</cite>, <cite>phi13</cite>, <cite>phi23</cite>, <cite>alpha1</cite>, <cite>alpha2</cite>,
+<cite>deltansi</cite>.</p></li>
+<li><p><strong>reparam_mix_matrix</strong> (bool (default: <cite>False</cite>)) – Whether to rephase the parameterization of the leptonic mixing matrix
+from its PDG default by <span class="math notranslate nohighlight">\(\mathrm{diag}(e^{i\delta_\mathrm{CP}}, 1, 1)\)</span>,
+as motivated in <a class="reference external" href="https://inspirehep.net/literature/1672932">https://inspirehep.net/literature/1672932</a> (JHEP08(2018)180).
+In the <em>absence</em> of NSI, this has no observable impact on oscillation
+probabilities, but results in the CPT transformation being realised
+by the transformations <span class="math notranslate nohighlight">\(\Delta m^2_{31} \to -\Delta m^2_{32},
+\theta_{12} \to \pi/2 - \theta_{12},
+\delta_\mathrm{CP} \to \pi - \delta_\mathrm{CP}\)</span>,
+which is accommodated by the parameters’ usual ranges. These
+transformations are then part of the generalized mass ordering
+degeneracy in the presence of NSI (see same reference above).</p></li>
+<li><p><strong>neutrino_decay</strong> (bool (default: <cite>False</cite>)) – Whether to invoke neutrino decay with oscillations. The model
+implemented assumes the (invisible) decay of the third mass eigenstate
+into a singlet that is lighter than all three active mass eigenstates.
+The decay is parameterized in a model-independent way via the parameter
+<span class="math notranslate nohighlight">\(\alpha_3 = m_3/\tau_3\)</span>, where <span class="math notranslate nohighlight">\(m_3\)</span> is the mass and
+<span class="math notranslate nohighlight">\(\tau_3\)</span> the lifetime in the rest frame. As a result, the vacuum
+Hamiltonian in the flavor basis then reads
+<span class="math notranslate nohighlight">\(U \mathrm{diag}(0, \Delta m^2_{21}, \Delta m^2_{31} - i \alpha_3) U^\dagger/(2E)\)</span>,
+which deviates from the standard expression by the imaginary subtrahend in the
+last entry. See e.g. <a class="reference external" href="https://inspirehep.net/literature/2870979">https://inspirehep.net/literature/2870979</a>
+(JHEP04(2025)105) for such an analysis in the literature.
+The parameter <span class="math notranslate nohighlight">\(\alpha_3\)</span> is implemented by <cite>decay_alpha3</cite>.</p></li>
+<li><p><strong>tomography_type</strong> (str or <cite>None</cite> (default: <cite>None</cite>)) – Whether to allow for certain Earth matter density variations.
+If string, either ‘mass_of_earth’, ‘mass_of_core_w_constrain’,
+or ‘mass_of_core_wo_constrain’.
+In case of ‘mass_of_earth’, expects the single parameter
+<cite>density_scale</cite>, which acts as an overall density scaling factor of
+the assumed density profile.
+In case of ‘mass_of_core_w_constrain’, expects the single parameter
+<cite>core_density_scale</cite>, which acts as a density scaling factor for the
+inner and outer core of the Earth in a pre-determined 5-layer density model,
+conserving the total mass and moment of inertia of the Earth by
+accordingly rescaling the densities of the “inner” and “middle” (but
+not the “outer”) mantle.
+In case of ‘mass_of_core_wo_constrain’, expects the three parameters
+<cite>core_density_scale</cite>, <cite>innermantle_density_scale</cite>,
+<cite>middlemantle_density_scale</cite>. In this case, the corresponding densities
+in the 5-layer model are independently scaled, in contrast to the choice
+above.
+See e.g. <a class="reference external" href="https://inspirehep.net/literature/3072379">https://inspirehep.net/literature/3072379</a>
+(Eur.Phys.J.ST234(2025)16,5055-5064) for example analyses.</p></li>
+<li><p><strong>lri_type</strong> (str or <cite>None</cite> (default: <cite>None</cite>)) – Choice of model/parameterization of long-range interactions (LRI).
+If string, either ‘emu-symmetry’, ‘etau-symmetry’, or ‘mutau-symmetry’.
+Implemented is the single parameter <cite>v_lri</cite>.
+In the case of <span class="math notranslate nohighlight">\(e\)</span>-<span class="math notranslate nohighlight">\(\mu\)</span> symmetry, it is added to the standard
+<span class="math notranslate nohighlight">\(ee\)</span> matter potential entry and subtracted from the <span class="math notranslate nohighlight">\(\mu\mu\)</span> one.
+In the case of <span class="math notranslate nohighlight">\(e\)</span>-<span class="math notranslate nohighlight">\(\tau\)</span> symmetry, it is added to the standard
+<span class="math notranslate nohighlight">\(ee\)</span> matter potential entry and subtracted from the <span class="math notranslate nohighlight">\(\tau\tau\)</span> one.
+In the case of <span class="math notranslate nohighlight">\(\mu\)</span>-<span class="math notranslate nohighlight">\(\tau\)</span> symmetry, it is added to the standard
+<span class="math notranslate nohighlight">\(\mu\mu\)</span> matter potential entry and subtracted from the <span class="math notranslate nohighlight">\(\tau\tau\)</span>
+one. See e.g. <a class="reference external" href="https://inspirehep.net/literature/2658147">https://inspirehep.net/literature/2658147</a> (JHEP 08(2023)101)
+for such an analysis in the literature.</p></li>
+<li><p><strong>params</strong> – <p>expected params are ..</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">detector_depth</span> <span class="p">:</span> <span class="nb">float</span>
 <span class="n">earth_model</span> <span class="p">:</span> <span class="n">PREM</span> <span class="n">file</span> <span class="n">path</span>
 <span class="n">prop_height</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
@@ -1215,18 +1288,8 @@ and an osc. stage….todo</p>
 <span class="n">v_lri</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">eV</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;true_coszen&quot;</span>
-<span class="s2">&quot;nubar&quot;</span>
-<span class="s2">&quot;flav&quot;</span>
-<span class="s2">&quot;nu_flux&quot;</span>
-<span class="s2">&quot;weights&quot;</span>
-</pre></div>
-</div>
 </p></li>
-<li><p><strong>**kwargs</strong> – Other kwargs are handled by Stage</p></li>
-<li><p><strong>-----</strong></p></li>
+<li><p><strong>**std_kwargs</strong> – Other kwargs are handled by Stage</p></li>
 </ul>
 </dd>
 </dl>
@@ -1255,6 +1318,25 @@ and an osc. stage….todo</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3.prob3.include_nlo">
+<span class="sig-name descname"><span class="pre">include_nlo</span></span><a class="headerlink" href="#pisa.stages.osc.prob3.prob3.include_nlo" title="Link to this definition"></a></dt>
+<dd><p>Whether to include a +2.0% NLO correction to the
+SM CC matter potential.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3.prob3.lri_type">
+<span class="sig-name descname"><span class="pre">lri_type</span></span><a class="headerlink" href="#pisa.stages.osc.prob3.prob3.lri_type" title="Link to this definition"></a></dt>
+<dd><p>Type of LRI to assume.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3.prob3.neutrino_decay">
+<span class="sig-name descname"><span class="pre">neutrino_decay</span></span><a class="headerlink" href="#pisa.stages.osc.prob3.prob3.neutrino_decay" title="Link to this definition"></a></dt>
+<dd><p>Invoke neutrino decay with neutrino oscillation.</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="pisa.stages.osc.prob3.prob3.nsi_type">
 <span class="sig-name descname"><span class="pre">nsi_type</span></span><a class="headerlink" href="#pisa.stages.osc.prob3.prob3.nsi_type" title="Link to this definition"></a></dt>
 <dd><p>Type of NSI to assume.</p>
@@ -1265,14 +1347,20 @@ and an osc. stage….todo</p>
 <span class="sig-name descname"><span class="pre">reparam_mix_matrix</span></span><a class="headerlink" href="#pisa.stages.osc.prob3.prob3.reparam_mix_matrix" title="Link to this definition"></a></dt>
 <dd><p>Use a PMNS mixing matrix parameterisation that differs from
 the standard one by an overall phase matrix
-diag(e^(i*delta_CP), 1, 1). This has no impact on
-oscillation probabilities in the <em>absence</em> of NSI.</p>
+<span class="math notranslate nohighlight">\(\mathrm{diag}(e^{i\delta_\mathrm{CP}}, 1, 1)\)</span>. This has no
+impact on oscillation probabilities in the <em>absence</em> of NSI.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.osc.prob3.prob3.setup_function">
 <span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/prob3.html#prob3.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.prob3.prob3.setup_function" title="Link to this definition"></a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.stages.osc.prob3.prob3.tomography_type">
+<span class="sig-name descname"><span class="pre">tomography_type</span></span><a class="headerlink" href="#pisa.stages.osc.prob3.prob3.tomography_type" title="Link to this definition"></a></dt>
+<dd><p>Type of Earth tomography to assume.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1286,26 +1374,18 @@ Date : August 10, 2023</p>
 <dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.Core_scaling_w_constrain">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.scaling_params.</span></span><span class="sig-name descname"><span class="pre">Core_scaling_w_constrain</span></span><a class="reference internal" href="_modules/pisa/stages/osc/scaling_params.html#Core_scaling_w_constrain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.scaling_params.Core_scaling_w_constrain" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Returns scaling factors for inner mantle and middle mantle by taking scaling factor of inner core and outer core as input.
-Scaling factor of inner and outer core = core_density_scale (alpha)
-Scaling factor of inner mantle = beta
-Scaling factor of middle mantle = gamma
-Outer mantle not scaled
-This function solves the equations for two constraints: mass of earth and moment of inertia, by taking core_density_scale as an independent
-parameter, and returns scaling factor factors for inner and middle mantle.</p>
+<p>Returns scaling factors for inner mantle and middle mantle by taking scaling
+factor of inner core and outer core as input.
+Scaling factor of inner and outer core = core_density_scale (alpha).
+Scaling factor of inner mantle = beta.
+Scaling factor of middle mantle = gamma.
+Outer mantle not scaled.
+This function solves the equations for two constraints: mass of earth and
+moment of inertia, by taking core_density_scale as an independent
+parameter, and returns scaling factors for inner and middle mantle.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.Core_scaling_w_constrain.core_density_scale">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">core_density_scale</span></span><a class="headerlink" href="#pisa.stages.osc.scaling_params.Core_scaling_w_constrain.core_density_scale" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.Core_scaling_w_constrain.is_descending">
-<span class="sig-name descname"><span class="pre">is_descending</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lst</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/scaling_params.html#Core_scaling_w_constrain.is_descending"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.scaling_params.Core_scaling_w_constrain.is_descending" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.Core_scaling_w_constrain.is_positive">
-<span class="sig-name descname"><span class="pre">is_positive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lst</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/osc/scaling_params.html#Core_scaling_w_constrain.is_positive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.scaling_params.Core_scaling_w_constrain.is_positive" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -1319,7 +1399,7 @@ parameter, and returns scaling factor factors for inner and middle mantle.</p>
 <dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.Core_scaling_wo_constrain">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.scaling_params.</span></span><span class="sig-name descname"><span class="pre">Core_scaling_wo_constrain</span></span><a class="reference internal" href="_modules/pisa/stages/osc/scaling_params.html#Core_scaling_wo_constrain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.scaling_params.Core_scaling_wo_constrain" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Takes scaling factors for core, inner mantle and outer mantle from pipeline and stores them in an array</p>
+<p>Stores independent scaling factors for core, inner mantle and outer mantle.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.Core_scaling_wo_constrain.core_density_scale">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">core_density_scale</span></span><a class="headerlink" href="#pisa.stages.osc.scaling_params.Core_scaling_wo_constrain.core_density_scale" title="Link to this definition"></a></dt>
@@ -1342,16 +1422,34 @@ parameter, and returns scaling factor factors for inner and middle mantle.</p>
 
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.FIVE_LAYER_RADII">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.scaling_params.</span></span><span class="sig-name descname"><span class="pre">FIVE_LAYER_RADII</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">array([</span>&#160;&#160; <span class="pre">0.</span> <span class="pre">,</span> <span class="pre">1221.5,</span> <span class="pre">3480.</span> <span class="pre">,</span> <span class="pre">5701.</span> <span class="pre">,</span> <span class="pre">6151.</span> <span class="pre">,</span> <span class="pre">6371.</span> <span class="pre">])</span></em><a class="headerlink" href="#pisa.stages.osc.scaling_params.FIVE_LAYER_RADII" title="Link to this definition"></a></dt>
+<dd><p>Radii (km) of five Earth layers to assume for the last two types of tomography.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.FIVE_LAYER_RHOS">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.scaling_params.</span></span><span class="sig-name descname"><span class="pre">FIVE_LAYER_RHOS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">array([13.</span>&#160; <span class="pre">,</span> <span class="pre">13.</span>&#160; <span class="pre">,</span> <span class="pre">10.96,</span>&#160; <span class="pre">5.03,</span>&#160; <span class="pre">3.7</span> <span class="pre">,</span>&#160; <span class="pre">2.5</span> <span class="pre">])</span></em><a class="headerlink" href="#pisa.stages.osc.scaling_params.FIVE_LAYER_RHOS" title="Link to this definition"></a></dt>
+<dd><p>Matter densities (g/cm^3) of five Earth layers to assume for the last two types of tomography.</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.Mass_scaling">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.scaling_params.</span></span><span class="sig-name descname"><span class="pre">Mass_scaling</span></span><a class="reference internal" href="_modules/pisa/stages/osc/scaling_params.html#Mass_scaling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.osc.scaling_params.Mass_scaling" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Uses a single scaling factor for all the layers. Scaling factor can be only positive.</p>
+<p>Uses a single positive scaling factor for all the layers.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.Mass_scaling.density_scale">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">density_scale</span></span><a class="headerlink" href="#pisa.stages.osc.scaling_params.Mass_scaling.density_scale" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.stages.osc.scaling_params.TOMOGRAPHY_ERROR_MSG">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.osc.scaling_params.</span></span><span class="sig-name descname"><span class="pre">TOMOGRAPHY_ERROR_MSG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'You</span> <span class="pre">need</span> <span class="pre">to</span> <span class="pre">provide</span> <span class="pre">the</span> <span class="pre">appropriate</span> <span class="pre">5-layer</span> <span class="pre">Earth</span> <span class="pre">model,</span> <span class="pre">which</span> <span class="pre">has</span> <span class="pre">the</span> <span class="pre">same</span> <span class="pre">layer</span> <span class="pre">radii</span> <span class="pre">([</span>&#160;&#160; <span class="pre">0.</span>&#160; <span class="pre">1221.5</span> <span class="pre">3480.</span>&#160; <span class="pre">5701.</span>&#160; <span class="pre">6151.</span>&#160; <span class="pre">6371.</span> <span class="pre">])</span> <span class="pre">and</span> <span class="pre">densities</span> <span class="pre">([13.</span>&#160;&#160; <span class="pre">13.</span>&#160;&#160; <span class="pre">10.96</span>&#160; <span class="pre">5.03</span>&#160; <span class="pre">3.7</span>&#160;&#160; <span class="pre">2.5</span> <span class="pre">])</span> <span class="pre">as</span> <span class="pre">the</span> <span class="pre">one</span> <span class="pre">hard-coded</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">chosen</span> <span class="pre">type</span> <span class="pre">of</span> <span class="pre">tomography</span> <span class="pre">internally.'</span></em><a class="headerlink" href="#pisa.stages.osc.scaling_params.TOMOGRAPHY_ERROR_MSG" title="Link to this definition"></a></dt>
+<dd><p>An error message simultaneously explaining the state of the code.</p>
 </dd></dl>
 
 </section>
