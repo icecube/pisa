@@ -319,7 +319,7 @@ class Hypersurface(object):
         # Have one fit per bin
         self.intercept = np.full(
             self.binning.shape, self.initial_intercept, dtype=FTYPE)
-        self.intercept_sigma = np.full_like(self.intercept, np.NaN)
+        self.intercept_sigma = np.full_like(self.intercept, np.nan)
         for param in list(self.params.values()):
             param._init_fit_coefft_arrays(self.binning)
 
@@ -416,7 +416,7 @@ class Hypersurface(object):
             out_shape = (num_param_values,)
 
         # Create the output array
-        out = np.full(out_shape, np.NaN, dtype=FTYPE)
+        out = np.full(out_shape, np.nan, dtype=FTYPE)
 
         #
         # Evaluate the hypersurface
@@ -442,7 +442,7 @@ class Hypersurface(object):
             for param in list(self.params.values()):
                 n_coeffs += param.num_fit_coeffts
             gradient_buffer = np.full(
-                out_shape + (n_coeffs,), np.NaN, dtype=FTYPE)
+                out_shape + (n_coeffs,), np.nan, dtype=FTYPE)
             # Start with the intercept, its gradient is always 1
             gradient_buffer[..., 0] = 1.
 
@@ -450,7 +450,7 @@ class Hypersurface(object):
             i = 1  # start at one because the intercept was already treated
             for k, p in list(self.params.items()):
                 gbuf = np.full(out_shape + (p.num_fit_coeffts,),
-                               np.NaN, dtype=FTYPE)
+                               np.nan, dtype=FTYPE)
                 param_val = param_values[k] if self.using_legacy_data else param_values[k] - p.nominal_value
                 p.gradient(param_val, out=gbuf, bin_idx=bin_idx)
                 for j in range(p.num_fit_coeffts):
@@ -592,7 +592,7 @@ class Hypersurface(object):
                         for param_name in list(self.params.keys())], dtype=FTYPE)
         # Prepare covariance matrix array
         self.fit_cov_mat = np.full(
-            list(self.binning.shape)+[self.num_fit_coeffts, self.num_fit_coeffts], np.NaN)
+            list(self.binning.shape)+[self.num_fit_coeffts, self.num_fit_coeffts], np.nan)
 
 
         #
@@ -676,7 +676,7 @@ class Hypersurface(object):
                 norm_m = copy.deepcopy(m)
                 norm_m.hist[finite_mask] = norm_m.hist[finite_mask] / \
                     unp.nominal_values(nominal_map.hist[finite_mask])
-                norm_m.hist[~finite_mask] = ufloat(np.NaN, np.NaN)
+                norm_m.hist[~finite_mask] = ufloat(np.nan, np.nan)
                 fit_maps_norm.append(norm_m)
             self.fit_maps_norm = fit_maps_norm
 
@@ -713,8 +713,8 @@ class Hypersurface(object):
                     p0 = np.array([p0_intercept] + p0_param_coeffts, dtype=FTYPE)
 
                 # Not fitting, add empty variables
-                popt = np.full_like(p0, np.NaN)
-                pcov = np.NaN
+                popt = np.full_like(p0, np.nan)
+                pcov = np.nan
 
 
             else :
@@ -780,8 +780,8 @@ class Hypersurface(object):
                 # Check if have NaNs/Infs
                 if np.any(~np.isfinite(y_to_use)):  # TODO also handle missing sigma
                     # Not fitting, add empty variables
-                    popt = np.full_like(p0, np.NaN)
-                    pcov = np.NaN
+                    popt = np.full_like(p0, np.nan)
+                    pcov = np.nan
 
                 # Otherwise, fit...
                 else:
@@ -943,14 +943,14 @@ class Hypersurface(object):
             i = 0
             if not fix_intercept:
                 self.intercept[bin_idx] = popt[i]
-                self.intercept_sigma[bin_idx] = np.NaN if corr_vals is None else corr_vals[i].std_dev
+                self.intercept_sigma[bin_idx] = np.nan if corr_vals is None else corr_vals[i].std_dev
                 i += 1
             for param in list(self.params.values()):
                 for j in range(param.num_fit_coeffts):
                     idx = param.get_fit_coefft_idx(
                         bin_idx=bin_idx, coefft_idx=j)
                     param.fit_coeffts[idx] = popt[i]
-                    param.fit_coeffts_sigma[idx] = np.NaN if corr_vals is None else corr_vals[i].std_dev
+                    param.fit_coeffts_sigma[idx] = np.nan if corr_vals is None else corr_vals[i].std_dev
                     i += 1
             # Store the covariance matrix
             if fix_intercept and np.all(np.isfinite(pcov)):
@@ -1442,7 +1442,7 @@ class HypersurfaceParam(object):
             arrays.append(fit_coefft_array)
 
         self.fit_coeffts = np.stack(arrays, axis=-1)
-        self.fit_coeffts_sigma = np.full_like(self.fit_coeffts, np.NaN)
+        self.fit_coeffts_sigma = np.full_like(self.fit_coeffts, np.nan)
 
     def evaluate(self, param, out, bin_idx=None):
         '''
@@ -1454,7 +1454,7 @@ class HypersurfaceParam(object):
         '''
 
         # Create an array to fill with this contribution
-        this_out = np.full_like(out, np.NaN, dtype=FTYPE)
+        this_out = np.full_like(out, np.nan, dtype=FTYPE)
 
         # Form the arguments to pass to the functional form
         # Need to be flexible in terms of the number of fit parameters
@@ -1477,7 +1477,7 @@ class HypersurfaceParam(object):
         By default evaluates all bins, but optionally can specify a particular bin (used when fitting).
         '''
         # Create an array to fill with the gradient
-        this_out = np.full_like(out, np.NaN, dtype=FTYPE)
+        this_out = np.full_like(out, np.nan, dtype=FTYPE)
 
         # Form the arguments to pass to the functional form
         # Need to be flexible in terms of the number of fit parameters
@@ -2031,7 +2031,7 @@ def _load_hypersurfaces_legacy(input_data):
         hypersurface._init(
             binning=binning,
             nominal_param_values={
-                name: np.NaN for name in hypersurface.param_names},
+                name: np.nan for name in hypersurface.param_names},
         )
 
         # Indicate this is legacy data (not all functionality will work)
@@ -2146,7 +2146,7 @@ def _load_hypersurfaces_data_release(input_file_prototype, binning):
         hypersurface._init(
             binning=binning,
             nominal_param_values={
-                name: np.NaN for name in hypersurface.param_names},
+                name: np.nan for name in hypersurface.param_names},
         )
 
         # Indicate this is legacy data (not all functionality will work)

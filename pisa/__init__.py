@@ -16,8 +16,8 @@ from numba import jit as numba_jit
 from numpy import (
     array, inf, nan,
     float32, float64,
-    int0, int8, int16, int32, int64,
-    uint0, uint8, uint16, uint32, uint64,
+    intp, int8, int16, int32, int64,
+    uintp, uint8, uint16, uint32, uint64,
     complex64, complex128
 )
 # The alias only exists on Linux x86_64, see
@@ -61,8 +61,8 @@ __all__ = [
     # all types defined in PISA (i.e. passes round trip test)
     'array', 'inf', 'nan', 'namedtuple', 'OrderedDict',
     'float32', 'float64',
-    'int0', 'int8', 'int16', 'int32', 'int64',
-    'uint0', 'uint8', 'uint16', 'uint32', 'uint64',
+    'intp', 'int8', 'int16', 'int32', 'int64',
+    'uintp', 'uint8', 'uint16', 'uint32', 'uint64',
     'complex64', 'complex128', 'complex256',
 
     # Constants

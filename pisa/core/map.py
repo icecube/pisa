@@ -1760,7 +1760,7 @@ class Map(object):
         # Apply bin mask, if one exists
         # Set masked off elements to NaN (handling both cases where the hst is either a simple array, or has uncertainties)
         if self.binning.mask is not None :
-            hist[~self.binning.mask] = ufloat(np.NaN, np.NaN) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.NaN #TODO Is there a better way to check if this is a uarray?
+            hist[~self.binning.mask] = ufloat(np.nan, np.nan) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.nan #TODO Is there a better way to check if this is a uarray?
 
         # Done
         return hist

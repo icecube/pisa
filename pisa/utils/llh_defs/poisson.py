@@ -103,7 +103,7 @@ def fast_pgmix(k, alphas=None, betas=None):
             logging.debug(a, b, poisson_gamma_mixtures.c_generalized_pg_mixture(k, np.array([a]),np.array([b])))
 
 
-    output_value = np.NaN
+    output_value = np.nan
 
     if(ret > 1e-300):
         output_value = np.log(ret)
