@@ -35,7 +35,7 @@ import tempfile
 
 from setuptools.command.build_ext import build_ext
 from setuptools import setup, Extension, find_packages
-import versioneer
+#import versioneer
 
 
 __all__ = [
@@ -77,7 +77,7 @@ __license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 
 SETUP_REQUIRES = [
     'pip>=1.8',
-    'setuptools>18.5', # versioneer requires >18.5
+    'setuptools>18.5,<81', # versioneer requires >18.5
     'numpy>=1.17',
     'scipy>=1.6',
     'cython',
@@ -97,6 +97,7 @@ INSTALL_REQUIRES = [
     'pint>=0.20', # property pint.quantity._Quantity no longer exists in 0.20
     'scipy>=1.6',
     'pandas',
+    'setuptools>18.5,<81', # for python>=3.12 to still be able to use pkg_resources
     'simplejson>=3.19.1', # allow_nan added to decoder
     'tables',
     'tabulate',
@@ -118,7 +119,7 @@ EXTRAS_REQUIRE = {
         'recommonmark',
         'sphinx>=1.3',
         'sphinx_rtd_theme',
-        'versioneer',
+        #'versioneer',
         'pytest',
     ],
     # TODO: get mceq install to work... this is non-trivial since that
@@ -283,12 +284,12 @@ def do_setup():
     ]
 
     cmdclasses = {'build': CustomBuild, 'build_ext': CustomBuildExt}
-    cmdclasses.update(versioneer.get_cmdclass())
+    #cmdclasses.update(versioneer.get_cmdclass())
 
     # Now do the actual work
     setup(
         name='pisa',
-        version=versioneer.get_version(),
+        version='4.2', #versioneer.get_version(),
         description='Tools for analyzing and drawing statistical conclusions from experimental data',
         long_description=long_description,
         long_description_content_type='text/markdown',
@@ -297,7 +298,7 @@ def do_setup():
         author_email='analysis@icecube.wisc.edu',
         url='http://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=3.6', # f-strings, kwarg/dict ordering require Py>=3.6
+        python_requires='>=3.6,<=3.12', # f-strings, kwarg/dict ordering require Py>=3.6
         setup_requires=SETUP_REQUIRES,
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRAS_REQUIRE,

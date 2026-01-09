@@ -143,7 +143,7 @@ def isbarenumeric(x):
         is_bare_numeric = False
     elif isinstance(x, np.ndarray):
         if x.dtype.type not in (
-            np.bool_, np.bool8, np.object0, np.object_
+            np.bool_, np.object0, np.object_
         ):
             is_bare_numeric = True
     elif isinstance(x, Number) and not isinstance(x, bool):
@@ -234,8 +234,8 @@ def recursiveEquality(x, y, allclose_kw=ALLCLOSE_KW):
 
     # pint units; allow for comparing across different regestries, for
     # pragmatic (but possibly not the most correct) reasons...
-    elif isinstance(x, pint.unit._Unit):
-        if not isinstance(y, pint.unit._Unit):
+    elif isinstance(x, pint.Unit):
+        if not isinstance(y, pint.Unit):
             logging.trace('type(x)=%s but type(y)=%s', type(x), type(y))
         if repr(x) != repr(y):
             logging.trace('x:\n%s', x)
@@ -243,8 +243,8 @@ def recursiveEquality(x, y, allclose_kw=ALLCLOSE_KW):
             return False
 
     # pint quantities
-    elif isinstance(x, pint.quantity._Quantity):
-        if not isinstance(y, pint.quantity._Quantity):
+    elif isinstance(x, pint.Quantity):
+        if not isinstance(y, pint.Quantity):
             logging.trace('type(x)=%s but type(y)=%s', type(x), type(y))
             return False
 
@@ -607,7 +607,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
     # NOTE/TODO: allowing access across unit regestries for pragmatic (if
     # incorrect) reasons... may want to revisit this decision.
     # pylint: disable=protected-access
-    misbehaving_sequences = (np.ndarray, pint.quantity._Quantity)
+    misbehaving_sequences = (np.ndarray, pint.Quantity)
     if (isinstance(obj, (Iterable, Iterator, Sequence))
             and not isinstance(obj, misbehaving_sequences)):
         #logging.trace('Iterable, Iterator, or Sequence but not ndarray or'
@@ -627,7 +627,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
     # (in the base units).
 
     has_units = False
-    if isinstance(obj, pint.quantity._Quantity):
+    if isinstance(obj, pint.Quantity):
         #logging.trace('is a Quantity, converting to base units')
         has_units = True
         if full_norm:
@@ -649,7 +649,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
         has_uncertainties = True
         std_devs = obj.std_dev
         obj = obj.nominal_value
-    elif isinstance(obj, np.ndarray) and np.issubsctype(obj, AffineScalarFunc):
+    elif isinstance(obj, np.ndarray) and np.issubdtype(obj, AffineScalarFunc):
         #logging.trace('ndarray with subsctype is AffineScalarFunc')
         has_uncertainties = True
         std_devs = unp.std_devs(obj)

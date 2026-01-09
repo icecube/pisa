@@ -5,11 +5,12 @@
 Units were introduced for parameters and binnings in PISA Cake using the [Pint package](https://pint.readthedocs.io/). The package is fully numpy and uncertainties compatible.
 
 Note the terminology used:
-* ***Unit*** has no attached value(s). Type: `pint.unit._Unit`
-* ***Quantity*** is a number (or array) *with units attached* to them. Type: `pint.quantity._Quantity`
+* ***Unit*** has no attached value(s). Type: `pint.Unit`
+* ***Quantity*** is a number (or array) *with units attached* to them. Type: `pint.Quantity`
 * ***Magnitude*** is the value of a quantity sans units. Type: `float`, `int`, `numpy.ndarray`, etc.
 
 ### Pint's quirks
+TODO: remove?
 One quirk is that pint has lazy imports, so until you actually instantiate a unit registry, doing things like
 ```python
 isinstance(x, pint.unit._Unit)
