@@ -172,7 +172,7 @@ def rebin(hist, orig_binning, new_binning, normalize_values=True):
         else:
             orig_edges = orig_dim.bin_edges
             new_edges = new_dim.bin_edges
-        if not np.all(new_edges == orig_edges):
+        if not len(new_edges) == len(orig_edges) or not np.allclose(new_edges, orig_edges, **ALLCLOSE_KW):
             orig_edge_idx = np.array([np.where(orig_edges == n)
                                       for n in new_edges]).ravel()
             hist = np.add.reduceat(hist, orig_edge_idx[:-1],
@@ -3206,12 +3206,12 @@ def test_Map():
                  binning=[e_binning, cz_binning, az_binning])
     m_new = m_orig.reorder_dimensions(['azimuth', 'energy', 'coszen'])
 
-    assert np.alltrue(m_orig[:, 0, 0].hist.flatten() ==
-                      m_new[0, :, 0].hist.flatten())
-    assert np.alltrue(m_orig[0, :, 0].hist.flatten() ==
-                      m_new[0, 0, :].hist.flatten())
-    assert np.alltrue(m_orig[0, 0, :].hist.flatten() ==
-                      m_new[:, 0, 0].hist.flatten())
+    assert np.all(m_orig[:, 0, 0].hist.flatten() ==
+                  m_new[0, :, 0].hist.flatten())
+    assert np.all(m_orig[0, :, 0].hist.flatten() ==
+                  m_new[0, 0, :].hist.flatten())
+    assert np.all(m_orig[0, 0, :].hist.flatten() ==
+                  m_new[:, 0, 0].hist.flatten())
 
     for dim in m_orig.binning.names:
         assert m_orig[:, 0, 0].binning[dim] == m_new[0, :, 0].binning[dim]

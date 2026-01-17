@@ -143,7 +143,7 @@ def isbarenumeric(x):
         is_bare_numeric = False
     elif isinstance(x, np.ndarray):
         if x.dtype.type not in (
-            np.bool_, np.object0, np.object_
+            np.bool_, np.object_
         ):
             is_bare_numeric = True
     elif isinstance(x, Number) and not isinstance(x, bool):
@@ -649,7 +649,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
         has_uncertainties = True
         std_devs = obj.std_dev
         obj = obj.nominal_value
-    elif isinstance(obj, np.ndarray) and np.issubdtype(obj, AffineScalarFunc):
+    elif isinstance(obj, np.ndarray) and isinstance(obj.dtype.type, AffineScalarFunc): # TODO: does this work?
         #logging.trace('ndarray with subsctype is AffineScalarFunc')
         has_uncertainties = True
         std_devs = unp.std_devs(obj)
