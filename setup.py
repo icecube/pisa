@@ -77,7 +77,7 @@ __license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 
 SETUP_REQUIRES = [
     'pip>=1.8',
-    'setuptools>18.5,<81', # versioneer requires >18.5
+    'setuptools>18.5,<81', # versioneer requires >18.5, use of pkg_resources requires <81 
     'numpy>=1.17',
     'scipy>=1.6',
     'cython',
@@ -97,7 +97,7 @@ INSTALL_REQUIRES = [
     'pint>=0.20', # property pint.quantity._Quantity no longer exists in 0.20
     'scipy>=1.6',
     'pandas',
-    'setuptools>18.5,<81', # for python>=3.12 to still be able to use pkg_resources
+    'setuptools>18.5,<81', # keep in INSTALL_REQUIRES for python>=3.12 to still be able to use pkg_resources
     'simplejson>=3.19.1', # allow_nan added to decoder
     'tables',
     'tabulate',
