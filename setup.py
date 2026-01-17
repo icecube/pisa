@@ -80,8 +80,7 @@ SETUP_REQUIRES = [
     'setuptools>18.5', # versioneer requires >18.5
     'numpy>=1.17,<1.23',
     'scipy>=1.6,<1.14',
-    'cython~=0.29.0', # needed for the setup and for the install
-    'scikit-learn<=1.1.2',
+    'cython',
 ]
 
 INSTALL_REQUIRES = [
@@ -98,15 +97,15 @@ INSTALL_REQUIRES = [
     'pint<=0.19', # property pint.quantity._Quantity no longer exists in 0.20
     'scipy>=1.6,<1.14',
     'pandas',
-    'simplejson==3.18.4',
+    'simplejson>=3.19.1', # allow_nan added to decoder
     'tables',
     'tabulate',
     'uncertainties',
     'llvmlite', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
     'py-cpuinfo',
     'sympy',
-    'cython~=0.29.0', # needed for the setup and for the install
-    'scikit-learn<=1.1.2',
+    'cython',
+    'scikit-learn',
     'pyarrow',
     'tqdm',
     'daemonflux>=0.8.0',
