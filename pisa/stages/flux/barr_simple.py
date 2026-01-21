@@ -13,7 +13,7 @@ from pisa import FTYPE, TARGET
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import myjit, ftype
+from pisa.utils.numba_tools import myjit, ftype, FX, IX
 from pisa.utils.barr_parameterization import modRatioNuBar, modRatioUpHor
 
 __all__ = ['barr_simple', 'apply_ratio_scale', 'spectral_index_scale',
@@ -204,15 +204,7 @@ def apply_sys_kernel(
     out[1] *= modRatioUpHor(1, true_energy, true_coszen, Barr_uphor_ratio)
 
 
-# vectorized function to apply
-# must be outside class
-if FTYPE == np.float64:
-    SIGNATURE = "(f8, f8, f8[:], f8[:], i4, f8, f8, f8, f8, f8, f8[:])"
-else:
-    SIGNATURE = "(f4, f4, f4[:], f4[:], i4, f4, f4, f4, f4, f4, f4[:])"
-
-
-@guvectorize([SIGNATURE], "(),(),(d),(d),(),(),(),(),(),()->(d)", target=TARGET)
+@guvectorize([f"({FX}, {FX}, {FX}[:], {FX}[:], {IX}, {FX}, {FX}, {FX}, {FX}, {FX}, {FX}[:])"], "(),(),(d),(d),(),(),(),(),(),()->(d)", target=TARGET)
 def apply_sys_vectorized(
     true_energy,
     true_coszen,
