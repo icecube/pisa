@@ -8,7 +8,6 @@ from pisa.core.binning import MultiDimBinning
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.core.translation import histogram
-from pisa.utils.profiler import profile
 
 __all__ = [
     "snowstorm_hist",
@@ -97,6 +96,9 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
             self.additional_params = additional_params
         assert isinstance(self.additional_params, list)
 
+        self.n_split = 2
+        self.grads = {}
+
         # -- Initialize base class -- #
         super().__init__(
             expected_params=self.systematics+self.additional_params,
@@ -114,36 +116,52 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
                 central_values.append(sum(self.simulation_dists_params[i])/2)
         self.central_values = central_values
 
-    @profile
-    def compute_function(self):
         for container in self.data:
-            container.representation = self.calc_mode
-            sample = np.array([container[name] for name in self.apply_mode.names])
-            syst = [container[sys] for sys in self.systematics]
-            weights = container["weights"]
+            self.grads[container.name] = {}
+        self.additional_params_values = None
+
+    def compute_function(self):
+        additional_params_values = [self.params[p].m for p in self.additional_params]
+        if additional_params_values != self.additional_params_values:
+            calc_grads = True
+            self.additional_params_values = additional_params_values
+        elif self.apply_mode.shape != self.grads[self.data.names[0]][self.systematics[0]].shape:
+            calc_grads = True
+        else:
+            calc_grads = False
+
+        for container in self.data:
+            if calc_grads:
+                container.representation = self.calc_mode
+                sample = np.array([container[name] for name in self.apply_mode.names])
+                syst = [container[sys] for sys in self.systematics]
+                weights = container["weights"]
 
             container.representation = self.apply_mode
             container["syst_scale"] = np.ones(self.apply_mode.shape)
             for i, sys in enumerate(self.systematics):
-                h1 = histogram(
-                    list(sample[:, syst[i] > self.central_values[i]]),
-                    weights[syst[i] > self.central_values[i]],
-                    self.apply_mode,
-                    averaged=False
-                )
-                h2 = histogram(
-                    list(sample[:, syst[i] < self.central_values[i]]),
-                    weights[syst[i] < self.central_values[i]],
-                    self.apply_mode,
-                    averaged=False
-                )
-                if self.simulation_dists[i] == "gauss": # TODO verify
-                    correction_factor = 1/self.simulation_dists_params[i][1] * np.sqrt(np.pi/2)
-                    grad = np.nan_to_num((h1 - h2) / (h1 + h2) * correction_factor * 2)
-                else:
-                    diff = (self.simulation_dists_params[i][1] - self.simulation_dists_params[i][0]) / 2
-                    grad = np.nan_to_num((h1 - h2) / (h1 + h2) / diff * 2)
-                container["syst_scale"] *= 1 + (self.params[sys].m-self.central_values[i])*grad
+                if calc_grads:
+                    h1 = histogram(
+                        list(sample[:, syst[i] > self.central_values[i]]),
+                        weights[syst[i] > self.central_values[i]],
+                        self.apply_mode,
+                        averaged=False
+                    )
+                    h2 = histogram(
+                        list(sample[:, syst[i] < self.central_values[i]]),
+                        weights[syst[i] < self.central_values[i]],
+                        self.apply_mode,
+                        averaged=False
+                    )
+                    if self.simulation_dists[i] == "gauss": # TODO verify
+                        correction_factor = 1/self.simulation_dists_params[i][1] * np.sqrt(np.pi/2)
+                        self.grads[container.name][sys] = np.nan_to_num((h1-h2) / (h1+h2) * correction_factor * self.n_split)
+                    else:
+                        diff = (self.simulation_dists_params[i][1] - self.simulation_dists_params[i][0]) / 2
+                        self.grads[container.name][sys] = np.nan_to_num((h1-h2) / (h1+h2) / diff * self.n_split)
+
+                container["syst_scale"] *= 1 + (self.params[sys].m-self.central_values[i]) * self.grads[container.name][sys]
+            container["syst_scale"] = np.clip(container["syst_scale"], a_min=0, a_max=np.inf)
 
     def apply_function(self):
         self.data.representation = self.apply_mode
