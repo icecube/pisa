@@ -4,6 +4,7 @@ PISA stage to apply detector systematics
 
 import numpy as np
 
+from pisa import ureg
 from pisa.core.binning import MultiDimBinning
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
@@ -86,7 +87,7 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         if isinstance(simulation_dists_params, str):
             self.simulation_dists_params = eval(simulation_dists_params)
         else:
-            self.simulation_dists = simulation_dists_params
+            self.simulation_dists_params = simulation_dists_params
         assert isinstance(self.simulation_dists_params, list)
         assert len(self.simulation_dists_params) == len(self.systematics)
 
@@ -167,3 +168,18 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         self.data.representation = self.apply_mode
         for container in self.data:
             container["weights"] *= container["syst_scale"]
+
+
+def init_test(**param_kwargs):
+    """Instantiation example"""
+    param_set = ParamSet([
+        Param(name='dom_eff', value=1.0, **param_kwargs),
+        Param(name='deltam31', value=3e-3*ureg.eV**2, **param_kwargs),
+    ])
+    return snowstorm_hist(
+        systematics=['dom_eff'],
+        simulation_dists=['gauss'],
+        simulation_dists_params=[(1.0, 0.1)],
+        additional_params=['deltam31'],
+        params=param_set,
+    )
