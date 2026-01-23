@@ -207,6 +207,8 @@ class hist(Stage):  # pylint: disable=invalid-name
 
                 container.representation = self.apply_mode
                 container["weights"] = hist
+                for k in container.validity["weights"]:
+                    container.validity["weights"][k] = True
 
                 if self.error_method == "sumw2":
                     container["errors"] = np.sqrt(sumw2)
