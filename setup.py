@@ -77,7 +77,7 @@ __license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 
 SETUP_REQUIRES = [
     'pip>=1.8',
-    'setuptools>18.5,<81', # versioneer requires >18.5, use of pkg_resources requires <81 
+    'setuptools>18.5,<81', # versioneer requires >18.5, use of pkg_resources requires <81
     'numpy>=1.17',
     'scipy>=1.6',
     'cython',
@@ -102,7 +102,7 @@ INSTALL_REQUIRES = [
     'tables',
     'tabulate',
     'uncertainties',
-    'llvmlite', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
+    'llvmlite',
     'py-cpuinfo',
     'sympy',
     'cython',
@@ -298,7 +298,7 @@ def do_setup():
         author_email='analysis@icecube.wisc.edu',
         url='http://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=3.6,<=3.12', # f-strings, kwarg/dict ordering require Py>=3.6
+        python_requires='>=3.6,<3.13', # f-strings, kwarg/dict ordering require Py>=3.6
         setup_requires=SETUP_REQUIRES,
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRAS_REQUIRE,
@@ -335,6 +335,7 @@ def do_setup():
                 'pisa-test_covariance = pisa_tests.test_covariance:main',
                 'pisa-test_example_pipelines = pisa_tests.test_example_pipelines:main',
                 'pisa-test_kde_stage = pisa_tests.test_kde_stage:main',
+                'pisa-test_services = pisa_tests.test_services:main'
             ]
         }
     )
