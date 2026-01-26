@@ -81,11 +81,14 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
     def compute_function(self):
         self.data.representation = self.calc_mode
 
-        nue_numu_ratio = self.params.nue_numu_ratio.value.m_as("dimensionless")
-        nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as("dimensionless")
-        delta_index = self.params.delta_index.value.m_as("dimensionless")
-        Barr_uphor_ratio = self.params.Barr_uphor_ratio.value.m_as("dimensionless")
-        Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as("dimensionless")
+        # If a parameter below has not been modified by minimizer,
+        # its magnitude below will be a native float, otherwise np.float64,
+        # so convert to expected FTYPE
+        nue_numu_ratio = FTYPE(self.params.nue_numu_ratio.value.m_as("dimensionless"))
+        nu_nubar_ratio = FTYPE(self.params.nu_nubar_ratio.value.m_as("dimensionless"))
+        delta_index = FTYPE(self.params.delta_index.value.m_as("dimensionless"))
+        Barr_uphor_ratio = FTYPE(self.params.Barr_uphor_ratio.value.m_as("dimensionless"))
+        Barr_nu_nubar_ratio = FTYPE(self.params.Barr_nu_nubar_ratio.value.m_as("dimensionless"))
 
         for container in self.data:
             apply_sys_vectorized(
