@@ -94,7 +94,7 @@ INSTALL_REQUIRES = [
     'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
     'numba>=0.53', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
     'numpy>=1.17',
-    'pint>=0.20', # property pint.quantity._Quantity no longer exists in 0.20
+    'pint>=0.20', # property pint.quantity._Quantity no longer exists in 0.20 (TODO: test whether versions >=0.20 actually required)
     'scipy>=1.6',
     'pandas',
     'setuptools>18.5,<81', # keep in INSTALL_REQUIRES for python>=3.12 to still be able to use pkg_resources
@@ -296,9 +296,9 @@ def do_setup():
         license='Apache 2.0',
         author='The IceCube Collaboration',
         author_email='analysis@icecube.wisc.edu',
-        url='http://github.com/icecubeopensource/pisa',
+        url='https://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=3.6,<3.13', # f-strings, kwarg/dict ordering require Py>=3.6
+        python_requires='>=3.8,<3.13', # f-strings, kwarg/dict ordering require Py>=3.6, daemonflux 0.8.0 requires Py>=3.8, Py 3.13: error in utils/numba_tools.py
         setup_requires=SETUP_REQUIRES,
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRAS_REQUIRE,
