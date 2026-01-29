@@ -35,7 +35,7 @@ import tempfile
 
 from setuptools.command.build_ext import build_ext
 from setuptools import setup, Extension, find_packages
-#import versioneer
+import versioneer
 
 
 __all__ = [
@@ -119,7 +119,7 @@ EXTRAS_REQUIRE = {
         'recommonmark',
         'sphinx>=1.3',
         'sphinx_rtd_theme',
-        #'versioneer',
+        'versioneer',
         'pytest',
     ],
     # TODO: get mceq install to work... this is non-trivial since that
@@ -284,12 +284,12 @@ def do_setup():
     ]
 
     cmdclasses = {'build': CustomBuild, 'build_ext': CustomBuildExt}
-    #cmdclasses.update(versioneer.get_cmdclass())
+    cmdclasses = versioneer.get_cmdclass(cmdclasses)
 
     # Now do the actual work
     setup(
         name='pisa',
-        version='4.2', #versioneer.get_version(),
+        version=versioneer.get_version(),
         description='Tools for analyzing and drawing statistical conclusions from experimental data',
         long_description=long_description,
         long_description_content_type='text/markdown',
