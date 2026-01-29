@@ -66,26 +66,27 @@ class Core_scaling_w_constrain():
 
     @property
     def scaling_array(self):
-        radii_cm = FIVE_LAYER_RADII * 10**5
-        rho = FIVE_LAYER_RHOS
+        # need to prevent overflows in powers/products below, so use suitable units
+        radii_km = FIVE_LAYER_RADII
+        rho_gigaton_per_km3 = FIVE_LAYER_RHOS # g/cm³ -> gigaton/km³
 
-        a1 = (4*np.pi/3)*(rho[1]*radii_cm[1]**3)
-        a2 = (8*np.pi/15)*(rho[1]*radii_cm[1]**5)
-        b1 = (4*np.pi/3)*(rho[2]*(radii_cm[2]**3 - radii_cm[1]**3))
-        b2 = (8*np.pi/15)*(rho[2]*(radii_cm[2]**5 - radii_cm[1]**5))
-        c1 = (4*np.pi/3)*(rho[3]*(radii_cm[3]**3 - radii_cm[2]**3))
-        c2 = (8*np.pi/15)*(rho[3]*(radii_cm[3]**5 - radii_cm[2]**5))
-        d1 = (4*np.pi/3)*(rho[4]*(radii_cm[4]**3 - radii_cm[3]**3))
-        d2 = (8*np.pi/15)*(rho[4]*(radii_cm[4]**5 - radii_cm[3]**5))
-        e1 = (4*np.pi/3)*(rho[5]*(radii_cm[5]**3 - radii_cm[4]**3))
-        e2 = (8*np.pi/15)*(rho[5]*(radii_cm[5]**5 - radii_cm[4]**5))
+        a1 = (4*np.pi/3)*(rho_gigaton_per_km3[1]*radii_km[1]**3)
+        a2 = (8*np.pi/15)*(rho_gigaton_per_km3[1]*radii_km[1]**5)
+        b1 = (4*np.pi/3)*(rho_gigaton_per_km3[2]*(radii_km[2]**3 - radii_km[1]**3))
+        b2 = (8*np.pi/15)*(rho_gigaton_per_km3[2]*(radii_km[2]**5 - radii_km[1]**5))
+        c1 = (4*np.pi/3)*(rho_gigaton_per_km3[3]*(radii_km[3]**3 - radii_km[2]**3))
+        c2 = (8*np.pi/15)*(rho_gigaton_per_km3[3]*(radii_km[3]**5 - radii_km[2]**5))
+        d1 = (4*np.pi/3)*(rho_gigaton_per_km3[4]*(radii_km[4]**3 - radii_km[3]**3))
+        d2 = (8*np.pi/15)*(rho_gigaton_per_km3[4]*(radii_km[4]**5 - radii_km[3]**5))
+        e1 = (4*np.pi/3)*(rho_gigaton_per_km3[5]*(radii_km[5]**3 - radii_km[4]**3))
+        e2 = (8*np.pi/15)*(rho_gigaton_per_km3[5]*(radii_km[5]**5 - radii_km[4]**5))
 
-        I = a2 + b2 + c2 + d2 + e2
-        M = a1 + b1 + c1 + d1 + e1
+        I = (a2 + b2 + c2 + d2 + e2) # gigaton * km²
+        M = (a1 + b1 + c1 + d1 + e1) # gigaton
 
         alpha = self.core_density_scale
-        gamma = ((I*c1 - M*c2) - alpha*(c1*a2 - c2*a1) - alpha*(c1*b2 - b1*c2) - (c1*e2 - e1*c2))/(c1*d2 - d1*c2)
-        beta = (I - alpha*a2 - alpha*b2 - gamma*d2 - e2)/c2
+        gamma = ((I*c1 - M*c2) - alpha*(c1*a2 - c2*a1) - alpha*(c1*b2 - b1*c2) - (c1*e2 - e1*c2))/(c1*d2 - d1*c2) # dimensionless (gigaton²km²/gigaton²km²)
+        beta = (I - alpha*a2 - alpha*b2 - gamma*d2 - e2)/c2 # dimensionless (gigaton km²/gigaton km²)
 
         # density scaling factors need to be positive
         assert (np.asarray([alpha, beta, gamma], dtype=FTYPE) >= 0).all()

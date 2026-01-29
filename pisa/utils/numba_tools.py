@@ -33,6 +33,7 @@ __all__ = [
     "copy_matrix_guf",
     "test_copy_matrix",
     "cuda_copy",
+    "FX", "IX"
 ]
 __version__ = "0.2"
 __author__ = "Philipp Eller (pde3@psu.edu)"
@@ -95,9 +96,11 @@ else:
 if FTYPE == np.float32:
     FX = "f4"
     CX = "c8"
+    IX = "i4"
 elif FTYPE == np.float64:
     FX = "f8"
     CX = "c16"
+    IX = "i8"
 
 
 def myjit(func):
@@ -231,7 +234,7 @@ def conjugate_guf(A, out):
 def test_conjugate():
     """Unit tests of `conjugate` and `conjugate_guf`"""
     A = (np.linspace(1, 12, 12) + 1j * np.linspace(21, 32, 12)).reshape(4, 3).astype(CX)
-    
+
     B = np.ones((4, 3), dtype=CX)
 
     conjugate_guf(A, B)

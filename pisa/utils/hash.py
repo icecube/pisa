@@ -117,11 +117,11 @@ def hash_obj(obj, hash_to='int', full_hash=True):
     # Handle numpy arrays and matrices specially
     if isinstance(obj, (np.ndarray, np.matrix)):
         if full_hash:
-            return hash_obj(obj.tostring(), **pass_on_kw)
+            return hash_obj(obj.tobytes(), **pass_on_kw)
         len_flat = obj.size
         stride = 1 + (len_flat // FAST_HASH_NDARRAY_ELEMENTS)
         sub_elements = obj.flat[0::stride]
-        return hash_obj(sub_elements.tostring(), **pass_on_kw)
+        return hash_obj(sub_elements.tobytes(), **pass_on_kw)
 
     # Handle an open file object as a special case
     if isinstance(obj, IOBase):

@@ -13,7 +13,7 @@ from pisa import FTYPE, TARGET
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import myjit, ftype
+from pisa.utils.numba_tools import myjit, ftype, FX, IX
 from pisa.utils.barr_parameterization import modRatioNuBar, modRatioUpHor
 
 __all__ = ['barr_simple', 'apply_ratio_scale', 'spectral_index_scale',
@@ -81,11 +81,14 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
     def compute_function(self):
         self.data.representation = self.calc_mode
 
-        nue_numu_ratio = self.params.nue_numu_ratio.value.m_as("dimensionless")
-        nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as("dimensionless")
-        delta_index = self.params.delta_index.value.m_as("dimensionless")
-        Barr_uphor_ratio = self.params.Barr_uphor_ratio.value.m_as("dimensionless")
-        Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as("dimensionless")
+        # If a parameter below has not been modified by minimizer,
+        # its magnitude below will be a native float, otherwise np.float64,
+        # so convert to expected FTYPE
+        nue_numu_ratio = FTYPE(self.params.nue_numu_ratio.value.m_as("dimensionless"))
+        nu_nubar_ratio = FTYPE(self.params.nu_nubar_ratio.value.m_as("dimensionless"))
+        delta_index = FTYPE(self.params.delta_index.value.m_as("dimensionless"))
+        Barr_uphor_ratio = FTYPE(self.params.Barr_uphor_ratio.value.m_as("dimensionless"))
+        Barr_nu_nubar_ratio = FTYPE(self.params.Barr_nu_nubar_ratio.value.m_as("dimensionless"))
 
         for container in self.data:
             apply_sys_vectorized(
@@ -204,15 +207,7 @@ def apply_sys_kernel(
     out[1] *= modRatioUpHor(1, true_energy, true_coszen, Barr_uphor_ratio)
 
 
-# vectorized function to apply
-# must be outside class
-if FTYPE == np.float64:
-    SIGNATURE = "(f8, f8, f8[:], f8[:], i4, f8, f8, f8, f8, f8, f8[:])"
-else:
-    SIGNATURE = "(f4, f4, f4[:], f4[:], i4, f4, f4, f4, f4, f4, f4[:])"
-
-
-@guvectorize([SIGNATURE], "(),(),(d),(d),(),(),(),(),(),()->(d)", target=TARGET)
+@guvectorize([f"({FX}, {FX}, {FX}[:], {FX}[:], {IX}, {FX}, {FX}, {FX}, {FX}, {FX}, {FX}[:])"], "(),(),(d),(d),(),(),(),(),(),()->(d)", target=TARGET)
 def apply_sys_vectorized(
     true_energy,
     true_coszen,
