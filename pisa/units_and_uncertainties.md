@@ -15,7 +15,7 @@ the standard way of importing pint in PISA is the line
 ```python
 from pisa import ureg, Q_
 ```
-, where `ureg` is the shared unit registry and `Q_` is the associated shared `Quantity` instance.
+, where `ureg` is the shared unit registry and `Q_` is the associated shared `Quantity` type.
 
 ### Basic attributes of Pint quantities
 
