@@ -110,7 +110,7 @@ A shell prompt with `<ENV NAME>` name in parentheses should now confirm the succ
 
 Load the CVMFS environment:<br>
 ```bash
-unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
+unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/setup.sh`
 ```
 <details>
   <summary>on one of IceCube's Cobalt nodes</summary>
