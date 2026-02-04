@@ -208,7 +208,7 @@ With the exception of `Python` itself (and possibly `git`), the installation met
 Support for all of these comes pre-packaged or as `conda`/`mamba`-installable packages in the Miniforge Python distribution.
 * [python](http://www.python.org) — version >= 3.8 and < 3.13 required (tested to work with: 3.10, 3.11, 3.12)
   * Miniforge & CVMFS: built in
-* [pip](https://pip.pypa.io) version >= 1.8 and <= 25 required
+* [pip](https://pip.pypa.io) version >= 1.8 required
   * Miniforge & CVMFS: built in
 * [git](https://git-scm.com)
   * Miniforge: `mamba install git`
@@ -225,7 +225,7 @@ Some of the following optional dependencies must be installed manually prior to 
 * [emcee](https://github.com/dfm/emcee) Required for MCMC sampling functionality in the `llh_client`& `llh_server` utils modules and the `analysis` module.
 * [GLoBES wrapper](https://github.com/atrettin/GLoBES_wrapper) Required for `osc.globes` service.
 * [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for `data.licloader_weighter` service.
-* [MCEq](https://github.com/afedynitch/MCEq) Required for `create_barr_sys_tables_mceq.py` script.
+* [MCEq](https://github.com/mceq-project/MCEq) Required for `create_barr_sys_tables_mceq.py` script.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
 * [OpenMP](https://openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.

@@ -3,7 +3,7 @@
 
 """
 Allows for PISA installation. Tested with `pip`. Use the environment variable
-`CC` to pass a custom compiler to the instller. (GCC and Clang should both
+`CC` to pass a custom compiler to the installer. (GCC and Clang should both
 work; OpenMP support--an optional dependency--is only available for recent
 versions of the latter).
 
@@ -52,7 +52,7 @@ __all__ = [
 
 __author__ = 'S. Boeser, J.L. Lanfranchi, P. Eller, M. Hieronymus'
 
-__license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -318,7 +318,7 @@ def do_setup():
                 # Scripts in core dir
                 'pisa-detectors = pisa.core.detectors:main',
                 'pisa-distribution_maker = pisa.core.distribution_maker:main',
-                'pisa-pipeline = pisa.core.pipeline:main', #FIXME
+                'pisa-pipeline = pisa.core.pipeline:main',
 
                 # Scripts in scripts dir
                 'pisa-add_flux_to_events_file = pisa.scripts.add_flux_to_events_file:main',
