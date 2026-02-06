@@ -143,7 +143,7 @@ def isbarenumeric(x):
         is_bare_numeric = False
     elif isinstance(x, np.ndarray):
         if x.dtype.type not in (
-            np.bool_, np.bool8, np.object0, np.object_
+            np.bool_, np.object_
         ):
             is_bare_numeric = True
     elif isinstance(x, Number) and not isinstance(x, bool):
@@ -232,10 +232,10 @@ def recursiveEquality(x, y, allclose_kw=ALLCLOSE_KW):
             return False
         return recursiveEquality(x.hashable_state, y.hashable_state)
 
-    # pint units; allow for comparing across different regestries, for
+    # pint units; allow for comparing across different registries, for
     # pragmatic (but possibly not the most correct) reasons...
-    elif isinstance(x, pint.unit._Unit):
-        if not isinstance(y, pint.unit._Unit):
+    elif isinstance(x, pint.Unit):
+        if not isinstance(y, pint.Unit):
             logging.trace('type(x)=%s but type(y)=%s', type(x), type(y))
         if repr(x) != repr(y):
             logging.trace('x:\n%s', x)
@@ -243,8 +243,8 @@ def recursiveEquality(x, y, allclose_kw=ALLCLOSE_KW):
             return False
 
     # pint quantities
-    elif isinstance(x, pint.quantity._Quantity):
-        if not isinstance(y, pint.quantity._Quantity):
+    elif isinstance(x, pint.Quantity):
+        if not isinstance(y, pint.Quantity):
             logging.trace('type(x)=%s but type(y)=%s', type(x), type(y))
             return False
 
@@ -604,10 +604,10 @@ def normQuant(obj, sigfigs=None, full_norm=True):
     # Sequences, etc. but NOT numpy arrays (or pint quantities, which are
     # iterable) get their elements normalized and populated to a new list for
     # returning.
-    # NOTE/TODO: allowing access across unit regestries for pragmatic (if
+    # NOTE/TODO: allowing access across unit registries for pragmatic (if
     # incorrect) reasons... may want to revisit this decision.
     # pylint: disable=protected-access
-    misbehaving_sequences = (np.ndarray, pint.quantity._Quantity)
+    misbehaving_sequences = (np.ndarray, pint.Quantity)
     if (isinstance(obj, (Iterable, Iterator, Sequence))
             and not isinstance(obj, misbehaving_sequences)):
         #logging.trace('Iterable, Iterator, or Sequence but not ndarray or'
@@ -627,7 +627,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
     # (in the base units).
 
     has_units = False
-    if isinstance(obj, pint.quantity._Quantity):
+    if isinstance(obj, pint.Quantity):
         #logging.trace('is a Quantity, converting to base units')
         has_units = True
         if full_norm:
@@ -649,11 +649,16 @@ def normQuant(obj, sigfigs=None, full_norm=True):
         has_uncertainties = True
         std_devs = obj.std_dev
         obj = obj.nominal_value
-    elif isinstance(obj, np.ndarray) and np.issubsctype(obj, AffineScalarFunc):
-        #logging.trace('ndarray with subsctype is AffineScalarFunc')
-        has_uncertainties = True
-        std_devs = unp.std_devs(obj)
-        obj = unp.nominal_values(obj)
+    elif isinstance(obj, np.ndarray):
+        # In order to detect an array with uncertainties, assume that the first
+        # element is representative
+        if obj.size:
+            first_element = obj.flat[0]
+            if isinstance(first_element, AffineScalarFunc):
+                #logging.trace('ndarray with elements that are of type AffineScalarFunc')
+                has_uncertainties = True
+                std_devs = unp.std_devs(obj)
+                obj = unp.nominal_values(obj)
 
     # What is done below will convert scalars into arrays, so get this info
     # before it is lost.
@@ -922,7 +927,21 @@ def test_normQuant():
 
     # Dict of dicts
     _ = normQuant({'x': {'1': 1, '2': 2}, 'y': {'3': 3, '4': 4}})
+
+    # arrays with uncertainties
+    ua1 = normQuant(unp.uarray([1, 2], [0.01, 0.02]))
+    ua2 = normQuant(np.array([ufloat(1, 0.01), ufloat(2, 0.02)]))
+    # in the uncertainties package, "objects [...] represent probability
+    # distributions and not pure numbers", so we do not expect equality
+    # here (the following is hence perhaps a consistency check that
+    # normQuant doesn't result in one of the "infinitely small number
+    # of cases" in which the comparison yields True)
+    assert np.all(ua1 != ua2)
+    # however, here we're comparing a random variable with itself:
+    assert np.all(ua1 == ua1)
+    assert np.all(ua2 == ua2)
     logging.info('<< PASS : test_normQuant >>')
+
 
 
 def test_interpret_quantity():

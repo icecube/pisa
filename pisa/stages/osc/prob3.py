@@ -388,8 +388,8 @@ class prob3(Stage):  # pylint: disable=invalid-name
             rhos_ext = self.layers.rhos_unweighted[::-1][:-1]
             if not (len(radii_ext) == len(FIVE_LAYER_RADII) and len(rhos_ext) == len(FIVE_LAYER_RHOS)):
                 raise ValueError(TOMOGRAPHY_ERROR_MSG)
-            radii_equal = np.allclose(np.add(radii_ext, 1), np.add(FIVE_LAYER_RADII, 1))
-            rhos_equal = np.allclose(np.add(rhos_ext, 1), np.add(FIVE_LAYER_RHOS, 1))
+            radii_equal = np.allclose(np.add(radii_ext, 1), np.add(FIVE_LAYER_RADII.m_as("km"), 1))
+            rhos_equal = np.allclose(np.add(rhos_ext, 1), np.add(FIVE_LAYER_RHOS.m_as("g/cm**3"), 1))
             if not radii_equal or not rhos_equal:
                 raise ValueError(TOMOGRAPHY_ERROR_MSG)
             if self.tomography_type == "mass_of_core_w_constrain":

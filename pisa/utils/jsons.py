@@ -450,7 +450,7 @@ if version.parse(json.__version__) >= version.parse("3.19.1"):
                 #
                 # Similarly, sequences of strings should stay lists of strings, not
                 # become numpy arrays.
-                if issubclass(ndarray_values.dtype.type, (np.object0, np.str0, str)):
+                if issubclass(ndarray_values.dtype.type, (np.object_, np.str_, str)):
                     return values, end
 
                 return ndarray_values, end
@@ -573,7 +573,7 @@ else:
                 #
                 # Similarly, sequences of strings should stay lists of strings, not
                 # become numpy arrays.
-                if issubclass(ndarray_values.dtype.type, (np.object0, np.str0, str)):
+                if issubclass(ndarray_values.dtype.type, (np.object_, np.str_, str)):
                     return values, end
 
                 return ndarray_values, end

@@ -2,27 +2,20 @@
 
 ## Units
 
-Units were introduced for parameters and binnings in PISA Cake using the [Pint package](https://pint.readthedocs.io/). The package is fully numpy and uncertainties compatible.
+Units were introduced for parameters and binnings in PISA using the [Pint package](https://pint.readthedocs.io/). The package is fully compatible with the NumPy and uncertainties packages.
 
 Note the terminology used:
-* ***Unit*** has no attached value(s). Type: `pint.unit._Unit`
-* ***Quantity*** is a number (or array) *with units attached* to them. Type: `pint.quantity._Quantity`
-* ***Magnitude*** is the value of a quantity sans units. Type: `float`, `int`, `numpy.ndarray`, etc.
+* [***Unit***](https://pint.readthedocs.io/en/stable/api/base.html#pint.Unit) has no attached value(s). Type: `pint.Unit`
+* [***Quantity***](https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity) is a number (or array) *with units attached* to them. Type: `pint.Quantity`
+* [***Magnitude***](https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity.magnitude) is the value of a quantity sans units. Type: `float`, `int`, `numpy.ndarray`, etc.
 
 ### Pint's quirks
-One quirk is that pint has lazy imports, so until you actually instantiate a unit registry, doing things like
-```python
-isinstance(x, pint.unit._Unit)
-isinstance(x, pint.quantity._Quantity)
-```
-will fail (`pint.unit` and `pint.quantity` effectively don't exist) until you first do
-```python
-ureg = pint.UnitRegistry()
-```
-Therefore, and to assure that we alsways use the same instance, the "standard" way of importing pint in PISA is the following line:
+As Pint has no "global units", to ensure we always use the same shared [unit registry](https://pint.readthedocs.io/en/stable/getting/pint-in-your-projects.html#having-a-shared-registry), 
+the standard way of importing pint in PISA is the line
 ```python
 from pisa import ureg, Q_
 ```
+, where `ureg` is the shared unit registry and `Q_` is the associated shared `Quantity` type.
 
 ### Basic attributes of Pint quantities
 
@@ -42,11 +35,14 @@ from pisa import ureg, Q_
   12.4
   >>> q.m
   12.4
+  >>> q.m_as('meter')
+  3.77952
   ```
 
 ## Uncertainties
 
-Support for the handling of errors is available from the python [uncertainties package](https://pythonhosted.org/uncertainties/). This interoperates well with units, too. Note that there *is* a performance penalty for using uncertainties, so hooks are provided to enable or disable this feature at the user's discretion. 
+Support for the handling of errors is available from the [uncertainties package](https://uncertainties.readthedocs.io/). This interoperates well with units, too. 
+Note that there *is* a performance penalty for using uncertainties, so hooks are provided to enable or disable this feature at the user's discretion. 
 
 ### Basic attributes of numbers with uncertainties
 
@@ -146,4 +142,5 @@ More examples of how to use the above packages are given below.
     DimensionalityError: Cannot convert from 'meter' ([length]) to 'second' ([time])
     ```
 
-* The [`pisa.core.Map`](https://github.com/jllanfranchi/pisa/blob/cake/pisa/core/map.py) object integrates uncertainties, which are turned off by default but can be enabled with either the `set_poisson_errors()` or `set_errors(...)` methods. Once enabled, all subsequent operations on the `Map` will propagate errors (to first order).
+* The [`pisa.core.Map`](https://github.com/icecube/pisa/blob/master/pisa/core/map.py) object integrates uncertainties, which are turned off by default but can be enabled with either 
+the `set_poisson_errors()` or `set_errors(...)` methods. Once enabled, all subsequent operations on the `Map` will propagate errors (to first order).
