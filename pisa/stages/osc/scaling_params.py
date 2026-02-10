@@ -4,21 +4,21 @@ Date : August 10, 2023
 """
 
 import numpy as np
-from pisa import FTYPE
+from pisa import FTYPE, ureg
 
 __all__ = [
     'Mass_scaling', 'Core_scaling_w_constrain', 'Core_scaling_wo_constrain',
     'FIVE_LAYER_RADII', 'FIVE_LAYER_RHOS', 'TOMOGRAPHY_ERROR_MSG'
 ]
 
-FIVE_LAYER_RADII = np.array([0.0, 1221.50, 3480.00, 5701.00, 6151.0, 6371.00], dtype=FTYPE)
-"""Radii (km) of five Earth layers to assume for the last two types of tomography."""
+FIVE_LAYER_RADII = np.array([0.0, 1221.50, 3480.00, 5701.00, 6151.0, 6371.00], dtype=FTYPE) * ureg.km
+"""Radii of five Earth layers to assume for the last two types of tomography."""
 
-FIVE_LAYER_RHOS = np.array([13.0, 13.0, 10.96, 5.03, 3.7, 2.5], dtype=FTYPE)
-"""Matter densities (g/cm^3) of five Earth layers to assume for the last two types of tomography."""
+FIVE_LAYER_RHOS = np.array([13.0, 13.0, 10.96, 5.03, 3.7, 2.5], dtype=FTYPE) * ureg.g / ureg.cm**3
+"""Matter densities of five Earth layers to assume for the last two types of tomography."""
 
 TOMOGRAPHY_ERROR_MSG = ("You need to provide the appropriate 5-layer Earth model,"
-f" which has the same layer radii ({FIVE_LAYER_RADII}) and densities ({FIVE_LAYER_RHOS})"
+f" which has the same layer radii ({FIVE_LAYER_RADII:~P}) and densities ({FIVE_LAYER_RHOS:~P})"
 " as the one hard-coded for the chosen type of tomography internally.")
 """An error message simultaneously explaining the state of the code."""
 
@@ -66,28 +66,30 @@ class Core_scaling_w_constrain():
 
     @property
     def scaling_array(self):
-        radii_cm = FIVE_LAYER_RADII * 10**5
-        rho = FIVE_LAYER_RHOS
+        # need to prevent overflows in powers/products below, so use suitable units
+        radii = FIVE_LAYER_RADII
+        rho = FIVE_LAYER_RHOS.to("gigametric_ton/km**3") # magnitude in gigatonne/km³ same as in g/cm³
 
-        a1 = (4*np.pi/3)*(rho[1]*radii_cm[1]**3)
-        a2 = (8*np.pi/15)*(rho[1]*radii_cm[1]**5)
-        b1 = (4*np.pi/3)*(rho[2]*(radii_cm[2]**3 - radii_cm[1]**3))
-        b2 = (8*np.pi/15)*(rho[2]*(radii_cm[2]**5 - radii_cm[1]**5))
-        c1 = (4*np.pi/3)*(rho[3]*(radii_cm[3]**3 - radii_cm[2]**3))
-        c2 = (8*np.pi/15)*(rho[3]*(radii_cm[3]**5 - radii_cm[2]**5))
-        d1 = (4*np.pi/3)*(rho[4]*(radii_cm[4]**3 - radii_cm[3]**3))
-        d2 = (8*np.pi/15)*(rho[4]*(radii_cm[4]**5 - radii_cm[3]**5))
-        e1 = (4*np.pi/3)*(rho[5]*(radii_cm[5]**3 - radii_cm[4]**3))
-        e2 = (8*np.pi/15)*(rho[5]*(radii_cm[5]**5 - radii_cm[4]**5))
+        a1 = (4*np.pi/3)*(rho[1]*radii[1]**3)
+        a2 = (8*np.pi/15)*(rho[1]*radii[1]**5)
+        b1 = (4*np.pi/3)*(rho[2]*(radii[2]**3 - radii[1]**3))
+        b2 = (8*np.pi/15)*(rho[2]*(radii[2]**5 - radii[1]**5))
+        c1 = (4*np.pi/3)*(rho[3]*(radii[3]**3 - radii[2]**3))
+        c2 = (8*np.pi/15)*(rho[3]*(radii[3]**5 - radii[2]**5))
+        d1 = (4*np.pi/3)*(rho[4]*(radii[4]**3 - radii[3]**3))
+        d2 = (8*np.pi/15)*(rho[4]*(radii[4]**5 - radii[3]**5))
+        e1 = (4*np.pi/3)*(rho[5]*(radii[5]**3 - radii[4]**3))
+        e2 = (8*np.pi/15)*(rho[5]*(radii[5]**5 - radii[4]**5))
 
-        I = a2 + b2 + c2 + d2 + e2
-        M = a1 + b1 + c1 + d1 + e1
+        I = a2 + b2 + c2 + d2 + e2 # mass x area
+        M = a1 + b1 + c1 + d1 + e1 # mass
 
         alpha = self.core_density_scale
-        gamma = ((I*c1 - M*c2) - alpha*(c1*a2 - c2*a1) - alpha*(c1*b2 - b1*c2) - (c1*e2 - e1*c2))/(c1*d2 - d1*c2)
-        beta = (I - alpha*a2 - alpha*b2 - gamma*d2 - e2)/c2
+        gamma = ((I*c1 - M*c2) - alpha*(c1*a2 - c2*a1) - alpha*(c1*b2 - b1*c2) - (c1*e2 - e1*c2))/(c1*d2 - d1*c2) # dimensionless
+        beta = (I - alpha*a2 - alpha*b2 - gamma*d2 - e2)/c2 # dimensionless
+        assert gamma.dimensionless and beta.dimensionless
 
-        # density scaling factors need to be positive
+        # density scaling factors mustn't be negative
         assert (np.asarray([alpha, beta, gamma], dtype=FTYPE) >= 0).all()
 
         tmp_array = np.ones(6, dtype=FTYPE)

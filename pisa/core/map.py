@@ -172,7 +172,7 @@ def rebin(hist, orig_binning, new_binning, normalize_values=True):
         else:
             orig_edges = orig_dim.bin_edges
             new_edges = new_dim.bin_edges
-        if not np.all(new_edges == orig_edges):
+        if not len(new_edges) == len(orig_edges) or not np.allclose(new_edges, orig_edges, **ALLCLOSE_KW):
             orig_edge_idx = np.array([np.where(orig_edges == n)
                                       for n in new_edges]).ravel()
             hist = np.add.reduceat(hist, orig_edge_idx[:-1],
@@ -1760,7 +1760,7 @@ class Map(object):
         # Apply bin mask, if one exists
         # Set masked off elements to NaN (handling both cases where the hst is either a simple array, or has uncertainties)
         if self.binning.mask is not None :
-            hist[~self.binning.mask] = ufloat(np.NaN, np.NaN) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.NaN #TODO Is there a better way to check if this is a uarray?
+            hist[~self.binning.mask] = ufloat(np.nan, np.nan) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.nan #TODO Is there a better way to check if this is a uarray?
 
         # Done
         return hist
@@ -3206,12 +3206,12 @@ def test_Map():
                  binning=[e_binning, cz_binning, az_binning])
     m_new = m_orig.reorder_dimensions(['azimuth', 'energy', 'coszen'])
 
-    assert np.alltrue(m_orig[:, 0, 0].hist.flatten() ==
-                      m_new[0, :, 0].hist.flatten())
-    assert np.alltrue(m_orig[0, :, 0].hist.flatten() ==
-                      m_new[0, 0, :].hist.flatten())
-    assert np.alltrue(m_orig[0, 0, :].hist.flatten() ==
-                      m_new[:, 0, 0].hist.flatten())
+    assert np.all(m_orig[:, 0, 0].hist.flatten() ==
+                  m_new[0, :, 0].hist.flatten())
+    assert np.all(m_orig[0, :, 0].hist.flatten() ==
+                  m_new[0, 0, :].hist.flatten())
+    assert np.all(m_orig[0, 0, :].hist.flatten() ==
+                  m_new[:, 0, 0].hist.flatten())
 
     for dim in m_orig.binning.names:
         assert m_orig[:, 0, 0].binning[dim] == m_new[0, :, 0].binning[dim]

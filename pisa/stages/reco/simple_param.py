@@ -368,7 +368,7 @@ def simple_pid_parameterization(particle_key,true_energy,params,track_pid,cascad
     track_mask = random_state.uniform(0.,1.,size=true_energy.size) < track_prob
 
     # Assign PID values
-    pid = np.full_like(true_energy,np.NaN)
+    pid = np.full_like(true_energy,np.nan)
     pid[track_mask] = track_pid
     pid[~track_mask] = cascade_pid
 
@@ -471,7 +471,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
 
             # Create container if not already present
             if "reco_energy" not in container.keys :
-                container['reco_energy'] = np.full_like(true_energy,np.NaN,dtype=FTYPE)
+                container['reco_energy'] = np.full_like(true_energy,np.nan,dtype=FTYPE)
 
             # Create the reco energy variable
             if perfect_reco :
@@ -495,7 +495,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
 
             # Create container if not already present
             if "reco_coszen" not in container.keys :
-                container['reco_coszen'] = np.full_like(true_coszen,np.NaN,dtype=FTYPE)
+                container['reco_coszen'] = np.full_like(true_coszen,np.nan,dtype=FTYPE)
 
             # Create the reco coszen variable
             if perfect_reco :
@@ -520,7 +520,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
 
             # Create container if not already present
             if "pid" not in container.keys :
-                container['pid'] = np.full_like(true_energy,np.NaN,dtype=FTYPE)
+                container['pid'] = np.full_like(true_energy,np.nan,dtype=FTYPE)
 
             # Create the PID variable
             if perfect_reco :

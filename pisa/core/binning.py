@@ -1971,7 +1971,7 @@ class MultiDimBinning():
         If a bin mask is used, this will only count bins that are not masked off
         """
         if self.mask is None :
-            return np.product(self.shape)
+            return np.prod(self.shape)
         else :
             return np.sum(self.mask.astype(int))
 

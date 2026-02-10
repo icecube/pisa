@@ -879,7 +879,7 @@ def format_num(
     fmt=None,
     sci_thresh=(6, -4),
     exponent=None,
-    inf_thresh=np.infty,
+    inf_thresh=np.inf,
     trailing_zeros=False,
     always_show_sign=False,
     decstr='.',

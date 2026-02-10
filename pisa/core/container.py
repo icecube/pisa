@@ -260,7 +260,7 @@ class VirtualContainer():
 
     @property
     def size(self):
-        return np.product(self.shape)
+        return np.prod(self.shape)
 
 
 class Container():
@@ -357,7 +357,7 @@ class Container():
 
     @property
     def size(self):
-        return np.product(self.shape)
+        return np.prod(self.shape)
     
     @property
     def num_dims(self):
