@@ -234,7 +234,7 @@
                     <span class="n">h1_e</span><span class="p">,</span> <span class="n">h1_xs</span> <span class="o">=</span> <span class="n">extractData</span><span class="p">(</span><span class="n">rfile</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
 
                     <span class="n">tot_xs</span> <span class="o">=</span> <span class="n">h1_xs</span><span class="o">*</span><span class="mi">2</span> <span class="o">+</span> <span class="n">o16_xs</span><span class="o">*</span><span class="mi">1</span>
-                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">alltrue</span><span class="p">(</span><span class="n">h1_e</span> <span class="o">==</span> <span class="n">o16_e</span><span class="p">)</span>
+                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">h1_e</span> <span class="o">==</span> <span class="n">o16_e</span><span class="p">)</span>
                     <span class="n">ext_e</span> <span class="o">=</span> <span class="n">o16_e</span>
 
                 <span class="k">elif</span> <span class="n">ver</span> <span class="o">==</span> <span class="s1">&#39;genie_2.8.6&#39;</span><span class="p">:</span>
@@ -252,7 +252,7 @@
                 <span class="k">if</span> <span class="n">energy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">energy</span> <span class="o">=</span> <span class="n">ext_e</span>
 
-                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">alltrue</span><span class="p">(</span><span class="n">ext_e</span> <span class="o">==</span> <span class="n">energy</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ext_e</span> <span class="o">==</span> <span class="n">energy</span><span class="p">)</span>
 
                 <span class="c1"># Note that units in the ROOT files are [1e-38 cm^2] but PISA</span>
                 <span class="c1"># requires units of [m^2], so this conversion is made here.</span>

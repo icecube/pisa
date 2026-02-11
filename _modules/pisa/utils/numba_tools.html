@@ -103,6 +103,7 @@
     <span class="s2">&quot;copy_matrix_guf&quot;</span><span class="p">,</span>
     <span class="s2">&quot;test_copy_matrix&quot;</span><span class="p">,</span>
     <span class="s2">&quot;cuda_copy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FX&quot;</span><span class="p">,</span> <span class="s2">&quot;IX&quot;</span>
 <span class="p">]</span>
 <span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.2&quot;</span>
 <span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Philipp Eller (pde3@psu.edu)&quot;</span>
@@ -165,9 +166,11 @@
 <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
     <span class="n">FX</span> <span class="o">=</span> <span class="s2">&quot;f4&quot;</span>
     <span class="n">CX</span> <span class="o">=</span> <span class="s2">&quot;c8&quot;</span>
+    <span class="n">IX</span> <span class="o">=</span> <span class="s2">&quot;i4&quot;</span>
 <span class="k">elif</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
     <span class="n">FX</span> <span class="o">=</span> <span class="s2">&quot;f8&quot;</span>
     <span class="n">CX</span> <span class="o">=</span> <span class="s2">&quot;c16&quot;</span>
+    <span class="n">IX</span> <span class="o">=</span> <span class="s2">&quot;i8&quot;</span>
 
 
 <div class="viewcode-block" id="myjit">
@@ -318,7 +321,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">test_conjugate</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests of `conjugate` and `conjugate_guf`&quot;&quot;&quot;</span>
     <span class="n">A</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">CX</span><span class="p">)</span>
-    
+
     <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CX</span><span class="p">)</span>
 
     <span class="n">conjugate_guf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>

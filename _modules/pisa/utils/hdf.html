@@ -324,7 +324,7 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
                 <span class="n">node</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">string_</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
-                <span class="n">node</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>  <span class="c1"># same as np.bool8</span>
+                <span class="n">node</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
                     <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">string_</span><span class="p">)</span>
@@ -455,7 +455,6 @@
             <span class="p">(</span><span class="s1">&#39;uint64&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span>
 
             <span class="p">(</span><span class="s1">&#39;bool&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
-            <span class="p">(</span><span class="s1">&#39;bool8&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool8</span><span class="p">(</span><span class="kc">True</span><span class="p">)),</span>
             <span class="p">(</span><span class="s1">&#39;bool_&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">True</span><span class="p">)),</span>
         <span class="p">])</span>
 
@@ -479,7 +478,6 @@
             <span class="s2">&quot;uint64&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">,</span>
 
             <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span>
-            <span class="s2">&quot;bool8&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">bool8</span><span class="p">,</span>
             <span class="s2">&quot;bool_&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">,</span>
         <span class="p">}</span>
 

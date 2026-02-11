@@ -221,7 +221,7 @@
         <span class="n">is_bare_numeric</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool8</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">object0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">object_</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">object_</span>
         <span class="p">):</span>
             <span class="n">is_bare_numeric</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Number</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
@@ -316,10 +316,10 @@
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">)</span>
 
-    <span class="c1"># pint units; allow for comparing across different regestries, for</span>
+    <span class="c1"># pint units; allow for comparing across different registries, for</span>
     <span class="c1"># pragmatic (but possibly not the most correct) reasons...</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">_Unit</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">_Unit</span><span class="p">):</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Unit</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Unit</span><span class="p">):</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;type(x)=</span><span class="si">%s</span><span class="s1"> but type(y)=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">repr</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;x:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
@@ -327,8 +327,8 @@
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="c1"># pint quantities</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">_Quantity</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">_Quantity</span><span class="p">):</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;type(x)=</span><span class="si">%s</span><span class="s1"> but type(y)=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
             <span class="k">return</span> <span class="kc">False</span>
 
@@ -694,10 +694,10 @@
     <span class="c1"># Sequences, etc. but NOT numpy arrays (or pint quantities, which are</span>
     <span class="c1"># iterable) get their elements normalized and populated to a new list for</span>
     <span class="c1"># returning.</span>
-    <span class="c1"># NOTE/TODO: allowing access across unit regestries for pragmatic (if</span>
+    <span class="c1"># NOTE/TODO: allowing access across unit registries for pragmatic (if</span>
     <span class="c1"># incorrect) reasons... may want to revisit this decision.</span>
     <span class="c1"># pylint: disable=protected-access</span>
-    <span class="n">misbehaving_sequences</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">_Quantity</span><span class="p">)</span>
+    <span class="n">misbehaving_sequences</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">))</span>
             <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">misbehaving_sequences</span><span class="p">)):</span>
         <span class="c1">#logging.trace(&#39;Iterable, Iterator, or Sequence but not ndarray or&#39;</span>
@@ -717,7 +717,7 @@
     <span class="c1"># (in the base units).</span>
 
     <span class="n">has_units</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">_Quantity</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
         <span class="c1">#logging.trace(&#39;is a Quantity, converting to base units&#39;)</span>
         <span class="n">has_units</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="n">full_norm</span><span class="p">:</span>
@@ -739,11 +739,16 @@
         <span class="n">has_uncertainties</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">std_devs</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">std_dev</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">nominal_value</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">issubsctype</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">AffineScalarFunc</span><span class="p">):</span>
-        <span class="c1">#logging.trace(&#39;ndarray with subsctype is AffineScalarFunc&#39;)</span>
-        <span class="n">has_uncertainties</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">std_devs</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="c1"># In order to detect an array with uncertainties, assume that the first</span>
+        <span class="c1"># element is representative</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="n">first_element</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">first_element</span><span class="p">,</span> <span class="n">AffineScalarFunc</span><span class="p">):</span>
+                <span class="c1">#logging.trace(&#39;ndarray with elements that are of type AffineScalarFunc&#39;)</span>
+                <span class="n">has_uncertainties</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">std_devs</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
     <span class="c1"># What is done below will convert scalars into arrays, so get this info</span>
     <span class="c1"># before it is lost.</span>
@@ -1027,7 +1032,21 @@
 
     <span class="c1"># Dict of dicts</span>
     <span class="n">_</span> <span class="o">=</span> <span class="n">normQuant</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;3&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}})</span>
+
+    <span class="c1"># arrays with uncertainties</span>
+    <span class="n">ua1</span> <span class="o">=</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">]))</span>
+    <span class="n">ua2</span> <span class="o">=</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ufloat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span> <span class="n">ufloat</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)]))</span>
+    <span class="c1"># in the uncertainties package, &quot;objects [...] represent probability</span>
+    <span class="c1"># distributions and not pure numbers&quot;, so we do not expect equality</span>
+    <span class="c1"># here (the following is hence perhaps a consistency check that</span>
+    <span class="c1"># normQuant doesn&#39;t result in one of the &quot;infinitely small number</span>
+    <span class="c1"># of cases&quot; in which the comparison yields True)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ua1</span> <span class="o">!=</span> <span class="n">ua2</span><span class="p">)</span>
+    <span class="c1"># however, here we&#39;re comparing a random variable with itself:</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ua1</span> <span class="o">==</span> <span class="n">ua1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ua2</span> <span class="o">==</span> <span class="n">ua2</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_normQuant &gt;&gt;&#39;</span><span class="p">)</span></div>
+
 
 
 

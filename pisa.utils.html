@@ -547,7 +547,7 @@ come from independent random variables, etc.</p>
 </div>
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.utils.comparisons.ALLCLOSE_KW">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.comparisons.</span></span><span class="sig-name descname"><span class="pre">ALLCLOSE_KW</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'atol':</span> <span class="pre">2.220446049250313e-16,</span> <span class="pre">'equal_nan':</span> <span class="pre">True,</span> <span class="pre">'rtol':</span> <span class="pre">1e-12}</span></em><a class="headerlink" href="#pisa.utils.comparisons.ALLCLOSE_KW" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.comparisons.</span></span><span class="sig-name descname"><span class="pre">ALLCLOSE_KW</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'atol':</span> <span class="pre">np.float64(2.220446049250313e-16),</span> <span class="pre">'equal_nan':</span> <span class="pre">True,</span> <span class="pre">'rtol':</span> <span class="pre">1e-12}</span></em><a class="headerlink" href="#pisa.utils.comparisons.ALLCLOSE_KW" title="Link to this definition"></a></dt>
 <dd><p>Keyword args to pass to all calls to numpy.allclose</p>
 </dd></dl>
 
@@ -565,7 +565,7 @@ come from independent random variables, etc.</p>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.utils.comparisons.FTYPE_PREC">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.comparisons.</span></span><span class="sig-name descname"><span class="pre">FTYPE_PREC</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2.220446049250313e-16</span></em><a class="headerlink" href="#pisa.utils.comparisons.FTYPE_PREC" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.comparisons.</span></span><span class="sig-name descname"><span class="pre">FTYPE_PREC</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">np.float64(2.220446049250313e-16)</span></em><a class="headerlink" href="#pisa.utils.comparisons.FTYPE_PREC" title="Link to this definition"></a></dt>
 <dd><p>Machine precision (“eps”) for PISA’s FTYPE (float datatype)</p>
 </dd></dl>
 
@@ -786,7 +786,7 @@ structure is different between the two objects, returns False</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.comparisons.recursiveEquality">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.comparisons.</span></span><span class="sig-name descname"><span class="pre">recursiveEquality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allclose_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'atol':</span> <span class="pre">2.220446049250313e-16,</span> <span class="pre">'equal_nan':</span> <span class="pre">True,</span> <span class="pre">'rtol':</span> <span class="pre">1e-12}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/comparisons.html#recursiveEquality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.comparisons.recursiveEquality" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.comparisons.</span></span><span class="sig-name descname"><span class="pre">recursiveEquality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allclose_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'atol':</span> <span class="pre">np.float64(2.220446049250313e-16),</span> <span class="pre">'equal_nan':</span> <span class="pre">True,</span> <span class="pre">'rtol':</span> <span class="pre">1e-12}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/comparisons.html#recursiveEquality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.comparisons.recursiveEquality" title="Link to this definition"></a></dt>
 <dd><p>Recursively verify equality between two objects <cite>x</cite> and <cite>y</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -6020,124 +6020,6 @@ the inputs</p>
 <dd class="field-odd"><p>numpy.ndarray of same shape as inputs</p>
 </dd>
 </dl>
-</dd></dl>
-
-</section>
-<section id="module-pisa.utils.tests">
-<span id="pisa-utils-tests-module"></span><h2>pisa.utils.tests module<a class="headerlink" href="#module-pisa.utils.tests" title="Link to this heading"></a></h2>
-<p>Functions to help compare and plot differences between PISA 2 and PISA 3 maps</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.baseplot">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">baseplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clabel=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symm=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evtrate=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#baseplot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.baseplot" title="Link to this definition"></a></dt>
-<dd><p>Simple plotting of a 2D histogram (map)</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.baseplot2">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">baseplot2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evtrate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#baseplot2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.baseplot2" title="Link to this definition"></a></dt>
-<dd><p>Simple plotting of a 2D map.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>map</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a>)</p></li>
-<li><p><strong>title</strong> (<em>str</em>)</p></li>
-<li><p><strong>ax</strong> (<em>axis</em>)</p></li>
-<li><p><strong>symm</strong> (<em>bool</em>)</p></li>
-<li><p><strong>evtrate</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>ax, pcmesh, cbar</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.check_agreement">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">check_agreement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">testname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh_diff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#check_agreement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.check_agreement" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.make_delta_map">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">make_delta_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmap</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#make_delta_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.make_delta_map" title="Link to this definition"></a></dt>
-<dd><p>Get the difference between two PISA 2 style maps (amap-bmap) and return
-as another PISA 2 style map.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.make_ratio_map">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">make_ratio_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmap</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#make_ratio_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.make_ratio_map" title="Link to this definition"></a></dt>
-<dd><p>Get the ratio of two PISA 2 style maps (amap/bmap) and return as another
-PISA 2 style map.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.order">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">order</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#order"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.order" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.order_str">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">order_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#order_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.order_str" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.pisa2_map_to_pisa3_map">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">pisa2_map_to_pisa3_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pisa2_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ebins_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ebins'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">czbins_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'czbins'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_lin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#pisa2_map_to_pisa3_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.pisa2_map_to_pisa3_map" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.plot_cmp">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">plot_cmp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'png'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#plot_cmp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.plot_cmp" title="Link to this definition"></a></dt>
-<dd><p>Plot comparisons between two (identically-binned) maps or map sets.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>new</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> or </em><a class="reference internal" href="pisa.core.html#pisa.core.map.MapSet" title="pisa.core.map.MapSet"><em>MapSet</em></a>)</p></li>
-<li><p><strong>ref</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.map.Map" title="pisa.core.map.Map"><em>Map</em></a><em> or </em><a class="reference internal" href="pisa.core.html#pisa.core.map.MapSet" title="pisa.core.map.MapSet"><em>MapSet</em></a>)</p></li>
-<li><p><strong>new_label</strong> (<em>str</em>)</p></li>
-<li><p><strong>ref_label</strong> (<em>str</em>)</p></li>
-<li><p><strong>plot_label</strong> (<em>str</em>)</p></li>
-<li><p><strong>file_label</strong> (<em>str</em>)</p></li>
-<li><p><strong>outdir</strong> (<em>str</em>)</p></li>
-<li><p><strong>ftype</strong> (<em>str</em>)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.plot_comparisons">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">plot_comparisons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_abv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_abv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">texname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stagename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">servicename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shorttitles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'png'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#plot_comparisons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.plot_comparisons" title="Link to this definition"></a></dt>
-<dd><p>Plot comparisons between two identically-binned PISA 2 style maps</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.plot_map_comparisons">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">plot_map_comparisons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_abv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_abv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">texname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stagename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">servicename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shorttitles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'png'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#plot_map_comparisons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.plot_map_comparisons" title="Link to this definition"></a></dt>
-<dd><p>Plot comparisons between two identically-binned PISA 3 style maps</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.print_agreement">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">print_agreement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">testname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#print_agreement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.print_agreement" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.print_event_rates">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">print_event_rates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">testname1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">testname2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map1_events</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map2_events</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#print_event_rates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.print_event_rates" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.validate_map_objs">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">validate_map_objs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmap</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#validate_map_objs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.validate_map_objs" title="Link to this definition"></a></dt>
-<dd><p>Validate that two PISA 3 style maps are compatible binning.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pisa.utils.tests.validate_maps">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.tests.</span></span><span class="sig-name descname"><span class="pre">validate_maps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmap</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/tests.html#validate_maps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.tests.validate_maps" title="Link to this definition"></a></dt>
-<dd><p>Validate that two PISA 2 style maps are compatible binning.</p>
 </dd></dl>
 
 </section>

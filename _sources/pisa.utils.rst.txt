@@ -277,14 +277,6 @@ pisa.utils.stats module
    :undoc-members:
    :show-inheritance:
 
-pisa.utils.tests module
------------------------
-
-.. automodule:: pisa.utils.tests
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 pisa.utils.vbwkde module
 ------------------------
 

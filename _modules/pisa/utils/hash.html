@@ -189,11 +189,11 @@
     <span class="c1"># Handle numpy arrays and matrices specially</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">)):</span>
         <span class="k">if</span> <span class="n">full_hash</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">tostring</span><span class="p">(),</span> <span class="o">**</span><span class="n">pass_on_kw</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(),</span> <span class="o">**</span><span class="n">pass_on_kw</span><span class="p">)</span>
         <span class="n">len_flat</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">size</span>
         <span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">len_flat</span> <span class="o">//</span> <span class="n">FAST_HASH_NDARRAY_ELEMENTS</span><span class="p">)</span>
         <span class="n">sub_elements</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="n">stride</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">sub_elements</span><span class="o">.</span><span class="n">tostring</span><span class="p">(),</span> <span class="o">**</span><span class="n">pass_on_kw</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hash_obj</span><span class="p">(</span><span class="n">sub_elements</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(),</span> <span class="o">**</span><span class="n">pass_on_kw</span><span class="p">)</span>
 
     <span class="c1"># Handle an open file object as a special case</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">IOBase</span><span class="p">):</span>

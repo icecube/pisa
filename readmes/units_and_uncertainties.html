@@ -70,25 +70,18 @@
              
   <p># Units and Uncertainties</p>
 <p>## Units</p>
-<p>Units were introduced for parameters and binnings in PISA Cake using the [Pint package](<a class="reference external" href="https://pint.readthedocs.io/">https://pint.readthedocs.io/</a>). The package is fully numpy and uncertainties compatible.</p>
+<p>Units were introduced for parameters and binnings in PISA using the [Pint package](<a class="reference external" href="https://pint.readthedocs.io/">https://pint.readthedocs.io/</a>). The package is fully compatible with the NumPy and uncertainties packages.</p>
 <p>Note the terminology used:
-* <strong>*Unit*</strong> has no attached value(s). Type: <cite>pint.unit._Unit</cite>
-* <strong>*Quantity*</strong> is a number (or array) <em>with units attached</em> to them. Type: <cite>pint.quantity._Quantity</cite>
-* <strong>*Magnitude*</strong> is the value of a quantity sans units. Type: <cite>float</cite>, <cite>int</cite>, <cite>numpy.ndarray</cite>, etc.</p>
+* [<strong>*Unit*</strong>](<a class="reference external" href="https://pint.readthedocs.io/en/stable/api/base.html#pint.Unit">https://pint.readthedocs.io/en/stable/api/base.html#pint.Unit</a>) has no attached value(s). Type: <cite>pint.Unit</cite>
+* [<strong>*Quantity*</strong>](<a class="reference external" href="https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity">https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity</a>) is a number (or array) <em>with units attached</em> to them. Type: <cite>pint.Quantity</cite>
+* [<strong>*Magnitude*</strong>](<a class="reference external" href="https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity.magnitude">https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity.magnitude</a>) is the value of a quantity sans units. Type: <cite>float</cite>, <cite>int</cite>, <cite>numpy.ndarray</cite>, etc.</p>
 <p>### Pint’s quirks
-One quirk is that pint has lazy imports, so until you actually instantiate a unit registry, doing things like
-<code class="docutils literal notranslate"><span class="pre">`python</span>
-<span class="pre">isinstance(x,</span> <span class="pre">pint.unit._Unit)</span>
-<span class="pre">isinstance(x,</span> <span class="pre">pint.quantity._Quantity)</span>
-<span class="pre">`</span></code>
-will fail (<cite>pint.unit</cite> and <cite>pint.quantity</cite> effectively don’t exist) until you first do
-<code class="docutils literal notranslate"><span class="pre">`python</span>
-<span class="pre">ureg</span> <span class="pre">=</span> <span class="pre">pint.UnitRegistry()</span>
-<span class="pre">`</span></code>
-Therefore, and to assure that we alsways use the same instance, the “standard” way of importing pint in PISA is the following line:
+As Pint has no “global units”, to ensure we always use the same shared [unit registry](<a class="reference external" href="https://pint.readthedocs.io/en/stable/getting/pint-in-your-projects.html#having-a-shared-registry">https://pint.readthedocs.io/en/stable/getting/pint-in-your-projects.html#having-a-shared-registry</a>),
+the standard way of importing pint in PISA is the line
 <code class="docutils literal notranslate"><span class="pre">`python</span>
 <span class="pre">from</span> <span class="pre">pisa</span> <span class="pre">import</span> <span class="pre">ureg,</span> <span class="pre">Q_</span>
-<span class="pre">`</span></code></p>
+<span class="pre">`</span></code>
+, where <cite>ureg</cite> is the shared unit registry and <cite>Q_</cite> is the associated shared <cite>Quantity</cite> type.</p>
 <p>### Basic attributes of Pint quantities</p>
 <ul class="simple">
 <li><p>To access the <em>units</em> of a quantity:
@@ -106,10 +99,13 @@ Therefore, and to assure that we alsways use the same instance, the “standard�
 <span class="pre">12.4</span>
 <span class="pre">&gt;&gt;&gt;</span> <span class="pre">q.m</span>
 <span class="pre">12.4</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">q.m_as('meter')</span>
+<span class="pre">3.77952</span>
 <span class="pre">`</span></code></p></li>
 </ul>
 <p>## Uncertainties</p>
-<p>Support for the handling of errors is available from the python [uncertainties package](<a class="reference external" href="https://pythonhosted.org/uncertainties/">https://pythonhosted.org/uncertainties/</a>). This interoperates well with units, too. Note that there <em>is</em> a performance penalty for using uncertainties, so hooks are provided to enable or disable this feature at the user’s discretion.</p>
+<p>Support for the handling of errors is available from the [uncertainties package](<a class="reference external" href="https://uncertainties.readthedocs.io/">https://uncertainties.readthedocs.io/</a>). This interoperates well with units, too.
+Note that there <em>is</em> a performance penalty for using uncertainties, so hooks are provided to enable or disable this feature at the user’s discretion.</p>
 <p>### Basic attributes of numbers with uncertainties</p>
 <ul class="simple">
 <li><p>Nominal value:
@@ -210,8 +206,9 @@ Therefore, and to assure that we alsways use the same instance, the “standard�
 <span class="pre">`</span></code></p></li>
 </ul>
 </li>
-<li><p>The [<cite>pisa.core.Map</cite>](<a class="reference external" href="https://github.com/jllanfranchi/pisa/blob/cake/pisa/core/map.py">https://github.com/jllanfranchi/pisa/blob/cake/pisa/core/map.py</a>) object integrates uncertainties, which are turned off by default but can be enabled with either the <cite>set_poisson_errors()</cite> or <cite>set_errors(…)</cite> methods. Once enabled, all subsequent operations on the <cite>Map</cite> will propagate errors (to first order).</p></li>
+<li><p>The [<cite>pisa.core.Map</cite>](<a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/map.py">https://github.com/icecube/pisa/blob/master/pisa/core/map.py</a>) object integrates uncertainties, which are turned off by default but can be enabled with either</p></li>
 </ul>
+<p>the <cite>set_poisson_errors()</cite> or <cite>set_errors(…)</cite> methods. Once enabled, all subsequent operations on the <cite>Map</cite> will propagate errors (to first order).</p>
 
 
            </div>
