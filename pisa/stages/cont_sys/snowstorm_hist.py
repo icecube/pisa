@@ -1,5 +1,7 @@
 """
-PISA stage to apply detector systematics
+PISA stage to apply detector systematics to snowstorm simulation by 
+splitting and histogramming the simulation set.
+The method is based on this paper: https://arxiv.org/pdf/1909.01530
 """
 
 import numpy as np
@@ -17,7 +19,7 @@ __all__ = [
 
 __author__ = "J. Weldert"
 
-__license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -34,7 +36,12 @@ __license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
 
 class snowstorm_hist(Stage):  # pylint: disable=invalid-name
     """
-    Service to apply detector systematics through snowstorm hists.
+    Service to apply detector systematics through splitting and histogramming
+    of snowstorm simulation.
+
+    Expected container keys are:
+        "weights"
+        All detector systematics that should be used
 
     Parameters
     ----------
@@ -50,8 +57,8 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         Parameters that are no detector systematics but if changed require a
         re-calculation of the gradients (e.g. osc params).
     params : ParamSet
-        Note that the params required to be in `params` are determined from
-        those listed in the `systematics`.
+        Note that the params required to be in `params` are those listed in 
+        `systematics` plus those listed in `additional_params`.
     """
 
     def __init__(
@@ -59,7 +66,7 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         systematics,
         simulation_dists,
         simulation_dists_params,
-        additional_params=[],
+        additional_params=None,
         **std_kwargs,
     ):
         # evaluation only works on event-by-event basis
@@ -82,7 +89,7 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         assert isinstance(self.simulation_dists, list)
         assert len(self.simulation_dists) == len(self.systematics)
         for sd in self.simulation_dists:
-            assert sd in ["gauss", "uniform"]
+            assert sd.lower() in ["gauss", "uniform"]
 
         if isinstance(simulation_dists_params, str):
             self.simulation_dists_params = eval(simulation_dists_params)
@@ -93,12 +100,14 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
 
         if isinstance(additional_params, str):
             self.additional_params = eval(additional_params)
+        elif additional_params is None:
+            self.additional_params = []
         else:
             self.additional_params = additional_params
         assert isinstance(self.additional_params, list)
 
-        self.n_split = 2
         self.grads = {}
+        """Place to store gradients to save computing time."""
 
         # -- Initialize base class -- #
         super().__init__(
@@ -111,17 +120,21 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
     def setup_function(self):
         central_values = []
         for i, sd in enumerate(self.simulation_dists):
-            if sd == "gauss":
+            if sd.lower() == "gauss":
                 central_values.append(self.simulation_dists_params[i][0])
             else: # uniform
                 central_values.append(sum(self.simulation_dists_params[i])/2)
         self.central_values = central_values
+        """Central values of the systematic parameters in the snowstorm set."""
 
+        # Clear gradients and additional param values every time the stage is set up
         for container in self.data:
             self.grads[container.name] = {}
         self.additional_params_values = None
 
     def compute_function(self):
+        # First check if we need to calculate the gradients or if we can use the already stored ones.
+        # We need to calculate if an additional params value or the apply_mode changed
         additional_params_values = [self.params[p].m for p in self.additional_params]
         if additional_params_values != self.additional_params_values:
             calc_grads = True
@@ -132,6 +145,7 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
             calc_grads = False
 
         for container in self.data:
+            # Only need per event infos if we want to calculate the gradients
             if calc_grads:
                 container.representation = self.calc_mode
                 sample = np.array([container[name] for name in self.apply_mode.names])
@@ -154,12 +168,17 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
                         self.apply_mode,
                         averaged=False
                     )
-                    if self.simulation_dists[i] == "gauss": # TODO verify
+                    if self.simulation_dists[i].lower() == "gauss": # TODO verify correction factor is correct
+                        # This is based on equation 2.12 in the paper.
                         correction_factor = 1/self.simulation_dists_params[i][1] * np.sqrt(np.pi/2)
-                        self.grads[container.name][sys] = np.nan_to_num((h1-h2) / (h1+h2) * correction_factor * self.n_split)
+                        self.grads[container.name][sys] = np.nan_to_num(2*(h1-h2)*correction_factor / (h1+h2))
                     else:
+                        # For the uniform case we basically do grad=dy/dx. dx (called diff here) is half of 
+                        # the simulated range, because that is the difference of the centers of the two splits.
+                        # dy is (h1-h2) multiplied by 2 because each hist only used half of the simulated phase space.
+                        # At the end we divide by h=(h1+h2) to get a relative gradient.
                         diff = (self.simulation_dists_params[i][1] - self.simulation_dists_params[i][0]) / 2
-                        self.grads[container.name][sys] = np.nan_to_num((h1-h2) / (h1+h2) / diff * self.n_split)
+                        self.grads[container.name][sys] = np.nan_to_num(2*(h1-h2)/diff / (h1+h2))
 
                 container["syst_scale"] *= 1 + (self.params[sys].m-self.central_values[i]) * self.grads[container.name][sys]
             container["syst_scale"] = np.clip(container["syst_scale"], a_min=0, a_max=np.inf)
