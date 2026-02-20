@@ -126,7 +126,7 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         if additional_params_values != self.additional_params_values:
             calc_grads = True
             self.additional_params_values = additional_params_values
-        elif self.apply_mode.shape != self.grads[self.data.names[0]][self.systematics[0]].shape:
+        elif np.prod(self.apply_mode.shape) != len(self.grads[self.data.names[0]][self.systematics[0]]):
             calc_grads = True
         else:
             calc_grads = False
