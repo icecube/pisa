@@ -109,6 +109,9 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         self.grads = {}
         """Place to store gradients to save computing time."""
 
+        self.central_values = []
+        """Central values of the systematic parameters in the snowstorm set."""
+
         # -- Initialize base class -- #
         super().__init__(
             expected_params=self.systematics+self.additional_params,
@@ -118,14 +121,11 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         )
 
     def setup_function(self):
-        central_values = []
         for i, sd in enumerate(self.simulation_dists):
             if sd.lower() == "gauss":
-                central_values.append(self.simulation_dists_params[i][0])
+                self.central_values.append(self.simulation_dists_params[i][0])
             else: # uniform
-                central_values.append(sum(self.simulation_dists_params[i])/2)
-        self.central_values = central_values
-        """Central values of the systematic parameters in the snowstorm set."""
+                self.central_values.append(sum(self.simulation_dists_params[i])/2)
 
         # Clear gradients and additional param values every time the stage is set up
         for container in self.data:
