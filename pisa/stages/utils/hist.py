@@ -207,9 +207,8 @@ class hist(Stage):  # pylint: disable=invalid-name
 
                 container.representation = self.apply_mode
                 container["weights"] = hist
-                for k in container.validity["weights"]:
-                    # Histogramming does not invalidate other representations.
-                    container.validity["weights"][k] = True
+                # Histogramming does not invalidate "events" representation
+                container.validity["weights"][hash("events")] = True
 
                 if self.error_method == "sumw2":
                     container["errors"] = np.sqrt(sumw2)
