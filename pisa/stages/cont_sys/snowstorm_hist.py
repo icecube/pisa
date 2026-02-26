@@ -121,6 +121,7 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         )
 
     def setup_function(self):
+        self.central_values = []
         for i, sd in enumerate(self.simulation_dists):
             if sd.lower() == "gauss":
                 self.central_values.append(self.simulation_dists_params[i][0])
@@ -184,7 +185,6 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
             container["syst_scale"] = np.clip(container["syst_scale"], a_min=0, a_max=np.inf)
 
     def apply_function(self):
-        self.data.representation = self.apply_mode
         for container in self.data:
             container["weights"] *= container["syst_scale"]
 
