@@ -10,6 +10,7 @@ Subpackages
    pisa.stages.absorption
    pisa.stages.aeff
    pisa.stages.background
+   pisa.stages.cont_sys
    pisa.stages.data
    pisa.stages.discr_sys
    pisa.stages.flux

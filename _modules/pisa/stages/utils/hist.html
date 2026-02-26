@@ -284,6 +284,8 @@
 
                 <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
                 <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span>
+                <span class="c1"># Histogramming does not invalidate &quot;events&quot; representation</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">][</span><span class="nb">hash</span><span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">&quot;sumw2&quot;</span><span class="p">:</span>
                     <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sumw2</span><span class="p">)</span>
