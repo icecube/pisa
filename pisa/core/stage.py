@@ -152,15 +152,15 @@ class Stage():
             supported_reps = {}
         assert isinstance(supported_reps, Mapping)
         if 'calc_mode' not in supported_reps:
-            supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning, None]
+            supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning]
         if 'apply_mode' not in supported_reps:
-            supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning, None]
+            supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
         self.supported_reps = supported_reps
 
-        self._check_representation(rep=calc_mode, mode='calc_mode')
+        self._check_representation(rep=calc_mode, mode='calc_mode', allow_None=True)
         self._calc_mode = calc_mode
 
-        self._check_representation(rep=apply_mode, mode='apply_mode')
+        self._check_representation(rep=apply_mode, mode='apply_mode', allow_None=True)
         self._apply_mode = apply_mode
 
         self._error_method = error_method
@@ -311,9 +311,11 @@ class Stage():
             self._check_representation(rep=value, mode='apply_mode')
             self._apply_mode = value
 
-    def _check_representation(self, rep, mode):
+    def _check_representation(self, rep, mode, allow_None=False):
         if rep is None:
-            if None not in self.supported_reps[mode]:
+            # allow_None is used to always allow None in the init of a stage.
+            # Should be removed once stages explicitely set modes.
+            if None not in self.supported_reps[mode] and not allow_None:
                 raise ValueError(
                     f"{mode} {rep} is not supported by {self.stage_name}"
                     f".{self.service_name}"

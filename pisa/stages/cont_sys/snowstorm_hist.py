@@ -217,4 +217,5 @@ def init_test(**param_kwargs):
         simulation_dists_params=[(1.0, 0.1)],
         additional_params=['deltam31'],
         params=param_set,
+        calc_mode="events",
     )

@@ -94,6 +94,9 @@ def find_services(path):
         return services
 
     for dirpath, dirs, files in walk(path, followlinks=True):
+        if dirpath.endswith(".ipynb_checkpoints") or dirpath.endswith("__pycache__"):
+            continue
+
         files.sort(key=nsort_key_func)
         dirs.sort(key=nsort_key_func)
 
@@ -154,6 +157,8 @@ def add_test_inputs(service, empty=False):
                 container1[k] = np.linspace(0.1, 1, 10, dtype=FTYPE)
                 container2[k] = np.linspace(0.1, 1, 10, dtype=FTYPE)
         service.data = ContainerSet('data', [container1, container2])
+        service.data["output_binning"] = TEST_BINNING
+        service.data["regularized_output_binning"] = TEST_BINNING
     else:
         logging.debug(PFX + "Creating empty test inputs...")
         service.data = ContainerSet('data')
@@ -318,7 +323,7 @@ def test_services(
                 continue
 
         #if service.data is not None: # we should never be in this state here
-        if service.calc_mode is None:
+        if service.calc_mode is None and None not in service.supported_reps['calc_mode']:
             logging.debug(PFX + "Setting calc_mode ...")
             try:
                 service.calc_mode = 'events'
@@ -336,7 +341,7 @@ def test_services(
                 stage_dot_services_failed.append(stage_dot_service)
                 continue
 
-        if service.apply_mode is None:
+        if service.apply_mode is None and None not in service.supported_reps['apply_mode']:
             logging.debug(PFX + "Setting apply_mode ...")
             try:
                 service.apply_mode = 'events'
