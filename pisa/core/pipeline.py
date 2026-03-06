@@ -100,9 +100,9 @@ class Pipeline():
         self.pisa_version = None
 
         self.name = config['pipeline']['name']
-        self.data = ContainerSet(self.name)
         self.detector_name = config['pipeline']['detector_name']
-        self._output_binning = config['pipeline']['output_binning']
+        self.data = ContainerSet(self.name)
+        self.data["output_binning"] = config['pipeline']['output_binning']
         self.output_key = config['pipeline']['output_key']
 
         self._profile = profile
@@ -116,7 +116,7 @@ class Pipeline():
         self._apply_modes = [s.apply_mode for s in self.stages]
         self._source_code_hash = None
 
-        if isinstance(self._output_binning, VarBinning):
+        if isinstance(self.data["output_binning"], VarBinning):
             self.assert_varbinning_compat()
             self.assert_exclusive_varbinning()
         else:
@@ -542,7 +542,10 @@ class Pipeline():
         apply_modes = [s.apply_mode for s in self.stages]
         if apply_modes != self._apply_modes:
             # possible that stage apply_modes got manipulated in between runs
-            self.assert_apply_modes_consistency()
+            if isinstance(self.output_binning, VarBinning):
+                self.assert_varbinning_compat()
+            else:
+                self.assert_apply_modes_consistency()
         if self.profile:
             start_t = time()
             self._run_function()
@@ -571,7 +574,9 @@ class Pipeline():
 
     def _setup_function(self):
         """Setup (reset) all stages"""
+        output_binning = self.data["output_binning"]
         self.data = ContainerSet(self.name)
+        self.data["output_binning"] = output_binning
         for stage in self.stages:
             stage.data = self.data
             stage.setup()
@@ -696,6 +701,12 @@ class Pipeline():
             if isinstance(s.apply_mode, MultiDimBinning) and ref_binning is None:
                 ref_binning = s.apply_mode
                 ref_name = f"{s.stage_name}.{s.service_name}"
+                if isinstance(self.output_binning, MultiDimBinning) and ref_binning != self.output_binning:
+                    raise ValueError(
+                        f"Stage {ref_name} has '{s.apply_mode}' as apply_mode, which "
+                        f"deviates from the pipeline output binning {self.output_binning}. "
+                        "This configuration would result in an unreliable pipeline output."
+                    )
             elif ref_binning is not None and s.apply_mode != ref_binning:
                 raise ValueError(
                     f"Stage {s.stage_name}.{s.service_name} has '{s.apply_mode}'"
@@ -782,14 +793,14 @@ class Pipeline():
 
     @property
     def output_binning(self):
-        return self._output_binning
+        return self.data["output_binning"]
 
     @output_binning.setter
     def output_binning(self, binning):
         if isinstance(binning, VarBinning):
             self.assert_varbinning_compat()
             self.assert_exclusive_varbinning(output_binning=binning)
-        self._output_binning = binning
+        self.data["output_binning"] = binning
         if isinstance(binning, MultiDimBinning):
             for s in self.stages:
                 if isinstance(s.apply_mode, MultiDimBinning):

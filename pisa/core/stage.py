@@ -152,16 +152,22 @@ class Stage():
             supported_reps = {}
         assert isinstance(supported_reps, Mapping)
         if 'calc_mode' not in supported_reps:
-            supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning]
+            supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning, None]
         if 'apply_mode' not in supported_reps:
-            supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
+            supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning, None]
         self.supported_reps = supported_reps
 
-        self._check_representation(rep=calc_mode, mode='calc_mode', allow_None=True)
-        self._calc_mode = calc_mode
+        if calc_mode is None and supported_reps['calc_mode'] == ['events']:
+            self._calc_mode = 'events'
+        else:
+            self._check_representation(rep=calc_mode, mode='calc_mode')
+            self._calc_mode = calc_mode
 
-        self._check_representation(rep=apply_mode, mode='apply_mode', allow_None=True)
-        self._apply_mode = apply_mode
+        if apply_mode is None and supported_reps['apply_mode'] == ['events']:
+            self._apply_mode = 'events'
+        else:
+            self._check_representation(rep=apply_mode, mode='apply_mode')
+            self._apply_mode = apply_mode
 
         self._error_method = error_method
 
@@ -311,14 +317,20 @@ class Stage():
             self._check_representation(rep=value, mode='apply_mode')
             self._apply_mode = value
 
-    def _check_representation(self, rep, mode, allow_None=False):
-        if isinstance(rep, str) and rep not in self.supported_reps[mode]:
-            raise ValueError(
-                f"{mode} {rep} is not supported by {self.stage_name}"
-                f".{self.service_name}"
-            )
-        if (not isinstance(rep, str) and type(rep) not in self.supported_reps[mode]
-            and (rep is not None or not allow_None)):
+    def _check_representation(self, rep, mode):
+        if rep is None:
+            if None not in self.supported_reps[mode]:
+                raise ValueError(
+                    f"{mode} {rep} is not supported by {self.stage_name}"
+                    f".{self.service_name}"
+                )
+        elif isinstance(rep, str):
+            if rep not in self.supported_reps[mode]:
+                raise ValueError(
+                    f"{mode} {rep} is not supported by {self.stage_name}"
+                    f".{self.service_name}"
+                )
+        elif type(rep) not in self.supported_reps[mode]:
             raise ValueError(
                 f"{mode} {type(rep)} is not supported by {self.stage_name}"
                 f".{self.service_name}"

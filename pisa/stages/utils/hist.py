@@ -42,24 +42,28 @@ class hist(Stage):  # pylint: disable=invalid-name
         if apply_unc_weights:
             expected_container_keys.append('unc_weights')
 
+        supported_reps = {
+            'calc_mode': [MultiDimBinning, "events"],
+            'apply_mode': [None, MultiDimBinning],
+        }
+
         # init base class
         super().__init__(
             expected_params=(),
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
-        assert self.calc_mode is not None
-        assert self.apply_mode is not None
-        self.regularized_apply_mode = None
         self.apply_unc_weights = apply_unc_weights
         self.unweighted = unweighted
 
     def setup_function(self):
 
-        assert isinstance(self.apply_mode, MultiDimBinning), (
-            "Hist stage needs a binning as `apply_mode`, but is %s" % self.apply_mode
-        )
+        if self.apply_mode is None:
+            self.apply_mode = self.data["output_binning"]
+        else:
+            assert self.apply_mode == self.data["output_binning"]
 
         if isinstance(self.calc_mode, MultiDimBinning):
 
@@ -116,12 +120,10 @@ class hist(Stage):  # pylint: disable=invalid-name
                     dimensions.append(new_dim)
                 else:
                     dimensions.append(dim)
-            self.regularized_apply_mode = MultiDimBinning(dimensions)
+            self.data["regularized_output_binning"] = MultiDimBinning(dimensions)
             logging.debug(
-                "Using regularized binning:\n" + str(self.regularized_apply_mode)
+                "Using regularized binning:\n" + str(self.data["regularized_output_binning"])
             )
-        else:
-            raise ValueError(f"unknown calc mode: {self.calc_mode}")
 
     @profile
     def apply_function(self):
@@ -164,7 +166,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                 dims_log = [d.is_log for d in self.apply_mode]
                 dims_ire = [d.is_irregular for d in self.apply_mode]
                 for dim, is_log, is_ire in zip(
-                    self.regularized_apply_mode, dims_log, dims_ire
+                    self.data["regularized_output_binning"], dims_log, dims_ire
                 ):
                     if is_log and not is_ire:
                         container.representation = "log_events"
@@ -195,15 +197,15 @@ class hist(Stage):  # pylint: disable=invalid-name
                 hist = histogram(
                     sample,
                     unc_weights*weights,
-                    self.regularized_apply_mode,
+                    self.data["regularized_output_binning"],
                     averaged=False
                 )
 
                 if self.error_method == "sumw2":
                     sumw2 = histogram(sample, np.square(unc_weights*weights),
-                        self.regularized_apply_mode, averaged=False)
+                        self.data["regularized_output_binning"], averaged=False)
                     bin_unc2 = histogram(sample, np.square(unc_weights)*weights,
-                        self.regularized_apply_mode, averaged=False)
+                        self.data["regularized_output_binning"], averaged=False)
 
                 container.representation = self.apply_mode
                 container["weights"] = hist

@@ -43,6 +43,8 @@ class ContainerSet():
         for container in containers:
             self.add_container(container)
         self.representation = representation
+        # global auxiliary data dict, can be used to e.g. share keys between stages
+        self._glob_aux_data = {}
 
     def __repr__(self):
         return f'ContainerSet containing {[c.name for c in self]}'
@@ -146,7 +148,18 @@ class ContainerSet():
             linked_names = [c.name for c in self.linked_containers]
             if key in linked_names:
                 return self.linked_containers[linked_names.index(key)]
+        if key in self._glob_aux_data.keys():
+            return self._glob_aux_data[key]
         raise KeyError(f"No name `{key}` in container")
+
+    def __setitem__(self, key, data):
+        if key in self.names:
+            raise KeyError(f"`{key}` is a container name. If you want to update a container use self.containers.")
+        if len(self.linked_containers) > 0:
+            linked_names = [c.name for c in self.linked_containers]
+            if key in linked_names:
+                raise KeyError(f"`{key}` is a linked container name and can't be overwritten.")
+        self._glob_aux_data[key] = data
 
     def __iter__(self):
         """Iterate over individual non-linked containers and virtual containers
@@ -174,6 +187,11 @@ class ContainerSet():
         for container in self:
             maps.append(container.get_map(key, error=error))
         return MapSet(name=self.name, maps=maps)
+
+    @property
+    def glob_aux_data_keys(self):
+        """Returns the names of the objects stored in the global auxiliary data."""
+        return self._glob_aux_data.keys()
 
 
 class VirtualContainer():
