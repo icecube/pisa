@@ -157,17 +157,11 @@ class Stage():
             supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning, None]
         self.supported_reps = supported_reps
 
-        if calc_mode is None and supported_reps['calc_mode'] == ['events']:
-            self._calc_mode = 'events'
-        else:
-            self._check_representation(rep=calc_mode, mode='calc_mode')
-            self._calc_mode = calc_mode
+        self._check_representation(rep=calc_mode, mode='calc_mode')
+        self._calc_mode = calc_mode
 
-        if apply_mode is None and supported_reps['apply_mode'] == ['events']:
-            self._apply_mode = 'events'
-        else:
-            self._check_representation(rep=apply_mode, mode='apply_mode')
-            self._apply_mode = apply_mode
+        self._check_representation(rep=apply_mode, mode='apply_mode')
+        self._apply_mode = apply_mode
 
         self._error_method = error_method
 

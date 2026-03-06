@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"                    # setup.py and setup.cfg are in repository root
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      # optional: specifying time in UTC (format HH:MM). Uncomment to set a preferred time.
+      # time: "04:00"
+    open-pull-requests-limit: 5
+    # Dependabot will attempt to parse setup.py / setup.cfg; it also supports requirements.txt if added.
+    allow:
+      - dependency-type: "direct"
+
+  - package-ecosystem: "github-actions"
+    directory: "/.github/workflows"   # workflows live under .github/workflows
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    allow:
+      - dependency-type: "direct"

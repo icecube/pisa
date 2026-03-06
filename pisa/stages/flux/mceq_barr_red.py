@@ -222,8 +222,8 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
                 list(flux_container_shape) + list(gradient_params_shape)
             )
 
-            container["nu_flux"] = np.full(flux_container_shape, np.NaN, dtype=FTYPE)
-            container["gradients"] = np.full(gradients_shape, np.NaN, dtype=FTYPE)
+            container["nu_flux"] = np.full(flux_container_shape, np.nan, dtype=FTYPE)
+            container["gradients"] = np.full(gradients_shape, np.nan, dtype=FTYPE)
 
         # Also create an array container to hold the gradient parameter values
         # Only want this once, e.g. not once per container

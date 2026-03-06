@@ -249,7 +249,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
             if isinstance(node, string_types):
                 node = np.string_(node)
             elif isinstance(node, bool):
-                node = np.bool_(node)  # same as np.bool8
+                node = np.bool_(node)
             elif isinstance(node, np.ndarray):
                 if issubclass(node.dtype.type, string_types):
                     node = node.astype(np.string_)
@@ -377,7 +377,6 @@ def test_hdf():
             ('uint64', np.uint64(1)),
 
             ('bool', True),
-            ('bool8', np.bool8(True)),
             ('bool_', np.bool_(True)),
         ])
 
@@ -401,7 +400,6 @@ def test_hdf():
             "uint64": lambda x: x.dtype == np.uint64,
 
             "bool": lambda x: isinstance(x, bool),
-            "bool8": lambda x: x.dtype == np.bool8,
             "bool_": lambda x: x.dtype == np.bool_,
         }
 

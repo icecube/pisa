@@ -237,8 +237,8 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
                 # default to alphas values of PSEUDO_WEIGHT and
                 # of beta = 1.0, which mimicks a narrow PDF
                 # close to 0.0
-                beta = np.divide(mean_w, var_z, out=np.ones(1), where=var_z!=0)
-                trad_alpha = np.divide(mean_w**2, var_z, out=np.ones(1)*PSEUDO_WEIGHT, where=var_z!=0)
+                beta = np.divide(mean_w, var_z, out=np.ones(1), where=var_z!=0)[0]
+                trad_alpha = np.divide(mean_w**2, var_z, out=np.ones(1)*PSEUDO_WEIGHT, where=var_z!=0)[0]
                 alpha = (n_weights + mean_adjustment)*trad_alpha
 
                 alphas_vector[index] = alpha

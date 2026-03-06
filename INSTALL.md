@@ -9,7 +9,7 @@ This guide will enable you to _use_ PISA within about five minutes. If you are m
     * In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.
 1. In your terminal, create and activate a new conda environment, with a Python version compatible with the Python requirements below<br>
     ```bash
-    conda create -n <ENV NAME> python=3.10
+    conda create -n <ENV NAME> python=3.12
     conda activate <ENV NAME>
     ```
 1. If your system doesn't already have it, install [git](https://git-scm.com) into this environment. (We use `mamba` as a drop-in replacement for the `conda` package manager.)
@@ -31,9 +31,9 @@ This guide will enable you to _use_ PISA within about five minutes. If you are m
      ```
 1. Run a quick test<br>
    ```bash
-   pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH> --pdf
+   pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH> --png
    ```
-   This command should have created the folder `<OUTPUT PATH>` containing a pdf with output maps for different neutrino types and interactions.
+   This command should have created the folder `<OUTPUT PATH>` containing a png with output maps for different neutrino types and interactions.
 
 ## Advanced installation guide
 
@@ -75,7 +75,7 @@ Below we describe two different ways of setting up the PISA Python environment:<
 
 The [first (default)](#default-miniforge-distribution) obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the [Miniforge](https://conda-forge.org/docs/user/introduction/) distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br>
 
-The [second (alternative)](#alternative-cvmfs-and-venv) assumes you have access to IceCube's CernVM-FS (CVMFS) repository and would like to use one of the Python installations it provides as the "base" of a [venv](https://docs.python.org/3/library/venv.html). Our instructions have only been tested for the [`py3-v4.2.1` distribution](https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-2).
+The [second (alternative)](#alternative-cvmfs-and-venv) assumes you have access to IceCube's CernVM-FS (CVMFS) repository and would like to use one of the Python installations it provides as the "base" of a [venv](https://docs.python.org/3/library/venv.html). Our instructions have been tested for the [`py3-v4.4.2` distribution](https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-4).
 
 ### Default: Miniforge distribution
 
@@ -101,7 +101,7 @@ Install the latest Miniforge Python distribution for either Mac or Linux (as you
 
 It is recommended to keep the base environment stable. Therefore, create and activate a new conda environment, with a Python version compatible with the Python requirements below:<br>
  ```bash
- conda create -n <ENV NAME> python=3.10
+ conda create -n <ENV NAME> python=3.12
  conda activate <ENV NAME>
  ```
 A shell prompt with `<ENV NAME>` name in parentheses should now confirm the successful activation.
@@ -110,14 +110,15 @@ A shell prompt with `<ENV NAME>` name in parentheses should now confirm the succ
 
 Load the CVMFS environment:<br>
 ```bash
-unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
+unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/setup.sh`
 ```
 <details>
   <summary>on one of IceCube's Cobalt nodes</summary>
    
-   Verify that `which python` outputs `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`.
+   Verify that `which python` outputs `/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/RHEL_9_x86_64_v2/bin/python`.
 </details>
 
+Create a virtual environment:<br>
 ```bash
 python -m venv /PATH/TO/<VENV NAME>
 ```
@@ -173,9 +174,9 @@ pip install -e $PISA[develop] -vvv
 
 If the installation went smoothly, you are now ready to run a quick test<br>
 ```bash
-pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH> --pdf
+pisa-distribution_maker --pipeline settings/pipeline/IceCube_3y_neutrinos.cfg --outdir <OUTPUT PATH> --png
 ```
-This command should have created the folder `<OUTPUT PATH>` containing a pdf with output maps for different neutrino types and interactions.
+This command should have created the folder `<OUTPUT PATH>` containing a png with output maps for different neutrino types and interactions.
 
 ## Additional information
 
@@ -205,9 +206,9 @@ In this case, the old files have to be removed manually (along with any associat
 
 With the exception of `Python` itself (and possibly `git`), the installation methods outlined above should not demand the _manual_ prior installation of any Python or non-Python requirements for PISA.
 Support for all of these comes pre-packaged or as `conda`/`mamba`-installable packages in the Miniforge Python distribution.
-* [python](http://www.python.org) — version >= 3.8 and <= 3.10 required
+* [python](http://www.python.org) — version >= 3.8 and < 3.13 required (tested to work with: 3.10, 3.11, 3.12)
   * Miniforge & CVMFS: built in
-* [pip](https://pip.pypa.io) version >= 1.8 and <= 25 required
+* [pip](https://pip.pypa.io) version >= 1.8 required
   * Miniforge & CVMFS: built in
 * [git](https://git-scm.com)
   * Miniforge: `mamba install git`
@@ -224,7 +225,7 @@ Some of the following optional dependencies must be installed manually prior to 
 * [emcee](https://github.com/dfm/emcee) Required for MCMC sampling functionality in the `llh_client`& `llh_server` utils modules and the `analysis` module.
 * [GLoBES wrapper](https://github.com/atrettin/GLoBES_wrapper) Required for `osc.globes` service.
 * [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for `data.licloader_weighter` service.
-* [MCEq](https://github.com/afedynitch/MCEq) Required for `create_barr_sys_tables_mceq.py` script.
+* [MCEq](https://github.com/mceq-project/MCEq) Required for `create_barr_sys_tables_mceq.py` script.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
 * [OpenMP](https://openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.

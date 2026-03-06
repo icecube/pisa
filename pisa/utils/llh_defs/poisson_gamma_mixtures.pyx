@@ -43,7 +43,7 @@ def c_single_pgg(int k, double A,double B, double Q, double kmc, double gamma, n
 
     cdef double res=0.0
     if((log_sterlings.shape[0]-1)<k):
-        print "sterling matrix too small .. requires at least k+1, k is ..", k
+        print("sterling matrix too small .. requires at least k+1, k is ..", k)
         sys.exit(-1)
    
     single_pgg(k, A, B, Q, kmc, gamma, <double*> log_sterlings.data, int(log_sterlings.shape[0]), &res)
@@ -55,7 +55,7 @@ def c_multi_pgg(int k, np.ndarray[np.float64_t, ndim=1] A,np.ndarray[np.float64_
 
     cdef double res=0.0
     if((log_sterlings.shape[0]-1)<k):
-        print "sterling matrix too small .. requires at least k+1, k is ..", k
+        print("sterling matrix too small .. requires at least k+1, k is ..", k)
         sys.exit(-1)
    
     multi_pgg(k, <double*> A.data, <double*> B.data, <double*> Q.data, <double*> kmc.data, <double*> gamma.data, int(A.shape[0]), <double*> log_sterlings.data, int(log_sterlings.shape[0]),  &res)
