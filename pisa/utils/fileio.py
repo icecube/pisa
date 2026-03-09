@@ -29,6 +29,7 @@ __all__ = [
     'NSORT_RE',
     'UNSIGNED_FSORT_RE',
     'SIGNED_FSORT_RE',
+    'EVAL_MSG',
     'expand',
     'mkdir',
     'get_valid_filename',
@@ -45,7 +46,7 @@ __all__ = [
 
 __author__ = 'J.L. Lanfranchi'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -89,6 +90,10 @@ SIGNED_FSORT_RE = re.compile(
     re.IGNORECASE | re.VERBOSE
 )
 
+EVAL_MSG = ('Using eval() is potentially dangerous as it can execute '
+            'arbitrary code! Do not store your config file in a place '
+            'where others have writing access!')
+"""Generic warning about evaluating expressions."""
 
 def expand(path, exp_user=True, exp_vars=True, absolute=False, resolve_symlinks=False):
     """Convenience function for expanding a path
