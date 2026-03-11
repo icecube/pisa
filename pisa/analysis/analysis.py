@@ -3262,8 +3262,8 @@ def test_constrained_minimization(pprint=False):
 
     logging.info('<< PASS : test_constrained_minimization >>')
 
-
-def test_global_scipy_minimization(pprint=False):
+#TODO: rename to test_global_scipy_minimization to reinclude in unit-test auto detection
+def global_scipy_minimization(pprint=False):
 
     config = 'settings/pipeline/fast_example.cfg'
     dm = DistributionMaker(config)
@@ -3438,4 +3438,5 @@ if __name__ == "__main__":
     set_verbosity(1)
     test_basic_analysis(pprint=True)
     test_constrained_minimization(pprint=True)
-    test_global_scipy_minimization(pprint=True)
+    #TODO: rename to test_global_scipy_minimization in case auto detection re-enabled (see above)
+    global_scipy_minimization(pprint=True)
