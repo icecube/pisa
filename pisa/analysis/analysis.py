@@ -1,6 +1,6 @@
 """
 Common tools for performing an analysis collected into the class
-`Analysis` that can be subclassed by specific analyses.
+`BasicAnalysis` that can be subclassed by specific analyses.
 """
 
 
