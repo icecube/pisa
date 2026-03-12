@@ -65,7 +65,6 @@ def set_minimizer_defaults(minimizer_settings):
             'eps': 1e-8,
             'maxfun': 15000,
             'maxiter': 15000,
-            #'iprint': -1,
             'maxls': 20
         }
     elif method == 'l-bfgs-b' and FTYPE == np.float32:
@@ -77,7 +76,6 @@ def set_minimizer_defaults(minimizer_settings):
             'eps': 1e-5,
             'maxfun': 15000,
             'maxiter': 15000,
-            #'iprint': -1,
             'maxls': 20
         }
     elif method == 'slsqp' and FTYPE == np.float64:
@@ -155,6 +153,7 @@ def validate_minimizer_settings(minimizer_settings):
     if method == 'l-bfgs-b':
         must_have = ('maxcor', 'ftol', 'gtol', 'eps', 'maxfun', 'maxiter',
                      'maxls')
+        # TODO: remove disp and iprint eventually (>= scipy 1.18.0)
         may_have = must_have + ('args', 'jac', 'bounds', 'disp', 'iprint',
                                 'callback')
     elif method == 'slsqp':
