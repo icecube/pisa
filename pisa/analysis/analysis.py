@@ -141,6 +141,9 @@ class HypoFitResult():
         include_maps_binned=False
     ):
         """
+        Initialize the fit result object. All parameters below may be None.
+        Note that various assumptions about the parameters are not verified.
+
         Parameters
         ----------
         metric : str
@@ -160,6 +163,8 @@ class HypoFitResult():
             `include_detailed_metric_info` is set to `True`
 
         """
+        if isinstance(metric, str):
+            metric = [metric]
         self.metric = metric
         self.metric_val = metric_val
         # deepcopy done in setter function
@@ -187,13 +192,13 @@ class HypoFitResult():
             msg = "missing input to calculate detailed metric info"
             assert hypo_maker is not None, msg
             assert data_dist is not None, msg
-            assert metric is not None, msg
+            assert self.metric is not None, msg
             # this passes through the setter method, but it should just pass through
             # without actually doing anything
             if hypo_maker.__class__.__name__ == "Detectors":
                 self.detailed_metric_info = [self.get_detailed_metric_info(
                     data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
-                    params=hypo_maker.distribution_makers[i].params, metric=metric[i],
+                    params=hypo_maker.distribution_makers[i].params, metric=self.metric[i],
                     other_metrics=other_metrics, detector_name=hypo_maker.det_names[i],
                     hypo_maker=hypo_maker, include_maps_binned=include_maps_binned
                 ) for i in range(len(data_dist))]
@@ -201,13 +206,13 @@ class HypoFitResult():
                 # DistributionMaker object with variable binning
                 self.detailed_metric_info = [self.get_detailed_metric_info(
                     data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
-                    params=hypo_maker.params, metric=metric[0],
+                    params=hypo_maker.params, metric=self.metric[0],
                     other_metrics=other_metrics, detector_name=hypo_maker.detector_name,
                     hypo_maker=hypo_maker, include_maps_binned=include_maps_binned
                 ) for i in range(len(data_dist))]
             else:
                 # DistributionMaker object with regular binning
-                if metric[0] == 'generalized_poisson_llh':
+                if self.metric[0] == 'generalized_poisson_llh':
                     raise NotImplementedError(
                         "generalized_poisson_llh not correctly implemented any longer!"
                     )
@@ -215,7 +220,7 @@ class HypoFitResult():
 
                 self.detailed_metric_info = self.get_detailed_metric_info(
                     data_dist=data_dist, hypo_asimov_dist=self.hypo_asimov_dist,
-                    params=hypo_maker.params, metric=metric[0],
+                    params=hypo_maker.params, metric=self.metric[0],
                     other_metrics=other_metrics,
                     detector_name=hypo_maker.detector_name,
                     hypo_maker=hypo_maker, include_maps_binned=include_maps_binned
@@ -273,12 +278,53 @@ class HypoFitResult():
     def detailed_metric_info(self, new_info):
         if new_info is None:
             self._detailed_metric_info = None
-        elif isinstance(new_info, list):
+            return
+        if isinstance(new_info, list):
             self._detailed_metric_info = [
                 self.deserialize_detailed_metric_info(i) for i in new_info
             ]
+            if self.metric_val is None:
+                return
+            # sanity check on metric value
+            # As seen in init, in this case we either have a fit with
+            # 1) Detectors instance (should be identifiable via number of metrics)
+            # 2) DistributionMaker object with variable binning or
+            is_detectors = len(self.metric) > 1
+            metric_val_from_maps = np.sum(
+                [d[self.metric[0 if not is_detectors else i]]["maps"]["total"] for
+                 i, d in enumerate(self._detailed_metric_info)]
+            )
+            if is_detectors:
+                # 1)
+                # TODO: We don't have access to the Detectors instance itself here
+                # -> no straightforward way to correctly determine the total prior
+                # contribution (cf. Detectors.init_params())
+                metric_val_from_priors = np.nan
+            else:
+                # 2)
+                # can obtain the total prior contribution from any of the list entries
+                metric_val_from_priors = np.sum(
+                    self._detailed_metric_info[0][self.metric[0]]["priors"]
+                )
+            total_metric_val_from_detailed = metric_val_from_maps + metric_val_from_priors
         else:
             self._detailed_metric_info = self.deserialize_detailed_metric_info(new_info)
+            if self.metric_val is None:
+                return
+            # sanity check on metric value
+            total_metric_val_from_detailed = (
+                self._detailed_metric_info[self.metric[0]]["maps"]["total"] +
+                np.sum(self._detailed_metric_info[self.metric[0]]["priors"])
+            )
+        if not np.isnan(total_metric_val_from_detailed):
+            if not recursiveEquality(total_metric_val_from_detailed, self.metric_val):
+                logging.warning(
+                    "Deviating total %s values from detailed info and instance "
+                    "attribute: %s vs. %s -> HypoFitResult may be unreliable.",
+                    self.metric[0], total_metric_val_from_detailed, self.metric_val
+                )
+            else:
+                logging.debug("HypoFitResult consistency verified.")
 
     @property
     def hypo_asimov_dist(self):
@@ -373,7 +419,6 @@ class HypoFitResult():
                 if include_maps_binned:
                     name_vals_d['maps_binned'] = MapSet(map_binned)
                 name_vals_d['priors'] = params.priors_penalties(metric=metric)
-                detailed_metric_info[m] = name_vals_d
             else:
                 # If the metric is not generalized poisson, but the distribution is a
                 # dict, retrieve the 'weights' mapset from the distribution output.
@@ -410,7 +455,7 @@ class HypoFitResult():
                 if include_maps_binned:
                     name_vals_d['maps_binned'] = MapSet(maps_binned)
                 name_vals_d['priors'] = params.priors_penalties(metric=metric)
-                detailed_metric_info[m] = name_vals_d
+            detailed_metric_info[m] = name_vals_d
         return detailed_metric_info
 
     @staticmethod
@@ -419,11 +464,11 @@ class HypoFitResult():
 
         detailed_metric_info = OrderedDict()
         if "detector_name" in info_dict.keys():
-            detailed_metric_info['detector_name'] = info_dict["detector_name"]
+            detailed_metric_info["detector_name"] = info_dict["detector_name"]
         all_metrics = sorted(set(info_dict.keys()) - {"detector_name"})
         for m in all_metrics:
             name_vals_d = OrderedDict()
-            name_vals_d['maps'] = info_dict[m]["maps"]
+            name_vals_d["maps"] = info_dict[m]["maps"]
             if "maps_binned" in info_dict[m]:
                 # don't assume that this entry exists
                 if isinstance(info_dict[m]["maps_binned"], MapSet):
@@ -432,8 +477,8 @@ class HypoFitResult():
                     name_vals_d["maps_binned"] = info_dict[m]["maps_binned"]
                 else:
                     # Deserialize if necessary
-                    name_vals_d['maps_binned'] = MapSet(**info_dict[m]["maps_binned"])
-            name_vals_d['priors'] = info_dict[m]["priors"]
+                    name_vals_d["maps_binned"] = MapSet(**info_dict[m]["maps_binned"])
+            name_vals_d["priors"] = info_dict[m]["priors"]
             detailed_metric_info[m] = name_vals_d
         return detailed_metric_info
 
