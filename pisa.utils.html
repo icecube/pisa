@@ -1310,6 +1310,11 @@ as strings that must be used or parsed elsewhere.</p>
 <span class="go">0.7</span>
 </pre></div>
 </div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">quant</span> <span class="o">=</span> <span class="n">parse_quantity</span><span class="p">(</span><span class="s1">&#39;5 * units.gigametric_ton&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">quant</span><span class="o">.</span><span class="n">std_dev</span><span class="p">)</span>
+<span class="go">nan</span>
+</pre></div>
+</div>
 <p>Also note that spaces and the “*” are optional:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_quantity</span><span class="p">(</span><span class="s1">&#39;1+/-1units.GeV&#39;</span><span class="p">))</span>
 <span class="go">1.0+/-1.0 gigaelectron_volt</span>
