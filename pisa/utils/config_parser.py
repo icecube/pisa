@@ -241,6 +241,7 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from collections import OrderedDict
 from collections.abc import Mapping
 from io import StringIO
+import math
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
 import sys
@@ -268,7 +269,7 @@ __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
 
 __author__ = 'P. Eller, J. Lanfranchi'
 
-__license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -326,6 +327,10 @@ def parse_quantity(string):
     >>> print(quant.std_dev)
     0.7
 
+    >>> quant = parse_quantity('5 * units.gigametric_ton')
+    >>> print(quant.std_dev)
+    nan
+
     Also note that spaces and the "*" are optional:
 
     >>> print(parse_quantity('1+/-1units.GeV'))
@@ -341,7 +346,9 @@ def parse_quantity(string):
     if '+/-' in value:
         value = ufloat_fromstr(value)
     else:
-        value = ufloat(float(value), 0)
+        # Assign a std. dev. of NaN rather than 0 (see uncertainties user guide
+        # on handling NaN)
+        value = ufloat(float(value), float("nan"))
     value *= ureg(unit)
     return value
 
@@ -552,7 +559,7 @@ def parse_param(config, section, selector, fullname, pname, value):
         else:
             raise Exception('Prior type unknown')
 
-    elif hasattr(value, 'std_dev') and value.std_dev != 0:
+    elif hasattr(value, 'std_dev') and not math.isnan(value.std_dev):
         kwargs['prior'] = Prior(kind='gaussian',
                                 mean=value.nominal_value * value.units,
                                 stddev=value.std_dev * value.units)
