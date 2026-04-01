@@ -9,13 +9,13 @@ pisa.analysis.analysis module
 
 .. automodule:: pisa.analysis.analysis
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 Module contents
 ---------------
 
 .. automodule:: pisa.analysis
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
