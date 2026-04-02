@@ -250,12 +250,15 @@ Some of the following optional dependencies must be installed manually prior to 
 
 ### Compile the documentation
 
-In case you installed the optional "develop" dependencies, you can compile a (new) version of the documentation to html via
+In case you installed the optional "develop" dependencies, you can compile a (new) version of the documentation to html locally. Be aware that the above Sphinx Github Changelog extension requires authentication using a GitHub API token.
+If you don't have a suitable personal access token yet, generate one with a public-repo scope and assign it to the `GITHUB_TOKEN` environment variable before running `make` below.
+
+In case code structure has changed, regenerate the source files that document all of PISA's (sub-)packages and modules by executing
 ```bash
 cd $PISA && sphinx-apidoc -f -o docs/source pisa
 ```
 
-In case code structure has changed, rebuild the API documentation by executing
+Finally, rebuild the HTML documentation by executing
 ```bash
 cd $PISA/docs && make html
 ```
