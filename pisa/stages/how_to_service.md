@@ -67,7 +67,7 @@ The next docstring is for the class, and it follows the NumPy convention for for
 Document the parameters (aka keyword arguments) specified by the `__init__` method in a section titled `Parameters`.
 Include a `Notes` section to discuss things like details of implementation that the user should be aware of that are too lengthy to put in the brief descriptions in the `Parameters` section.
 Each section has dashes underneath the section name (same length as the name), and is separated by the above section by one or two empty lines.
-Refer to the [general conventions](https://github.com/icecube/pisa/general_conventions.md) for references where you can find out more about writing docstrings.
+Refer to the [general conventions](https://github.com/icecube/pisa/blob/master/pisa/general_conventions.md) for references where you can find out more about writing docstrings.
 
 ```python
     """Docstring (mandatory!)
@@ -196,7 +196,7 @@ In case the service instantiation requires reading from some input file: if the 
 The instantiation test function for our simple dummy service could look like
 
 ```python
-    def init_test(**param_kwargs):
+def init_test(**param_kwargs):
     """Initialisation example"""
     param_set = ParamSet([
         name='a', value=0.0, **param_kwargs),

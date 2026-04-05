@@ -40,6 +40,7 @@ release = version
 
 extensions = [ # TODO: need all these?
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosectionlabel', # allow referencing sections by their title
     'sphinx.ext.doctest',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
@@ -62,6 +63,9 @@ source_suffix = {
     '.md': 'myst-nb',
     '.ipynb': 'myst-nb',
 }
+
+# make sure the target is unique
+autosectionlabel_prefix_document = True
 
 
 # -- myst-nb configuration ---------------------------------------------------
