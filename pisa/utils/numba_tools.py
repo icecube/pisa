@@ -133,8 +133,10 @@ def myjit(func):
         assert source[0].strip().startswith("@myjit")
         source = "\n".join(source[1:]) + "\n"
         source = source.replace("cuda.local.array", "np.empty")
-        exec(source)
-        new_py_func = eval(func.__name__)
+        # use locals dict with global imports visible
+        local_scope = {}
+        exec(source, globals(), local_scope) # pass globals explicitly
+        new_py_func = local_scope[func.__name__]
         new_nb_func = jit(new_py_func, nopython=True)
         # needs to be exported to globals
         globals()[func.__name__] = new_nb_func
@@ -176,8 +178,10 @@ def conjugate_transpose(A, B):
     [f"({XX}[:, :], {XX}[:, :])" for XX in [FX, CX]], "(i, j) -> (j, i)", target=TARGET,
 )
 def conjugate_transpose_guf(A, out):
-    """gufunc that calls conjugate_transpose"""
-    conjugate_transpose(A, out)
+    """gufunc - inlined conjugate_transpose logic for Python 3.13 compatibility"""
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            out[j, i] = A[i, j].conjugate()
 
 
 def test_conjugate_transpose():
@@ -227,8 +231,10 @@ def conjugate(A, B):
     [f"({XX}[:, :], {XX}[:, :])" for XX in [FX, CX]], "(i, j) -> (i, j)", target=TARGET,
 )
 def conjugate_guf(A, out):
-    """gufunc that calls `conjugate`"""
-    conjugate(A, out)
+    """gufunc - inlined conjugate logic for Python 3.13 compatibility"""
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            out[i, j] = A[i, j].conjugate()
 
 
 def test_conjugate():
@@ -279,8 +285,12 @@ def matrix_dot_matrix(A, B, C):
     target=TARGET,
 )
 def matrix_dot_matrix_guf(A, B, out):
-    """gufunc that calls matrix_dot_matrix"""
-    matrix_dot_matrix(A, B, out)
+    """gufunc - inlined matrix_dot_matrix logic for Python 3.13 compatibility"""
+    for j in range(B.shape[1]):
+        for i in range(A.shape[0]):
+            out[i, j] = 0.0
+            for n in range(B.shape[0]):
+                out[i, j] += A[i, n] * B[n, j]
 
 
 def test_matrix_dot_matrix():
@@ -320,8 +330,11 @@ def matrix_dot_vector(A, v, w):
     target=TARGET,
 )
 def matrix_dot_vector_guf(A, B, out):
-    """gufunc that calls matrix_dot_vector"""
-    matrix_dot_vector(A, B, out)
+    """gufunc - inlined matrix_dot_vector logic for Python 3.13 compatibility"""
+    for i in range(A.shape[0]):
+        out[i] = 0.0
+        for j in range(A.shape[1]):
+            out[i] += A[i, j] * B[j]
 
 
 def test_matrix_dot_vector():
@@ -358,8 +371,10 @@ def clear_matrix(A):
     [f"({XX}[:, :], {XX}[:, :])" for XX in [FX, CX]], "(i, j) -> (i, j)", target=TARGET,
 )
 def clear_matrix_guf(dummy, out):  # pylint: disable=unused-argument
-    """gufunc that calls `clear_matrix`"""
-    clear_matrix(out)
+    """gufunc - inlined clear_matrix logic for Python 3.13 compatibility"""
+    for i in range(out.shape[0]):
+        for j in range(out.shape[1]):
+            out[i, j] = 0
 
 
 def test_clear_matrix():
@@ -394,8 +409,10 @@ def copy_matrix(A, B):
     [f"({XX}[:, :], {XX}[:, :])" for XX in [FX, CX]], "(i, j) -> (i, j)", target=TARGET,
 )
 def copy_matrix_guf(A, out):
-    """gufunc that calls `copy_matrix`"""
-    copy_matrix(A, out)
+    """gufunc - inlined copy_matrix logic for Python 3.13 compatibility"""
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            out[i, j] = A[i, j]
 
 
 def test_copy_matrix():

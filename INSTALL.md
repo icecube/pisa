@@ -9,7 +9,7 @@ This guide will enable you to _use_ PISA within about five minutes. If you are m
     * In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.
 1. In your terminal, create and activate a new conda environment, with a Python version compatible with the Python requirements below<br>
     ```bash
-    conda create -n <ENV NAME> python=3.12
+    conda create -n <ENV NAME> python=3.14
     conda activate <ENV NAME>
     ```
 1. If your system doesn't already have it, install [git](https://git-scm.com) into this environment. (We use `mamba` as a drop-in replacement for the `conda` package manager.)
@@ -101,7 +101,7 @@ Install the latest Miniforge Python distribution for either Mac or Linux (as you
 
 It is recommended to keep the base environment stable. Therefore, create and activate a new conda environment, with a Python version compatible with the Python requirements below:<br>
  ```bash
- conda create -n <ENV NAME> python=3.12
+ conda create -n <ENV NAME> python=3.14
  conda activate <ENV NAME>
  ```
 A shell prompt with `<ENV NAME>` name in parentheses should now confirm the successful activation.
@@ -206,7 +206,7 @@ In this case, the old files have to be removed manually (along with any associat
 
 With the exception of `Python` itself (and possibly `git`), the installation methods outlined above should not demand the _manual_ prior installation of any Python or non-Python requirements for PISA.
 Support for all of these comes pre-packaged or as `conda`/`mamba`-installable packages in the Miniforge Python distribution.
-* [python](http://www.python.org) — version >= 3.8 and < 3.13 required (tested to work with: 3.10, 3.11, 3.12)
+* [python](http://www.python.org) — version >= 3.8 and < 3.15 required (tested to work with >= 3.10)
   * Miniforge & CVMFS: built in
 * [pip](https://pip.pypa.io) version >= 1.8 required
   * Miniforge & CVMFS: built in

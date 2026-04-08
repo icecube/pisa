@@ -1224,6 +1224,20 @@ class PISAConfigParser(RawConfigParser):  # pylint: disable=too-many-ancestors
             empty_lines_in_values=False,
         )
         self.file_iterators = []
+        # Python > 3.12 _comment_prefixes & _inline_comment_prefixes attributes
+        # of RawConfigParser removed in favour of:
+        # * 3.13: _prefixes of type types.SimpleNamespace
+        # * 3.14: _comments of type configparser._CommentSpec
+        if hasattr(self, "_prefixes"):
+            # Python 3.13: just extract the values (=defaults) again
+            self._comment_prefixes = self._prefixes.full
+            self._inline_comment_prefixes = self._prefixes.inline
+        elif hasattr(self, "_comments"):
+            # Python 3.14: processed and combined into a compiled regex
+            # -> would need to deconstruct self.pattern.pattern
+            # -> instead, just explicitly set the defaults here
+            self._comment_prefixes = ('#', ';')
+            self._inline_comment_prefixes = tuple()
 
     def set(self, section, option, value=None):
         """Set an option.  Extends RawConfigParser.set by validating type and
