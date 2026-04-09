@@ -16,13 +16,13 @@ from pisa.utils import likelihood_functions
 
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
-           'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
+           'chi2', 'llh', 'poisson_llh', 'log_poisson', 'log_smear', 'conv_poisson',
            'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'correct_chi2',
            'mcllh_mean', 'mcllh_eff', 'signed_sqrt_mod_chi2', 'generalized_poisson_llh']
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau'
 
-__license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ CHI2_METRICS = ['chi2', 'mod_chi2', 'correct_chi2', 'weighted_chi2',
 'signed_sqrt_mod_chi2']
 """Metrics defined that result in measures of chi squared"""
 
-LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean',
+LLH_METRICS = ['llh', 'poisson_llh', 'conv_llh', 'barlow_llh', 'mcllh_mean',
 'mcllh_eff', 'generalized_poisson_llh']
 """Metrics defined that result in measures of log likelihood"""
 
@@ -96,7 +96,7 @@ def maperror_logmsg(m):
     return msg
 
 def chi2(actual_values, expected_values):
-    """
+    r"""
     Compute Pearson's chi-square between each value in `actual_values`
     and `expected_values`.
 
@@ -167,7 +167,7 @@ def chi2(actual_values, expected_values):
     return chi2_val
 
 def llh(actual_values, expected_values):
-    """
+    r"""
     Compute the log-likelihoods that each count in `actual_values`
     came from the corresponding expected value in `expected_values`.
 
@@ -175,7 +175,8 @@ def llh(actual_values, expected_values):
       \mathcal{L} = N_{\mathrm{actual}} \ln(N_{\mathrm{exp}}) - N_{\mathrm{exp}} - (N_{\mathrm{actual}} \ln(N_{\mathrm{actual}}) - N_{\mathrm{actual}})
 
     Note that this expression uses https://en.wikipedia.org/wiki/Stirling%27s_approximation
-    to estimate ln(k!)~k ln(k)-k.
+    to estimate ln(k!)~k ln(k)-k, which has important consequences for its use in analysis,
+    see issue #854 and the notes below.
 
     Parameters
     ----------
@@ -192,6 +193,20 @@ def llh(actual_values, expected_values):
     * Uncertainties are not propagated through this calculation.
     * Values in `expected_values` are clipped to the range [SMALL_POS, inf]
       prior to the calculation to avoid infinities due to the log function.
+    * Due to the above approximation, this metric only results in approximate
+      log-likelihood values for pseudoexperiments, and in NaN when any actual value
+      is zero.
+    * However, this metric results in exact log-likelihood differences between any
+      two hypotheses for pseudoexperiments.
+    * Also, for an Asimov pseudoexperiment, this metric results in a log-likelihood
+      value (given any hypothesis) matching the negative of the exact log-likelihood
+      difference between the truth and that hypothesis. Hence, it allows to skip
+      computing the value at the truth hypothesis underlying an Asimov pseudoexperiment
+      when evaluating the log-likelihood difference.
+
+    See also
+    --------
+    poisson_llh : true Poissonian log-likelihood function
 
     """
     assert actual_values.shape == expected_values.shape
@@ -234,6 +249,79 @@ def llh(actual_values, expected_values):
     #
     llh_val = actual_values*np.log(expected_values) - expected_values
     llh_val -= actual_values*np.log(actual_values) - actual_values
+
+    return llh_val
+
+def poisson_llh(actual_values, expected_values):
+    r"""
+    Compute the log-likelihoods that each count in `actual_values`
+    came from the corresponding expected value in `expected_values`,
+    using the Poisson distribution with accurate factorial computation.
+
+    .. math::
+      \mathcal{L} = N_{\mathrm{actual}} \ln(N_{\mathrm{exp}}) - N_{\mathrm{exp}} - \ln(N_{\mathrm{actual}}!)
+
+    This uses :math:`\ln(\Gamma(n+1)) = \ln(n!)` for accurate computation,
+    which correctly handles zero and low counts where Stirling's approximation
+    fails.
+
+    Parameters
+    ----------
+    actual_values, expected_values : numpy.ndarrays of same shape
+
+    Returns
+    -------
+    llh : numpy.ndarray of same shape as the inputs
+        llh corresponding to each pair of elements in `actual_values` and
+        `expected_values`.
+
+    Notes
+    -----
+    * Uncertainties are not propagated through this calculation.
+    * Values in `expected_values` are clipped to the range [SMALL_POS, inf]
+      prior to the calculation to avoid infinities due to the log function.
+    * This is a true Poissonian log-likelihood, unlike the `llh`
+      function which uses Stirling's approximation.
+
+    See also
+    --------
+    llh : similar function using Stirling's approximation
+
+    """
+    assert actual_values.shape == expected_values.shape
+
+    # Convert to simple numpy arrays containing floats
+    if not isbarenumeric(actual_values):
+        actual_values = unp.nominal_values(actual_values)
+    if not isbarenumeric(expected_values):
+        expected_values = unp.nominal_values(expected_values)
+
+    with np.errstate(invalid='ignore'):
+
+        # Mask off any nan expected values (these can result from bin masking)
+        actual_values = np.ma.masked_invalid(actual_values)
+        expected_values = np.ma.masked_invalid(expected_values)
+
+        # Make sure actual values (aka "data") are valid -- no infs, no nans, etc.
+        if np.any((actual_values < 0) | ~np.isfinite(actual_values)):
+            msg = ('`actual_values` must be >= 0 and neither inf nor nan...\n'
+                   + maperror_logmsg(actual_values))
+            raise ValueError(msg)
+
+        # Check that expected values are valid
+        if np.any(expected_values < 0.0):
+            msg = ('`expected_values` must all be >= 0...\n'
+                   + maperror_logmsg(expected_values))
+            raise ValueError(msg)
+
+        # Replace 0's with small positive numbers to avoid inf in log
+        np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
+                out=expected_values)
+
+    # Poisson log-likelihood using accurate factorial computation
+    # ln(P(k|λ)) = k*ln(λ) - λ - ln(k!)
+    llh_val = actual_values * np.log(expected_values) - expected_values
+    llh_val -= gammaln(actual_values + 1)
 
     return llh_val
 
@@ -468,7 +556,7 @@ def norm_conv_poisson(k, l, s, nsigma=3, steps=50):
     return cp*n1/n2
 
 def conv_llh(actual_values, expected_values):
-    """
+    r"""
     This convolution log-likelihood takes into account any uncertainties on the
     expected values (from e.g. finite MC statistics), which is achieved by
     smearing out the simple Poisson pdf with a normal distribution centered at 0.
@@ -561,7 +649,7 @@ def barlow_llh(actual_values, expected_values):
     return llh_val
 
 def mod_chi2(actual_values, expected_values):
-    """
+    r"""
     Compute a modified Pearson's chi-square between each value in `actual_values`
     and `expected_values` taking into account uncertainty terms (incl. e.g. finite stats).
 
@@ -607,7 +695,7 @@ def mod_chi2(actual_values, expected_values):
     return m_chi2
 
 def correct_chi2(actual_values, expected_values):
-    """
+    r"""
     Compute -2 times the log-likelihood of a normal approximation of
     the Poisson pdf between each value in `actual_values` and `expected_values`
     taking into account uncertainty terms (incl. e.g. finite stats) and their
