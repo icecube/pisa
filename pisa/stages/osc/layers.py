@@ -665,15 +665,11 @@ def test_layers_3():
     assert np.allclose(np.sum(distance_segments, axis=1), vacuum_distances, **ALLCLOSE_KW), 'ERROR: distance mismatch: {0} vs {1}'.format(np.sum(distance_segments, axis=1), vacuum_distances)
 
     logging.info('<< PASS : test_Layers 3 >>')
-    
+
 def test_layers_4():
     '''
     TEST IV: Verify that repeatedly setting electron fractions yields
-    consistent results (see issue #868).
-
-    This test verifies that subsequent calls to setElecFrac() with different
-    electron fractions produce reproducible event counts and consistent
-    weighted densities.
+    consistent densities (see issue #868).
     '''
     # pylint: disable=import-outside-toplevel
     from pisa.utils.comparisons import ALLCLOSE_KW
@@ -745,7 +741,7 @@ def test_layers_4():
     # assertions
     logging.debug('Asserting density reproducibility...')
 
-    # key test: resetting to original fractions should give original densities
+    # resetting to original fractions should give original densities
     assert np.allclose(density_1st_call, density_reset_call, **ALLCLOSE_KW), \
         f'FAILED: Resetting to original fractions should reproduce original densities.\n' \
         f'First call: {density_1st_call}\n' \
