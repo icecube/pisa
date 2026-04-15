@@ -3,6 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. TODO: certain guides currently do not lend themselves to inclusion in these docs, such as the main readme or conventions markdown guide
+   -> need to make these docs the authoritative documentation source, and accordingly adapt the above documents (also seems to be in accordance
+   with PISA design choices laid out in deactivated wiki)
+
 Welcome to PISA's documentation!
 ================================
 
@@ -22,15 +26,13 @@ If you use PISA, **please cite our publication** (`e-Print available here <https
    Published in: Nucl.Instrum.Meth.A 977 (2020) 164332
 
 
-.. Contents
-   --------
-
 .. toctree::
    :caption: Navigation
    :hidden:
 
    Installation <stubs/install_stub>
    Tutorials <tutorials>
+   Contributing <contributing>
 
 .. toctree::
    :caption: Reference
@@ -38,5 +40,4 @@ If you use PISA, **please cite our publication** (`e-Print available here <https
 
    Python API <pisa>
    Changelog <changelog>
-   Contributing <stubs/contributing_stub>
    License <stubs/license_stub>
