@@ -138,3 +138,13 @@ html_theme_options = {
     # adapt and uncomment in case we need an announcement:
     #"announcement": "<em>Important</em> announcement!",
 }
+
+# -- options for LaTeX output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/latex.html
+
+latex_engine = 'lualatex'
+latex_elements = {
+    'preamble': r'\usepackage{enumitem}\setlistdepth{99}'
+}
+latex_logo = "../../images/pisa4_logo_transparent.png"
+latex_show_urls = 'footnote'
