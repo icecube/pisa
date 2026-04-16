@@ -397,6 +397,9 @@ def find_unit_tests(path):
         return tests
 
     for dirpath, dirs, files in walk(path, followlinks=True):
+        if dirpath.endswith(".ipynb_checkpoints") or dirpath.endswith("__pycache__"):
+            continue
+
         files.sort(key=nsort_key_func)
         dirs.sort(key=nsort_key_func)
 

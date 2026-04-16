@@ -43,6 +43,10 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         "weights"
         All detector systematics that should be used
 
+    The stage also expects that "regularized_output_binning" is part of the global
+    auxilary variables of the `data` container set. This key is added by the
+    utils.hist stage.
+
     Parameters
     ----------
     systematics : list of str
@@ -157,6 +161,7 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
                 container.representation = self.calc_mode
                 syst = [container[sys] for sys in self.systematics]
                 weights = container["weights"]
+                # The following is copied from utils.hist.
                 sample = []
                 dims_log = [d.is_log for d in self.apply_mode]
                 dims_ire = [d.is_irregular for d in self.apply_mode]
