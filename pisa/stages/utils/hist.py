@@ -121,7 +121,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                     dimensions.append(dim)
             self.data["regularized_output_binning"] = MultiDimBinning(dimensions)
             logging.debug(
-                "Using regularized binning:\n" + str(self.data["regularized_output_binning"])
+                "Using regularized binning:\n%s", str(self.data["regularized_output_binning"])
             )
 
     @profile
