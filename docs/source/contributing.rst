@@ -7,3 +7,4 @@ Contributing
 
    stubs/contributing_stub
    stubs/howto_service_stub
+   stubs/globals_stub

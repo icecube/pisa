@@ -27,8 +27,8 @@ import pisa
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'PISA'
-copyright = '2014–2026, The IceCube Collaboration'
 author = 'The IceCube Collaboration'
+copyright = '2014–2026, %s' % author
 # The short X.Y version.
 version = pisa.__version__
 # The full version, including alpha/beta/rc tags.
@@ -91,6 +91,7 @@ myst_links_external_new_tab = True
 
 # -- sphinx_github_changelog configuration -----------------------------------
 # https://sphinx-github-changelog.readthedocs.io
+#TODO: the release notes are missing in the PDF output
 
 # sphinx_github_changelog extension requires authenticating even for public repos
 github_token = os.environ.get("GITHUB_TOKEN")
@@ -142,9 +143,17 @@ html_theme_options = {
 # -- options for LaTeX output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/latex.html
 
+# Grouping the document tree into LaTeX files. List of tuples
+# (source start file, target name, title, author, document class [howto/manual], toctree_only).
+# 'manual' imports the 'report' document class (while 'howto' would import 'article')
+latex_documents = [('index', 'pisa-%s.tex' % release, '%s documentation' % project,
+                    copyright, 'manual', False)]
 latex_engine = 'lualatex'
 latex_elements = {
     'preamble': r'\usepackage{enumitem}\setlistdepth{99}'
 }
 latex_logo = "../../images/pisa4_logo_transparent.png"
+# show page numbers next to internal references
+latex_show_pagerefs = True
+# show URLs in footnotes
 latex_show_urls = 'footnote'
