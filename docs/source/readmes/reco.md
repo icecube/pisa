@@ -1,1 +1,0 @@
-../../../pisa/stages/reco/README.md

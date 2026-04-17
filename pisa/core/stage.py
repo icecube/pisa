@@ -312,13 +312,21 @@ class Stage():
             self._apply_mode = value
 
     def _check_representation(self, rep, mode, allow_None=False):
-        if isinstance(rep, str) and rep not in self.supported_reps[mode]:
-            raise ValueError(
-                f"{mode} {rep} is not supported by {self.stage_name}"
-                f".{self.service_name}"
-            )
-        if (not isinstance(rep, str) and type(rep) not in self.supported_reps[mode]
-            and (rep is not None or not allow_None)):
+        if rep is None:
+            # allow_None is used to always allow None in the init of a stage.
+            # Should be removed once stages explicitely set modes.
+            if None not in self.supported_reps[mode] and not allow_None:
+                raise ValueError(
+                    f"{mode} {rep} is not supported by {self.stage_name}"
+                    f".{self.service_name}"
+                )
+        elif isinstance(rep, str):
+            if rep not in self.supported_reps[mode]:
+                raise ValueError(
+                    f"{mode} {rep} is not supported by {self.stage_name}"
+                    f".{self.service_name}"
+                )
+        elif type(rep) not in self.supported_reps[mode]:
             raise ValueError(
                 f"{mode} {type(rep)} is not supported by {self.stage_name}"
                 f".{self.service_name}"

@@ -15,7 +15,7 @@ A selection of key terms and concepts in PISA is compiled below.
 
 * **Pipeline settings**: The collection of all parameters required (and no more) to instantiate all stages (and which service to use for each) in a single `Pipeline`.
 
-* **Quantity**: A number or array *with units attached*. See [units and uncertainties](units_and_uncertainties.md).
+* **Quantity**: A number or array *with units attached*. See [units and uncertainties](https://github.com/icecube/pisa/blob/master/pisa/units_and_uncertainties.md).
 
 * **Resource**: A file with settings, simulated events, parameterizations, metadata, etc. that is used by one of the services, a `DistributionMaker`, an analysis script, .... Example resources are found in `$PISA/pisa_examples/resources`, where a subdirectory may exist for each stage (and several directories exist for resources used for other purposes). For PISA to be able to detect your personal resources anywhere else, include all your custom resource locations in your command shell's environment variable `PISA_RESOURCES`.
 

@@ -43,6 +43,10 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         "weights"
         All detector systematics that should be used
 
+    The stage also expects that "regularized_output_binning" is part of the global
+    auxilary variables of the `data` container set. This key is added by the
+    utils.hist stage.
+
     Parameters
     ----------
     systematics : list of str
@@ -69,11 +73,6 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         additional_params=None,
         **std_kwargs,
     ):
-        # evaluation only works on event-by-event basis
-        supported_reps = {
-            'calc_mode': ['events'],
-            'apply_mode': [MultiDimBinning],
-        }
 
         # Store args
         if isinstance(systematics, str):
@@ -112,6 +111,12 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         self.central_values = []
         """Central values of the systematic parameters in the snowstorm set."""
 
+        # evaluation only works on event-by-event basis
+        supported_reps = {
+            'calc_mode': ["events"],
+            'apply_mode': [None, MultiDimBinning],
+        }
+
         # -- Initialize base class -- #
         super().__init__(
             expected_params=self.systematics+self.additional_params,
@@ -121,6 +126,11 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         )
 
     def setup_function(self):
+        if self.apply_mode is None:
+            self.apply_mode = self.data["output_binning"]
+        else:
+            assert self.apply_mode == self.data["output_binning"]
+
         self.central_values = []
         for i, sd in enumerate(self.simulation_dists):
             if sd.lower() == "gauss":
@@ -149,9 +159,20 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
             # Only need per event infos if we want to calculate the gradients
             if calc_grads:
                 container.representation = self.calc_mode
-                sample = np.array([container[name] for name in self.apply_mode.names])
                 syst = [container[sys] for sys in self.systematics]
                 weights = container["weights"]
+                # The following is copied from utils.hist.
+                sample = []
+                dims_log = [d.is_log for d in self.apply_mode]
+                dims_ire = [d.is_irregular for d in self.apply_mode]
+                for dim, is_log, is_ire in zip(self.data["regularized_output_binning"], dims_log, dims_ire):
+                    if is_log and not is_ire:
+                        container.representation = "log_events"
+                        sample.append(container[dim.name])
+                    else:
+                        container.representation = "events"
+                        sample.append(container[dim.name])
+                sample = np.array(sample)
 
             container.representation = self.apply_mode
             container["syst_scale"] = np.ones(self.apply_mode.shape)
@@ -160,13 +181,13 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
                     h1 = histogram(
                         list(sample[:, syst[i] > self.central_values[i]]),
                         weights[syst[i] > self.central_values[i]],
-                        self.apply_mode,
+                        self.data["regularized_output_binning"],
                         averaged=False
                     )
                     h2 = histogram(
                         list(sample[:, syst[i] < self.central_values[i]]),
                         weights[syst[i] < self.central_values[i]],
-                        self.apply_mode,
+                        self.data["regularized_output_binning"],
                         averaged=False
                     )
                     if self.simulation_dists[i].lower() == "gauss": # TODO verify correction factor is correct
@@ -201,4 +222,5 @@ def init_test(**param_kwargs):
         simulation_dists_params=[(1.0, 0.1)],
         additional_params=['deltam31'],
         params=param_set,
+        calc_mode="events",
     )

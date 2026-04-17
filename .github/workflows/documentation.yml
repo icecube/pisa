@@ -25,6 +25,8 @@ jobs:
       run: |
         sphinx-apidoc -f -o docs/source pisa
         cd docs && make html
+      env:
+        SPHINX_GITHUB_CHANGELOG_TOKEN: ${{ github.token }}
     - name: Deploy to gh pages
       uses: peaceiris/actions-gh-pages@v4
       with:

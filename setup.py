@@ -115,12 +115,14 @@ INSTALL_REQUIRES = [
 
 EXTRAS_REQUIRE = {
     'develop': [
+        'furo',
+        'linkify-it-py',
+        'myst-nb',
         'pylint>=4.0',
-        'recommonmark',
-        'sphinx>=1.3',
-        'sphinx_rtd_theme',
-        'versioneer',
         'pytest',
+        'sphinx>=1.3',
+        'sphinx_github_changelog',
+        'versioneer',
     ],
     # TODO: get mceq install to work... this is non-trivial since that
     # project isn't exactly cleanly instllable via pip already, plus it
