@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.osc.layers - PISA 0+untagged.1.g52f1c4d documentation</title>
+        <title>pisa.stages.osc.layers - PISA 0+untagged.1.gcfb3566 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g52f1c4d documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.gcfb3566 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g52f1c4d documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.gcfb3566 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -286,11 +286,8 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">division</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">numba</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">numba</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="n">numba</span> <span class="o">=</span> <span class="kc">None</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span>
@@ -300,7 +297,7 @@
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;P. Eller&#39;</span><span class="p">,</span><span class="s1">&#39;E. Bourbeau&#39;</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2020, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
 <span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
@@ -315,17 +312,8 @@
 <span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
 
 
-<span class="k">if</span> <span class="n">numba</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">class</span><span class="w"> </span><span class="nc">jit</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decorator class to mimic Numba&#39;s `jit` when Numba is missing&quot;&quot;&quot;</span>
-        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-            <span class="k">pass</span>
-        <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">jit</span> <span class="o">=</span> <span class="n">numba</span><span class="o">.</span><span class="n">jit</span>
-    <span class="n">ftype</span> <span class="o">=</span> <span class="n">numba</span><span class="o">.</span><span class="n">typeof</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-
+<span class="n">jit</span> <span class="o">=</span> <span class="n">numba</span><span class="o">.</span><span class="n">jit</span>
+<span class="n">ftype</span> <span class="o">=</span> <span class="n">numba</span><span class="o">.</span><span class="n">typeof</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="extCalcLayers">
@@ -467,7 +455,7 @@
 
 <div class="viewcode-block" id="Layers">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Layers</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Layers</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate the path through earth for a given layer model with densities</span>
 <span class="sd">    (PREM [1]), the electron fractions (Ye) and an array of coszen values</span>
@@ -739,16 +727,18 @@
         <span class="c1">#</span>
         <span class="c1"># TODO: insert extra radii is the electron density boundaries</span>
         <span class="c1">#       don&#39;t match the current layer boundaries</span>
-        
+
         <span class="c1">#</span>
-        <span class="c1"># Weight the density properly</span>
+        <span class="c1"># Weight the density properly (always need to start from the</span>
+        <span class="c1"># unweighted = unmodified rhos to allow for multiple subsequent changes of the</span>
+        <span class="c1"># electron fractions, i.e., to avoid compounding effect!)</span>
         <span class="c1">#</span>
-        <span class="n">density_inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_INNER</span><span class="p">)</span>
-        <span class="n">density_outer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_OUTER</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&gt;</span> <span class="n">R_INNER</span><span class="p">)</span>
-        <span class="n">density_mantle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_MANTLE</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&gt;</span> <span class="n">R_OUTER</span><span class="p">)</span>
+        <span class="n">density_inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_INNER</span><span class="p">)</span>
+        <span class="n">density_outer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_OUTER</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&gt;</span> <span class="n">R_INNER</span><span class="p">)</span>
+        <span class="n">density_mantle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_MANTLE</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&gt;</span> <span class="n">R_OUTER</span><span class="p">)</span>
 
         <span class="n">weighted_densities</span> <span class="o">=</span> <span class="n">density_inner</span> <span class="o">+</span> <span class="n">density_outer</span> <span class="o">+</span> <span class="n">density_mantle</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">=</span> <span class="n">weighted_densities</span></div>
 
 
@@ -774,9 +764,11 @@
         <span class="c1">#       don&#39;t match the current layer boundaries</span>
 
         <span class="c1">#</span>
-        <span class="c1"># Weight the density properly</span>
+        <span class="c1"># Weight the density properly (always need to start from the</span>
+        <span class="c1"># unweighted = unmodified rhos to allow for multiple subsequent changes of the</span>
+        <span class="c1"># electron fractions, i.e., to avoid compounding effect!)</span>
         <span class="c1">#</span>
-        <span class="n">density_inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_INNER</span><span class="p">)</span>
+        <span class="n">density_inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_INNER</span><span class="p">)</span>
         <span class="n">density_outer</span> <span class="o">=</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span>
             <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -981,8 +973,111 @@
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">vacuum_distances</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">&#39;ERROR: distance mismatch: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">vacuum_distances</span><span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Layers 3 &gt;&gt;&#39;</span><span class="p">)</span>
-    
 
+<span class="k">def</span><span class="w"> </span><span class="nf">test_layers_4</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    TEST IV: Verify that repeatedly setting electron fractions yields</span>
+<span class="sd">    consistent densities (see issue #868).</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># pylint: disable=import-outside-toplevel</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Testing reproducibility of electron fraction modifications...&#39;</span><span class="p">)</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>
+    <span class="c1"># store the unweighted density at initialization for later comparison</span>
+    <span class="n">rhos_unweighted_initial</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">rhos_unweighted</span><span class="p">)</span>
+
+    <span class="c1"># test coszen values (same as in test 3)</span>
+    <span class="n">cz_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4461133826191877</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+
+    <span class="c1"># first electron fraction set (dito)</span>
+    <span class="n">YeI_1</span><span class="p">,</span> <span class="n">YeO_1</span><span class="p">,</span> <span class="n">YeM_1</span> <span class="o">=</span> <span class="mf">0.4656</span><span class="p">,</span> <span class="mf">0.4656</span><span class="p">,</span> <span class="mf">0.4957</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="n">YeI_1</span><span class="p">,</span> <span class="n">YeO_1</span><span class="p">,</span> <span class="n">YeM_1</span><span class="p">)</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">cz</span><span class="o">=</span><span class="n">cz_values</span><span class="p">)</span>
+
+    <span class="c1"># store first results</span>
+    <span class="n">density_1st_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;First setElecFrac call (YeI=0.4656, YeO=0.4656, YeM=0.4957):&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;  density: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">density_1st_call</span><span class="p">)</span>
+
+    <span class="c1"># change electron fractions to different values</span>
+    <span class="n">YeI_2</span><span class="p">,</span> <span class="n">YeO_2</span><span class="p">,</span> <span class="n">YeM_2</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="n">YeI_2</span><span class="p">,</span> <span class="n">YeO_2</span><span class="p">,</span> <span class="n">YeM_2</span><span class="p">)</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">cz</span><span class="o">=</span><span class="n">cz_values</span><span class="p">)</span>
+
+    <span class="n">density_2nd_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
+    <span class="n">rhos_2nd_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">rhos</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Second setElecFrac call (YeI=0.5, YeO=0.5, YeM=0.5):&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;  density: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">density_2nd_call</span><span class="p">)</span>
+
+    <span class="c1"># Manually compute expected weighted densities from unweighted reference</span>
+    <span class="c1"># to verify the calculation is correct</span>
+    <span class="n">R_INNER</span> <span class="o">=</span> <span class="mf">1221.5</span>
+    <span class="n">R_OUTER</span> <span class="o">=</span> <span class="mf">3480.</span>
+    <span class="n">R_MANTLE</span> <span class="o">=</span> <span class="mf">6371.</span>
+
+    <span class="n">expected_rhos_2nd</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">rhos_unweighted_initial</span> <span class="o">*</span> <span class="n">YeI_2</span> <span class="o">*</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_INNER</span><span class="p">)</span> <span class="o">+</span>
+        <span class="n">rhos_unweighted_initial</span> <span class="o">*</span> <span class="n">YeO_2</span> <span class="o">*</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_OUTER</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">radii</span> <span class="o">&gt;</span> <span class="n">R_INNER</span><span class="p">)</span> <span class="o">+</span>
+        <span class="n">rhos_unweighted_initial</span> <span class="o">*</span> <span class="n">YeM_2</span> <span class="o">*</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">radii</span> <span class="o">&lt;=</span> <span class="n">R_MANTLE</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">radii</span> <span class="o">&gt;</span> <span class="n">R_OUTER</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">rhos_2nd_call</span><span class="p">,</span> <span class="n">expected_rhos_2nd</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
+        <span class="s1">&#39;FAILED: Second call densities do not match expected calculation.&#39;</span>
+
+    <span class="c1"># reset back to original electron fractions</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="n">YeI_1</span><span class="p">,</span> <span class="n">YeO_1</span><span class="p">,</span> <span class="n">YeM_1</span><span class="p">)</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">cz</span><span class="o">=</span><span class="n">cz_values</span><span class="p">)</span>
+
+    <span class="n">density_reset_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Reset to original setElecFrac call (YeI=0.4656, YeO=0.4656, YeM=0.4957):&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;  density: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">density_reset_call</span><span class="p">)</span>
+
+    <span class="c1"># call once more to verify consistency</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="n">YeI_1</span><span class="p">,</span> <span class="n">YeO_1</span><span class="p">,</span> <span class="n">YeM_1</span><span class="p">)</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">cz</span><span class="o">=</span><span class="n">cz_values</span><span class="p">)</span>
+
+    <span class="n">density_final_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Final setElecFrac call (same as first):&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;  density: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">density_final_call</span><span class="p">)</span>
+
+    <span class="c1"># assertions</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Asserting density reproducibility...&#39;</span><span class="p">)</span>
+
+    <span class="c1"># resetting to original fractions should give original densities</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">density_1st_call</span><span class="p">,</span> <span class="n">density_reset_call</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
+        <span class="sa">f</span><span class="s1">&#39;FAILED: Resetting to original fractions should reproduce original densities.</span><span class="se">\n</span><span class="s1">&#39;</span> \
+        <span class="sa">f</span><span class="s1">&#39;First call: </span><span class="si">{</span><span class="n">density_1st_call</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span> \
+        <span class="sa">f</span><span class="s1">&#39;Reset call: </span><span class="si">{</span><span class="n">density_reset_call</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="c1"># multiple identical calls should give identical results</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">density_reset_call</span><span class="p">,</span> <span class="n">density_final_call</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
+        <span class="sa">f</span><span class="s1">&#39;FAILED: Multiple identical setElecFrac calls should produce identical results.</span><span class="se">\n</span><span class="s1">&#39;</span> \
+        <span class="sa">f</span><span class="s1">&#39;Reset call: </span><span class="si">{</span><span class="n">density_reset_call</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span> \
+        <span class="sa">f</span><span class="s1">&#39;Final call: </span><span class="si">{</span><span class="n">density_final_call</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="c1"># verify that changing fractions actually changes densities</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">density_1st_call</span><span class="p">,</span> <span class="n">density_2nd_call</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
+        <span class="sa">f</span><span class="s1">&#39;FAILED: Different electron fractions should produce different densities.</span><span class="se">\n</span><span class="s1">&#39;</span> \
+        <span class="sa">f</span><span class="s1">&#39;First call: </span><span class="si">{</span><span class="n">density_1st_call</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span> \
+        <span class="sa">f</span><span class="s1">&#39;Second call: </span><span class="si">{</span><span class="n">density_2nd_call</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="c1"># verify rhos_unweighted remains constant (it should never change)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">rhos_unweighted_initial</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">rhos_unweighted</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
+        <span class="s1">&#39;FAILED: rhos_unweighted should not change across setElecFrac calls&#39;</span>
+
+    <span class="c1"># test that electron + neutron fractions sum to 1 for each layer region</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">YeFrac</span><span class="p">,</span> <span class="n">YnFrac</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">)):</span>
+        <span class="c1"># each Ye and Yn pair should sum to 1</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">YeFrac</span> <span class="o">+</span> <span class="n">YnFrac</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s1">&#39;FAILED: YeFrac[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">] + YnFrac[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">] != 1.0&#39;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Layers 4 &gt;&gt;&#39;</span><span class="p">)</span>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
@@ -990,6 +1085,7 @@
     <span class="n">test_layers_1</span><span class="p">()</span>
     <span class="n">test_layers_2</span><span class="p">()</span>
     <span class="n">test_layers_3</span><span class="p">()</span>
+    <span class="n">test_layers_4</span><span class="p">()</span>
 </pre></div>
         </article>
       </div>
@@ -1029,7 +1125,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=69b63715"></script>
+</div><script src="../../../../_static/documentation_options.js?v=b7289380"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

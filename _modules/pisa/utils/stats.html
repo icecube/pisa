@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.stats - PISA 0+untagged.1.g52f1c4d documentation</title>
+        <title>pisa.utils.stats - PISA 0+untagged.1.gcfb3566 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.g52f1c4d documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.gcfb3566 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g52f1c4d documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.gcfb3566 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -297,13 +297,13 @@
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SMALL_POS&#39;</span><span class="p">,</span> <span class="s1">&#39;CHI2_METRICS&#39;</span><span class="p">,</span> <span class="s1">&#39;LLH_METRICS&#39;</span><span class="p">,</span> <span class="s1">&#39;ALL_METRICS&#39;</span><span class="p">,</span>
            <span class="s1">&#39;maperror_logmsg&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;llh&#39;</span><span class="p">,</span> <span class="s1">&#39;log_poisson&#39;</span><span class="p">,</span> <span class="s1">&#39;log_smear&#39;</span><span class="p">,</span> <span class="s1">&#39;conv_poisson&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;llh&#39;</span><span class="p">,</span> <span class="s1">&#39;poisson_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;log_poisson&#39;</span><span class="p">,</span> <span class="s1">&#39;log_smear&#39;</span><span class="p">,</span> <span class="s1">&#39;conv_poisson&#39;</span><span class="p">,</span>
            <span class="s1">&#39;norm_conv_poisson&#39;</span><span class="p">,</span> <span class="s1">&#39;conv_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;barlow_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;correct_chi2&#39;</span><span class="p">,</span>
            <span class="s1">&#39;mcllh_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;mcllh_eff&#39;</span><span class="p">,</span> <span class="s1">&#39;signed_sqrt_mod_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;generalized_poisson_llh&#39;</span><span class="p">]</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau&#39;</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2025, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
 <span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
@@ -325,7 +325,7 @@
 <span class="s1">&#39;signed_sqrt_mod_chi2&#39;</span><span class="p">]</span>
 <span class="sd">&quot;&quot;&quot;Metrics defined that result in measures of chi squared&quot;&quot;&quot;</span>
 
-<span class="n">LLH_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;llh&#39;</span><span class="p">,</span> <span class="s1">&#39;conv_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;barlow_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;mcllh_mean&#39;</span><span class="p">,</span>
+<span class="n">LLH_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;llh&#39;</span><span class="p">,</span> <span class="s1">&#39;poisson_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;conv_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;barlow_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;mcllh_mean&#39;</span><span class="p">,</span>
 <span class="s1">&#39;mcllh_eff&#39;</span><span class="p">,</span> <span class="s1">&#39;generalized_poisson_llh&#39;</span><span class="p">]</span>
 <span class="sd">&quot;&quot;&quot;Metrics defined that result in measures of log likelihood&quot;&quot;&quot;</span>
 
@@ -382,7 +382,7 @@
 <div class="viewcode-block" id="chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.chi2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute Pearson&#39;s chi-square between each value in `actual_values`</span>
 <span class="sd">    and `expected_values`.</span>
 
@@ -456,7 +456,7 @@
 <div class="viewcode-block" id="llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.llh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the log-likelihoods that each count in `actual_values`</span>
 <span class="sd">    came from the corresponding expected value in `expected_values`.</span>
 
@@ -464,7 +464,8 @@
 <span class="sd">      \mathcal{L} = N_{\mathrm{actual}} \ln(N_{\mathrm{exp}}) - N_{\mathrm{exp}} - (N_{\mathrm{actual}} \ln(N_{\mathrm{actual}}) - N_{\mathrm{actual}})</span>
 
 <span class="sd">    Note that this expression uses https://en.wikipedia.org/wiki/Stirling%27s_approximation</span>
-<span class="sd">    to estimate ln(k!)~k ln(k)-k.</span>
+<span class="sd">    to estimate ln(k!)~k ln(k)-k, which has important consequences for its use in analysis,</span>
+<span class="sd">    see issue #854 and the notes below.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -481,6 +482,20 @@
 <span class="sd">    * Uncertainties are not propagated through this calculation.</span>
 <span class="sd">    * Values in `expected_values` are clipped to the range [SMALL_POS, inf]</span>
 <span class="sd">      prior to the calculation to avoid infinities due to the log function.</span>
+<span class="sd">    * Due to the above approximation, this metric only results in approximate</span>
+<span class="sd">      log-likelihood values for pseudoexperiments, and in NaN when any actual value</span>
+<span class="sd">      is zero.</span>
+<span class="sd">    * However, this metric results in exact log-likelihood differences between any</span>
+<span class="sd">      two hypotheses for pseudoexperiments.</span>
+<span class="sd">    * Also, for an Asimov pseudoexperiment, this metric results in a log-likelihood</span>
+<span class="sd">      value (given any hypothesis) matching the negative of the exact log-likelihood</span>
+<span class="sd">      difference between the truth and that hypothesis. Hence, it allows to skip</span>
+<span class="sd">      computing the value at the truth hypothesis underlying an Asimov pseudoexperiment</span>
+<span class="sd">      when evaluating the log-likelihood difference.</span>
+
+<span class="sd">    See also</span>
+<span class="sd">    --------</span>
+<span class="sd">    poisson_llh : true Poissonian log-likelihood function</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">actual_values</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">shape</span>
@@ -523,6 +538,82 @@
     <span class="c1">#</span>
     <span class="n">llh_val</span> <span class="o">=</span> <span class="n">actual_values</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">expected_values</span>
     <span class="n">llh_val</span> <span class="o">-=</span> <span class="n">actual_values</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">actual_values</span>
+
+    <span class="k">return</span> <span class="n">llh_val</span></div>
+
+
+<div class="viewcode-block" id="poisson_llh">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.poisson_llh">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">poisson_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the log-likelihoods that each count in `actual_values`</span>
+<span class="sd">    came from the corresponding expected value in `expected_values`,</span>
+<span class="sd">    using the Poisson distribution with accurate factorial computation.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">      \mathcal{L} = N_{\mathrm{actual}} \ln(N_{\mathrm{exp}}) - N_{\mathrm{exp}} - \ln(N_{\mathrm{actual}}!)</span>
+
+<span class="sd">    This uses :math:`\ln(\Gamma(n+1)) = \ln(n!)` for accurate computation,</span>
+<span class="sd">    which correctly handles zero and low counts where Stirling&#39;s approximation</span>
+<span class="sd">    fails.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    actual_values, expected_values : numpy.ndarrays of same shape</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    llh : numpy.ndarray of same shape as the inputs</span>
+<span class="sd">        llh corresponding to each pair of elements in `actual_values` and</span>
+<span class="sd">        `expected_values`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    * Uncertainties are not propagated through this calculation.</span>
+<span class="sd">    * Values in `expected_values` are clipped to the range [SMALL_POS, inf]</span>
+<span class="sd">      prior to the calculation to avoid infinities due to the log function.</span>
+<span class="sd">    * This is a true Poissonian log-likelihood, unlike the `llh`</span>
+<span class="sd">      function which uses Stirling&#39;s approximation.</span>
+
+<span class="sd">    See also</span>
+<span class="sd">    --------</span>
+<span class="sd">    llh : similar function using Stirling&#39;s approximation</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">actual_values</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># Convert to simple numpy arrays containing floats</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">isbarenumeric</span><span class="p">(</span><span class="n">actual_values</span><span class="p">):</span>
+        <span class="n">actual_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">isbarenumeric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">):</span>
+        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+
+        <span class="c1"># Mask off any nan expected values (these can result from bin masking)</span>
+        <span class="n">actual_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
+        <span class="n">expected_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
+
+        <span class="c1"># Make sure actual values (aka &quot;data&quot;) are valid -- no infs, no nans, etc.</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">actual_values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">&#39;</span>
+                   <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">actual_values</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="c1"># Check that expected values are valid</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">expected_values</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">&#39;</span>
+                   <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in log</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
+
+    <span class="c1"># Poisson log-likelihood using accurate factorial computation</span>
+    <span class="c1"># ln(P(k|λ)) = k*ln(λ) - λ - ln(k!)</span>
+    <span class="n">llh_val</span> <span class="o">=</span> <span class="n">actual_values</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">expected_values</span>
+    <span class="n">llh_val</span> <span class="o">-=</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">actual_values</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">llh_val</span></div>
 
@@ -778,7 +869,7 @@
 <div class="viewcode-block" id="conv_llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.conv_llh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">conv_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This convolution log-likelihood takes into account any uncertainties on the</span>
 <span class="sd">    expected values (from e.g. finite MC statistics), which is achieved by</span>
 <span class="sd">    smearing out the simple Poisson pdf with a normal distribution centered at 0.</span>
@@ -877,7 +968,7 @@
 <div class="viewcode-block" id="mod_chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.mod_chi2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute a modified Pearson&#39;s chi-square between each value in `actual_values`</span>
 <span class="sd">    and `expected_values` taking into account uncertainty terms (incl. e.g. finite stats).</span>
 
@@ -926,7 +1017,7 @@
 <div class="viewcode-block" id="correct_chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.correct_chi2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">correct_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute -2 times the log-likelihood of a normal approximation of</span>
 <span class="sd">    the Poisson pdf between each value in `actual_values` and `expected_values`</span>
 <span class="sd">    taking into account uncertainty terms (incl. e.g. finite stats) and their</span>
@@ -1217,7 +1308,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=69b63715"></script>
+</div><script src="../../../_static/documentation_options.js?v=b7289380"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

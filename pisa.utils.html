@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils package - PISA 0+untagged.1.g52f1c4d documentation</title>
+        <title>pisa.utils package - PISA 0+untagged.1.gcfb3566 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g52f1c4d documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.gcfb3566 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g52f1c4d documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.gcfb3566 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -5856,7 +5856,7 @@ Must corrspond to the array dimension</p></li>
 <p>Statistical functions</p>
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.utils.stats.ALL_METRICS">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">ALL_METRICS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['llh',</span> <span class="pre">'conv_llh',</span> <span class="pre">'barlow_llh',</span> <span class="pre">'mcllh_mean',</span> <span class="pre">'mcllh_eff',</span> <span class="pre">'generalized_poisson_llh',</span> <span class="pre">'chi2',</span> <span class="pre">'mod_chi2',</span> <span class="pre">'correct_chi2',</span> <span class="pre">'weighted_chi2',</span> <span class="pre">'signed_sqrt_mod_chi2']</span></span><a class="headerlink" href="#pisa.utils.stats.ALL_METRICS" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">ALL_METRICS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['llh',</span> <span class="pre">'poisson_llh',</span> <span class="pre">'conv_llh',</span> <span class="pre">'barlow_llh',</span> <span class="pre">'mcllh_mean',</span> <span class="pre">'mcllh_eff',</span> <span class="pre">'generalized_poisson_llh',</span> <span class="pre">'chi2',</span> <span class="pre">'mod_chi2',</span> <span class="pre">'correct_chi2',</span> <span class="pre">'weighted_chi2',</span> <span class="pre">'signed_sqrt_mod_chi2']</span></span><a class="headerlink" href="#pisa.utils.stats.ALL_METRICS" title="Link to this definition">¶</a></dt>
 <dd><p>All metrics defined</p>
 </dd></dl>
 
@@ -5868,7 +5868,7 @@ Must corrspond to the array dimension</p></li>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.utils.stats.LLH_METRICS">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">LLH_METRICS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['llh',</span> <span class="pre">'conv_llh',</span> <span class="pre">'barlow_llh',</span> <span class="pre">'mcllh_mean',</span> <span class="pre">'mcllh_eff',</span> <span class="pre">'generalized_poisson_llh']</span></span><a class="headerlink" href="#pisa.utils.stats.LLH_METRICS" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">LLH_METRICS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['llh',</span> <span class="pre">'poisson_llh',</span> <span class="pre">'conv_llh',</span> <span class="pre">'barlow_llh',</span> <span class="pre">'mcllh_mean',</span> <span class="pre">'mcllh_eff',</span> <span class="pre">'generalized_poisson_llh']</span></span><a class="headerlink" href="#pisa.utils.stats.LLH_METRICS" title="Link to this definition">¶</a></dt>
 <dd><p>Metrics defined that result in measures of log likelihood</p>
 </dd></dl>
 
@@ -6051,7 +6051,8 @@ came from the corresponding expected value in <cite>expected_values</cite>.</p>
 \[\mathcal{L} = N_{\mathrm{actual}} \ln(N_{\mathrm{exp}}) - N_{\mathrm{exp}} - (N_{\mathrm{actual}} \ln(N_{\mathrm{actual}}) - N_{\mathrm{actual}})\]</div>
 </div>
 <p>Note that this expression uses <a class="reference external" href="https://en.wikipedia.org/wiki/Stirling%27s_approximation">https://en.wikipedia.org/wiki/Stirling%27s_approximation</a>
-to estimate ln(k!)~k ln(k)-k.</p>
+to estimate ln(k!)~k ln(k)-k, which has important consequences for its use in analysis,
+see issue #854 and the notes below.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -6072,7 +6073,24 @@ to estimate ln(k!)~k ln(k)-k.</p>
 <li><p>Uncertainties are not propagated through this calculation.</p></li>
 <li><p>Values in <cite>expected_values</cite> are clipped to the range [SMALL_POS, inf]
 prior to the calculation to avoid infinities due to the log function.</p></li>
+<li><p>Due to the above approximation, this metric only results in approximate
+log-likelihood values for pseudoexperiments, and in NaN when any actual value
+is zero.</p></li>
+<li><p>However, this metric results in exact log-likelihood differences between any
+two hypotheses for pseudoexperiments.</p></li>
+<li><p>Also, for an Asimov pseudoexperiment, this metric results in a log-likelihood
+value (given any hypothesis) matching the negative of the exact log-likelihood
+difference between the truth and that hypothesis. Hence, it allows to skip
+computing the value at the truth hypothesis underlying an Asimov pseudoexperiment
+when evaluating the log-likelihood difference.</p></li>
 </ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pisa.utils.stats.poisson_llh" title="pisa.utils.stats.poisson_llh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">poisson_llh</span></code></a></dt><dd><p>true Poissonian log-likelihood function</p>
+</dd>
+</dl>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -6221,6 +6239,51 @@ so this is the steps to each side of the gaussian smearing term)</p></li>
 <dd class="field-odd"><p>likelihood</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.utils.stats.poisson_llh">
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.stats.</span></span><span class="sig-name descname"><span class="pre">poisson_llh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/stats.html#poisson_llh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.stats.poisson_llh" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the log-likelihoods that each count in <cite>actual_values</cite>
+came from the corresponding expected value in <cite>expected_values</cite>,
+using the Poisson distribution with accurate factorial computation.</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\mathcal{L} = N_{\mathrm{actual}} \ln(N_{\mathrm{exp}}) - N_{\mathrm{exp}} - \ln(N_{\mathrm{actual}}!)\]</div>
+</div>
+<p>This uses <span class="math notranslate nohighlight">\(\ln(\Gamma(n+1)) = \ln(n!)\)</span> for accurate computation,
+which correctly handles zero and low counts where Stirling’s approximation
+fails.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actual_values</strong> (<em>numpy.ndarrays</em><em> of </em><em>same shape</em>)</p></li>
+<li><p><strong>expected_values</strong> (<em>numpy.ndarrays</em><em> of </em><em>same shape</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>llh</strong> – llh corresponding to each pair of elements in <cite>actual_values</cite> and
+<cite>expected_values</cite>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray of same shape as the inputs</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Uncertainties are not propagated through this calculation.</p></li>
+<li><p>Values in <cite>expected_values</cite> are clipped to the range [SMALL_POS, inf]
+prior to the calculation to avoid infinities due to the log function.</p></li>
+<li><p>This is a true Poissonian log-likelihood, unlike the <cite>llh</cite>
+function which uses Stirling’s approximation.</p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pisa.utils.stats.llh" title="pisa.utils.stats.llh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">llh</span></code></a></dt><dd><p>similar function using Stirling’s approximation</p>
+</dd>
+</dl>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -7103,6 +7166,7 @@ modifications that have been proposed in the literature.</p>
 <li><a class="reference internal" href="#pisa.utils.stats.mcllh_mean"><code class="docutils literal notranslate"><span class="pre">mcllh_mean()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.utils.stats.mod_chi2"><code class="docutils literal notranslate"><span class="pre">mod_chi2()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.utils.stats.norm_conv_poisson"><code class="docutils literal notranslate"><span class="pre">norm_conv_poisson()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.utils.stats.poisson_llh"><code class="docutils literal notranslate"><span class="pre">poisson_llh()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.utils.stats.signed_sqrt_mod_chi2"><code class="docutils literal notranslate"><span class="pre">signed_sqrt_mod_chi2()</span></code></a></li>
 </ul>
 </li>
@@ -7137,7 +7201,7 @@ modifications that have been proposed in the literature.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=69b63715"></script>
+</div><script src="_static/documentation_options.js?v=b7289380"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
