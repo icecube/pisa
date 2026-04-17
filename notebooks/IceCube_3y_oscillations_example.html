@@ -1,0 +1,1030 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="PISA stage modes" href="pisa_modes.html"><link rel="prev" title="PISA Terminology" href="../stubs/glossary_stub.html">
+        <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>PISA Example Using Public IceCube Data - PISA 0+untagged.1.g52f1c4d documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=9e02ad1e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">PISA 0+untagged.1.g52f1c4d documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g52f1c4d documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Navigation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../stubs/install_stub.html">Installation</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorials.html">Tutorials</a><input aria-label="Toggle navigation of Tutorials" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../stubs/glossary_stub.html">PISA Terminology</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">PISA Example Using Public IceCube Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa_modes.html">PISA stage modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stubs/howto_pipeline_config_redirect.html">Pipeline configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stubs/units_uncertainties_stub.html">Units and Uncertainties</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../contributing.html">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../stubs/contributing_stub.html">How to contribute to PISA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stubs/howto_service_stub.html">Creating a service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stubs/globals_stub.html">Global constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../pisa.html">Python API</a><input aria-label="Toggle navigation of Python API" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pisa.stages.html">pisa.stages package</a><input aria-label="Toggle navigation of pisa.stages package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.absorption.html">pisa.stages.absorption package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.aeff.html">pisa.stages.aeff package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.background.html">pisa.stages.background package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.cont_sys.html">pisa.stages.cont_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.data.html">pisa.stages.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.discr_sys.html">pisa.stages.discr_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.flux.html">pisa.stages.flux package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.likelihood.html">pisa.stages.likelihood package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../pisa.stages.osc.html">pisa.stages.osc package</a><input aria-label="Toggle navigation of pisa.stages.osc package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../pisa.stages.osc.prob3numba.html">pisa.stages.osc.prob3numba package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.reco.html">pisa.stages.reco package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.utils.html">pisa.stages.utils package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.xsec.html">pisa.stages.xsec package</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pisa.utils.html">pisa.utils package</a><input aria-label="Toggle navigation of pisa.utils package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.utils.hypersurface.html">pisa.utils.hypersurface package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.utils.llh_defs.html">pisa.utils.llh_defs package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../stubs/license_stub.html">License</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/blob/master/docs/source/notebooks/IceCube_3y_oscillations_example.ipynb?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/edit/master/docs/source/notebooks/IceCube_3y_oscillations_example.ipynb" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="pisa-example-using-public-icecube-data">
+<h1>PISA Example Using Public IceCube Data<a class="headerlink" href="#pisa-example-using-public-icecube-data" title="Link to this heading">¶</a></h1>
+<p>This analysis is a close variant of what is published in [1], and referred to as <em>Sample B</em> in [2] and [3]. The set of systematic uncertainties is slightly reduced and results will be close to, but not identical to the published numbers.</p>
+<p><strong>References:</strong></p>
+<ul class="simple">
+<li><p>[1] “Measurement of Atmospheric Neutrino Oscillations at 6-56 GeV with IceCube DeepCore,” IceCube Collaboration: M. G. Aartsen et al., Physical Review Letters 120, 071801 (2018). DOI: 10.1103/PhysRevLett.120.071801</p></li>
+<li><p>[2] “Measurement of Atmospheric Tau Neutrino Appearance with IceCube DeepCore,” IceCube Collaboration: M. G. Aartsen et al., Phys. Rev. D99.3(2019), p. 032007. DOI: 10.1103/PhysRevD.99.032007</p></li>
+<li><p>[3] “Probing the Neutrino Mass Ordering with Atmospheric Neutrinos from Three Years of IceCube DeepCore Data,” IceCube Collaboration: M.G. Aartsen et al., Feb 20, 2019, preprint: arXiv:1902.07771</p></li>
+</ul>
+<p>Dataset must be obtained from <a class="reference external" href="https://icecube.wisc.edu/science/data/highstats_nuosc_3y" rel="noreferer noopener" target="_blank">https://icecube.wisc.edu/science/data/highstats_nuosc_3y</a></p>
+<section id="setup">
+<h2>Setup<a class="headerlink" href="#setup" title="Link to this heading">¶</a></h2>
+<p>Usually you would need to export the location of the data, and the config files to <code class="docutils literal notranslate"><span class="pre">PISA_RESOURCES</span></code>. For this example however, the data is inside our package.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pisa</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.distribution_maker</span><span class="w"> </span><span class="kn">import</span> <span class="n">DistributionMaker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.analysis.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">Analysis</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading">¶</a></h2>
+<p>We can now instantiate the <code class="docutils literal notranslate"><span class="pre">model</span></code> (given our configs) that we later fit to data. This now containes two <code class="docutils literal notranslate"><span class="pre">Pipelines</span></code> in a <code class="docutils literal notranslate"><span class="pre">DistributionMaker</span></code>, one for our neutrinos, and one for the background muons.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">([</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">,</span> <span class="s2">&quot;settings/pipeline/IceCube_3y_muons.cfg&quot;</span><span class="p">])</span>
+<span class="c1"># this just turns on profiling</span>
+<span class="n">model</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">model</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><table>
+<thead>
+<tr><th style="text-align: right;">  pipeline number</th><th style="text-align: center;">  name   </th><th style="text-align: center;"> detector name </th><th style="text-align: center;"> output_binning </th><th style="text-align: center;">     output_key      </th><th style="text-align: center;"> profile </th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: right;">                0</td><td style="text-align: center;">neutrinos</td><td style="text-align: center;">               </td><td style="text-align: center;">        "dragon_datarelease":
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)         </td><td style="text-align: center;">('weights', 'errors')</td><td style="text-align: center;">  True   </td></tr>
+<tr><td style="text-align: right;">                1</td><td style="text-align: center;">  muons  </td><td style="text-align: center;">               </td><td style="text-align: center;">        "dragon_datarelease":
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)         </td><td style="text-align: center;">('weights', 'errors')</td><td style="text-align: center;">  True   </td></tr>
+</tbody>
+</table></div></div>
+</div>
+<p>Our model has a number of free parameters, that will be used in our fit to the data</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><table>
+<thead>
+<tr><th style="text-align: right;">               name</th><th style="text-align: center;"> value  </th><th style="text-align: center;"> nominal_value </th><th style="text-align: center;">    range     </th><th style="text-align: center;">  prior  </th><th style="text-align: center;">      units       </th><th style="text-align: center;"> is_fixed </th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: right;">     nue_numu_ratio</td><td style="text-align: center;">   1    </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.5, 1.5]  </td><td style="text-align: center;">+/- 0.05 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">   Barr_uphor_ratio</td><td style="text-align: center;">   0    </td><td style="text-align: center;">       0       </td><td style="text-align: center;"> [-3.0, 3.0]  </td><td style="text-align: center;"> +/- 1.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">Barr_nu_nubar_ratio</td><td style="text-align: center;">   0    </td><td style="text-align: center;">       0       </td><td style="text-align: center;"> [-3.0, 3.0]  </td><td style="text-align: center;"> +/- 1.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">        delta_index</td><td style="text-align: center;">   0    </td><td style="text-align: center;">       0       </td><td style="text-align: center;"> [-0.5, 0.5]  </td><td style="text-align: center;"> +/- 0.1 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">            theta13</td><td style="text-align: center;">  8.5   </td><td style="text-align: center;">      8.5      </td><td style="text-align: center;"> [7.85, 9.1]  </td><td style="text-align: center;">+/- 0.205</td><td style="text-align: center;">      degree      </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">            theta23</td><td style="text-align: center;">  42.3  </td><td style="text-align: center;">     42.3      </td><td style="text-align: center;">   [31, 59]   </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">      degree      </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">           deltam31</td><td style="text-align: center;">0.002457</td><td style="text-align: center;">   0.002457    </td><td style="text-align: center;">[0.001, 0.007]</td><td style="text-align: center;"> uniform </td><td style="text-align: center;">electron_volt ** 2</td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">         aeff_scale</td><td style="text-align: center;">   1    </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.0, 3.0]  </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">         nutau_norm</td><td style="text-align: center;">   1    </td><td style="text-align: center;">       1       </td><td style="text-align: center;"> [-1.0, 8.5]  </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">         nu_nc_norm</td><td style="text-align: center;">   1    </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.5, 1.5]  </td><td style="text-align: center;"> +/- 0.2 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">    opt_eff_overall</td><td style="text-align: center;">   1    </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.8, 1.2]  </td><td style="text-align: center;"> +/- 0.1 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">    opt_eff_lateral</td><td style="text-align: center;">   25   </td><td style="text-align: center;">      25       </td><td style="text-align: center;">   [5, 50]    </td><td style="text-align: center;">+/- 10.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">     opt_eff_headon</td><td style="text-align: center;">   0    </td><td style="text-align: center;">       0       </td><td style="text-align: center;"> [-5.0, 2.0]  </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">     ice_scattering</td><td style="text-align: center;">   0    </td><td style="text-align: center;">       0       </td><td style="text-align: center;">  [-15, 15]   </td><td style="text-align: center;">+/- 10.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">     ice_absorption</td><td style="text-align: center;">   0    </td><td style="text-align: center;">       0       </td><td style="text-align: center;">  [-15, 15]   </td><td style="text-align: center;">+/- 10.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">     atm_muon_scale</td><td style="text-align: center;">   1    </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.0, 5.0]  </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+</tbody>
+</table></div></div>
+</div>
+<p>The two pipelines are quite different, with most complexity in the neutrino pipeline, that has several <code class="docutils literal notranslate"><span class="pre">Stage</span></code>s and free parameters:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><table>
+<thead>
+<tr><th style="text-align: right;">  stage number</th><th style="text-align: center;">    name     </th><th style="text-align: center;"> calc_mode </th><th style="text-align: center;"> apply_mode </th><th style="text-align: center;"> has setup </th><th style="text-align: center;"> has compute </th><th style="text-align: center;"> has apply </th><th style="text-align: center;"> # fixed params </th><th style="text-align: center;"> # free params </th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: right;">             0</td><td style="text-align: center;"> csv_loader  </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
+<tr><td style="text-align: right;">             1</td><td style="text-align: center;">  honda_ip   </td><td style="text-align: center;">      "true_allsky_fine":
+200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       0       </td></tr>
+<tr><td style="text-align: right;">             2</td><td style="text-align: center;"> barr_simple </td><td style="text-align: center;">      "true_allsky_fine":
+200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       4       </td></tr>
+<tr><td style="text-align: right;">             3</td><td style="text-align: center;">    prob3    </td><td style="text-align: center;">      "true_allsky_fine":
+200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       9        </td><td style="text-align: center;">       3       </td></tr>
+<tr><td style="text-align: right;">             4</td><td style="text-align: center;">    aeff     </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   False   </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       2        </td><td style="text-align: center;">       3       </td></tr>
+<tr><td style="text-align: right;">             5</td><td style="text-align: center;">    hist     </td><td style="text-align: center;">  events   </td><td style="text-align: center;">      "dragon_datarelease":
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
+<tr><td style="text-align: right;">             6</td><td style="text-align: center;">hypersurfaces</td><td style="text-align: center;">      "dragon_datarelease":
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)      </td><td style="text-align: center;">      "dragon_datarelease":
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       5       </td></tr>
+</tbody>
+</table></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">params</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><table>
+<thead>
+<tr><th style="text-align: right;">               name</th><th style="text-align: center;"> value </th><th style="text-align: center;"> nominal_value </th><th style="text-align: center;">   range   </th><th style="text-align: center;"> prior  </th><th style="text-align: center;"> units </th><th style="text-align: center;"> is_fixed </th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: right;">     nu_nubar_ratio</td><td style="text-align: center;">   1   </td><td style="text-align: center;">       1       </td><td style="text-align: center;">[0.7, 1.3] </td><td style="text-align: center;">+/- 0.1 </td><td style="text-align: center;">   1   </td><td style="text-align: center;">   True   </td></tr>
+<tr><td style="text-align: right;">     nue_numu_ratio</td><td style="text-align: center;">   1   </td><td style="text-align: center;">       1       </td><td style="text-align: center;">[0.5, 1.5] </td><td style="text-align: center;">+/- 0.05</td><td style="text-align: center;">   1   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">   Barr_uphor_ratio</td><td style="text-align: center;">   0   </td><td style="text-align: center;">       0       </td><td style="text-align: center;">[-3.0, 3.0]</td><td style="text-align: center;">+/- 1.0 </td><td style="text-align: center;">   1   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">Barr_nu_nubar_ratio</td><td style="text-align: center;">   0   </td><td style="text-align: center;">       0       </td><td style="text-align: center;">[-3.0, 3.0]</td><td style="text-align: center;">+/- 1.0 </td><td style="text-align: center;">   1   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">        delta_index</td><td style="text-align: center;">   0   </td><td style="text-align: center;">       0       </td><td style="text-align: center;">[-0.5, 0.5]</td><td style="text-align: center;">+/- 0.1 </td><td style="text-align: center;">   1   </td><td style="text-align: center;">  False   </td></tr>
+</tbody>
+</table></div></div>
+</div>
+<p>While the muon pipleine is rather simple</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><table>
+<thead>
+<tr><th style="text-align: right;">  stage number</th><th style="text-align: center;">    name    </th><th style="text-align: center;"> calc_mode </th><th style="text-align: center;"> apply_mode </th><th style="text-align: center;"> has setup </th><th style="text-align: center;"> has compute </th><th style="text-align: center;"> has apply </th><th style="text-align: center;"> # fixed params </th><th style="text-align: center;"> # free params </th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: right;">             0</td><td style="text-align: center;">csv_icc_hist</td><td style="text-align: center;">      "dragon_datarelease":
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)      </td><td style="text-align: center;">      "dragon_datarelease":
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       1       </td></tr>
+</tbody>
+</table></div></div>
+</div>
+</section>
+<section id="retrieve-outputs">
+<h2>Retrieve Outputs<a class="headerlink" href="#retrieve-outputs" title="Link to this heading">¶</a></h2>
+<p>We can get individual outputs from just a pipleine like so. This fetches outputs from the neutrino pipleine, which are 12 maps.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">maps</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">maps</span><span class="o">.</span><span class="n">names</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39;nue_cc&#39;,
+ &#39;numu_cc&#39;,
+ &#39;nutau_cc&#39;,
+ &#39;nue_nc&#39;,
+ &#39;numu_nc&#39;,
+ &#39;nutau_nc&#39;,
+ &#39;nuebar_cc&#39;,
+ &#39;numubar_cc&#39;,
+ &#39;nutaubar_cc&#39;,
+ &#39;nuebar_nc&#39;,
+ &#39;numubar_nc&#39;,
+ &#39;nutaubar_nc&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">maps</span><span class="p">,</span> <span class="n">axes</span><span class="p">):</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/075d28f7c4db3b3145e4dbf8db5e33d3bcf09d4d37c655e465ba9494e7fcc6a1.png" src="../_images/075d28f7c4db3b3145e4dbf8db5e33d3bcf09d4d37c655e465ba9494e7fcc6a1.png" />
+</div>
+</div>
+<p>If we are interested in just the total expecatation from the full model (all neutrinos + muons), we can do the following:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/ba5eae419fe59679a178ce9a6451c2df69b8854b914bb028522d9af5549b1740.png" src="../_images/ba5eae419fe59679a178ce9a6451c2df69b8854b914bb028522d9af5549b1740.png" />
+</div>
+</div>
+</section>
+<section id="diff-plots">
+<h2>Diff plots<a class="headerlink" href="#diff-plots" title="Link to this heading">¶</a></h2>
+<p>Let’s explore how a change in one of our nuisance parameters affects the expected counts per bin. Here we choose a <em>hole ice</em> parameter and move it a smidge.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># reset all free parameters to put them back to nominal values</span>
+<span class="n">model</span><span class="o">.</span><span class="n">reset_free</span><span class="p">()</span>
+<span class="n">nominal</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># shift one parameter</span>
+<span class="n">model</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">opt_eff_lateral</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">sys</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="p">((</span><span class="n">nominal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">sys</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">nominal</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">clabel</span><span class="o">=</span><span class="s2">&quot;rel. difference&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/7eb40e74db8f0ac634df88e5b4742ecd3e6bfd0836461226fe437c75e82aa4bc.png" src="../_images/7eb40e74db8f0ac634df88e5b4742ecd3e6bfd0836461226fe437c75e82aa4bc.png" />
+</div>
+</div>
+</section>
+<section id="get-data">
+<h2>Get Data<a class="headerlink" href="#get-data" title="Link to this heading">¶</a></h2>
+<p>We can load the real observed data too. This is a Pipeline with no free parameters, as the data is of course fixed.
+NB: When developping a new analysis you will <strong>not</strong> be allowed to look at the data as we do here before the box opening (c.f. <em>blindness</em>).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># real data</span>
+<span class="n">data_maker</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/IceCube_3y_data.cfg&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_maker</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><table>
+<thead>
+<tr><th style="text-align: right;">  stage number</th><th style="text-align: center;">    name     </th><th style="text-align: center;"> calc_mode </th><th style="text-align: center;"> apply_mode </th><th style="text-align: center;"> has setup </th><th style="text-align: center;"> has compute </th><th style="text-align: center;"> has apply </th><th style="text-align: center;"> # fixed params </th><th style="text-align: center;"> # free params </th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: right;">             0</td><td style="text-align: center;">csv_data_hist</td><td style="text-align: center;">  events   </td><td style="text-align: center;">      "dragon_datarelease":
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
+</tbody>
+</table></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">reset_free</span><span class="p">()</span>
+<span class="n">nominal</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Data&quot;</span><span class="p">)</span>
+<span class="n">nominal</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">)</span>
+<span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">nominal</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Diff&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/d6e8c549c35daa573c69e71b7c6654828fb38e227bc487e7b42c64f599878f22.png" src="../_images/d6e8c549c35daa573c69e71b7c6654828fb38e227bc487e7b42c64f599878f22.png" />
+</div>
+</div>
+</section>
+<section id="fitting">
+<h2>Fitting<a class="headerlink" href="#fitting" title="Link to this heading">¶</a></h2>
+<p>For fitting we need to configure a minimizer, several standard cfgs are available, but you can also define your own.
+For the fit we need to choose a <code class="docutils literal notranslate"><span class="pre">metric</span></code>, and by default, theta23 octants, which are quasi degenerate, are fit seperately, which means two fits are run.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">minimizer_cfg</span> <span class="o">=</span> <span class="n">pisa</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fileio</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.json&#39;</span><span class="p">)</span>
+<span class="n">ana</span> <span class="o">=</span> <span class="n">Analysis</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">ana</span><span class="o">.</span><span class="n">fit_hypo</span><span class="p">(</span>
+         <span class="n">data</span><span class="p">,</span>
+         <span class="n">model</span><span class="p">,</span>
+         <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;mod_chi2&#39;</span><span class="p">,</span>
+         <span class="n">minimizer_settings</span><span class="o">=</span><span class="n">minimizer_cfg</span><span class="p">,</span>
+         <span class="n">fit_octants_separately</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[ WARNING] Minimizer slsqp requires artificial boundaries SMALLER than the user-specified boundaries (so that numerical gradients do not exceed the user-specified boundaries).
+                                                                                        (deg)        (deg)       (eV**2)                                                                                                                        
+ iter   funcalls    mod_chi2   | nue_numu_rat Barr_uphor_r Barr_nu_nuba delta_index    theta13      theta23      deltam31    aeff_scale   nutau_norm   nu_nc_norm  opt_eff_over opt_eff_late opt_eff_head ice_scatteri ice_absorpti atm_muon_sca
+------ ---------- ------------ + ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------
+  0        6       1.75086e+02 |  1.00000e+00  0.00000e+00  0.00000e+00  0.00000e+00  8.50013e+00  4.23000e+01  2.45700e-03  1.00000e+00  1.00000e+00  1.00000e+00  1.00000e+00  2.50000e+01  0.00000e+00  0.00000e+00  0.00000e+00  1.00000e+00
+</pre></div>
+</div>
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">KeyboardInterrupt</span><span class="g g-Whitespace">                         </span>Traceback (most recent call last)
+<span class="o">&lt;</span><span class="n">timed</span> <span class="n">exec</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+
+<span class="nn">~/pisa/pisa/analysis/analysis.py</span> in <span class="ni">fit_hypo</span><span class="nt">(self, data_dist, hypo_maker, metric, minimizer_settings, hypo_param_selections, reset_free, check_octant, fit_octants_separately, check_ordering, other_metrics, blind, pprint, external_priors_penalty)</span>
+<span class="g g-Whitespace">    </span><span class="mi">511</span>                 <span class="n">pprint</span><span class="o">=</span><span class="n">pprint</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">512</span>                 <span class="n">blind</span><span class="o">=</span><span class="n">blind</span><span class="p">,</span>
+<span class="ne">--&gt; </span><span class="mi">513</span>                 <span class="n">external_priors_penalty</span><span class="o">=</span><span class="n">external_priors_penalty</span>
+<span class="g g-Whitespace">    </span><span class="mi">514</span>             <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">515</span> 
+
+<span class="nn">~/pisa/pisa/analysis/analysis.py</span> in <span class="ni">fit_hypo_inner</span><span class="nt">(self, data_dist, hypo_maker, metric, minimizer_settings, other_metrics, pprint, blind, external_priors_penalty)</span>
+<span class="g g-Whitespace">    </span><span class="mi">776</span>             <span class="n">method</span><span class="o">=</span><span class="n">minimizer_settings</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+<span class="g g-Whitespace">    </span><span class="mi">777</span>             <span class="n">options</span><span class="o">=</span><span class="n">minimizer_settings</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+<span class="ne">--&gt; </span><span class="mi">778</span>             <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_minimizer_callback</span>
+<span class="g g-Whitespace">    </span><span class="mi">779</span>         <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">780</span>         <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="nn">~/.local/lib/python3.7/site-packages/scipy/optimize/_minimize.py</span> in <span class="ni">minimize</span><span class="nt">(fun, x0, args, method, jac, hess, hessp, bounds, constraints, tol, callback, options)</span>
+<span class="g g-Whitespace">    </span><span class="mi">616</span>     <span class="k">elif</span> <span class="n">meth</span> <span class="o">==</span> <span class="s1">&#39;slsqp&#39;</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">617</span>         <span class="k">return</span> <span class="n">_minimize_slsqp</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span>
+<span class="ne">--&gt; </span><span class="mi">618</span>                                <span class="n">constraints</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">callback</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">619</span>     <span class="k">elif</span> <span class="n">meth</span> <span class="o">==</span> <span class="s1">&#39;trust-constr&#39;</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">620</span>         <span class="k">return</span> <span class="n">_minimize_trustregion_constr</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">hess</span><span class="p">,</span> <span class="n">hessp</span><span class="p">,</span>
+
+<span class="nn">~/.local/lib/python3.7/site-packages/scipy/optimize/slsqp.py</span> in <span class="ni">_minimize_slsqp</span><span class="nt">(func, x0, args, jac, bounds, constraints, maxiter, ftol, iprint, disp, eps, callback, **unknown_options)</span>
+<span class="g g-Whitespace">    </span><span class="mi">421</span>             <span class="c1"># Compute the derivatives of the objective function</span>
+<span class="g g-Whitespace">    </span><span class="mi">422</span>             <span class="c1"># For some reason SLSQP wants g dimensioned to n+1</span>
+<span class="ne">--&gt; </span><span class="mi">423</span>             <span class="n">g</span> <span class="o">=</span> <span class="n">append</span><span class="p">(</span><span class="n">fprime</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">424</span> 
+<span class="g g-Whitespace">    </span><span class="mi">425</span>             <span class="c1"># Compute the normals of the constraints</span>
+
+<span class="nn">~/.local/lib/python3.7/site-packages/scipy/optimize/optimize.py</span> in <span class="ni">function_wrapper</span><span class="nt">(*wrapper_args)</span>
+<span class="g g-Whitespace">    </span><span class="mi">325</span>     <span class="k">def</span><span class="w"> </span><span class="nf">function_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">wrapper_args</span><span class="p">):</span>
+<span class="g g-Whitespace">    </span><span class="mi">326</span>         <span class="n">ncalls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="ne">--&gt; </span><span class="mi">327</span>         <span class="k">return</span> <span class="n">function</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">wrapper_args</span> <span class="o">+</span> <span class="n">args</span><span class="p">))</span>
+<span class="g g-Whitespace">    </span><span class="mi">328</span> 
+<span class="g g-Whitespace">    </span><span class="mi">329</span>     <span class="k">return</span> <span class="n">ncalls</span><span class="p">,</span> <span class="n">function_wrapper</span>
+
+<span class="nn">~/.local/lib/python3.7/site-packages/scipy/optimize/slsqp.py</span> in <span class="ni">approx_jacobian</span><span class="nt">(x, func, epsilon, *args)</span>
+<span class="g g-Whitespace">     </span><span class="mi">61</span>     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x0</span><span class="p">)):</span>
+<span class="g g-Whitespace">     </span><span class="mi">62</span>         <span class="n">dx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">epsilon</span>
+<span class="ne">---&gt; </span><span class="mi">63</span>         <span class="n">jac</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="p">((</span><span class="n">x0</span><span class="o">+</span><span class="n">dx</span><span class="p">,)</span><span class="o">+</span><span class="n">args</span><span class="p">))</span> <span class="o">-</span> <span class="n">f0</span><span class="p">)</span><span class="o">/</span><span class="n">epsilon</span>
+<span class="g g-Whitespace">     </span><span class="mi">64</span>         <span class="n">dx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="g g-Whitespace">     </span><span class="mi">65</span> 
+
+<span class="nn">~/.local/lib/python3.7/site-packages/scipy/optimize/optimize.py</span> in <span class="ni">function_wrapper</span><span class="nt">(*wrapper_args)</span>
+<span class="g g-Whitespace">    </span><span class="mi">325</span>     <span class="k">def</span><span class="w"> </span><span class="nf">function_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">wrapper_args</span><span class="p">):</span>
+<span class="g g-Whitespace">    </span><span class="mi">326</span>         <span class="n">ncalls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="ne">--&gt; </span><span class="mi">327</span>         <span class="k">return</span> <span class="n">function</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">wrapper_args</span> <span class="o">+</span> <span class="n">args</span><span class="p">))</span>
+<span class="g g-Whitespace">    </span><span class="mi">328</span> 
+<span class="g g-Whitespace">    </span><span class="mi">329</span>     <span class="k">return</span> <span class="n">ncalls</span><span class="p">,</span> <span class="n">function_wrapper</span>
+
+<span class="nn">~/pisa/pisa/analysis/analysis.py</span> in <span class="ni">_minimizer_callable</span><span class="nt">(self, scaled_param_vals, hypo_maker, data_dist, metric, counter, fit_history, pprint, blind, external_priors_penalty)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1113</span>                 <span class="n">metric_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;empty_bins&#39;</span><span class="p">:</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">empty_bin_indices</span><span class="p">}</span>
+<span class="g g-Whitespace">   </span><span class="mi">1114</span>             <span class="k">else</span><span class="p">:</span>
+<span class="ne">-&gt; </span><span class="mi">1115</span>                 <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1116</span>                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hypo_asimov_dist</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
+<span class="g g-Whitespace">   </span><span class="mi">1117</span>                     <span class="n">hypo_asimov_dist</span> <span class="o">=</span> <span class="n">hypo_asimov_dist</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
+
+<span class="nn">~/pisa/pisa/core/distribution_maker.py</span> in <span class="ni">get_outputs</span><span class="nt">(self, return_sum, sum_map_name, sum_map_tex_name, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">250</span> 
+<span class="g g-Whitespace">    </span><span class="mi">251</span>         <span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span> <span class="c1"># pylint: disable=redefined-outer-name</span>
+<span class="ne">--&gt; </span><span class="mi">252</span> 
+<span class="g g-Whitespace">    </span><span class="mi">253</span>         <span class="k">if</span> <span class="n">return_sum</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">254</span> 
+
+<span class="nn">~/pisa/pisa/core/distribution_maker.py</span> in <span class="ni">&lt;listcomp&gt;</span><span class="nt">(.0)</span>
+<span class="g g-Whitespace">    </span><span class="mi">250</span> 
+<span class="g g-Whitespace">    </span><span class="mi">251</span>         <span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span> <span class="c1"># pylint: disable=redefined-outer-name</span>
+<span class="ne">--&gt; </span><span class="mi">252</span> 
+<span class="g g-Whitespace">    </span><span class="mi">253</span>         <span class="k">if</span> <span class="n">return_sum</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">254</span> 
+
+<span class="nn">~/pisa/pisa/core/pipeline.py</span> in <span class="ni">get_outputs</span><span class="nt">(self, output_binning, output_key)</span>
+<span class="g g-Whitespace">    </span><span class="mi">305</span> 
+<span class="g g-Whitespace">    </span><span class="mi">306</span>         <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="ne">--&gt; </span><span class="mi">307</span> 
+<span class="g g-Whitespace">    </span><span class="mi">308</span>         <span class="k">if</span> <span class="n">output_binning</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">309</span>             <span class="n">output_binning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_binning</span>
+
+<span class="nn">~/pisa/pisa/core/pipeline.py</span> in <span class="ni">run</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">329</span>         <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">330</span>             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Working on stage </span><span class="si">{</span><span class="n">stage</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">stage</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">331</span>             <span class="n">stage</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="g g-Whitespace">    </span><span class="mi">332</span> 
+<span class="g g-Whitespace">    </span><span class="mi">333</span>     <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<span class="nn">~/pisa/pisa/core/stage.py</span> in <span class="ni">run</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">368</span> 
+<span class="g g-Whitespace">    </span><span class="mi">369</span>     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="ne">--&gt; </span><span class="mi">370</span>         <span class="bp">self</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<span class="g g-Whitespace">    </span><span class="mi">371</span>         <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">()</span>
+<span class="g g-Whitespace">    </span><span class="mi">372</span>         <span class="k">return</span> <span class="kc">None</span>
+
+<span class="nn">~/pisa/pisa/core/stage.py</span> in <span class="ni">compute</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">338</span>         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">339</span>             <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+<span class="ne">--&gt; </span><span class="mi">340</span>             <span class="bp">self</span><span class="o">.</span><span class="n">compute_function</span><span class="p">()</span>
+<span class="g g-Whitespace">    </span><span class="mi">341</span>             <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+<span class="g g-Whitespace">    </span><span class="mi">342</span>             <span class="bp">self</span><span class="o">.</span><span class="n">calc_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">)</span>
+
+<span class="nn">~/pisa/pisa/stages/osc/prob3.py</span> in <span class="ni">compute_function</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">316</span>                             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;densities&#39;</span><span class="p">],</span>
+<span class="g g-Whitespace">    </span><span class="mi">317</span>                             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;distances&#39;</span><span class="p">],</span>
+<span class="ne">--&gt; </span><span class="mi">318</span>                             <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;probability&#39;</span><span class="p">],</span>
+<span class="g g-Whitespace">    </span><span class="mi">319</span>                            <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">320</span>             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;probability&#39;</span><span class="p">)</span>
+
+<span class="nn">~/pisa/pisa/stages/osc/prob3.py</span> in <span class="ni">calc_probs</span><span class="nt">(self, nubar, e_array, rho_array, len_array, out)</span>
+<span class="g g-Whitespace">    </span><span class="mi">231</span>                         <span class="n">rho_array</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">232</span>                         <span class="n">len_array</span><span class="p">,</span>
+<span class="ne">--&gt; </span><span class="mi">233</span>                         <span class="n">out</span><span class="o">=</span><span class="n">out</span>
+<span class="g g-Whitespace">    </span><span class="mi">234</span>                        <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">235</span> 
+
+<span class="ne">KeyboardInterrupt</span>: 
+</pre></div>
+</div>
+</div>
+</div>
+<p>Here we can view the bestfit parameters - the result of our fit.
+We have run two fits (separately for each theta23 octant), and the best result is stored in <code class="docutils literal notranslate"><span class="pre">results[0]</span></code> (both fits are also available under <code class="docutils literal notranslate"><span class="pre">results[1]</span></code>)</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bestfit_params</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">free</span>
+<span class="n">bestfit_params</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><table>
+<thead>
+<tr><th style="text-align: right;">               name</th><th style="text-align: center;">  value   </th><th style="text-align: center;"> nominal_value </th><th style="text-align: center;">    range     </th><th style="text-align: center;">  prior  </th><th style="text-align: center;">      units       </th><th style="text-align: center;"> is_fixed </th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: right;">     nue_numu_ratio</td><td style="text-align: center;"> 1.03304  </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.5, 1.5]  </td><td style="text-align: center;">+/- 0.05 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">   Barr_uphor_ratio</td><td style="text-align: center;">-0.313404 </td><td style="text-align: center;">       0       </td><td style="text-align: center;"> [-3.0, 3.0]  </td><td style="text-align: center;"> +/- 1.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">Barr_nu_nubar_ratio</td><td style="text-align: center;">-0.0200293</td><td style="text-align: center;">       0       </td><td style="text-align: center;"> [-3.0, 3.0]  </td><td style="text-align: center;"> +/- 1.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">        delta_index</td><td style="text-align: center;">-0.0106011</td><td style="text-align: center;">       0       </td><td style="text-align: center;"> [-0.5, 0.5]  </td><td style="text-align: center;"> +/- 0.1 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">            theta13</td><td style="text-align: center;"> 8.50992  </td><td style="text-align: center;">      8.5      </td><td style="text-align: center;"> [7.85, 9.1]  </td><td style="text-align: center;">+/- 0.205</td><td style="text-align: center;">      degree      </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">            theta23</td><td style="text-align: center;"> 46.2525  </td><td style="text-align: center;">     42.3      </td><td style="text-align: center;">   [31, 59]   </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">      degree      </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">           deltam31</td><td style="text-align: center;">0.00242605</td><td style="text-align: center;">   0.002457    </td><td style="text-align: center;">[0.001, 0.007]</td><td style="text-align: center;"> uniform </td><td style="text-align: center;">electron_volt ** 2</td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">         aeff_scale</td><td style="text-align: center;"> 0.934868 </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.0, 3.0]  </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">         nutau_norm</td><td style="text-align: center;"> 0.610718 </td><td style="text-align: center;">       1       </td><td style="text-align: center;"> [-1.0, 8.5]  </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">         nu_nc_norm</td><td style="text-align: center;"> 1.26342  </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.5, 1.5]  </td><td style="text-align: center;"> +/- 0.2 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">    opt_eff_overall</td><td style="text-align: center;"> 1.05348  </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.8, 1.2]  </td><td style="text-align: center;"> +/- 0.1 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">    opt_eff_lateral</td><td style="text-align: center;"> 22.0081  </td><td style="text-align: center;">      25       </td><td style="text-align: center;">   [5, 50]    </td><td style="text-align: center;">+/- 10.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">     opt_eff_headon</td><td style="text-align: center;"> -1.32275 </td><td style="text-align: center;">       0       </td><td style="text-align: center;"> [-5.0, 2.0]  </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">     ice_scattering</td><td style="text-align: center;"> -2.87791 </td><td style="text-align: center;">       0       </td><td style="text-align: center;">  [-15, 15]   </td><td style="text-align: center;">+/- 10.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">     ice_absorption</td><td style="text-align: center;"> 1.76103  </td><td style="text-align: center;">       0       </td><td style="text-align: center;">  [-15, 15]   </td><td style="text-align: center;">+/- 10.0 </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+<tr><td style="text-align: right;">     atm_muon_scale</td><td style="text-align: center;"> 0.931489 </td><td style="text-align: center;">       1       </td><td style="text-align: center;">  [0.0, 5.0]  </td><td style="text-align: center;"> uniform </td><td style="text-align: center;">  dimensionless   </td><td style="text-align: center;">  False   </td></tr>
+</tbody>
+</table></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># update the model with the bestfit (make a copy here, because we don&#39;t want our bestfit params to be affected (NB: stuff is passed by reference in python))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">bestfit_params</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s see how good that fit looks like. We here construct signed mod_chi2 maps by hand.
+You can see that after the fit, it improved considerably, and the distribution of chi2 values is now more uniform - not much features can be seen anymore.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">bestfit</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Data&quot;</span><span class="p">)</span>
+<span class="n">nominal</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Nominal&quot;</span><span class="p">)</span>
+<span class="n">diff</span> <span class="o">=</span> <span class="n">data</span> <span class="o">-</span> <span class="n">nominal</span>
+<span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">*</span><span class="n">diff</span><span class="o">/</span><span class="p">(</span><span class="n">nominal</span> <span class="o">+</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">nominal</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">])))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;signed $\chi^2$&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">12</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+
+<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Data&quot;</span><span class="p">)</span>
+<span class="n">bestfit</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Bestfit&quot;</span><span class="p">)</span>
+<span class="n">diff</span> <span class="o">=</span> <span class="n">data</span> <span class="o">-</span> <span class="n">bestfit</span>
+<span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">*</span><span class="n">diff</span><span class="o">/</span><span class="p">(</span><span class="n">bestfit</span> <span class="o">+</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">bestfit</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">])))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;signed $\chi^2$&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">12</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/ff56f63a5627a0b4e776aabf2910d4b2526d67d853ae9b2de0c7d91fe6556fef.png" src="../_images/ff56f63a5627a0b4e776aabf2910d4b2526d67d853ae9b2de0c7d91fe6556fef.png" />
+</div>
+</div>
+<p>When checking the chi2 value from the fitted model, you maybe see that it is around 113, while in the minimizer loop we saw it converged to 116. It is important to keep in mind that in the fit we had extended the metric with prior penalty terms. When we add those back we get the identical number as reported in the fit.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">nominal</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">bestfit</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>175.08610154304426
+113.03553972952989
+</pre></div>
+</div>
+</div>
+</div>
+<p>Evaluating other metrics just for fun:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">pisa</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">ALL_METRICS</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> = </span><span class="si">%.3f</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">bestfit</span><span class="p">,</span> <span class="n">metric</span><span class="p">)))</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> failed&#39;</span><span class="o">%</span><span class="k">metric</span>)
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>llh = -64.972
+conv_llh = -57.326
+barlow_llh = -1147.290
+mcllh_mean = -541.333
+mcllh_eff = -541.486
+generalized_poisson_llh failed
+chi2 = 128.476
+mod_chi2 = 113.036
+</pre></div>
+</div>
+</div>
+</div>
+<p>Adding prior penalty terms</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">bestfit_params</span><span class="p">))</span>
+<span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">bestfit</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">model</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">priors_penalty</span><span class="p">(</span><span class="s1">&#39;mod_chi2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>115.8086745310561
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;metric_val&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>115.8086745310561
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="storing-the-results-to-a-file">
+<h2>Storing the results to a file<a class="headerlink" href="#storing-the-results-to-a-file" title="Link to this heading">¶</a></h2>
+<p>Since the fit took a while, it might be useful to store the results to a file. (NB: in this example we use a temp file, but in real life you would of course just use a real pathname instead!)</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.json&#39;</span><span class="p">)</span>
+<span class="n">pisa</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fileio</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">temp</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[ WARNING] Overwriting file at &#39;/tmp/tmp04yxkl60.json&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<p>To reload, we can read the file. But to get PISA objects back, they need to instantiated</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result_reload</span> <span class="o">=</span> <span class="n">pisa</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fileio</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="n">bestfit_params</span> <span class="o">=</span> <span class="n">pisa</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">ParamSet</span><span class="p">(</span><span class="n">result_reload</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">free</span>
+<span class="n">bestfit_params</span>
+<span class="n">temp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="profiling">
+<h2>Profiling<a class="headerlink" href="#profiling" title="Link to this heading">¶</a></h2>
+<p>To understand what parts of the model were executed how many times, and how long it took, the profiling  can help:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">pipelines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">report_profile</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>data csv_loader
+- setup:  Total time 0.00000 s, n calls: 0, time/call: 0.00000 s
+- calc:   Total time 0.00000 s, n calls: 0, time/call: 0.00000 s
+- apply:  Total time 1.34596 s, n calls: 817, time/call: 0.00165 s
+flux honda_ip
+- setup:  Total time 0.00000 s, n calls: 0, time/call: 0.00000 s
+- calc:   Total time 25.08353 s, n calls: 1, time/call: 25.08353 s
+- apply:  Total time 0.00072 s, n calls: 817, time/call: 0.00000 s
+flux barr_simple
+- setup:  Total time 0.00000 s, n calls: 0, time/call: 0.00000 s
+- calc:   Total time 118.13966 s, n calls: 330, time/call: 0.35800 s
+- apply:  Total time 0.00091 s, n calls: 817, time/call: 0.00000 s
+osc prob3
+- setup:  Total time 0.00000 s, n calls: 0, time/call: 0.00000 s
+- calc:   Total time 339.71126 s, n calls: 290, time/call: 1.17142 s
+- apply:  Total time 73.15262 s, n calls: 817, time/call: 0.08954 s
+aeff aeff
+- setup:  Total time 0.00000 s, n calls: 0, time/call: 0.00000 s
+- calc:   Total time 0.00056 s, n calls: 290, time/call: 0.00000 s
+- apply:  Total time 1.62155 s, n calls: 817, time/call: 0.00198 s
+utils hist
+- setup:  Total time 0.00000 s, n calls: 0, time/call: 0.00000 s
+- calc:   Total time 0.00000 s, n calls: 0, time/call: 0.00000 s
+- apply:  Total time 73.78663 s, n calls: 817, time/call: 0.09031 s
+discr_sys hypersurfaces
+- setup:  Total time 0.00000 s, n calls: 0, time/call: 0.00000 s
+- calc:   Total time 0.27885 s, n calls: 372, time/call: 0.00075 s
+- apply:  Total time 0.44868 s, n calls: 817, time/call: 0.00055 s
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="pisa_modes.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">PISA stage modes</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../stubs/glossary_stub.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">PISA Terminology</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2014–2026, The IceCube Collaboration
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/icecube/pisa" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">PISA Example Using Public IceCube Data</a><ul>
+<li><a class="reference internal" href="#setup">Setup</a></li>
+<li><a class="reference internal" href="#model">Model</a></li>
+<li><a class="reference internal" href="#retrieve-outputs">Retrieve Outputs</a></li>
+<li><a class="reference internal" href="#diff-plots">Diff plots</a></li>
+<li><a class="reference internal" href="#get-data">Get Data</a></li>
+<li><a class="reference internal" href="#fitting">Fitting</a></li>
+<li><a class="reference internal" href="#storing-the-results-to-a-file">Storing the results to a file</a></li>
+<li><a class="reference internal" href="#profiling">Profiling</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=69b63715"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

@@ -1,102 +1,305 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="pisa.stages package" href="pisa.stages.html"><link rel="prev" title="pisa.core package" href="pisa.core.html">
+        <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>pisa.scripts package - PISA 0+untagged.1.g52f1c4d documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=9e02ad1e" />
+    
+    
 
 
-<!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="./">
-<head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pisa.scripts package &mdash; PISA 4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
-
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
   
-      <script src="_static/jquery.js?v=5d32c60e"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=0cd558ae"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pisa.stages package" href="pisa.stages.html" />
-    <link rel="prev" title="pisa.core package" href="pisa.core.html" /> 
-</head>
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
 
-          
-          
-          <a href="index.html" class="icon icon-home">
-            PISA
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API reference</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="pisa.html">pisa package</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="pisa.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="pisa.analysis.html">pisa.analysis package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pisa.core.html">pisa.core package</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">pisa.scripts package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pisa.stages.html">pisa.stages package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pisa.utils.html">pisa.utils package</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="pisa.html#module-pisa">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
 
-        </div>
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g52f1c4d documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
       </div>
-    </nav>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g52f1c4d documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Navigation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stubs/install_stub.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials.html">Tutorials</a><input aria-label="Toggle navigation of Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="stubs/glossary_stub.html">PISA Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/IceCube_3y_oscillations_example.html">PISA Example Using Public IceCube Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/pisa_modes.html">PISA stage modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/howto_pipeline_config_redirect.html">Pipeline configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/units_uncertainties_stub.html">Units and Uncertainties</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="contributing.html">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="stubs/contributing_stub.html">How to contribute to PISA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/howto_service_stub.html">Creating a service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/globals_stub.html">Global constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="pisa.html">Python API</a><input aria-label="Toggle navigation of Python API" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">pisa.scripts package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="pisa.stages.html">pisa.stages package</a><input aria-label="Toggle navigation of pisa.stages package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.absorption.html">pisa.stages.absorption package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.aeff.html">pisa.stages.aeff package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.background.html">pisa.stages.background package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.cont_sys.html">pisa.stages.cont_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html">pisa.stages.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.discr_sys.html">pisa.stages.discr_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html">pisa.stages.flux package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.likelihood.html">pisa.stages.likelihood package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="pisa.stages.osc.html">pisa.stages.osc package</a><input aria-label="Toggle navigation of pisa.stages.osc package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html">pisa.stages.osc.prob3numba package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.reco.html">pisa.stages.reco package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html">pisa.stages.utils package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.xsec.html">pisa.stages.xsec package</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="pisa.utils.html">pisa.utils package</a><input aria-label="Toggle navigation of pisa.utils package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.utils.hypersurface.html">pisa.utils.hypersurface package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.utils.llh_defs.html">pisa.utils.llh_defs package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stubs/license_stub.html">License</a></li>
+</ul>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">PISA</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="modules.html">pisa</a></li>
-          <li class="breadcrumb-item"><a href="pisa.html">pisa package</a></li>
-      <li class="breadcrumb-item active">pisa.scripts package</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="_sources/pisa.scripts.rst.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <section id="pisa-scripts-package">
-<h1>pisa.scripts package<a class="headerlink" href="#pisa-scripts-package" title="Link to this heading"></a></h1>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/blob/master/docs/source/pisa.scripts.rst?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/edit/master/docs/source/pisa.scripts.rst" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="pisa-scripts-package">
+<h1>pisa.scripts package<a class="headerlink" href="#pisa-scripts-package" title="Link to this heading">¶</a></h1>
 <section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 </section>
 <section id="module-pisa.scripts.add_flux_to_events_file">
-<span id="pisa-scripts-add-flux-to-events-file-module"></span><h2>pisa.scripts.add_flux_to_events_file module<a class="headerlink" href="#module-pisa.scripts.add_flux_to_events_file" title="Link to this heading"></a></h2>
+<span id="pisa-scripts-add-flux-to-events-file-module"></span><h2>pisa.scripts.add_flux_to_events_file module<a class="headerlink" href="#module-pisa.scripts.add_flux_to_events_file" title="Link to this heading">¶</a></h2>
 <p>Add neutrino fluxes for each event.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.add_flux_to_events_file.add_fluxes_to_file">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.add_flux_to_events_file.</span></span><span class="sig-name descname"><span class="pre">add_fluxes_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/add_flux_to_events_file.html#add_fluxes_to_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.add_flux_to_events_file.add_fluxes_to_file" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.add_flux_to_events_file.</span></span><span class="sig-name descname"><span class="pre">add_fluxes_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/add_flux_to_events_file.html#add_fluxes_to_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.add_flux_to_events_file.add_fluxes_to_file" title="Link to this definition">¶</a></dt>
 <dd><p>Add fluxes to PISA events file (e.g. for use by an mc stage)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -113,13 +316,13 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.add_flux_to_events_file.main">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.add_flux_to_events_file.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/add_flux_to_events_file.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.add_flux_to_events_file.main" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.add_flux_to_events_file.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/add_flux_to_events_file.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.add_flux_to_events_file.main" title="Link to this definition">¶</a></dt>
 <dd><p>Run <cite>add_fluxes_to_file</cite> function with arguments from command line</p>
 </dd></dl>
 
 </section>
 <section id="module-pisa.scripts.compare">
-<span id="pisa-scripts-compare-module"></span><h2>pisa.scripts.compare module<a class="headerlink" href="#module-pisa.scripts.compare" title="Link to this heading"></a></h2>
+<span id="pisa-scripts-compare-module"></span><h2>pisa.scripts.compare module<a class="headerlink" href="#module-pisa.scripts.compare" title="Link to this heading">¶</a></h2>
 <p>Compare two entities: Maps, map sets, pipelines, or distribution makers. One
 kind can be compared against another, so long as the resulting map(s) have
 equivalent names and binning. The result each entity specification is formatted
@@ -127,7 +330,7 @@ into a MapSet and can be stored to disk so that e.g. re-running a
 DistributionMaker is unnecessary to reproduce the results.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.compare.compare">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.compare.</span></span><span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asymm_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asymm_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fract_diff_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fract_diff_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">png</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_abs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_param_selections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_abs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_param_selections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/compare.html#compare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.compare.compare" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.compare.</span></span><span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asymm_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asymm_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fract_diff_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fract_diff_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">png</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_abs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_param_selections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_abs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_param_selections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/compare.html#compare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.compare.compare" title="Link to this definition">¶</a></dt>
 <dd><p>Compare two entities. The result each entity specification is
 formatted into a MapSet and stored to disk, so that e.g. re-running
 a DistributionMaker is unnecessary to reproduce the results.</p>
@@ -194,40 +397,40 @@ asymm_min or asymm_max, symmetric limits are automatically used
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.compare.main">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.compare.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/compare.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.compare.main" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.compare.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/compare.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.compare.main" title="Link to this definition">¶</a></dt>
 <dd><p>Function used from command-line calls (either <cite>python compare.py</cite> or via
 installer’s console scripts (see <cite>setup.py</cite>).</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.compare.parse_args">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.compare.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/compare.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.compare.parse_args" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.compare.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/compare.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.compare.parse_args" title="Link to this definition">¶</a></dt>
 <dd><p>Parse command line arguments</p>
 </dd></dl>
 
 </section>
 <section id="module-pisa.scripts.convert_config_format">
-<span id="pisa-scripts-convert-config-format-module"></span><h2>pisa.scripts.convert_config_format module<a class="headerlink" href="#module-pisa.scripts.convert_config_format" title="Link to this heading"></a></h2>
+<span id="pisa-scripts-convert-config-format-module"></span><h2>pisa.scripts.convert_config_format module<a class="headerlink" href="#module-pisa.scripts.convert_config_format" title="Link to this heading">¶</a></h2>
 <p>Convert PISA config files from format used up until July 2017 to the new config
 file format.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.convert_config_format.main">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.convert_config_format.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/convert_config_format.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.convert_config_format.main" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.convert_config_format.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/convert_config_format.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.convert_config_format.main" title="Link to this definition">¶</a></dt>
 <dd><p>Do the conversion.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.convert_config_format.parse_args">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.convert_config_format.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\nConvert</span> <span class="pre">PISA</span> <span class="pre">config</span> <span class="pre">files</span> <span class="pre">from</span> <span class="pre">format</span> <span class="pre">used</span> <span class="pre">up</span> <span class="pre">until</span> <span class="pre">July</span> <span class="pre">2017</span> <span class="pre">to</span> <span class="pre">the</span> <span class="pre">new</span> <span class="pre">config\nfile</span> <span class="pre">format.\n'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/convert_config_format.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.convert_config_format.parse_args" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.convert_config_format.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\nConvert</span> <span class="pre">PISA</span> <span class="pre">config</span> <span class="pre">files</span> <span class="pre">from</span> <span class="pre">format</span> <span class="pre">used</span> <span class="pre">up</span> <span class="pre">until</span> <span class="pre">July</span> <span class="pre">2017</span> <span class="pre">to</span> <span class="pre">the</span> <span class="pre">new</span> <span class="pre">config\nfile</span> <span class="pre">format.\n'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/convert_config_format.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.convert_config_format.parse_args" title="Link to this definition">¶</a></dt>
 <dd><p>Parse command line arguments</p>
 </dd></dl>
 
 </section>
 <section id="pisa-scripts-create-barr-sys-tables-mceq-module">
-<h2>pisa.scripts.create_barr_sys_tables_mceq module<a class="headerlink" href="#pisa-scripts-create-barr-sys-tables-mceq-module" title="Link to this heading"></a></h2>
+<h2>pisa.scripts.create_barr_sys_tables_mceq module<a class="headerlink" href="#pisa-scripts-create-barr-sys-tables-mceq-module" title="Link to this heading">¶</a></h2>
 </section>
 <section id="module-pisa.scripts.fit_hypersurfaces">
-<span id="pisa-scripts-fit-hypersurfaces-module"></span><h2>pisa.scripts.fit_hypersurfaces module<a class="headerlink" href="#module-pisa.scripts.fit_hypersurfaces" title="Link to this heading"></a></h2>
+<span id="pisa-scripts-fit-hypersurfaces-module"></span><h2>pisa.scripts.fit_hypersurfaces module<a class="headerlink" href="#module-pisa.scripts.fit_hypersurfaces" title="Link to this heading">¶</a></h2>
 <p>Fit a hypersurface to discrete systematics datasets – as specified by a fit config
 file – and produce a fit file usable by, e.g., the <cite>discr_sys.hypersurfaces</cite> service.</p>
 <p>For more details, see <cite>pisa/utils/hypersurface/</cite>.</p>
@@ -238,9 +441,9 @@ Fridge (private repository) at</p>
 </div></blockquote>
 <p>See example fit config files in directory <cite>pisa_examples/resources/settings/discr_sys/</cite>.</p>
 <section id="config-file-syntax">
-<h3>Config file syntax<a class="headerlink" href="#config-file-syntax" title="Link to this heading"></a></h3>
+<h3>Config file syntax<a class="headerlink" href="#config-file-syntax" title="Link to this heading">¶</a></h3>
 <section id="general-section">
-<h4>“general” section<a class="headerlink" href="#general-section" title="Link to this heading"></a></h4>
+<h4>“general” section<a class="headerlink" href="#general-section" title="Link to this heading">¶</a></h4>
 <p>You must define a “general” section which must have at least options “sys_list” and
 “sys_func_list” and can optionally include options “units” and “combine_regex”. You
 can add more options to the “general” section, but they will be ignored by PISA unless
@@ -266,7 +469,7 @@ strings. Old versions of this script allowed values like</p>
 deprecated (a warning is emitted if it is detected) and should be avoided.</p>
 </section>
 <section id="apply-to-all-sets-section">
-<h4>“apply_to_all_sets” section<a class="headerlink" href="#apply-to-all-sets-section" title="Link to this heading"></a></h4>
+<h4>“apply_to_all_sets” section<a class="headerlink" href="#apply-to-all-sets-section" title="Link to this heading">¶</a></h4>
 <p>You can optionally include an “apply_to_all_sets” section in your config that, true to
 its name, defines options applied to all systematic sets sections in the file. E.g.,</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">apply_to_all_sets</span><span class="p">]</span>
@@ -289,7 +492,7 @@ options defined in the discrete set sections of the config will start with this 
 configuration. Details of the above syntax are described more below.</p>
 </section>
 <section id="nominal-set-and-sys-set-sections">
-<h4>“nominal_set” and “sys_set” sections<a class="headerlink" href="#nominal-set-and-sys-set-sections" title="Link to this heading"></a></h4>
+<h4>“nominal_set” and “sys_set” sections<a class="headerlink" href="#nominal-set-and-sys-set-sections" title="Link to this heading">¶</a></h4>
 <p>All other required sections in the config file describe the discrete sets and must
 define a “pipeline_cfg” for that systematics set (whether explicitly in the section or
 via the “apply_to_all_sets” section). A systematics set section either starts with
@@ -315,7 +518,7 @@ simply swap out the events_file in that pipeline config file for the appropriate
 file.</p>
 </section>
 <section id="syntax-for-modifying-the-specified-pipeline-cfg">
-<h4>Syntax for modifying the specified “pipeline_cfg”<a class="headerlink" href="#syntax-for-modifying-the-specified-pipeline-cfg" title="Link to this heading"></a></h4>
+<h4>Syntax for modifying the specified “pipeline_cfg”<a class="headerlink" href="#syntax-for-modifying-the-specified-pipeline-cfg" title="Link to this heading">¶</a></h4>
 <p>The following syntax is interpreted if specified in “apply_to_all_sets”, “sys_set”,
 and/or “nominal_set” sections. Note an “apply_to_all_sets” section must specify a
 “pipeline_cfg” for any of the following syntax to be used.</p>
@@ -337,7 +540,7 @@ following the equals/colon is ignored. E.g. to add the “data.simple_data_loade
 </div>
 </section>
 <section id="notes-on-whitespace">
-<h4>Notes on whitespace<a class="headerlink" href="#notes-on-whitespace" title="Link to this heading"></a></h4>
+<h4>Notes on whitespace<a class="headerlink" href="#notes-on-whitespace" title="Link to this heading">¶</a></h4>
 <p>Whitespace is ignored in section names and in lists, so the following are interpreted
 equivalently</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span> <span class="n">sys_set</span> <span class="p">:</span> <span class="mf">0.88</span> <span class="p">,</span> <span class="mi">22</span> <span class="p">,</span> <span class="mf">0.1</span> <span class="p">]</span>
@@ -353,68 +556,68 @@ equivalently</p>
 </section>
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.APPLY_ALL_SECTION_NAME">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">APPLY_ALL_SECTION_NAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'apply_to_all_sets'</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.APPLY_ALL_SECTION_NAME" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">APPLY_ALL_SECTION_NAME</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'apply_to_all_sets'</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.APPLY_ALL_SECTION_NAME" title="Link to this definition">¶</a></dt>
 <dd><p>section name that defines pipeline config / options for all discr sets</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.COMBINE_REGEX_OPTION">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">COMBINE_REGEX_OPTION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'combine_regex'</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.COMBINE_REGEX_OPTION" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">COMBINE_REGEX_OPTION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'combine_regex'</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.COMBINE_REGEX_OPTION" title="Link to this definition">¶</a></dt>
 <dd><p>Option in general section to specify map(s) to combine before performing fit</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.GENERAL_SECTION_NAME">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">GENERAL_SECTION_NAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'general'</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.GENERAL_SECTION_NAME" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">GENERAL_SECTION_NAME</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'general'</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.GENERAL_SECTION_NAME" title="Link to this definition">¶</a></dt>
 <dd><p>general section name</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.REMOVE_OPTION_RE">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">REMOVE_OPTION_RE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\s*remove\\s*\\[(.*)\\]\\s*(\\S*.*)')</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.REMOVE_OPTION_RE" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">REMOVE_OPTION_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\s*remove\\s*\\[(.*)\\]\\s*(\\S*.*)')</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.REMOVE_OPTION_RE" title="Link to this definition">¶</a></dt>
 <dd><p>modifications to pipeline configs are specified by options following this pattern</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.SET_OPTION_RE">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">SET_OPTION_RE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\s*set\\s*\\[(.*)\\]\\s*(\\S*.*)')</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.SET_OPTION_RE" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">SET_OPTION_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\s*set\\s*\\[(.*)\\]\\s*(\\S*.*)')</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.SET_OPTION_RE" title="Link to this definition">¶</a></dt>
 <dd><p>defining a section and/or an option within a section in a pipeline configs is
 specified by following this pattern</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.SYS_FUNC_LIST_OPTION">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">SYS_FUNC_LIST_OPTION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'sys_func_list'</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.SYS_FUNC_LIST_OPTION" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">SYS_FUNC_LIST_OPTION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'sys_func_list'</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.SYS_FUNC_LIST_OPTION" title="Link to this definition">¶</a></dt>
 <dd><p>Option in general section to specify functional form of the discrete systematics</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.SYS_LIST_OPTION">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">SYS_LIST_OPTION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'sys_list'</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.SYS_LIST_OPTION" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">SYS_LIST_OPTION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'sys_list'</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.SYS_LIST_OPTION" title="Link to this definition">¶</a></dt>
 <dd><p>Option in general section to specify discrete systematics</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.SYS_SET_OPTION">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">SYS_SET_OPTION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pipeline_cfg'</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.SYS_SET_OPTION" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">SYS_SET_OPTION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pipeline_cfg'</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.SYS_SET_OPTION" title="Link to this definition">¶</a></dt>
 <dd><p>systematics set config file is specified by this option</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.UNITS_OPTION">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">UNITS_OPTION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'units'</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.UNITS_OPTION" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">UNITS_OPTION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'units'</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.UNITS_OPTION" title="Link to this definition">¶</a></dt>
 <dd><p>Option in general section to specify units of discrete systematics</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.UNITS_SPECIFIER">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">UNITS_SPECIFIER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'units.'</span></em><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.UNITS_SPECIFIER" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">UNITS_SPECIFIER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'units.'</span></span><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.UNITS_SPECIFIER" title="Link to this definition">¶</a></dt>
 <dd><p>User is allowed to use e.g. &lt;UNITS_SPECIFIER&gt;meter or simply meter in UNITS_OPTION</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.create_hypersurfaces">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">create_hypersurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_cfg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#create_hypersurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.create_hypersurfaces" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">create_hypersurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_cfg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#create_hypersurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.create_hypersurfaces" title="Link to this definition">¶</a></dt>
 <dd><p>Generate and store mapsets for different discrete systematics sets
 (with a single set characterised by a dedicated pipeline configuration)</p>
 <dl class="field-list simple">
@@ -432,7 +635,7 @@ specified by following this pattern</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.load_and_modify_pipeline_cfg">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">load_and_modify_pipeline_cfg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#load_and_modify_pipeline_cfg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.load_and_modify_pipeline_cfg" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">load_and_modify_pipeline_cfg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#load_and_modify_pipeline_cfg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.load_and_modify_pipeline_cfg" title="Link to this definition">¶</a></dt>
 <dd><p>Load and modify the pipeline config file as specified in that section of the fit
 config.</p>
 <dl class="field-list simple">
@@ -454,13 +657,13 @@ config.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.main">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.main" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.main" title="Link to this definition">¶</a></dt>
 <dd><p>Perform a hypersurface fit to discrete systematics sets.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.parse_args">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.parse_args" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.parse_args" title="Link to this definition">¶</a></dt>
 <dd><p>Parse arguments from command line.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -474,7 +677,7 @@ config.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.fit_hypersurfaces.parse_fit_config">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">parse_fit_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_cfg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#parse_fit_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.parse_fit_config" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.fit_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">parse_fit_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_cfg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/fit_hypersurfaces.html#parse_fit_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.fit_hypersurfaces.parse_fit_config" title="Link to this definition">¶</a></dt>
 <dd><p>Perform sanity checks on and parse fit configuration file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -496,13 +699,13 @@ config.</p>
 
 </section>
 <section id="module-pisa.scripts.make_events_file">
-<span id="pisa-scripts-make-events-file-module"></span><h2>pisa.scripts.make_events_file module<a class="headerlink" href="#module-pisa.scripts.make_events_file" title="Link to this heading"></a></h2>
+<span id="pisa-scripts-make-events-file-module"></span><h2>pisa.scripts.make_events_file module<a class="headerlink" href="#module-pisa.scripts.make_events_file" title="Link to this heading">¶</a></h2>
 <p>Take simulated (and reconstructed) HDF5 file(s) (as converted from I3 by
 icecube.hdfwriter.I3HDFTableService) as input and writes out a simplified HDF5
 file for use with PISA.</p>
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.scripts.make_events_file.CMSQ_TO_MSQ">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">CMSQ_TO_MSQ</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0001</span></em><a class="headerlink" href="#pisa.scripts.make_events_file.CMSQ_TO_MSQ" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">CMSQ_TO_MSQ</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0001</span></span><a class="headerlink" href="#pisa.scripts.make_events_file.CMSQ_TO_MSQ" title="Link to this definition">¶</a></dt>
 <dd><p>convert from centimeters^2 to meters^2</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -513,12 +716,12 @@ file for use with PISA.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.make_events_file.main">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_events_file.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_events_file.main" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_events_file.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_events_file.main" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.make_events_file.makeEventsFile">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">makeEventsFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proc_ver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_proc_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cust_cuts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extract_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('true_energy',</span> <span class="pre">'true_coszen',</span> <span class="pre">'reco_energy',</span> <span class="pre">'reco_coszen',</span> <span class="pre">'one_weight',</span> <span class="pre">'interaction_prob',</span> <span class="pre">'pid')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('true_energy',</span> <span class="pre">'true_coszen',</span> <span class="pre">'reco_energy',</span> <span class="pre">'reco_coszen',</span> <span class="pre">'weighted_aeff',</span> <span class="pre">'pid')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_events_file.html#makeEventsFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_events_file.makeEventsFile" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">makeEventsFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proc_ver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_proc_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cust_cuts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extract_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('true_energy',</span> <span class="pre">'true_coszen',</span> <span class="pre">'reco_energy',</span> <span class="pre">'reco_coszen',</span> <span class="pre">'one_weight',</span> <span class="pre">'interaction_prob',</span> <span class="pre">'pid')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('true_energy',</span> <span class="pre">'true_coszen',</span> <span class="pre">'reco_energy',</span> <span class="pre">'reco_coszen',</span> <span class="pre">'weighted_aeff',</span> <span class="pre">'pid')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_events_file.html#makeEventsFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_events_file.makeEventsFile" title="Link to this definition">¶</a></dt>
 <dd><p>Take the simulated and reconstructed HDF5 file(s) (as converted from I3
 by icecube.hdfwriter.I3HDFTableService) as input and write out a simplified
 PISA-standard-format HDF5 file for use in aeff, reco, and/or PID stages.</p>
@@ -604,90 +807,90 @@ completely independently from other flavor groupings specified.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.make_events_file.parse_args">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_events_file.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_events_file.parse_args" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_events_file.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_events_file.parse_args" title="Link to this definition">¶</a></dt>
 <dd><p>Get command line arguments</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.make_events_file.powerLawIntegral">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">powerLawIntegral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_events_file.html#powerLawIntegral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_events_file.powerLawIntegral" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_events_file.</span></span><span class="sig-name descname"><span class="pre">powerLawIntegral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_events_file.html#powerLawIntegral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_events_file.powerLawIntegral" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </section>
 <section id="module-pisa.scripts.make_nufit_theta23_spline_priors">
-<span id="pisa-scripts-make-nufit-theta23-spline-priors-module"></span><h2>pisa.scripts.make_nufit_theta23_spline_priors module<a class="headerlink" href="#module-pisa.scripts.make_nufit_theta23_spline_priors" title="Link to this heading"></a></h2>
+<span id="pisa-scripts-make-nufit-theta23-spline-priors-module"></span><h2>pisa.scripts.make_nufit_theta23_spline_priors module<a class="headerlink" href="#module-pisa.scripts.make_nufit_theta23_spline_priors" title="Link to this heading">¶</a></h2>
 <p>Create splines to the NuFit delta-chi2 surfaces for theta23 and output them in
 a format that can be read by PISA to use as a prior on this parameter.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.make_nufit_theta23_spline_priors.extract_vals">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_nufit_theta23_spline_priors.</span></span><span class="sig-name descname"><span class="pre">extract_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">string_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_nufit_theta23_spline_priors.html#extract_vals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_nufit_theta23_spline_priors.extract_vals" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_nufit_theta23_spline_priors.</span></span><span class="sig-name descname"><span class="pre">extract_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">string_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_nufit_theta23_spline_priors.html#extract_vals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_nufit_theta23_spline_priors.extract_vals" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.make_nufit_theta23_spline_priors.main">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_nufit_theta23_spline_priors.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_nufit_theta23_spline_priors.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_nufit_theta23_spline_priors.main" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_nufit_theta23_spline_priors.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_nufit_theta23_spline_priors.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_nufit_theta23_spline_priors.main" title="Link to this definition">¶</a></dt>
 <dd><p>Create splines to the NuFit delta-chi2 surfaces for theta23 and output them in
 a format that can be read by PISA to use as a prior on this parameter.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.make_nufit_theta23_spline_priors.make_prior_dict">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_nufit_theta23_spline_priors.</span></span><span class="sig-name descname"><span class="pre">make_prior_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_io</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_nufit_theta23_spline_priors.html#make_prior_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_nufit_theta23_spline_priors.make_prior_dict" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.make_nufit_theta23_spline_priors.</span></span><span class="sig-name descname"><span class="pre">make_prior_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_io</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/make_nufit_theta23_spline_priors.html#make_prior_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.make_nufit_theta23_spline_priors.make_prior_dict" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </section>
 <section id="module-pisa.scripts.test_flux_weights">
-<span id="pisa-scripts-test-flux-weights-module"></span><h2>pisa.scripts.test_flux_weights module<a class="headerlink" href="#module-pisa.scripts.test_flux_weights" title="Link to this heading"></a></h2>
+<span id="pisa-scripts-test-flux-weights-module"></span><h2>pisa.scripts.test_flux_weights module<a class="headerlink" href="#module-pisa.scripts.test_flux_weights" title="Link to this heading">¶</a></h2>
 <p>A set of tests on the flux weights calculated by PISA.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.do_1d_2d_bartol_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_1d_2d_bartol_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_1d_2d_bartol_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_1d_2d_bartol_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_1d_2d_bartol_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_1d_2d_bartol_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_1d_2d_bartol_test" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.do_1d_2d_honda_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_1d_2d_honda_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_1d_2d_honda_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_1d_2d_honda_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_1d_2d_honda_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_1d_2d_honda_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_1d_2d_honda_test" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.do_1d_3d_honda_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_1d_3d_honda_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_1d_3d_honda_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_1d_3d_honda_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_1d_3d_honda_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_1d_3d_honda_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_1d_3d_honda_test" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.do_2d_2d_bartol_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_2d_2d_bartol_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip_checks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_2d_2d_bartol_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_2d_2d_bartol_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_2d_2d_bartol_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip_checks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_2d_2d_bartol_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_2d_2d_bartol_test" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.do_2d_2d_comparisons">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_2d_2d_comparisons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">honda_spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bartol_spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_2d_2d_comparisons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_2d_2d_comparisons" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_2d_2d_comparisons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">honda_spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bartol_spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_2d_2d_comparisons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_2d_2d_comparisons" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.do_2d_2d_honda_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_2d_2d_honda_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip_checks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_2d_2d_honda_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_2d_2d_honda_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_2d_2d_honda_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip_checks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_2d_2d_honda_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_2d_2d_honda_test" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.do_2d_3d_honda_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_2d_3d_honda_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flav</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flavtex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_2d_3d_honda_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_2d_3d_honda_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">do_2d_3d_honda_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spline_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flav</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flavtex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enpow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#do_2d_3d_honda_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.do_2d_3d_honda_test" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.logplot">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">logplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clabel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logz=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">largelabels=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">medlabels=False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#logplot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.logplot" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">logplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clabel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">largelabels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">medlabels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#logplot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.logplot" title="Link to this definition">¶</a></dt>
 <dd><p>Simple plotting of a 2D histogram (map)</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.main">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.main" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.main" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.plot_1d_slices">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">plot_1d_slices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xintvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yintvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtabvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ytabvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtabbins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ytext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#plot_1d_slices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.plot_1d_slices" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">plot_1d_slices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xintvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yintvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtabvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ytabvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtabbins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ytext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#plot_1d_slices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.plot_1d_slices" title="Link to this definition">¶</a></dt>
 <dd><p>Test function to show interpolation and tables overlaid in 1D slices.
 See main function for how to use this function.</p>
 <dl class="field-list simple">
@@ -714,44 +917,165 @@ Will do both.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.scripts.test_flux_weights.take_average">
-<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">take_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interp_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversampling</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#take_average"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.take_average" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.scripts.test_flux_weights.</span></span><span class="sig-name descname"><span class="pre">take_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interp_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversampling</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/scripts/test_flux_weights.html#take_average"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.scripts.test_flux_weights.take_average" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </section>
 <section id="module-pisa.scripts">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pisa.scripts" title="Link to this heading"></a></h2>
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pisa.scripts" title="Link to this heading">¶</a></h2>
 </section>
 </section>
 
-
-           </div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="pisa.stages.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">pisa.stages package</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="pisa.core.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">pisa.core package</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2014–2026, The IceCube Collaboration
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pisa.core.html" class="btn btn-neutral float-left" title="pisa.core package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pisa.stages.html" class="btn btn-neutral float-right" title="pisa.stages package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/icecube/pisa" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
     </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">pisa.scripts package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pisa.scripts.add_flux_to_events_file">pisa.scripts.add_flux_to_events_file module</a><ul>
+<li><a class="reference internal" href="#pisa.scripts.add_flux_to_events_file.add_fluxes_to_file"><code class="docutils literal notranslate"><span class="pre">add_fluxes_to_file()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.add_flux_to_events_file.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.scripts.compare">pisa.scripts.compare module</a><ul>
+<li><a class="reference internal" href="#pisa.scripts.compare.compare"><code class="docutils literal notranslate"><span class="pre">compare()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.compare.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.compare.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.scripts.convert_config_format">pisa.scripts.convert_config_format module</a><ul>
+<li><a class="reference internal" href="#pisa.scripts.convert_config_format.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.convert_config_format.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa-scripts-create-barr-sys-tables-mceq-module">pisa.scripts.create_barr_sys_tables_mceq module</a></li>
+<li><a class="reference internal" href="#module-pisa.scripts.fit_hypersurfaces">pisa.scripts.fit_hypersurfaces module</a><ul>
+<li><a class="reference internal" href="#config-file-syntax">Config file syntax</a><ul>
+<li><a class="reference internal" href="#general-section">“general” section</a></li>
+<li><a class="reference internal" href="#apply-to-all-sets-section">“apply_to_all_sets” section</a></li>
+<li><a class="reference internal" href="#nominal-set-and-sys-set-sections">“nominal_set” and “sys_set” sections</a></li>
+<li><a class="reference internal" href="#syntax-for-modifying-the-specified-pipeline-cfg">Syntax for modifying the specified “pipeline_cfg”</a></li>
+<li><a class="reference internal" href="#notes-on-whitespace">Notes on whitespace</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.APPLY_ALL_SECTION_NAME"><code class="docutils literal notranslate"><span class="pre">APPLY_ALL_SECTION_NAME</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.COMBINE_REGEX_OPTION"><code class="docutils literal notranslate"><span class="pre">COMBINE_REGEX_OPTION</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.GENERAL_SECTION_NAME"><code class="docutils literal notranslate"><span class="pre">GENERAL_SECTION_NAME</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.REMOVE_OPTION_RE"><code class="docutils literal notranslate"><span class="pre">REMOVE_OPTION_RE</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.SET_OPTION_RE"><code class="docutils literal notranslate"><span class="pre">SET_OPTION_RE</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.SYS_FUNC_LIST_OPTION"><code class="docutils literal notranslate"><span class="pre">SYS_FUNC_LIST_OPTION</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.SYS_LIST_OPTION"><code class="docutils literal notranslate"><span class="pre">SYS_LIST_OPTION</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.SYS_SET_OPTION"><code class="docutils literal notranslate"><span class="pre">SYS_SET_OPTION</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.UNITS_OPTION"><code class="docutils literal notranslate"><span class="pre">UNITS_OPTION</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.UNITS_SPECIFIER"><code class="docutils literal notranslate"><span class="pre">UNITS_SPECIFIER</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.create_hypersurfaces"><code class="docutils literal notranslate"><span class="pre">create_hypersurfaces()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.load_and_modify_pipeline_cfg"><code class="docutils literal notranslate"><span class="pre">load_and_modify_pipeline_cfg()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.fit_hypersurfaces.parse_fit_config"><code class="docutils literal notranslate"><span class="pre">parse_fit_config()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.scripts.make_events_file">pisa.scripts.make_events_file module</a><ul>
+<li><a class="reference internal" href="#pisa.scripts.make_events_file.CMSQ_TO_MSQ"><code class="docutils literal notranslate"><span class="pre">CMSQ_TO_MSQ</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.make_events_file.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.make_events_file.makeEventsFile"><code class="docutils literal notranslate"><span class="pre">makeEventsFile()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.make_events_file.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.make_events_file.powerLawIntegral"><code class="docutils literal notranslate"><span class="pre">powerLawIntegral()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.scripts.make_nufit_theta23_spline_priors">pisa.scripts.make_nufit_theta23_spline_priors module</a><ul>
+<li><a class="reference internal" href="#pisa.scripts.make_nufit_theta23_spline_priors.extract_vals"><code class="docutils literal notranslate"><span class="pre">extract_vals()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.make_nufit_theta23_spline_priors.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.make_nufit_theta23_spline_priors.make_prior_dict"><code class="docutils literal notranslate"><span class="pre">make_prior_dict()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.scripts.test_flux_weights">pisa.scripts.test_flux_weights module</a><ul>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.do_1d_2d_bartol_test"><code class="docutils literal notranslate"><span class="pre">do_1d_2d_bartol_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.do_1d_2d_honda_test"><code class="docutils literal notranslate"><span class="pre">do_1d_2d_honda_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.do_1d_3d_honda_test"><code class="docutils literal notranslate"><span class="pre">do_1d_3d_honda_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.do_2d_2d_bartol_test"><code class="docutils literal notranslate"><span class="pre">do_2d_2d_bartol_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.do_2d_2d_comparisons"><code class="docutils literal notranslate"><span class="pre">do_2d_2d_comparisons()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.do_2d_2d_honda_test"><code class="docutils literal notranslate"><span class="pre">do_2d_2d_honda_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.do_2d_3d_honda_test"><code class="docutils literal notranslate"><span class="pre">do_2d_3d_honda_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.logplot"><code class="docutils literal notranslate"><span class="pre">logplot()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.plot_1d_slices"><code class="docutils literal notranslate"><span class="pre">plot_1d_slices()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.scripts.test_flux_weights.take_average"><code class="docutils literal notranslate"><span class="pre">take_average()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.scripts">Module contents</a></li>
+</ul>
+</li>
+</ul>
 
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
+          </div>
         </div>
       </div>
-    </section>
+      
+      
+    </aside>
   </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+</div><script src="_static/documentation_options.js?v=69b63715"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
 </html>

@@ -1,0 +1,683 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Tutorials" href="../tutorials.html"><link rel="prev" title="Welcome to PISA’s documentation!" href="../index.html">
+        <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Installation Guide - PISA 0+untagged.1.g52f1c4d documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=9e02ad1e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">PISA 0+untagged.1.g52f1c4d documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g52f1c4d documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Navigation</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorials.html">Tutorials</a><input aria-label="Toggle navigation of Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="glossary_stub.html">PISA Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/IceCube_3y_oscillations_example.html">PISA Example Using Public IceCube Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/pisa_modes.html">PISA stage modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="howto_pipeline_config_redirect.html">Pipeline configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units_uncertainties_stub.html">Units and Uncertainties</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../contributing.html">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="contributing_stub.html">How to contribute to PISA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="howto_service_stub.html">Creating a service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="globals_stub.html">Global constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../pisa.html">Python API</a><input aria-label="Toggle navigation of Python API" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pisa.stages.html">pisa.stages package</a><input aria-label="Toggle navigation of pisa.stages package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.absorption.html">pisa.stages.absorption package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.aeff.html">pisa.stages.aeff package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.background.html">pisa.stages.background package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.cont_sys.html">pisa.stages.cont_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.data.html">pisa.stages.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.discr_sys.html">pisa.stages.discr_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.flux.html">pisa.stages.flux package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.likelihood.html">pisa.stages.likelihood package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../pisa.stages.osc.html">pisa.stages.osc package</a><input aria-label="Toggle navigation of pisa.stages.osc package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../pisa.stages.osc.prob3numba.html">pisa.stages.osc.prob3numba package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.reco.html">pisa.stages.reco package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.utils.html">pisa.stages.utils package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.stages.xsec.html">pisa.stages.xsec package</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pisa.utils.html">pisa.utils package</a><input aria-label="Toggle navigation of pisa.utils package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.utils.hypersurface.html">pisa.utils.hypersurface package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pisa.utils.llh_defs.html">pisa.utils.llh_defs package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license_stub.html">License</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/blob/master/docs/source/stubs/install_stub.md?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/edit/master/docs/source/stubs/install_stub.md" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="installation-guide">
+<h1>Installation Guide<a class="headerlink" href="#installation-guide" title="Link to this heading">¶</a></h1>
+<p><em>Note that all terminal commands below are intended for the bash shell. You’ll have to translate if you use a different shell.</em></p>
+<section id="quick-start">
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
+<p>This guide will enable you to <em>use</em> PISA within about five minutes. If you are more interested in contributing to PISA’s development, please refer to the <a class="reference internal" href="#advanced-installation-guide"><span class="xref myst">advanced installation guide</span></a> instead.</p>
+<ol class="arabic">
+<li><p>Install the latest Miniforge Python distribution for either Mac or Linux (as your user, <em>not</em> as root)<br>
+<a class="reference external" href="https://conda-forge.org/download/" rel="noreferer noopener" target="_blank">https://conda-forge.org/download/</a><br></p>
+<ul class="simple">
+<li><p>In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.</p></li>
+</ul>
+</li>
+<li><p>In your terminal, create and activate a new conda environment, with a Python version compatible with the Python requirements below<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>&lt;ENV<span class="w"> </span>NAME&gt;<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12
+conda<span class="w"> </span>activate<span class="w"> </span>&lt;ENV<span class="w"> </span>NAME&gt;
+</pre></div>
+</div>
+</li>
+<li><p>If your system doesn’t already have it, install <a class="reference external" href="https://git-scm.com" rel="noreferer noopener" target="_blank">git</a> into this environment. (We use <code class="docutils literal notranslate"><span class="pre">mamba</span></code> as a drop-in replacement for the <code class="docutils literal notranslate"><span class="pre">conda</span></code> package manager.)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mamba<span class="w"> </span>install<span class="w"> </span>git
+</pre></div>
+</div>
+</li>
+<li><p>Define a directory for the PISA source code (~ 500 MB) to live in, and create the directory. For example:<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PISA</span><span class="o">=</span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>PISA&gt;/pisa
+mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$PISA</span>
+</pre></div>
+</div>
+</li>
+<li><p>Clone the PISA repository to your local computer<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/icecube/pisa.git<span class="w"> </span><span class="nv">$PISA</span>
+</pre></div>
+</div>
+</li>
+<li><p>Install PISA with default packages only and without development tools<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="nv">$PISA</span><span class="w"> </span>-vvv
+</pre></div>
+</div>
+</li>
+<li><p>Run a quick test<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pisa-distribution_maker<span class="w"> </span>--pipeline<span class="w"> </span>settings/pipeline/IceCube_3y_neutrinos.cfg<span class="w"> </span>--outdir<span class="w"> </span>&lt;OUTPUT<span class="w"> </span>PATH&gt;<span class="w"> </span>--png
+</pre></div>
+</div>
+<p>This command should have created the folder <code class="docutils literal notranslate"><span class="pre">&lt;OUTPUT</span> <span class="pre">PATH&gt;</span></code> containing a png with output maps for different neutrino types and interactions.</p>
+</li>
+</ol>
+</section>
+<section id="advanced-installation-guide">
+<h2>Advanced installation guide<a class="headerlink" href="#advanced-installation-guide" title="Link to this heading">¶</a></h2>
+<section id="preparation">
+<h3>Preparation<a class="headerlink" href="#preparation" title="Link to this heading">¶</a></h3>
+<p>To ensure that you can contribute to PISA’s development, first obtain a GitHub user ID if you don’t have one already.<br></p>
+<details>
+  <summary>optional sign up for GitHub education pack for many features for free</summary>
+  https://education.github.com/pack
+</details>
+<p>Fork PISA on GitHub so you have your own copy of the repository to work on, from which you can create pull requests:<br>
+<a class="reference external" href="https://github.com/icecube/pisa/fork" rel="noreferer noopener" target="_blank">https://github.com/icecube/pisa/fork</a></p>
+<p>If you like, set up passwordless ssh access to GitHub:<br>
+<a class="reference external" href="https://help.github.com/articles/connecting-to-github-with-ssh" rel="noreferer noopener" target="_blank">https://help.github.com/articles/connecting-to-github-with-ssh</a></p>
+<p>In your terminal, define a directory for PISA source code to live in, e.g.,<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PISA</span><span class="o">=</span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>PISA&gt;/pisa
+</pre></div>
+</div>
+<details>
+  <summary>suggested paths</summary>
+<p>Since the PISA source occupies several hundreds of MB of drive space: on one of IceCube’s Cobalt nodes, consider setting <code class="docutils literal notranslate"><span class="pre">&lt;PATH_TO_PISA&gt;</span></code> to <code class="docutils literal notranslate"><span class="pre">/data/user/&lt;USERNAME&gt;</span></code> instead of e.g. <code class="docutils literal notranslate"><span class="pre">$HOME</span></code>.</p>
+</details>
+Also add this line to your `~/.bashrc` file so you can refer to the `$PISA` variable without doing this every time.
+<p>Create the above directory:<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$PISA</span>
+</pre></div>
+</div>
+<p>Below we describe two different ways of setting up the PISA Python environment:<br></p>
+<blockquote>
+<div><p>[!NOTE]
+Miniforge or the venv virtual environment folder into which all Python packages will be installed can be placed wherever you please. (Note that there are <a class="reference external" href="https://pybit.es/articles/a-better-place-to-put-your-python-virtual-environments/" rel="noreferer noopener" target="_blank">disadvantages</a> to putting either in your local PISA repository’s top-level directory <code class="docutils literal notranslate"><span class="pre">$PISA</span></code>.) However, on one of IceCube’s Cobalt nodes, again consider <code class="docutils literal notranslate"><span class="pre">/data/user/&lt;USERNAME&gt;</span></code> instead of e.g. <code class="docutils literal notranslate"><span class="pre">$HOME</span></code>.</p>
+</div></blockquote>
+<p>The <a class="reference internal" href="#default-miniforge-distribution"><span class="xref myst">first (default)</span></a> obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the <a class="reference external" href="https://conda-forge.org/docs/user/introduction/" rel="noreferer noopener" target="_blank">Miniforge</a> distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br></p>
+<p>The <a class="reference internal" href="#alternative-cvmfs-and-venv"><span class="xref myst">second (alternative)</span></a> assumes you have access to IceCube’s CernVM-FS (CVMFS) repository and would like to use one of the Python installations it provides as the “base” of a <a class="reference external" href="https://docs.python.org/3/library/venv.html" rel="noreferer noopener" target="_blank">venv</a>. Our instructions have been tested for the <a class="reference external" href="https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-4" rel="noreferer noopener" target="_blank"><code class="docutils literal notranslate"><span class="pre">py3-v4.4.2</span></code> distribution</a>.</p>
+</section>
+<section id="default-miniforge-distribution">
+<h3>Default: Miniforge distribution<a class="headerlink" href="#default-miniforge-distribution" title="Link to this heading">¶</a></h3>
+<p>Install the latest Miniforge Python distribution for either Mac or Linux (as your user, <em>not</em> as root) from <a class="reference external" href="https://conda-forge.org/download/" rel="noreferer noopener" target="_blank">https://conda-forge.org/download/</a>.</p>
+<details>
+  <summary>command suggestions</summary>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3
+wget<span class="w"> </span><span class="s2">&quot;https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh&quot;</span>
+bash<span class="w"> </span><span class="s2">&quot;Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh&quot;</span><span class="w"> </span>-p<span class="w"> </span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3<span class="w"> </span>-u
+rm<span class="w"> </span><span class="s2">&quot;Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh&quot;</span>
+</pre></div>
+</div>
+<p><strong>Notes:</strong></p>
+<ul class="simple">
+<li><p>To perform SHA-256 checksum verification of the Miniforge installer, download the installer (<code class="docutils literal notranslate"><span class="pre">.sh</span></code>) for your platform whose name contains the release version and the corresponding <code class="docutils literal notranslate"><span class="pre">.sha256</span></code> checksum file from <a class="reference external" href="https://github.com/conda-forge/miniforge/releases/latest" rel="noreferer noopener" target="_blank">https://github.com/conda-forge/miniforge/releases/latest</a>, then execute <code class="docutils literal notranslate"><span class="pre">sha256sum</span> <span class="pre">-c</span> <span class="pre">&quot;Miniforge3-&lt;RELEASE</span> <span class="pre">VERSION&gt;-$(uname)-$(uname</span> <span class="pre">-m).sh.sha256&quot;</span></code>.</p></li>
+<li><p>You can decline having your shell profile updated to automatically initialize conda. In this case</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3/bin/conda<span class="w"> </span>shell.bash<span class="w"> </span>hook<span class="k">)</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>will activate the base environment as prompted at the end of the Miniforge installation script. Doing so is required to proceed with this installation and whenever PISA is used again. The successful activation is indicated by the shell prompt <code class="docutils literal notranslate"><span class="pre">(base)</span></code>. An overview of the packages in the base environment can be gained via <code class="docutils literal notranslate"><span class="pre">mamba/conda</span> <span class="pre">list</span></code>.</p>
+</details>
+<p>It is recommended to keep the base environment stable. Therefore, create and activate a new conda environment, with a Python version compatible with the Python requirements below:<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>&lt;ENV<span class="w"> </span>NAME&gt;<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12
+conda<span class="w"> </span>activate<span class="w"> </span>&lt;ENV<span class="w"> </span>NAME&gt;
+</pre></div>
+</div>
+<p>A shell prompt with <code class="docutils literal notranslate"><span class="pre">&lt;ENV</span> <span class="pre">NAME&gt;</span></code> name in parentheses should now confirm the successful activation.</p>
+</section>
+<section id="alternative-cvmfs-and-venv">
+<h3>Alternative: CVMFS and venv<a class="headerlink" href="#alternative-cvmfs-and-venv" title="Link to this heading">¶</a></h3>
+<p>Load the CVMFS environment:<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">unset</span><span class="w"> </span>OS_ARCH<span class="p">;</span><span class="w"> </span><span class="nb">eval</span><span class="w"> </span><span class="sb">`</span>/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/setup.sh<span class="sb">`</span>
+</pre></div>
+</div>
+<details>
+  <summary>on one of IceCube's Cobalt nodes</summary>
+<p>Verify that <code class="docutils literal notranslate"><span class="pre">which</span> <span class="pre">python</span></code> outputs <code class="docutils literal notranslate"><span class="pre">/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/RHEL_9_x86_64_v2/bin/python</span></code>.</p>
+</details>
+<p>Create a virtual environment:<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>/PATH/TO/&lt;VENV<span class="w"> </span>NAME&gt;
+</pre></div>
+</div>
+<p>Activate the virtual environment:<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>/PATH/TO/&lt;VENV<span class="w"> </span>NAME&gt;/bin/activate
+</pre></div>
+</div>
+<p>A shell prompt with the virtual environment’s name in parentheses should now confirm the successful activation.</p>
+</section>
+<section id="common-final-steps-clone-install-and-test-pisa">
+<h3>Common final steps: clone, install and test PISA<a class="headerlink" href="#common-final-steps-clone-install-and-test-pisa" title="Link to this heading">¶</a></h3>
+<p>Install <a class="reference external" href="https://git-scm.com" rel="noreferer noopener" target="_blank">git</a> if you <a class="reference internal" href="#required-dependencies"><span class="xref myst">don’t have it</span></a> already.</p>
+<p>Next, clone the PISA repository to your local computer. On the command line,</p>
+<details>
+  <summary>with ssh authentication</summary>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:&lt;YOUR<span class="w"> </span>GITHUB<span class="w"> </span>USER<span class="w"> </span>ID&gt;/pisa.git<span class="w"> </span><span class="nv">$PISA</span>
+</pre></div>
+</div>
+</details>
+<details>
+  <summary>without</summary>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/&lt;YOUR<span class="w"> </span>GITHUB<span class="w"> </span>USER<span class="w"> </span>ID&gt;/pisa.git<span class="w"> </span><span class="nv">$PISA</span>
+</pre></div>
+</div>
+<p>See <a class="reference external" href="https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls" rel="noreferer noopener" target="_blank">https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls</a> if you have issues authenticating in this case.</p>
+</details>
+<p>You can now proceed to install PISA, either</p>
+<p>with default packages only and without development tools</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="nv">$PISA</span><span class="w"> </span>-vvv
+</pre></div>
+</div>
+<p>or, if desired, including optional packages and development tools</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="nv">$PISA</span><span class="o">[</span>develop<span class="o">]</span><span class="w"> </span>-vvv
+</pre></div>
+</div>
+<blockquote>
+<div><p>[!NOTE]</p>
+<ul class="simple">
+<li><p>The installation is <em><strong>not run as administrator</strong></em>. It is discouraged to do so (and has not been tested this way).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-e</span> <span class="pre">$PISA</span></code> (or equivalently, <code class="docutils literal notranslate"><span class="pre">--editable</span> <span class="pre">$PISA</span></code>): Installs from source located at <code class="docutils literal notranslate"><span class="pre">$PISA</span></code> and  allows for changes to the source code within to be immediately propagated to your Python installation.
+Within the Python library tree, all files under <code class="docutils literal notranslate"><span class="pre">pisa</span></code> are links to your source code, so changes within your source are seen directly by the Python installation. Major changes to your source code (file names or directory structure changing) will require re-installation, though, for the links to be updated (see below for the command for re-installing).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[develop]</span></code> Specify optional dependency groups. You can omit any or all of these if your system does not support them or if you do not need them.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-vvv</span></code> Be maximally verbose during the install. You’ll see lots of messages, including warnings that are irrelevant, but if your installation fails, it’s easiest to debug if you use <code class="docutils literal notranslate"><span class="pre">-vvv</span></code>.</p></li>
+<li><p>If a specific compiler is set by the <code class="docutils literal notranslate"><span class="pre">CC</span></code> environment variable (<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">CC=&lt;path&gt;</span></code>), it will be used; otherwise, the <code class="docutils literal notranslate"><span class="pre">cc</span></code> command will be run on the system for compiling C-code.
+You can work with your installation using the usual git commands (pull, push, etc.). However, these <em><strong>won’t recompile</strong></em> any of the extension (i.e. pyx, <em>C/C++</em>) libraries. See below for how to re-install PISA when you need these to recompile.</p></li>
+</ul>
+</div></blockquote>
+<p>If the installation went smoothly, you are now ready to run a quick test<br></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pisa-distribution_maker<span class="w"> </span>--pipeline<span class="w"> </span>settings/pipeline/IceCube_3y_neutrinos.cfg<span class="w"> </span>--outdir<span class="w"> </span>&lt;OUTPUT<span class="w"> </span>PATH&gt;<span class="w"> </span>--png
+</pre></div>
+</div>
+<p>This command should have created the folder <code class="docutils literal notranslate"><span class="pre">&lt;OUTPUT</span> <span class="pre">PATH&gt;</span></code> containing a png with output maps for different neutrino types and interactions.</p>
+</section>
+</section>
+<section id="additional-information">
+<h2>Additional information<a class="headerlink" href="#additional-information" title="Link to this heading">¶</a></h2>
+<section id="ensure-a-clean-install-using-venv-or-conda-env">
+<h3>Ensure a clean install using venv or conda env<a class="headerlink" href="#ensure-a-clean-install-using-venv-or-conda-env" title="Link to this heading">¶</a></h3>
+<p>It is absolutely discouraged to install PISA as a root (privileged) user.
+PISA is not vetted for security vulnerabilities, so should always be installed and run as a regular (unprivileged) user.</p>
+<p>It is suggested (but not required) that you install PISA within a virtual environment (or in a conda env if you’re using Anaconda, Miniconda, or Miniforge Python distributions).
+This minimizes cross-contamination by PISA of a system-wide (or other) Python installation with conflicting required package versions, guarantees that you can install PISA as an unprivileged user, that PISA’s dependencies are met, and allows for multiple versions of PISA to be installed simultaneously (each in a different venv / conda env).</p>
+<p>Note that it is also discouraged, but you <em>can</em> install PISA as an unprivileged user using your system-wide Python install with the <code class="docutils literal notranslate"><span class="pre">--user</span></code> option to <code class="docutils literal notranslate"><span class="pre">pip</span></code>.
+This is not quite as clean as a virtual environment, and the issue with conflicting package dependency versions remains.</p>
+</section>
+<section id="re-installation">
+<h3>Re-installation<a class="headerlink" href="#re-installation" title="Link to this heading">¶</a></h3>
+<p>Sometimes a change within PISA requires re-installation (particularly if a compiled module changes, the below forces re-compilation).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="nv">$PISA</span><span class="o">[</span>develop<span class="o">]</span><span class="w"> </span>--force-reinstall<span class="w"> </span>-vvv
+</pre></div>
+</div>
+<p><strong>Note</strong> that if files change names or locations, though, the above can still not be enough.
+In this case, the old files have to be removed manually (along with any associated <code class="docutils literal notranslate"><span class="pre">.pyc</span></code> files, as Python will use these even if the <code class="docutils literal notranslate"><span class="pre">.py</span></code> files have been removed).</p>
+</section>
+<section id="required-dependencies">
+<h3>Required Dependencies<a class="headerlink" href="#required-dependencies" title="Link to this heading">¶</a></h3>
+<p>With the exception of <code class="docutils literal notranslate"><span class="pre">Python</span></code> itself (and possibly <code class="docutils literal notranslate"><span class="pre">git</span></code>), the installation methods outlined above should not demand the <em>manual</em> prior installation of any Python or non-Python requirements for PISA.
+Support for all of these comes pre-packaged or as <code class="docutils literal notranslate"><span class="pre">conda</span></code>/<code class="docutils literal notranslate"><span class="pre">mamba</span></code>-installable packages in the Miniforge Python distribution.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="http://www.python.org" rel="noreferer noopener" target="_blank">python</a> — version &gt;= 3.8 and &lt; 3.13 required (tested to work with: 3.10, 3.11, 3.12)</p>
+<ul>
+<li><p>Miniforge &amp; CVMFS: built in</p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://pip.pypa.io" rel="noreferer noopener" target="_blank">pip</a> version &gt;= 1.8 required</p>
+<ul>
+<li><p>Miniforge &amp; CVMFS: built in</p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://git-scm.com" rel="noreferer noopener" target="_blank">git</a></p>
+<ul>
+<li><p>Miniforge: <code class="docutils literal notranslate"><span class="pre">mamba</span> <span class="pre">install</span> <span class="pre">git</span></code></p></li>
+<li><p>or system wide, e.g. in Ubuntu<br>
+<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">git</span></code></p></li>
+<li><p>it is already installed on IceCube’s Cobalt nodes</p></li>
+</ul>
+</li>
+</ul>
+<p>Required Python modules whose installation is taken care of by pip are specified in <a class="reference external" href="https://github.com/icecube/pisa/blob/master/setup.py" rel="noreferer noopener" target="_blank">setup.py</a>.</p>
+</section>
+<section id="optional-dependencies">
+<h3>Optional Dependencies<a class="headerlink" href="#optional-dependencies" title="Link to this heading">¶</a></h3>
+<p>Some of the following optional dependencies must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, or conda/mamba to install the below before running the PISA installation.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/dfm/emcee" rel="noreferer noopener" target="_blank">emcee</a> Required for MCMC sampling functionality in the <code class="docutils literal notranslate"><span class="pre">llh_client</span></code>&amp; <code class="docutils literal notranslate"><span class="pre">llh_server</span></code> utils modules and the <code class="docutils literal notranslate"><span class="pre">analysis</span></code> module.</p></li>
+<li><p><a class="reference external" href="https://pradyunsg.me/furo/" rel="noreferer noopener" target="_blank">Furo Sphinx Theme</a> Sphinx extension HTML theme. (Required to compile PISA’s documentation.)</p>
+<ul>
+<li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/atrettin/GLoBES_wrapper" rel="noreferer noopener" target="_blank">GLoBES wrapper</a> Required for <code class="docutils literal notranslate"><span class="pre">osc.globes</span></code> service.</p></li>
+<li><p><a class="reference external" href="https://github.com/icecube/leptonweighter" rel="noreferer noopener" target="_blank">LeptonWeighter</a> Required for <code class="docutils literal notranslate"><span class="pre">data.licloader_weighter</span></code> service.</p></li>
+<li><p><a class="reference external" href="https://github.com/tsutsu3/linkify-it-py" rel="noreferer noopener" target="_blank">linkify-it-py</a> MyST-Parser extension for converting bare URLs into hyperlinks. (Required to compile PISA’s documentation.)</p>
+<ul>
+<li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/mceq-project/MCEq" rel="noreferer noopener" target="_blank">MCEq</a> Required for <code class="docutils literal notranslate"><span class="pre">create_barr_sys_tables_mceq.py</span></code> script.</p></li>
+<li><p><a class="reference external" href="https://myst-nb.readthedocs.io/" rel="noreferer noopener" target="_blank">MyST-NB</a> Sphinx extension for compiling markdown and jupyter notebooks. (Required to compile PISA’s documentation.)</p>
+<ul>
+<li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/arguelles/nuSQuIDS" rel="noreferer noopener" target="_blank">nuSQuiDS</a> Required for <code class="docutils literal notranslate"><span class="pre">osc.nusquids</span></code> service.</p></li>
+<li><p><a class="reference external" href="https://openmp.org" rel="noreferer noopener" target="_blank">OpenMP</a> Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.</p>
+<ul>
+<li><p>Available from your compiler: gcc supports OpenMP 4.0 and Clang &gt;= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.</p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/icecube/photospline" rel="noreferer noopener" target="_blank">Photospline</a> Required for <code class="docutils literal notranslate"><span class="pre">flux.airs</span></code> service.</p></li>
+<li><p><a class="reference external" href="https://pylint.org" rel="noreferer noopener" target="_blank">Pylint</a> Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.</p>
+<ul>
+<li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://docs.pytest.org/" rel="noreferer noopener" target="_blank">Pytest</a> Python testing framework. Used by a couple unit tests.</p>
+<ul>
+<li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://root.cern.ch" rel="noreferer noopener" target="_blank">ROOT &gt;= 6.12.04 with PyROOT</a> Required for <code class="docutils literal notranslate"><span class="pre">absorption.earth_absorption</span></code> service, and to read ROOT cross section files in the <code class="docutils literal notranslate"><span class="pre">crossSections</span></code> utils module. Due to a bug in ROOT’s Python support (documented here <a class="reference external" href="https://github.com/IceCubeOpenSource/pisa/issues/430" rel="noreferer noopener" target="_blank">https://github.com/IceCubeOpenSource/pisa/issues/430</a>), you need at least version 6.12.04 of ROOT.</p></li>
+<li><p><a class="reference external" href="https://www.sphinx-doc.org" rel="noreferer noopener" target="_blank">Sphinx &gt;= 1.3</a> Documentation generator. (Required to compile PISA’s documentation.)</p>
+<ul>
+<li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://sphinx-github-changelog.readthedocs.io" rel="noreferer noopener" target="_blank">Sphinx Github Changelog</a> Sphinx extension for building a changelog from GitHub releases. (Required to compile PISA’s documentation.)</p>
+<ul>
+<li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://github.com/python-versioneer/python-versioneer" rel="noreferer noopener" target="_blank">versioneer</a> Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places <code class="docutils literal notranslate"><span class="pre">versioneer.py</span></code> in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.</p>
+<ul>
+<li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="compile-the-documentation">
+<h3>Compile the documentation<a class="headerlink" href="#compile-the-documentation" title="Link to this heading">¶</a></h3>
+<p>In case you installed the optional “develop” dependencies, you can compile a (new) version of the documentation to html locally. Be aware that the above Sphinx Github Changelog extension requires authentication using a GitHub API token.
+If you don’t have a suitable personal access token yet, generate one with a public-repo scope and assign it to the <code class="docutils literal notranslate"><span class="pre">GITHUB_TOKEN</span></code> environment variable before running <code class="docutils literal notranslate"><span class="pre">make</span></code> below.</p>
+<p>In case code structure has changed, regenerate the source files that document all of PISA’s (sub-)packages and modules by executing</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span><span class="nv">$PISA</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sphinx-apidoc<span class="w"> </span>-f<span class="w"> </span>-o<span class="w"> </span>docs/source<span class="w"> </span>pisa
+</pre></div>
+</div>
+<p>Finally, rebuild the HTML documentation by executing</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span><span class="nv">$PISA</span>/docs<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>html
+</pre></div>
+</div>
+<p>(Run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">help</span></code>  to check which other documentation formats are available.)</p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../tutorials.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Tutorials</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../index.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Home</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2014–2026, The IceCube Collaboration
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/icecube/pisa" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Installation Guide</a><ul>
+<li><a class="reference internal" href="#quick-start">Quick start</a></li>
+<li><a class="reference internal" href="#advanced-installation-guide">Advanced installation guide</a><ul>
+<li><a class="reference internal" href="#preparation">Preparation</a></li>
+<li><a class="reference internal" href="#default-miniforge-distribution">Default: Miniforge distribution</a></li>
+<li><a class="reference internal" href="#alternative-cvmfs-and-venv">Alternative: CVMFS and venv</a></li>
+<li><a class="reference internal" href="#common-final-steps-clone-install-and-test-pisa">Common final steps: clone, install and test PISA</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#additional-information">Additional information</a><ul>
+<li><a class="reference internal" href="#ensure-a-clean-install-using-venv-or-conda-env">Ensure a clean install using venv or conda env</a></li>
+<li><a class="reference internal" href="#re-installation">Re-installation</a></li>
+<li><a class="reference internal" href="#required-dependencies">Required Dependencies</a></li>
+<li><a class="reference internal" href="#optional-dependencies">Optional Dependencies</a></li>
+<li><a class="reference internal" href="#compile-the-documentation">Compile the documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=69b63715"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

@@ -1,0 +1,478 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="License" href="stubs/license_stub.html"><link rel="prev" title="pisa.utils.llh_defs package" href="pisa.utils.llh_defs.html">
+        <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Changelog - PISA 0+untagged.1.g52f1c4d documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=9e02ad1e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g52f1c4d documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g52f1c4d documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Navigation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stubs/install_stub.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials.html">Tutorials</a><input aria-label="Toggle navigation of Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="stubs/glossary_stub.html">PISA Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/IceCube_3y_oscillations_example.html">PISA Example Using Public IceCube Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/pisa_modes.html">PISA stage modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/howto_pipeline_config_redirect.html">Pipeline configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/units_uncertainties_stub.html">Units and Uncertainties</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="contributing.html">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="stubs/contributing_stub.html">How to contribute to PISA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/howto_service_stub.html">Creating a service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/globals_stub.html">Global constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pisa.html">Python API</a><input aria-label="Toggle navigation of Python API" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="pisa.stages.html">pisa.stages package</a><input aria-label="Toggle navigation of pisa.stages package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.absorption.html">pisa.stages.absorption package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.aeff.html">pisa.stages.aeff package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.background.html">pisa.stages.background package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.cont_sys.html">pisa.stages.cont_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html">pisa.stages.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.discr_sys.html">pisa.stages.discr_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html">pisa.stages.flux package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.likelihood.html">pisa.stages.likelihood package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="pisa.stages.osc.html">pisa.stages.osc package</a><input aria-label="Toggle navigation of pisa.stages.osc package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html">pisa.stages.osc.prob3numba package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.reco.html">pisa.stages.reco package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html">pisa.stages.utils package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.xsec.html">pisa.stages.xsec package</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="pisa.utils.html">pisa.utils package</a><input aria-label="Toggle navigation of pisa.utils package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.utils.hypersurface.html">pisa.utils.hypersurface package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.utils.llh_defs.html">pisa.utils.llh_defs package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stubs/license_stub.html">License</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/blob/master/docs/source/changelog.rst?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/edit/master/docs/source/changelog.rst" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
+<section id="release-4-2">
+<h2>4.2<a class="headerlink" href="#release-4-2" title="Link to this heading">¶</a></h2>
+<p><em>Released on 2025-03-18 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/4.2">GitHub</a></em></p>
+<p>Last release before necessary dependency and Python version updates.</p>
+<p>Included are many bug fixes, cleanups, and documentation improvements, as well as several new physics capabilities, analysis options, and framework enhancements.</p>
+<h2>What's Changed</h2>
+<ul>
+<li>Fix Etot bug and add comments for clarity. by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1721968648" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/741" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/741/hovercard" href="https://github.com/icecube/pisa/pull/741">#741</a></li>
+<li>fixed small bug in <code>fit_scipy</code> by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/BenSmithers/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/BenSmithers">@BenSmithers</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1722440638" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/742" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/742/hovercard" href="https://github.com/icecube/pisa/pull/742">#742</a></li>
+<li>Derived Parameters in CFG files by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/BenSmithers/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/BenSmithers">@BenSmithers</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1647813142" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/729" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/729/hovercard" href="https://github.com/icecube/pisa/pull/729">#729</a></li>
+<li>Detector class bug fixes by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JanWeldert/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JanWeldert">@JanWeldert</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1731041402" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/743" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/743/hovercard" href="https://github.com/icecube/pisa/pull/743">#743</a></li>
+<li>Update README.md by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1750141364" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/744" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/744/hovercard" href="https://github.com/icecube/pisa/pull/744">#744</a></li>
+<li>Fix dependencies and  README by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1807772402" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/746" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/746/hovercard" href="https://github.com/icecube/pisa/pull/746">#746</a></li>
+<li>Deprecate  argument by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1804840955" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/745" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/745/hovercard" href="https://github.com/icecube/pisa/pull/745">#745</a></li>
+<li>Add densitiy scale by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JanWeldert/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JanWeldert">@JanWeldert</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1836714654" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/747" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/747/hovercard" href="https://github.com/icecube/pisa/pull/747">#747</a></li>
+<li>Bump python version by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1854647432" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/752" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/752/hovercard" href="https://github.com/icecube/pisa/pull/752">#752</a></li>
+<li>Implement Neutrino decay in PISA (Prob3) by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/anilak41/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/anilak41">@anilak41</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1843468626" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/748" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/748/hovercard" href="https://github.com/icecube/pisa/pull/748">#748</a></li>
+<li>Fix dependencies and update install instructions by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1861183390" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/753" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/753/hovercard" href="https://github.com/icecube/pisa/pull/753">#753</a></li>
+<li>Clarify that poissonLLH in likelihood_functions.py does not take into… by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/finnmayhew/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/finnmayhew">@finnmayhew</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1898955300" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/755" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/755/hovercard" href="https://github.com/icecube/pisa/pull/755">#755</a></li>
+<li>Re-shaped the mod_chi2's return to match the input shape by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JKrishnamoorthi/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JKrishnamoorthi">@JKrishnamoorthi</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2067321754" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/760" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/760/hovercard" href="https://github.com/icecube/pisa/pull/760">#760</a></li>
+<li>adding DAEMONFLUX stage by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/marialiubarska/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/marialiubarska">@marialiubarska</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2113891720" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/761" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/761/hovercard" href="https://github.com/icecube/pisa/pull/761">#761</a></li>
+<li>Updated local installation instruction by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JKrishnamoorthi/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JKrishnamoorthi">@JKrishnamoorthi</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2133728634" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/763" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/763/hovercard" href="https://github.com/icecube/pisa/pull/763">#763</a></li>
+<li>Addition of LRI potential by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/ggarg07/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/ggarg07">@ggarg07</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2120492485" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/762" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/762/hovercard" href="https://github.com/icecube/pisa/pull/762">#762</a></li>
+<li>Addition of density as a free parameter for tomography by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/sc458930/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/sc458930">@sc458930</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2138679030" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/764" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/764/hovercard" href="https://github.com/icecube/pisa/pull/764">#764</a></li>
+<li>Take into account covariance matrix for daemonflux parameters by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/marialiubarska/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/marialiubarska">@marialiubarska</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2238478245" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/766" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/766/hovercard" href="https://github.com/icecube/pisa/pull/766">#766</a></li>
+<li>Update README.md by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2261139717" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/767" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/767/hovercard" href="https://github.com/icecube/pisa/pull/767">#767</a></li>
+<li>Update INSTALL.md by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2263640723" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/768" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/768/hovercard" href="https://github.com/icecube/pisa/pull/768">#768</a></li>
+<li>Update doc files and set up docu workflow to deploy sphinx to gh pages. by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2265498193" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/769" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/769/hovercard" href="https://github.com/icecube/pisa/pull/769">#769</a></li>
+<li>basic example code to get event wise information by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JKrishnamoorthi/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JKrishnamoorthi">@JKrishnamoorthi</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2139919543" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/765" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/765/hovercard" href="https://github.com/icecube/pisa/pull/765">#765</a></li>
+<li>Update README.md by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2322726345" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/772" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/772/hovercard" href="https://github.com/icecube/pisa/pull/772">#772</a></li>
+<li>Update fix_error.py description by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/finnmayhew/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/finnmayhew">@finnmayhew</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2340707464" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/776" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/776/hovercard" href="https://github.com/icecube/pisa/pull/776">#776</a></li>
+<li>Deprecate duplicated prior functions by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JanWeldert/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JanWeldert">@JanWeldert</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2333555481" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/773" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/773/hovercard" href="https://github.com/icecube/pisa/pull/773">#773</a></li>
+<li>Stage and pipeline related documentation touch ups by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2430626599" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/780" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/780/hovercard" href="https://github.com/icecube/pisa/pull/780">#780</a></li>
+<li>Update README.md by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2431806248" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/781" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/781/hovercard" href="https://github.com/icecube/pisa/pull/781">#781</a></li>
+<li>adding stage for external osc calc by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/philippeller/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/philippeller">@philippeller</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1983868811" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/756" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/756/hovercard" href="https://github.com/icecube/pisa/pull/756">#756</a></li>
+<li>fix plotting 2d arrays (not caught by unit tests) by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2432442013" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/783" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/783/hovercard" href="https://github.com/icecube/pisa/pull/783">#783</a></li>
+<li>Remove unimplemented analytical NSI matrix calculation from nsi_param… by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/finnmayhew/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/finnmayhew">@finnmayhew</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2436039252" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/786" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/786/hovercard" href="https://github.com/icecube/pisa/pull/786">#786</a></li>
+<li>Finally fix map.plot, to be actually usable.. by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2439414590" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/787" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/787/hovercard" href="https://github.com/icecube/pisa/pull/787">#787</a></li>
+<li>Update significantly outdated documentation of global constants by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2442354718" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/789" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/789/hovercard" href="https://github.com/icecube/pisa/pull/789">#789</a></li>
+<li>Fix doubly defined <code>report_profile</code> method in <code>stage.py</code> + minor touch-ups by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2445124220" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/791" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/791/hovercard" href="https://github.com/icecube/pisa/pull/791">#791</a></li>
+<li>Make event cutting for <code>EventsPi</code> work also when at least one variable name is conta… by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2446536506" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/792" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/792/hovercard" href="https://github.com/icecube/pisa/pull/792">#792</a></li>
+<li>Apply obvious outstanding fixes to <code>simple_signal</code> and <code>generalized_llh_params</code> services by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2446549278" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/793" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/793/hovercard" href="https://github.com/icecube/pisa/pull/793">#793</a></li>
+<li>Apply small fixes to (mostly) docstrings of <code>config_parser</code> module and extend unit test by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2454514046" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/794" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/794/hovercard" href="https://github.com/icecube/pisa/pull/794">#794</a></li>
+<li>Fix broken links in general conventions guide by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2455451567" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/796" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/796/hovercard" href="https://github.com/icecube/pisa/pull/796">#796</a></li>
+<li>Revive parametric Aeff stage by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JanWeldert/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JanWeldert">@JanWeldert</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2455525544" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/798" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/798/hovercard" href="https://github.com/icecube/pisa/pull/798">#798</a></li>
+<li>Clean up imports by services and get rid of unused <code>WHERE</code> constant for smart arrays by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2443169775" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/790" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/790/hovercard" href="https://github.com/icecube/pisa/pull/790">#790</a></li>
+<li>Add link to general PISA conventions in root readme by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2463684558" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/805" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/805/hovercard" href="https://github.com/icecube/pisa/pull/805">#805</a></li>
+<li>Remove obsolete scripts from <code>pisa_tests</code> directory and update entry points in <code>setup.py</code> by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2473795588" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/812" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/812/hovercard" href="https://github.com/icecube/pisa/pull/812">#812</a></li>
+<li>Allow for ultrasurfaces fit results file path relative to pisa resources search paths by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2481295457" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/813" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/813/hovercard" href="https://github.com/icecube/pisa/pull/813">#813</a></li>
+<li>remove fit and minimiser settings in unused and unparsable .cfg format by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2494016734" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/820" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/820/hovercard" href="https://github.com/icecube/pisa/pull/820">#820</a></li>
+<li>Allow reporting timing data for several pipelines at once (from any <code>Detectors</code> or <code>DistributionMaker</code> instance) ... by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2496696830" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/822" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/822/hovercard" href="https://github.com/icecube/pisa/pull/822">#822</a></li>
+<li>make <code>to_file</code> accept simple file name again by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2507944675" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/824" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/824/hovercard" href="https://github.com/icecube/pisa/pull/824">#824</a></li>
+<li>Adding a contributing guide by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JanWeldert/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JanWeldert">@JanWeldert</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2528652222" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/826" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/826/hovercard" href="https://github.com/icecube/pisa/pull/826">#826</a></li>
+<li>Service transparency and usability: expected data keys, supported representations, unit tests by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2489237979" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/817" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/817/hovercard" href="https://github.com/icecube/pisa/pull/817">#817</a></li>
+<li>First version of an MCMC sampler by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JanWeldert/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JanWeldert">@JanWeldert</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2553011666" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/829" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/829/hovercard" href="https://github.com/icecube/pisa/pull/829">#829</a></li>
+<li>Update release.yml by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/philippeller/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/philippeller">@philippeller</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2667614204" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/837" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/837/hovercard" href="https://github.com/icecube/pisa/pull/837">#837</a></li>
+<li>Restructure and update installation instructions by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2664866874" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/836" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/836/hovercard" href="https://github.com/icecube/pisa/pull/836">#836</a></li>
+<li>Update install instructions by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JanWeldert/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JanWeldert">@JanWeldert</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2621398211" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/832" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/832/hovercard" href="https://github.com/icecube/pisa/pull/832">#832</a></li>
+<li>Fix python test environment setup. by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2752496558" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/844" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/844/hovercard" href="https://github.com/icecube/pisa/pull/844">#844</a></li>
+<li>Enable (in)equality constraints for use with local and global scipy minimizers by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2721056985" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/841" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/841/hovercard" href="https://github.com/icecube/pisa/pull/841">#841</a></li>
+<li>Update discrete systematic README (Ultrasurface use) by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/LeanderFischer/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/LeanderFischer">@LeanderFischer</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2786418974" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/846" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/846/hovercard" href="https://github.com/icecube/pisa/pull/846">#846</a></li>
+<li>Various documentation touch-ups by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2851819706" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/848" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/848/hovercard" href="https://github.com/icecube/pisa/pull/848">#848</a></li>
+<li>Alternative variable binning approach by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/JanWeldert/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/JanWeldert">@JanWeldert</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2853696541" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/849" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/849/hovercard" href="https://github.com/icecube/pisa/pull/849">#849</a></li>
+<li>update sphinx build config file version string from 4.1 -&gt; 4.2 by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/thehrh/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/thehrh">@thehrh</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2925421321" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/850" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/850/hovercard" href="https://github.com/icecube/pisa/pull/850">#850</a></li>
+</ul>
+<h2>New Contributors</h2>
+<ul>
+<li><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/finnmayhew/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/finnmayhew">@finnmayhew</a> made their first contribution in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="1898955300" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/755" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/755/hovercard" href="https://github.com/icecube/pisa/pull/755">#755</a></li>
+<li><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/ggarg07/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/ggarg07">@ggarg07</a> made their first contribution in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2120492485" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/762" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/762/hovercard" href="https://github.com/icecube/pisa/pull/762">#762</a></li>
+<li><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/sc458930/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/sc458930">@sc458930</a> made their first contribution in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="2138679030" data-permission-text="Title is private" data-url="https://github.com/icecube/pisa/issues/764" data-hovercard-type="pull_request" data-hovercard-url="/icecube/pisa/pull/764/hovercard" href="https://github.com/icecube/pisa/pull/764">#764</a></li>
+</ul>
+<p><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/icecube/pisa/compare/4.1...4.2"><tt>4.1...4.2</tt></a></p></section>
+<section id="release-4-1-1">
+<h2>4.1.1: First tag triggering docu workflow<a class="headerlink" href="#release-4-1-1" title="Link to this heading">¶</a></h2>
+<p><em>Released on 2024-04-26 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/4.1.1">GitHub</a></em></p>
+<p>Tag the current version to trigger the docu creation and deployment.</p></section>
+<section id="release-4-1">
+<h2>4.1: Pisa 4 official release<a class="headerlink" href="#release-4-1" title="Link to this heading">¶</a></h2>
+<p><em>Released on 2023-05-23 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/4.1">GitHub</a></em></p>
+<p>First official pisa 4 release.</p></section>
+<section id="release-4-0">
+<h2>Pisa 4.0 pre-release<a class="headerlink" href="#release-4-0" title="Link to this heading">¶</a></h2>
+<p><em>Released on 2021-01-26 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/4.0">GitHub</a></em></p>
+<p>First version of pisa 4 to be used for analysis</p></section>
+<section id="release-3-1">
+<h2>3.1: Pisa 3 last release<a class="headerlink" href="#release-3-1" title="Link to this heading">¶</a></h2>
+<p><em>Released on 2021-01-26 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/3.1">GitHub</a></em></p>
+<p>This is the last official pisa 3 release before switching over to pisa 4.</p></section>
+<section id="release-3-0b1">
+<h2>3.0b1<a class="headerlink" href="#release-3-0b1" title="Link to this heading">¶</a></h2>
+<p><em>Released on 2017-12-13 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/3.0b1">GitHub</a></em></p>
+</section>
+<section id="release-3-0a1">
+<h2>3.0a1<a class="headerlink" href="#release-3-0a1" title="Link to this heading">¶</a></h2>
+<p><em>Released on 2016-09-18 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/3.0a1">GitHub</a></em></p>
+<p>First alpha (pre-)release for PISA Cake (3.0). Still needs testing for LLR and Asimov analyses and postprocessing scripts. See INSTALL.md for how to install and run the included physics tests.</p></section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="stubs/license_stub.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">License</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="pisa.utils.llh_defs.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">pisa.utils.llh_defs package</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2014–2026, The IceCube Collaboration
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/icecube/pisa" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Changelog</a><ul>
+<li><a class="reference internal" href="#release-4-2">4.2</a></li>
+<li><a class="reference internal" href="#release-4-1-1">4.1.1: First tag triggering docu workflow</a></li>
+<li><a class="reference internal" href="#release-4-1">4.1: Pisa 4 official release</a></li>
+<li><a class="reference internal" href="#release-4-0">Pisa 4.0 pre-release</a></li>
+<li><a class="reference internal" href="#release-3-1">3.1: Pisa 3 last release</a></li>
+<li><a class="reference internal" href="#release-3-0b1">3.0b1</a></li>
+<li><a class="reference internal" href="#release-3-0a1">3.0a1</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=69b63715"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

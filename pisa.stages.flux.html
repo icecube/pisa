@@ -1,106 +1,308 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="pisa.stages.likelihood package" href="pisa.stages.likelihood.html"><link rel="prev" title="pisa.stages.discr_sys package" href="pisa.stages.discr_sys.html">
+        <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>pisa.stages.flux package - PISA 0+untagged.1.g52f1c4d documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=9e02ad1e" />
+    
+    
 
 
-<!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="./">
-<head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pisa.stages.flux package &mdash; PISA 4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
-
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
   
-      <script src="_static/jquery.js?v=5d32c60e"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=0cd558ae"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pisa.stages.likelihood package" href="pisa.stages.likelihood.html" />
-    <link rel="prev" title="pisa.stages.discr_sys package" href="pisa.stages.discr_sys.html" /> 
-</head>
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
 
-          
-          
-          <a href="index.html" class="icon icon-home">
-            PISA
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API reference</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="pisa.html">pisa package</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="pisa.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="pisa.analysis.html">pisa.analysis package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pisa.core.html">pisa.core package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pisa.scripts.html">pisa.scripts package</a></li>
-<li class="toctree-l4 current"><a class="reference internal" href="pisa.stages.html">pisa.stages package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pisa.utils.html">pisa.utils package</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="pisa.html#module-pisa">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
 
-        </div>
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g52f1c4d documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
       </div>
-    </nav>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g52f1c4d documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Navigation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stubs/install_stub.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials.html">Tutorials</a><input aria-label="Toggle navigation of Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="stubs/glossary_stub.html">PISA Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/IceCube_3y_oscillations_example.html">PISA Example Using Public IceCube Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/pisa_modes.html">PISA stage modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/howto_pipeline_config_redirect.html">Pipeline configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/units_uncertainties_stub.html">Units and Uncertainties</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="contributing.html">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="stubs/contributing_stub.html">How to contribute to PISA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/howto_service_stub.html">Creating a service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/globals_stub.html">Global constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="pisa.html">Python API</a><input aria-label="Toggle navigation of Python API" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="pisa.stages.html">pisa.stages package</a><input aria-label="Toggle navigation of pisa.stages package" checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.absorption.html">pisa.stages.absorption package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.aeff.html">pisa.stages.aeff package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.background.html">pisa.stages.background package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.cont_sys.html">pisa.stages.cont_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html">pisa.stages.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.discr_sys.html">pisa.stages.discr_sys package</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">pisa.stages.flux package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.likelihood.html">pisa.stages.likelihood package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="pisa.stages.osc.html">pisa.stages.osc package</a><input aria-label="Toggle navigation of pisa.stages.osc package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html">pisa.stages.osc.prob3numba package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.reco.html">pisa.stages.reco package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html">pisa.stages.utils package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.xsec.html">pisa.stages.xsec package</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="pisa.utils.html">pisa.utils package</a><input aria-label="Toggle navigation of pisa.utils package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.utils.hypersurface.html">pisa.utils.hypersurface package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.utils.llh_defs.html">pisa.utils.llh_defs package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stubs/license_stub.html">License</a></li>
+</ul>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">PISA</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="modules.html">pisa</a></li>
-          <li class="breadcrumb-item"><a href="pisa.html">pisa package</a></li>
-          <li class="breadcrumb-item"><a href="pisa.stages.html">pisa.stages package</a></li>
-      <li class="breadcrumb-item active">pisa.stages.flux package</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="_sources/pisa.stages.flux.rst.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <section id="pisa-stages-flux-package">
-<h1>pisa.stages.flux package<a class="headerlink" href="#pisa-stages-flux-package" title="Link to this heading"></a></h1>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/blob/master/docs/source/pisa.stages.flux.rst?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/edit/master/docs/source/pisa.stages.flux.rst" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="pisa-stages-flux-package">
+<h1>pisa.stages.flux package<a class="headerlink" href="#pisa-stages-flux-package" title="Link to this heading">¶</a></h1>
 <section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 </section>
 <section id="pisa-stages-flux-airs-module">
-<h2>pisa.stages.flux.airs module<a class="headerlink" href="#pisa-stages-flux-airs-module" title="Link to this heading"></a></h2>
+<h2>pisa.stages.flux.airs module<a class="headerlink" href="#pisa-stages-flux-airs-module" title="Link to this heading">¶</a></h2>
 </section>
 <section id="module-pisa.stages.flux.astrophysical">
-<span id="pisa-stages-flux-astrophysical-module"></span><h2>pisa.stages.flux.astrophysical module<a class="headerlink" href="#module-pisa.stages.flux.astrophysical" title="Link to this heading"></a></h2>
+<span id="pisa-stages-flux-astrophysical-module"></span><h2>pisa.stages.flux.astrophysical module<a class="headerlink" href="#module-pisa.stages.flux.astrophysical" title="Link to this heading">¶</a></h2>
 <p>stage to implement getting the contribution to fluxes from astrophysical neutrino sources</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.astrophysical.apply_sys_loop">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.astrophysical.</span></span><span class="sig-name descname"><span class="pre">apply_sys_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">astroflux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#apply_sys_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.apply_sys_loop" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.astrophysical.</span></span><span class="sig-name descname"><span class="pre">apply_sys_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">astroflux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#apply_sys_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.apply_sys_loop" title="Link to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Calculation:</dt><dd><ol class="arabic simple">
 <li><p>Start from nominal flux</p></li>
@@ -123,7 +325,7 @@ B = num flavors in flux (=3, e.g. e, mu, tau)</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.flux.astrophysical.astrophysical">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.astrophysical.</span></span><span class="sig-name descname"><span class="pre">astrophysical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#astrophysical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.astrophysical" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.astrophysical.</span></span><span class="sig-name descname"><span class="pre">astrophysical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#astrophysical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.astrophysical" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>Stage to apply power law astrophysical fluxes</p>
 <dl class="field-list simple">
@@ -147,19 +349,19 @@ B = num flavors in flux (=3, e.g. e, mu, tau)</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.astrophysical.astrophysical.apply_function">
-<span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#astrophysical.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.astrophysical.apply_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#astrophysical.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.astrophysical.apply_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.astrophysical.astrophysical.compute_function">
-<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#astrophysical.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.astrophysical.compute_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#astrophysical.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.astrophysical.compute_function" title="Link to this definition">¶</a></dt>
 <dd><p>Tilt it, scale it, bop it</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.astrophysical.astrophysical.setup_function">
-<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#astrophysical.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.astrophysical.setup_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#astrophysical.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.astrophysical.setup_function" title="Link to this definition">¶</a></dt>
 <dd><p>Setup the nominal flux</p>
 </dd></dl>
 
@@ -167,13 +369,13 @@ B = num flavors in flux (=3, e.g. e, mu, tau)</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.astrophysical.init_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.astrophysical.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.init_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.astrophysical.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.init_test" title="Link to this definition">¶</a></dt>
 <dd><p>Instantiation example</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.astrophysical.spectral_index_scale">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.astrophysical.</span></span><span class="sig-name descname"><span class="pre">spectral_index_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#spectral_index_scale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.spectral_index_scale" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.astrophysical.</span></span><span class="sig-name descname"><span class="pre">spectral_index_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#spectral_index_scale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.spectral_index_scale" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate spectral index scale.
 Adjusts the weights for events in an energy dependent way according to a
 shift in spectral index, applied about a user-defined energy pivot.</p>
@@ -181,11 +383,11 @@ shift in spectral index, applied about a user-defined energy pivot.</p>
 
 </section>
 <section id="module-pisa.stages.flux.barr_simple">
-<span id="pisa-stages-flux-barr-simple-module"></span><h2>pisa.stages.flux.barr_simple module<a class="headerlink" href="#module-pisa.stages.flux.barr_simple" title="Link to this heading"></a></h2>
+<span id="pisa-stages-flux-barr-simple-module"></span><h2>pisa.stages.flux.barr_simple module<a class="headerlink" href="#module-pisa.stages.flux.barr_simple" title="Link to this heading">¶</a></h2>
 <p>Stage to implement the old PISA/oscfit flux systematics</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.barr_simple.apply_ratio_scale">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">apply_ratio_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ratio_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sum_constant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.barr_simple.apply_ratio_scale" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">apply_ratio_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ratio_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sum_constant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.barr_simple.apply_ratio_scale" title="Link to this definition">¶</a></dt>
 <dd><p>apply ratio scale to flux values</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -202,12 +404,12 @@ shift in spectral index, applied about a user-defined energy pivot.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.barr_simple.apply_sys_kernel">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">apply_sys_kernel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu_flux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nubar_flux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nubar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nue_numu_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu_nubar_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Barr_uphor_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Barr_nu_nubar_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.barr_simple.apply_sys_kernel" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">apply_sys_kernel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu_flux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nubar_flux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nubar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nue_numu_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu_nubar_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Barr_uphor_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Barr_nu_nubar_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.barr_simple.apply_sys_kernel" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.flux.barr_simple.barr_simple">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">barr_simple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/barr_simple.html#barr_simple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.barr_simple.barr_simple" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">barr_simple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/barr_simple.html#barr_simple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.barr_simple.barr_simple" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>stage to apply Barr style flux uncertainties
 uses parameterisations of plots from Barr 2006 paper</p>
@@ -234,13 +436,13 @@ uses parameterisations of plots from Barr 2006 paper</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.barr_simple.barr_simple.compute_function">
-<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/barr_simple.html#barr_simple.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.barr_simple.barr_simple.compute_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/barr_simple.html#barr_simple.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.barr_simple.barr_simple.compute_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.barr_simple.barr_simple.setup_function">
-<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/barr_simple.html#barr_simple.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.barr_simple.barr_simple.setup_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/barr_simple.html#barr_simple.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.barr_simple.barr_simple.setup_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
@@ -248,25 +450,25 @@ uses parameterisations of plots from Barr 2006 paper</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.barr_simple.init_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/barr_simple.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.barr_simple.init_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/barr_simple.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.barr_simple.init_test" title="Link to this definition">¶</a></dt>
 <dd><p>Instantiation example</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.barr_simple.spectral_index_scale">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">spectral_index_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">egy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.barr_simple.spectral_index_scale" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.barr_simple.</span></span><span class="sig-name descname"><span class="pre">spectral_index_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">egy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.barr_simple.spectral_index_scale" title="Link to this definition">¶</a></dt>
 <dd><p>calculate spectral index scale</p>
 </dd></dl>
 
 </section>
 <section id="module-pisa.stages.flux.daemon_flux">
-<span id="pisa-stages-flux-daemon-flux-module"></span><h2>pisa.stages.flux.daemon_flux module<a class="headerlink" href="#module-pisa.stages.flux.daemon_flux" title="Link to this heading"></a></h2>
+<span id="pisa-stages-flux-daemon-flux-module"></span><h2>pisa.stages.flux.daemon_flux module<a class="headerlink" href="#module-pisa.stages.flux.daemon_flux" title="Link to this heading">¶</a></h2>
 <p>Implementation of DAEMON flux (<a class="reference external" href="https://arxiv.org/abs/2303.00022">https://arxiv.org/abs/2303.00022</a>)
 by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 <p>Maria Liubarska, J.P. Yanez 2023</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.flux.daemon_flux.daemon_flux">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">daemon_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calibration_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#daemon_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.daemon_flux" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">daemon_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calibration_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#daemon_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.daemon_flux" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>DAEMON flux stage</p>
 <dl class="field-list simple">
@@ -312,13 +514,13 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.daemon_flux.daemon_flux.compute_function">
-<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#daemon_flux.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.daemon_flux.compute_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#daemon_flux.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.daemon_flux.compute_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.daemon_flux.daemon_flux.setup_function">
-<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#daemon_flux.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.daemon_flux.setup_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#daemon_flux.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.daemon_flux.setup_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
@@ -326,27 +528,27 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.daemon_flux.evaluate_flux_map">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">evaluate_flux_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#evaluate_flux_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.evaluate_flux_map" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">evaluate_flux_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#evaluate_flux_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.evaluate_flux_map" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.daemon_flux.init_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.init_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.init_test" title="Link to this definition">¶</a></dt>
 <dd><p>Initialisation example</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.daemon_flux.make_2d_flux_map">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">make_2d_flux_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numuflux'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">egrid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([1.00000000e-01,</span> <span class="pre">1.02807322e-01,</span> <span class="pre">1.05693455e-01,</span> <span class="pre">1.08660611e-01,</span> <span class="pre">1.11711065e-01,</span> <span class="pre">1.14847155e-01,</span> <span class="pre">1.18071285e-01,</span> <span class="pre">1.21385926e-01,</span> <span class="pre">1.24793621e-01,</span> <span class="pre">1.28296980e-01,</span> <span class="pre">1.31898690e-01,</span> <span class="pre">1.35601511e-01,</span> <span class="pre">1.39408283e-01,</span> <span class="pre">1.43321923e-01,</span> <span class="pre">1.47345431e-01,</span> <span class="pre">1.51481892e-01,</span> <span class="pre">1.55734477e-01,</span> <span class="pre">1.60106446e-01,</span> <span class="pre">1.64601150e-01,</span> <span class="pre">1.69222035e-01,</span> <span class="pre">1.73972643e-01,</span> <span class="pre">1.78856616e-01,</span> <span class="pre">1.83877698e-01,</span> <span class="pre">1.89039738e-01,</span> <span class="pre">1.94346693e-01,</span> <span class="pre">1.99802631e-01,</span> <span class="pre">2.05411735e-01,</span> <span class="pre">2.11178304e-01,</span> <span class="pre">2.17106760e-01,</span> <span class="pre">2.23201647e-01,</span> <span class="pre">2.29467637e-01,</span> <span class="pre">2.35909533e-01,</span> <span class="pre">2.42532274e-01,</span> <span class="pre">2.49340937e-01,</span> <span class="pre">2.56340741e-01,</span> <span class="pre">2.63537052e-01,</span> <span class="pre">2.70935387e-01,</span> <span class="pre">2.78541416e-01,</span> <span class="pre">2.86360972e-01,</span> <span class="pre">2.94400048e-01,</span> <span class="pre">3.02664806e-01,</span> <span class="pre">3.11161583e-01,</span> <span class="pre">3.19896892e-01,</span> <span class="pre">3.28877429e-01,</span> <span class="pre">3.38110078e-01,</span> <span class="pre">3.47601918e-01,</span> <span class="pre">3.57360225e-01,</span> <span class="pre">3.67392478e-01,</span> <span class="pre">3.77706369e-01,</span> <span class="pre">3.88309805e-01,</span> <span class="pre">3.99210913e-01,</span> <span class="pre">4.10418050e-01,</span> <span class="pre">4.21939808e-01,</span> <span class="pre">4.33785019e-01,</span> <span class="pre">4.45962763e-01,</span> <span class="pre">4.58482375e-01,</span> <span class="pre">4.71353453e-01,</span> <span class="pre">4.84585864e-01,</span> <span class="pre">4.98189752e-01,</span> <span class="pre">5.12175544e-01,</span> <span class="pre">5.26553963e-01,</span> <span class="pre">5.41336030e-01,</span> <span class="pre">5.56533078e-01,</span> <span class="pre">5.72156756e-01,</span> <span class="pre">5.88219040e-01,</span> <span class="pre">6.04732245e-01,</span> <span class="pre">6.21709029e-01,</span> <span class="pre">6.39162405e-01,</span> <span class="pre">6.57105755e-01,</span> <span class="pre">6.75552832e-01,</span> <span class="pre">6.94517777e-01,</span> <span class="pre">7.14015130e-01,</span> <span class="pre">7.34059837e-01,</span> <span class="pre">7.54667263e-01,</span> <span class="pre">7.75853206e-01,</span> <span class="pre">7.97633907e-01,</span> <span class="pre">8.20026062e-01,</span> <span class="pre">8.43046837e-01,</span> <span class="pre">8.66713880e-01,</span> <span class="pre">8.91045332e-01,</span> <span class="pre">9.16059848e-01,</span> <span class="pre">9.41776601e-01,</span> <span class="pre">9.68215306e-01,</span> <span class="pre">9.95396231e-01,</span> <span class="pre">1.02334021e+00,</span> <span class="pre">1.05206867e+00,</span> <span class="pre">1.08160363e+00,</span> <span class="pre">1.11196773e+00,</span> <span class="pre">1.14318425e+00,</span> <span class="pre">1.17527712e+00,</span> <span class="pre">1.20827094e+00,</span> <span class="pre">1.24219100e+00,</span> <span class="pre">1.27706330e+00,</span> <span class="pre">1.31291459e+00,</span> <span class="pre">1.34977233e+00,</span> <span class="pre">1.38766479e+00,</span> <span class="pre">1.42662102e+00,</span> <span class="pre">1.46667087e+00,</span> <span class="pre">1.50784505e+00,</span> <span class="pre">1.55017512e+00,</span> <span class="pre">1.59369353e+00,</span> <span class="pre">1.63843365e+00,</span> <span class="pre">1.68442976e+00,</span> <span class="pre">1.73171713e+00,</span> <span class="pre">1.78033202e+00,</span> <span class="pre">1.83031168e+00,</span> <span class="pre">1.88169442e+00,</span> <span class="pre">1.93451965e+00,</span> <span class="pre">1.98882786e+00,</span> <span class="pre">2.04466067e+00,</span> <span class="pre">2.10206088e+00,</span> <span class="pre">2.16107251e+00,</span> <span class="pre">2.22174078e+00,</span> <span class="pre">2.28411221e+00,</span> <span class="pre">2.34823460e+00,</span> <span class="pre">2.41415712e+00,</span> <span class="pre">2.48193029e+00,</span> <span class="pre">2.55160607e+00,</span> <span class="pre">2.62323788e+00,</span> <span class="pre">2.69688063e+00,</span> <span class="pre">2.77259076e+00,</span> <span class="pre">2.85042632e+00,</span> <span class="pre">2.93044698e+00,</span> <span class="pre">3.01271407e+00,</span> <span class="pre">3.09729067e+00,</span> <span class="pre">3.18424160e+00,</span> <span class="pre">3.27363353e+00,</span> <span class="pre">3.36553498e+00,</span> <span class="pre">3.46001639e+00,</span> <span class="pre">3.55715021e+00,</span> <span class="pre">3.65701088e+00,</span> <span class="pre">3.75967497e+00,</span> <span class="pre">3.86522116e+00,</span> <span class="pre">3.97373038e+00,</span> <span class="pre">4.08528580e+00,</span> <span class="pre">4.19997295e+00,</span> <span class="pre">4.31787973e+00,</span> <span class="pre">4.43909653e+00,</span> <span class="pre">4.56371628e+00,</span> <span class="pre">4.69183451e+00,</span> <span class="pre">4.82354943e+00,</span> <span class="pre">4.95896201e+00,</span> <span class="pre">5.09817606e+00,</span> <span class="pre">5.24129830e+00,</span> <span class="pre">5.38843844e+00,</span> <span class="pre">5.53970928e+00,</span> <span class="pre">5.69522678e+00,</span> <span class="pre">5.85511016e+00,</span> <span class="pre">6.01948197e+00,</span> <span class="pre">6.18846824e+00,</span> <span class="pre">6.36219849e+00,</span> <span class="pre">6.54080591e+00,</span> <span class="pre">6.72442742e+00,</span> <span class="pre">6.91320378e+00,</span> <span class="pre">7.10727970e+00,</span> <span class="pre">7.30680395e+00,</span> <span class="pre">7.51192949e+00,</span> <span class="pre">7.72281357e+00,</span> <span class="pre">7.93961785e+00,</span> <span class="pre">8.16250851e+00,</span> <span class="pre">8.39165644e+00,</span> <span class="pre">8.62723729e+00,</span> <span class="pre">8.86943166e+00,</span> <span class="pre">9.11842520e+00,</span> <span class="pre">9.37440879e+00,</span> <span class="pre">9.63757866e+00,</span> <span class="pre">9.90813657e+00,</span> <span class="pre">1.01862899e+01,</span> <span class="pre">1.04722519e+01,</span> <span class="pre">1.07662418e+01,</span> <span class="pre">1.10684849e+01,</span> <span class="pre">1.13792129e+01,</span> <span class="pre">1.16986641e+01,</span> <span class="pre">1.20270833e+01,</span> <span class="pre">1.23647224e+01,</span> <span class="pre">1.27118400e+01,</span> <span class="pre">1.30687023e+01,</span> <span class="pre">1.34355829e+01,</span> <span class="pre">1.38127630e+01,</span> <span class="pre">1.42005318e+01,</span> <span class="pre">1.45991865e+01,</span> <span class="pre">1.50090328e+01,</span> <span class="pre">1.54303847e+01,</span> <span class="pre">1.58635653e+01,</span> <span class="pre">1.63089068e+01,</span> <span class="pre">1.67667503e+01,</span> <span class="pre">1.72374471e+01,</span> <span class="pre">1.77213578e+01,</span> <span class="pre">1.82188534e+01,</span> <span class="pre">1.87303154e+01,</span> <span class="pre">1.92561357e+01,</span> <span class="pre">1.97967175e+01,</span> <span class="pre">2.03524752e+01,</span> <span class="pre">2.09238348e+01,</span> <span class="pre">2.15112343e+01,</span> <span class="pre">2.21151240e+01,</span> <span class="pre">2.27359668e+01,</span> <span class="pre">2.33742387e+01,</span> <span class="pre">2.40304289e+01,</span> <span class="pre">2.47050406e+01,</span> <span class="pre">2.53985907e+01,</span> <span class="pre">2.61116110e+01,</span> <span class="pre">2.68446481e+01,</span> <span class="pre">2.75982639e+01,</span> <span class="pre">2.83730362e+01,</span> <span class="pre">2.91695588e+01,</span> <span class="pre">2.99884423e+01,</span> <span class="pre">3.08303146e+01,</span> <span class="pre">3.16958209e+01,</span> <span class="pre">3.25856248e+01,</span> <span class="pre">3.35004083e+01,</span> <span class="pre">3.44408728e+01,</span> <span class="pre">3.54077391e+01,</span> <span class="pre">3.64017485e+01,</span> <span class="pre">3.74236629e+01,</span> <span class="pre">3.84742658e+01,</span> <span class="pre">3.95543624e+01,</span> <span class="pre">4.06647809e+01,</span> <span class="pre">4.18063724e+01,</span> <span class="pre">4.29800121e+01,</span> <span class="pre">4.41865996e+01,</span> <span class="pre">4.54270599e+01,</span> <span class="pre">4.67023439e+01,</span> <span class="pre">4.80134292e+01,</span> <span class="pre">4.93613210e+01,</span> <span class="pre">5.07470524e+01,</span> <span class="pre">5.21716858e+01,</span> <span class="pre">5.36363132e+01,</span> <span class="pre">5.51420574e+01,</span> <span class="pre">5.66900727e+01,</span> <span class="pre">5.82815458e+01,</span> <span class="pre">5.99176967e+01,</span> <span class="pre">6.15997796e+01,</span> <span class="pre">6.33290840e+01,</span> <span class="pre">6.51069356e+01,</span> <span class="pre">6.69346971e+01,</span> <span class="pre">6.88137699e+01,</span> <span class="pre">7.07455942e+01,</span> <span class="pre">7.27316511e+01,</span> <span class="pre">7.47734631e+01,</span> <span class="pre">7.68725952e+01,</span> <span class="pre">7.90306568e+01,</span> <span class="pre">8.12493021e+01,</span> <span class="pre">8.35302320e+01,</span> <span class="pre">8.58751948e+01,</span> <span class="pre">8.82859884e+01,</span> <span class="pre">9.07644607e+01,</span> <span class="pre">9.33125118e+01,</span> <span class="pre">9.59320948e+01,</span> <span class="pre">9.86252179e+01,</span> <span class="pre">1.01393946e+02,</span> <span class="pre">1.04240401e+02,</span> <span class="pre">1.07166765e+02,</span> <span class="pre">1.10175281e+02,</span> <span class="pre">1.13268257e+02,</span> <span class="pre">1.16448062e+02,</span> <span class="pre">1.19717134e+02,</span> <span class="pre">1.23077980e+02,</span> <span class="pre">1.26533176e+02,</span> <span class="pre">1.30085370e+02,</span> <span class="pre">1.33737286e+02,</span> <span class="pre">1.37491723e+02,</span> <span class="pre">1.41351558e+02,</span> <span class="pre">1.45319752e+02,</span> <span class="pre">1.49399346e+02,</span> <span class="pre">1.53593468e+02,</span> <span class="pre">1.57905331e+02,</span> <span class="pre">1.62338243e+02,</span> <span class="pre">1.66895601e+02,</span> <span class="pre">1.71580899e+02,</span> <span class="pre">1.76397728e+02,</span> <span class="pre">1.81349780e+02,</span> <span class="pre">1.86440853e+02,</span> <span class="pre">1.91674849e+02,</span> <span class="pre">1.97055780e+02,</span> <span class="pre">2.02587771e+02,</span> <span class="pre">2.08275063e+02,</span> <span class="pre">2.14122015e+02,</span> <span class="pre">2.20133111e+02,</span> <span class="pre">2.26312957e+02,</span> <span class="pre">2.32666291e+02,</span> <span class="pre">2.39197984e+02,</span> <span class="pre">2.45913043e+02,</span> <span class="pre">2.52816614e+02,</span> <span class="pre">2.59913992e+02,</span> <span class="pre">2.67210616e+02,</span> <span class="pre">2.74712079e+02,</span> <span class="pre">2.82424133e+02,</span> <span class="pre">2.90352688e+02,</span> <span class="pre">2.98503825e+02,</span> <span class="pre">3.06883789e+02,</span> <span class="pre">3.15499006e+02,</span> <span class="pre">3.24356081e+02,</span> <span class="pre">3.33461802e+02,</span> <span class="pre">3.42823149e+02,</span> <span class="pre">3.52447300e+02,</span> <span class="pre">3.62341632e+02,</span> <span class="pre">3.72513730e+02,</span> <span class="pre">3.82971391e+02,</span> <span class="pre">3.93722633e+02,</span> <span class="pre">4.04775697e+02,</span> <span class="pre">4.16139055e+02,</span> <span class="pre">4.27821420e+02,</span> <span class="pre">4.39831747e+02,</span> <span class="pre">4.52179242e+02,</span> <span class="pre">4.64873371e+02,</span> <span class="pre">4.77923865e+02,</span> <span class="pre">4.91340729e+02,</span> <span class="pre">5.05134247e+02,</span> <span class="pre">5.19314994e+02,</span> <span class="pre">5.33893840e+02,</span> <span class="pre">5.48881961e+02,</span> <span class="pre">5.64290847e+02,</span> <span class="pre">5.80132310e+02,</span> <span class="pre">5.96418495e+02,</span> <span class="pre">6.13161884e+02,</span> <span class="pre">6.30375315e+02,</span> <span class="pre">6.48071983e+02,</span> <span class="pre">6.66265452e+02,</span> <span class="pre">6.84969672e+02,</span> <span class="pre">7.04198979e+02,</span> <span class="pre">7.23968114e+02,</span> <span class="pre">7.44292233e+02,</span> <span class="pre">7.65186915e+02,</span> <span class="pre">7.86668179e+02,</span> <span class="pre">8.08752491e+02,</span> <span class="pre">8.31456781e+02,</span> <span class="pre">8.54798453e+02,</span> <span class="pre">8.78795401e+02,</span> <span class="pre">9.03466021e+02,</span> <span class="pre">9.28829225e+02,</span> <span class="pre">9.54904456e+02,</span> <span class="pre">9.81711702e+02,</span> <span class="pre">1.00927151e+03,</span> <span class="pre">1.03760502e+03,</span> <span class="pre">1.06673394e+03,</span> <span class="pre">1.09668060e+03,</span> <span class="pre">1.12746796e+03,</span> <span class="pre">1.15911962e+03,</span> <span class="pre">1.19165984e+03,</span> <span class="pre">1.22511358e+03,</span> <span class="pre">1.25950646e+03,</span> <span class="pre">1.29486487e+03,</span> <span class="pre">1.33121590e+03,</span> <span class="pre">1.36858742e+03,</span> <span class="pre">1.40700809e+03,</span> <span class="pre">1.44650734e+03,</span> <span class="pre">1.48711546e+03,</span> <span class="pre">1.52886359e+03,</span> <span class="pre">1.57178372e+03,</span> <span class="pre">1.61590875e+03,</span> <span class="pre">1.66127252e+03,</span> <span class="pre">1.70790980e+03,</span> <span class="pre">1.75585633e+03,</span> <span class="pre">1.80514888e+03,</span> <span class="pre">1.85582523e+03,</span> <span class="pre">1.90792422e+03,</span> <span class="pre">1.96148581e+03,</span> <span class="pre">2.01655104e+03,</span> <span class="pre">2.07316213e+03,</span> <span class="pre">2.13136247e+03,</span> <span class="pre">2.19119669e+03,</span> <span class="pre">2.25271064e+03,</span> <span class="pre">2.31595149e+03,</span> <span class="pre">2.38096772e+03,</span> <span class="pre">2.44780916e+03,</span> <span class="pre">2.51652705e+03,</span> <span class="pre">2.58717408e+03,</span> <span class="pre">2.65980440e+03,</span> <span class="pre">2.73447368e+03,</span> <span class="pre">2.81123917e+03,</span> <span class="pre">2.89015972e+03,</span> <span class="pre">2.97129582e+03,</span> <span class="pre">3.05470967e+03,</span> <span class="pre">3.14046522e+03,</span> <span class="pre">3.22862820e+03,</span> <span class="pre">3.31926620e+03,</span> <span class="pre">3.41244871e+03,</span> <span class="pre">3.50824714e+03,</span> <span class="pre">3.60673495e+03,</span> <span class="pre">3.70798763e+03,</span> <span class="pre">3.81208280e+03,</span> <span class="pre">3.91910025e+03,</span> <span class="pre">4.02912203e+03,</span> <span class="pre">4.14223247e+03,</span> <span class="pre">4.25851829e+03,</span> <span class="pre">4.37806863e+03,</span> <span class="pre">4.50097513e+03,</span> <span class="pre">4.62733201e+03,</span> <span class="pre">4.75723614e+03,</span> <span class="pre">4.89078709e+03,</span> <span class="pre">5.02808725e+03,</span> <span class="pre">5.16924187e+03,</span> <span class="pre">5.31435916e+03,</span> <span class="pre">5.46355035e+03,</span> <span class="pre">5.61692982e+03,</span> <span class="pre">5.77461515e+03,</span> <span class="pre">5.93672722e+03,</span> <span class="pre">6.10339029e+03,</span> <span class="pre">6.27473213e+03,</span> <span class="pre">6.45088409e+03,</span> <span class="pre">6.63198120e+03,</span> <span class="pre">6.81816229e+03,</span> <span class="pre">7.00957009e+03,</span> <span class="pre">7.20635132e+03,</span> <span class="pre">7.40865683e+03,</span> <span class="pre">7.61664172e+03,</span> <span class="pre">7.83046540e+03,</span> <span class="pre">8.05029181e+03,</span> <span class="pre">8.27628946e+03,</span> <span class="pre">8.50863158e+03,</span> <span class="pre">8.74749630e+03,</span> <span class="pre">8.99306672e+03,</span> <span class="pre">9.24553110e+03,</span> <span class="pre">9.50508296e+03,</span> <span class="pre">9.77192128e+03,</span> <span class="pre">1.00462506e+04,</span> <span class="pre">1.03282813e+04,</span> <span class="pre">1.06182294e+04,</span> <span class="pre">1.09163173e+04,</span> <span class="pre">1.12227736e+04,</span> <span class="pre">1.15378330e+04,</span> <span class="pre">1.18617372e+04,</span> <span class="pre">1.21947344e+04,</span> <span class="pre">1.25370799e+04,</span> <span class="pre">1.28890361e+04,</span> <span class="pre">1.32508729e+04,</span> <span class="pre">1.36228676e+04,</span> <span class="pre">1.40053055e+04,</span> <span class="pre">1.43984795e+04,</span> <span class="pre">1.48026913e+04,</span> <span class="pre">1.52182505e+04,</span> <span class="pre">1.56454759e+04,</span> <span class="pre">1.60846948e+04,</span> <span class="pre">1.65362441e+04,</span> <span class="pre">1.70004698e+04,</span> <span class="pre">1.74777277e+04,</span> <span class="pre">1.79683839e+04,</span> <span class="pre">1.84728144e+04,</span> <span class="pre">1.89914058e+04,</span> <span class="pre">1.95245558e+04,</span> <span class="pre">2.00726730e+04,</span> <span class="pre">2.06361777e+04,</span> <span class="pre">2.12155017e+04,</span> <span class="pre">2.18110892e+04,</span> <span class="pre">2.24233968e+04,</span> <span class="pre">2.30528939e+04,</span> <span class="pre">2.37000629e+04,</span> <span class="pre">2.43654001e+04,</span> <span class="pre">2.50494154e+04,</span> <span class="pre">2.57526333e+04,</span> <span class="pre">2.64755927e+04,</span> <span class="pre">2.72188479e+04,</span> <span class="pre">2.79829688e+04,</span> <span class="pre">2.87685409e+04,</span> <span class="pre">2.95761666e+04,</span> <span class="pre">3.04064649e+04,</span> <span class="pre">3.12600724e+04,</span> <span class="pre">3.21376434e+04,</span> <span class="pre">3.30398507e+04,</span> <span class="pre">3.39673858e+04,</span> <span class="pre">3.49209598e+04,</span> <span class="pre">3.59013038e+04,</span> <span class="pre">3.69091691e+04,</span> <span class="pre">3.79453285e+04,</span> <span class="pre">3.90105762e+04,</span> <span class="pre">4.01057288e+04,</span> <span class="pre">4.12316259e+04,</span> <span class="pre">4.23891306e+04,</span> <span class="pre">4.35791301e+04,</span> <span class="pre">4.48025368e+04,</span> <span class="pre">4.60602884e+04,</span> <span class="pre">4.73533492e+04,</span> <span class="pre">4.86827104e+04,</span> <span class="pre">5.00493910e+04,</span> <span class="pre">5.14544388e+04,</span> <span class="pre">5.28989308e+04,</span> <span class="pre">5.43839743e+04,</span> <span class="pre">5.59107078e+04,</span> <span class="pre">5.74803016e+04,</span> <span class="pre">5.90939590e+04,</span> <span class="pre">6.07529169e+04,</span> <span class="pre">6.24584471e+04,</span> <span class="pre">6.42118571e+04,</span> <span class="pre">6.60144909e+04,</span> <span class="pre">6.78677305e+04,</span> <span class="pre">6.97729965e+04,</span> <span class="pre">7.17317494e+04,</span> <span class="pre">7.37454909e+04,</span> <span class="pre">7.58157646e+04,</span> <span class="pre">7.79441575e+04,</span> <span class="pre">8.01323013e+04,</span> <span class="pre">8.23818733e+04,</span> <span class="pre">8.46945981e+04,</span> <span class="pre">8.70722485e+04,</span> <span class="pre">8.95166472e+04,</span> <span class="pre">9.20296681e+04,</span> <span class="pre">9.46132376e+04,</span> <span class="pre">9.72693362e+04,</span> <span class="pre">1.00000000e+05])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#make_2d_flux_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.make_2d_flux_map" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">make_2d_flux_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numuflux'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">egrid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([1.00000000e-01,</span> <span class="pre">1.02807322e-01,</span> <span class="pre">1.05693455e-01,</span> <span class="pre">1.08660611e-01,</span> <span class="pre">1.11711065e-01,</span> <span class="pre">1.14847155e-01,</span> <span class="pre">1.18071285e-01,</span> <span class="pre">1.21385926e-01,</span> <span class="pre">1.24793621e-01,</span> <span class="pre">1.28296980e-01,</span> <span class="pre">1.31898690e-01,</span> <span class="pre">1.35601511e-01,</span> <span class="pre">1.39408283e-01,</span> <span class="pre">1.43321923e-01,</span> <span class="pre">1.47345431e-01,</span> <span class="pre">1.51481892e-01,</span> <span class="pre">1.55734477e-01,</span> <span class="pre">1.60106446e-01,</span> <span class="pre">1.64601150e-01,</span> <span class="pre">1.69222035e-01,</span> <span class="pre">1.73972643e-01,</span> <span class="pre">1.78856616e-01,</span> <span class="pre">1.83877698e-01,</span> <span class="pre">1.89039738e-01,</span> <span class="pre">1.94346693e-01,</span> <span class="pre">1.99802631e-01,</span> <span class="pre">2.05411735e-01,</span> <span class="pre">2.11178304e-01,</span> <span class="pre">2.17106760e-01,</span> <span class="pre">2.23201647e-01,</span> <span class="pre">2.29467637e-01,</span> <span class="pre">2.35909533e-01,</span> <span class="pre">2.42532274e-01,</span> <span class="pre">2.49340937e-01,</span> <span class="pre">2.56340741e-01,</span> <span class="pre">2.63537052e-01,</span> <span class="pre">2.70935387e-01,</span> <span class="pre">2.78541416e-01,</span> <span class="pre">2.86360972e-01,</span> <span class="pre">2.94400048e-01,</span> <span class="pre">3.02664806e-01,</span> <span class="pre">3.11161583e-01,</span> <span class="pre">3.19896892e-01,</span> <span class="pre">3.28877429e-01,</span> <span class="pre">3.38110078e-01,</span> <span class="pre">3.47601918e-01,</span> <span class="pre">3.57360225e-01,</span> <span class="pre">3.67392478e-01,</span> <span class="pre">3.77706369e-01,</span> <span class="pre">3.88309805e-01,</span> <span class="pre">3.99210913e-01,</span> <span class="pre">4.10418050e-01,</span> <span class="pre">4.21939808e-01,</span> <span class="pre">4.33785019e-01,</span> <span class="pre">4.45962763e-01,</span> <span class="pre">4.58482375e-01,</span> <span class="pre">4.71353453e-01,</span> <span class="pre">4.84585864e-01,</span> <span class="pre">4.98189752e-01,</span> <span class="pre">5.12175544e-01,</span> <span class="pre">5.26553963e-01,</span> <span class="pre">5.41336030e-01,</span> <span class="pre">5.56533078e-01,</span> <span class="pre">5.72156756e-01,</span> <span class="pre">5.88219040e-01,</span> <span class="pre">6.04732245e-01,</span> <span class="pre">6.21709029e-01,</span> <span class="pre">6.39162405e-01,</span> <span class="pre">6.57105755e-01,</span> <span class="pre">6.75552832e-01,</span> <span class="pre">6.94517777e-01,</span> <span class="pre">7.14015130e-01,</span> <span class="pre">7.34059837e-01,</span> <span class="pre">7.54667263e-01,</span> <span class="pre">7.75853206e-01,</span> <span class="pre">7.97633907e-01,</span> <span class="pre">8.20026062e-01,</span> <span class="pre">8.43046837e-01,</span> <span class="pre">8.66713880e-01,</span> <span class="pre">8.91045332e-01,</span> <span class="pre">9.16059848e-01,</span> <span class="pre">9.41776601e-01,</span> <span class="pre">9.68215306e-01,</span> <span class="pre">9.95396231e-01,</span> <span class="pre">1.02334021e+00,</span> <span class="pre">1.05206867e+00,</span> <span class="pre">1.08160363e+00,</span> <span class="pre">1.11196773e+00,</span> <span class="pre">1.14318425e+00,</span> <span class="pre">1.17527712e+00,</span> <span class="pre">1.20827094e+00,</span> <span class="pre">1.24219100e+00,</span> <span class="pre">1.27706330e+00,</span> <span class="pre">1.31291459e+00,</span> <span class="pre">1.34977233e+00,</span> <span class="pre">1.38766479e+00,</span> <span class="pre">1.42662102e+00,</span> <span class="pre">1.46667087e+00,</span> <span class="pre">1.50784505e+00,</span> <span class="pre">1.55017512e+00,</span> <span class="pre">1.59369353e+00,</span> <span class="pre">1.63843365e+00,</span> <span class="pre">1.68442976e+00,</span> <span class="pre">1.73171713e+00,</span> <span class="pre">1.78033202e+00,</span> <span class="pre">1.83031168e+00,</span> <span class="pre">1.88169442e+00,</span> <span class="pre">1.93451965e+00,</span> <span class="pre">1.98882786e+00,</span> <span class="pre">2.04466067e+00,</span> <span class="pre">2.10206088e+00,</span> <span class="pre">2.16107251e+00,</span> <span class="pre">2.22174078e+00,</span> <span class="pre">2.28411221e+00,</span> <span class="pre">2.34823460e+00,</span> <span class="pre">2.41415712e+00,</span> <span class="pre">2.48193029e+00,</span> <span class="pre">2.55160607e+00,</span> <span class="pre">2.62323788e+00,</span> <span class="pre">2.69688063e+00,</span> <span class="pre">2.77259076e+00,</span> <span class="pre">2.85042632e+00,</span> <span class="pre">2.93044698e+00,</span> <span class="pre">3.01271407e+00,</span> <span class="pre">3.09729067e+00,</span> <span class="pre">3.18424160e+00,</span> <span class="pre">3.27363353e+00,</span> <span class="pre">3.36553498e+00,</span> <span class="pre">3.46001639e+00,</span> <span class="pre">3.55715021e+00,</span> <span class="pre">3.65701088e+00,</span> <span class="pre">3.75967497e+00,</span> <span class="pre">3.86522116e+00,</span> <span class="pre">3.97373038e+00,</span> <span class="pre">4.08528580e+00,</span> <span class="pre">4.19997295e+00,</span> <span class="pre">4.31787973e+00,</span> <span class="pre">4.43909653e+00,</span> <span class="pre">4.56371628e+00,</span> <span class="pre">4.69183451e+00,</span> <span class="pre">4.82354943e+00,</span> <span class="pre">4.95896201e+00,</span> <span class="pre">5.09817606e+00,</span> <span class="pre">5.24129830e+00,</span> <span class="pre">5.38843844e+00,</span> <span class="pre">5.53970928e+00,</span> <span class="pre">5.69522678e+00,</span> <span class="pre">5.85511016e+00,</span> <span class="pre">6.01948197e+00,</span> <span class="pre">6.18846824e+00,</span> <span class="pre">6.36219849e+00,</span> <span class="pre">6.54080591e+00,</span> <span class="pre">6.72442742e+00,</span> <span class="pre">6.91320378e+00,</span> <span class="pre">7.10727970e+00,</span> <span class="pre">7.30680395e+00,</span> <span class="pre">7.51192949e+00,</span> <span class="pre">7.72281357e+00,</span> <span class="pre">7.93961785e+00,</span> <span class="pre">8.16250851e+00,</span> <span class="pre">8.39165644e+00,</span> <span class="pre">8.62723729e+00,</span> <span class="pre">8.86943166e+00,</span> <span class="pre">9.11842520e+00,</span> <span class="pre">9.37440879e+00,</span> <span class="pre">9.63757866e+00,</span> <span class="pre">9.90813657e+00,</span> <span class="pre">1.01862899e+01,</span> <span class="pre">1.04722519e+01,</span> <span class="pre">1.07662418e+01,</span> <span class="pre">1.10684849e+01,</span> <span class="pre">1.13792129e+01,</span> <span class="pre">1.16986641e+01,</span> <span class="pre">1.20270833e+01,</span> <span class="pre">1.23647224e+01,</span> <span class="pre">1.27118400e+01,</span> <span class="pre">1.30687023e+01,</span> <span class="pre">1.34355829e+01,</span> <span class="pre">1.38127630e+01,</span> <span class="pre">1.42005318e+01,</span> <span class="pre">1.45991865e+01,</span> <span class="pre">1.50090328e+01,</span> <span class="pre">1.54303847e+01,</span> <span class="pre">1.58635653e+01,</span> <span class="pre">1.63089068e+01,</span> <span class="pre">1.67667503e+01,</span> <span class="pre">1.72374471e+01,</span> <span class="pre">1.77213578e+01,</span> <span class="pre">1.82188534e+01,</span> <span class="pre">1.87303154e+01,</span> <span class="pre">1.92561357e+01,</span> <span class="pre">1.97967175e+01,</span> <span class="pre">2.03524752e+01,</span> <span class="pre">2.09238348e+01,</span> <span class="pre">2.15112343e+01,</span> <span class="pre">2.21151240e+01,</span> <span class="pre">2.27359668e+01,</span> <span class="pre">2.33742387e+01,</span> <span class="pre">2.40304289e+01,</span> <span class="pre">2.47050406e+01,</span> <span class="pre">2.53985907e+01,</span> <span class="pre">2.61116110e+01,</span> <span class="pre">2.68446481e+01,</span> <span class="pre">2.75982639e+01,</span> <span class="pre">2.83730362e+01,</span> <span class="pre">2.91695588e+01,</span> <span class="pre">2.99884423e+01,</span> <span class="pre">3.08303146e+01,</span> <span class="pre">3.16958209e+01,</span> <span class="pre">3.25856248e+01,</span> <span class="pre">3.35004083e+01,</span> <span class="pre">3.44408728e+01,</span> <span class="pre">3.54077391e+01,</span> <span class="pre">3.64017485e+01,</span> <span class="pre">3.74236629e+01,</span> <span class="pre">3.84742658e+01,</span> <span class="pre">3.95543624e+01,</span> <span class="pre">4.06647809e+01,</span> <span class="pre">4.18063724e+01,</span> <span class="pre">4.29800121e+01,</span> <span class="pre">4.41865996e+01,</span> <span class="pre">4.54270599e+01,</span> <span class="pre">4.67023439e+01,</span> <span class="pre">4.80134292e+01,</span> <span class="pre">4.93613210e+01,</span> <span class="pre">5.07470524e+01,</span> <span class="pre">5.21716858e+01,</span> <span class="pre">5.36363132e+01,</span> <span class="pre">5.51420574e+01,</span> <span class="pre">5.66900727e+01,</span> <span class="pre">5.82815458e+01,</span> <span class="pre">5.99176967e+01,</span> <span class="pre">6.15997796e+01,</span> <span class="pre">6.33290840e+01,</span> <span class="pre">6.51069356e+01,</span> <span class="pre">6.69346971e+01,</span> <span class="pre">6.88137699e+01,</span> <span class="pre">7.07455942e+01,</span> <span class="pre">7.27316511e+01,</span> <span class="pre">7.47734631e+01,</span> <span class="pre">7.68725952e+01,</span> <span class="pre">7.90306568e+01,</span> <span class="pre">8.12493021e+01,</span> <span class="pre">8.35302320e+01,</span> <span class="pre">8.58751948e+01,</span> <span class="pre">8.82859884e+01,</span> <span class="pre">9.07644607e+01,</span> <span class="pre">9.33125118e+01,</span> <span class="pre">9.59320948e+01,</span> <span class="pre">9.86252179e+01,</span> <span class="pre">1.01393946e+02,</span> <span class="pre">1.04240401e+02,</span> <span class="pre">1.07166765e+02,</span> <span class="pre">1.10175281e+02,</span> <span class="pre">1.13268257e+02,</span> <span class="pre">1.16448062e+02,</span> <span class="pre">1.19717134e+02,</span> <span class="pre">1.23077980e+02,</span> <span class="pre">1.26533176e+02,</span> <span class="pre">1.30085370e+02,</span> <span class="pre">1.33737286e+02,</span> <span class="pre">1.37491723e+02,</span> <span class="pre">1.41351558e+02,</span> <span class="pre">1.45319752e+02,</span> <span class="pre">1.49399346e+02,</span> <span class="pre">1.53593468e+02,</span> <span class="pre">1.57905331e+02,</span> <span class="pre">1.62338243e+02,</span> <span class="pre">1.66895601e+02,</span> <span class="pre">1.71580899e+02,</span> <span class="pre">1.76397728e+02,</span> <span class="pre">1.81349780e+02,</span> <span class="pre">1.86440853e+02,</span> <span class="pre">1.91674849e+02,</span> <span class="pre">1.97055780e+02,</span> <span class="pre">2.02587771e+02,</span> <span class="pre">2.08275063e+02,</span> <span class="pre">2.14122015e+02,</span> <span class="pre">2.20133111e+02,</span> <span class="pre">2.26312957e+02,</span> <span class="pre">2.32666291e+02,</span> <span class="pre">2.39197984e+02,</span> <span class="pre">2.45913043e+02,</span> <span class="pre">2.52816614e+02,</span> <span class="pre">2.59913992e+02,</span> <span class="pre">2.67210616e+02,</span> <span class="pre">2.74712079e+02,</span> <span class="pre">2.82424133e+02,</span> <span class="pre">2.90352688e+02,</span> <span class="pre">2.98503825e+02,</span> <span class="pre">3.06883789e+02,</span> <span class="pre">3.15499006e+02,</span> <span class="pre">3.24356081e+02,</span> <span class="pre">3.33461802e+02,</span> <span class="pre">3.42823149e+02,</span> <span class="pre">3.52447300e+02,</span> <span class="pre">3.62341632e+02,</span> <span class="pre">3.72513730e+02,</span> <span class="pre">3.82971391e+02,</span> <span class="pre">3.93722633e+02,</span> <span class="pre">4.04775697e+02,</span> <span class="pre">4.16139055e+02,</span> <span class="pre">4.27821420e+02,</span> <span class="pre">4.39831747e+02,</span> <span class="pre">4.52179242e+02,</span> <span class="pre">4.64873371e+02,</span> <span class="pre">4.77923865e+02,</span> <span class="pre">4.91340729e+02,</span> <span class="pre">5.05134247e+02,</span> <span class="pre">5.19314994e+02,</span> <span class="pre">5.33893840e+02,</span> <span class="pre">5.48881961e+02,</span> <span class="pre">5.64290847e+02,</span> <span class="pre">5.80132310e+02,</span> <span class="pre">5.96418495e+02,</span> <span class="pre">6.13161884e+02,</span> <span class="pre">6.30375315e+02,</span> <span class="pre">6.48071983e+02,</span> <span class="pre">6.66265452e+02,</span> <span class="pre">6.84969672e+02,</span> <span class="pre">7.04198979e+02,</span> <span class="pre">7.23968114e+02,</span> <span class="pre">7.44292233e+02,</span> <span class="pre">7.65186915e+02,</span> <span class="pre">7.86668179e+02,</span> <span class="pre">8.08752491e+02,</span> <span class="pre">8.31456781e+02,</span> <span class="pre">8.54798453e+02,</span> <span class="pre">8.78795401e+02,</span> <span class="pre">9.03466021e+02,</span> <span class="pre">9.28829225e+02,</span> <span class="pre">9.54904456e+02,</span> <span class="pre">9.81711702e+02,</span> <span class="pre">1.00927151e+03,</span> <span class="pre">1.03760502e+03,</span> <span class="pre">1.06673394e+03,</span> <span class="pre">1.09668060e+03,</span> <span class="pre">1.12746796e+03,</span> <span class="pre">1.15911962e+03,</span> <span class="pre">1.19165984e+03,</span> <span class="pre">1.22511358e+03,</span> <span class="pre">1.25950646e+03,</span> <span class="pre">1.29486487e+03,</span> <span class="pre">1.33121590e+03,</span> <span class="pre">1.36858742e+03,</span> <span class="pre">1.40700809e+03,</span> <span class="pre">1.44650734e+03,</span> <span class="pre">1.48711546e+03,</span> <span class="pre">1.52886359e+03,</span> <span class="pre">1.57178372e+03,</span> <span class="pre">1.61590875e+03,</span> <span class="pre">1.66127252e+03,</span> <span class="pre">1.70790980e+03,</span> <span class="pre">1.75585633e+03,</span> <span class="pre">1.80514888e+03,</span> <span class="pre">1.85582523e+03,</span> <span class="pre">1.90792422e+03,</span> <span class="pre">1.96148581e+03,</span> <span class="pre">2.01655104e+03,</span> <span class="pre">2.07316213e+03,</span> <span class="pre">2.13136247e+03,</span> <span class="pre">2.19119669e+03,</span> <span class="pre">2.25271064e+03,</span> <span class="pre">2.31595149e+03,</span> <span class="pre">2.38096772e+03,</span> <span class="pre">2.44780916e+03,</span> <span class="pre">2.51652705e+03,</span> <span class="pre">2.58717408e+03,</span> <span class="pre">2.65980440e+03,</span> <span class="pre">2.73447368e+03,</span> <span class="pre">2.81123917e+03,</span> <span class="pre">2.89015972e+03,</span> <span class="pre">2.97129582e+03,</span> <span class="pre">3.05470967e+03,</span> <span class="pre">3.14046522e+03,</span> <span class="pre">3.22862820e+03,</span> <span class="pre">3.31926620e+03,</span> <span class="pre">3.41244871e+03,</span> <span class="pre">3.50824714e+03,</span> <span class="pre">3.60673495e+03,</span> <span class="pre">3.70798763e+03,</span> <span class="pre">3.81208280e+03,</span> <span class="pre">3.91910025e+03,</span> <span class="pre">4.02912203e+03,</span> <span class="pre">4.14223247e+03,</span> <span class="pre">4.25851829e+03,</span> <span class="pre">4.37806863e+03,</span> <span class="pre">4.50097513e+03,</span> <span class="pre">4.62733201e+03,</span> <span class="pre">4.75723614e+03,</span> <span class="pre">4.89078709e+03,</span> <span class="pre">5.02808725e+03,</span> <span class="pre">5.16924187e+03,</span> <span class="pre">5.31435916e+03,</span> <span class="pre">5.46355035e+03,</span> <span class="pre">5.61692982e+03,</span> <span class="pre">5.77461515e+03,</span> <span class="pre">5.93672722e+03,</span> <span class="pre">6.10339029e+03,</span> <span class="pre">6.27473213e+03,</span> <span class="pre">6.45088409e+03,</span> <span class="pre">6.63198120e+03,</span> <span class="pre">6.81816229e+03,</span> <span class="pre">7.00957009e+03,</span> <span class="pre">7.20635132e+03,</span> <span class="pre">7.40865683e+03,</span> <span class="pre">7.61664172e+03,</span> <span class="pre">7.83046540e+03,</span> <span class="pre">8.05029181e+03,</span> <span class="pre">8.27628946e+03,</span> <span class="pre">8.50863158e+03,</span> <span class="pre">8.74749630e+03,</span> <span class="pre">8.99306672e+03,</span> <span class="pre">9.24553110e+03,</span> <span class="pre">9.50508296e+03,</span> <span class="pre">9.77192128e+03,</span> <span class="pre">1.00462506e+04,</span> <span class="pre">1.03282813e+04,</span> <span class="pre">1.06182294e+04,</span> <span class="pre">1.09163173e+04,</span> <span class="pre">1.12227736e+04,</span> <span class="pre">1.15378330e+04,</span> <span class="pre">1.18617372e+04,</span> <span class="pre">1.21947344e+04,</span> <span class="pre">1.25370799e+04,</span> <span class="pre">1.28890361e+04,</span> <span class="pre">1.32508729e+04,</span> <span class="pre">1.36228676e+04,</span> <span class="pre">1.40053055e+04,</span> <span class="pre">1.43984795e+04,</span> <span class="pre">1.48026913e+04,</span> <span class="pre">1.52182505e+04,</span> <span class="pre">1.56454759e+04,</span> <span class="pre">1.60846948e+04,</span> <span class="pre">1.65362441e+04,</span> <span class="pre">1.70004698e+04,</span> <span class="pre">1.74777277e+04,</span> <span class="pre">1.79683839e+04,</span> <span class="pre">1.84728144e+04,</span> <span class="pre">1.89914058e+04,</span> <span class="pre">1.95245558e+04,</span> <span class="pre">2.00726730e+04,</span> <span class="pre">2.06361777e+04,</span> <span class="pre">2.12155017e+04,</span> <span class="pre">2.18110892e+04,</span> <span class="pre">2.24233968e+04,</span> <span class="pre">2.30528939e+04,</span> <span class="pre">2.37000629e+04,</span> <span class="pre">2.43654001e+04,</span> <span class="pre">2.50494154e+04,</span> <span class="pre">2.57526333e+04,</span> <span class="pre">2.64755927e+04,</span> <span class="pre">2.72188479e+04,</span> <span class="pre">2.79829688e+04,</span> <span class="pre">2.87685409e+04,</span> <span class="pre">2.95761666e+04,</span> <span class="pre">3.04064649e+04,</span> <span class="pre">3.12600724e+04,</span> <span class="pre">3.21376434e+04,</span> <span class="pre">3.30398507e+04,</span> <span class="pre">3.39673858e+04,</span> <span class="pre">3.49209598e+04,</span> <span class="pre">3.59013038e+04,</span> <span class="pre">3.69091691e+04,</span> <span class="pre">3.79453285e+04,</span> <span class="pre">3.90105762e+04,</span> <span class="pre">4.01057288e+04,</span> <span class="pre">4.12316259e+04,</span> <span class="pre">4.23891306e+04,</span> <span class="pre">4.35791301e+04,</span> <span class="pre">4.48025368e+04,</span> <span class="pre">4.60602884e+04,</span> <span class="pre">4.73533492e+04,</span> <span class="pre">4.86827104e+04,</span> <span class="pre">5.00493910e+04,</span> <span class="pre">5.14544388e+04,</span> <span class="pre">5.28989308e+04,</span> <span class="pre">5.43839743e+04,</span> <span class="pre">5.59107078e+04,</span> <span class="pre">5.74803016e+04,</span> <span class="pre">5.90939590e+04,</span> <span class="pre">6.07529169e+04,</span> <span class="pre">6.24584471e+04,</span> <span class="pre">6.42118571e+04,</span> <span class="pre">6.60144909e+04,</span> <span class="pre">6.78677305e+04,</span> <span class="pre">6.97729965e+04,</span> <span class="pre">7.17317494e+04,</span> <span class="pre">7.37454909e+04,</span> <span class="pre">7.58157646e+04,</span> <span class="pre">7.79441575e+04,</span> <span class="pre">8.01323013e+04,</span> <span class="pre">8.23818733e+04,</span> <span class="pre">8.46945981e+04,</span> <span class="pre">8.70722485e+04,</span> <span class="pre">8.95166472e+04,</span> <span class="pre">9.20296681e+04,</span> <span class="pre">9.46132376e+04,</span> <span class="pre">9.72693362e+04,</span> <span class="pre">1.00000000e+05])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/daemon_flux.html#make_2d_flux_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.daemon_flux.make_2d_flux_map" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </section>
 <section id="module-pisa.stages.flux.hillasg">
-<span id="pisa-stages-flux-hillasg-module"></span><h2>pisa.stages.flux.hillasg module<a class="headerlink" href="#module-pisa.stages.flux.hillasg" title="Link to this heading"></a></h2>
+<span id="pisa-stages-flux-hillasg-module"></span><h2>pisa.stages.flux.hillasg module<a class="headerlink" href="#module-pisa.stages.flux.hillasg" title="Link to this heading">¶</a></h2>
 <p>Stage to evaluate the Hillas-Gaisser expectations from precalculated fluxes</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.flux.hillasg.hillasg">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.hillasg.</span></span><span class="sig-name descname"><span class="pre">hillasg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/hillasg.html#hillasg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.hillasg.hillasg" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.hillasg.</span></span><span class="sig-name descname"><span class="pre">hillasg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/hillasg.html#hillasg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.hillasg.hillasg" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>stage to generate nominal flux</p>
 <dl class="field-list simple">
@@ -365,13 +567,13 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.hillasg.hillasg.compute_function">
-<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/hillasg.html#hillasg.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.hillasg.hillasg.compute_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/hillasg.html#hillasg.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.hillasg.hillasg.compute_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.hillasg.hillasg.setup_function">
-<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/hillasg.html#hillasg.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.hillasg.hillasg.setup_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/hillasg.html#hillasg.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.hillasg.hillasg.setup_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
@@ -379,17 +581,17 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.hillasg.init_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.hillasg.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/hillasg.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.hillasg.init_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.hillasg.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/hillasg.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.hillasg.init_test" title="Link to this definition">¶</a></dt>
 <dd><p>Instantiation example</p>
 </dd></dl>
 
 </section>
 <section id="module-pisa.stages.flux.honda_ip">
-<span id="pisa-stages-flux-honda-ip-module"></span><h2>pisa.stages.flux.honda_ip module<a class="headerlink" href="#module-pisa.stages.flux.honda_ip" title="Link to this heading"></a></h2>
+<span id="pisa-stages-flux-honda-ip-module"></span><h2>pisa.stages.flux.honda_ip module<a class="headerlink" href="#module-pisa.stages.flux.honda_ip" title="Link to this heading">¶</a></h2>
 <p>Stage to evaluate the Honda flux tables using IP splines</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.flux.honda_ip.honda_ip">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.honda_ip.</span></span><span class="sig-name descname"><span class="pre">honda_ip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/honda_ip.html#honda_ip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.honda_ip.honda_ip" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.honda_ip.</span></span><span class="sig-name descname"><span class="pre">honda_ip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/honda_ip.html#honda_ip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.honda_ip.honda_ip" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>stage to generate nominal flux</p>
 <dl class="field-list simple">
@@ -408,13 +610,13 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.honda_ip.honda_ip.compute_function">
-<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/honda_ip.html#honda_ip.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.honda_ip.honda_ip.compute_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/honda_ip.html#honda_ip.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.honda_ip.honda_ip.compute_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.honda_ip.honda_ip.setup_function">
-<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/honda_ip.html#honda_ip.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.honda_ip.honda_ip.setup_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/honda_ip.html#honda_ip.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.honda_ip.honda_ip.setup_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
@@ -422,13 +624,13 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.honda_ip.init_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.honda_ip.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/honda_ip.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.honda_ip.init_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.honda_ip.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/honda_ip.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.honda_ip.init_test" title="Link to this definition">¶</a></dt>
 <dd><p>Instantiation example</p>
 </dd></dl>
 
 </section>
 <section id="module-pisa.stages.flux.mceq_barr">
-<span id="pisa-stages-flux-mceq-barr-module"></span><h2>pisa.stages.flux.mceq_barr module<a class="headerlink" href="#module-pisa.stages.flux.mceq_barr" title="Link to this heading"></a></h2>
+<span id="pisa-stages-flux-mceq-barr-module"></span><h2>pisa.stages.flux.mceq_barr module<a class="headerlink" href="#module-pisa.stages.flux.mceq_barr" title="Link to this heading">¶</a></h2>
 <p>Stage to implement the inclusive neutrino flux as calculated with MCEq,
 and the systematic flux variations based on the Barr scheme.</p>
 <p>It requires spline tables created by the <cite>pisa/scripts/create_barr_sys_tables_mceq.py</cite>
@@ -436,7 +638,7 @@ Pre-generated tables can be found at <a href="#id1"><span class="problematic" id
 <p>Tom Stuttard, Ida Storehaug, Philipp Eller, Summer Blot</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr.apply_sys_loop">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr.</span></span><span class="sig-name descname"><span class="pre">apply_sys_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu_flux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradients</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.mceq_barr.apply_sys_loop" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr.</span></span><span class="sig-name descname"><span class="pre">apply_sys_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu_flux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradients</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.mceq_barr.apply_sys_loop" title="Link to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Calculation:</dt><dd><ol class="arabic simple">
 <li><p>Start from nominal flux</p></li>
@@ -463,13 +665,13 @@ C = num gradients</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr.init_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.init_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.init_test" title="Link to this definition">¶</a></dt>
 <dd><p>Instantiation example</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr.mceq_barr">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr.</span></span><span class="sig-name descname"><span class="pre">mceq_barr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_nutau_flux</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_honda_nominal_flux</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_relative_gradients</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#mceq_barr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.mceq_barr" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr.</span></span><span class="sig-name descname"><span class="pre">mceq_barr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_nutau_flux</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_honda_nominal_flux</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_relative_gradients</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#mceq_barr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.mceq_barr" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>Stage that uses gradients calculated with MCEq to handle flux uncertainties.
 This stage calculates flux variations relative to a nominal flux that must
@@ -535,7 +737,7 @@ is the nominal flux.
 “dnumu”, “dnumubar”, “dnue”, and “dnuebar” is the gradient of the Barr modification</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr.mceq_barr.antipion_production">
-<span class="sig-name descname"><span class="pre">antipion_production</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">barr_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pion_ratio</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#mceq_barr.antipion_production"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.mceq_barr.antipion_production" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">antipion_production</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">barr_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pion_ratio</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#mceq_barr.antipion_production"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.mceq_barr.antipion_production" title="Link to this definition">¶</a></dt>
 <dd><p>Combine pi+ barr param and pi+/pi- ratio to get pi- barr param
 Definitions:</p>
 <blockquote>
@@ -548,13 +750,13 @@ similarly to the barr variables themselves .</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr.mceq_barr.compute_function">
-<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#mceq_barr.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.mceq_barr.compute_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#mceq_barr.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.mceq_barr.compute_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr.mceq_barr.setup_function">
-<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#mceq_barr.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.mceq_barr.setup_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr.html#mceq_barr.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr.mceq_barr.setup_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
@@ -562,7 +764,7 @@ similarly to the barr variables themselves .</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr.spectral_index_scale">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr.</span></span><span class="sig-name descname"><span class="pre">spectral_index_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.mceq_barr.spectral_index_scale" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr.</span></span><span class="sig-name descname"><span class="pre">spectral_index_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pisa.stages.flux.mceq_barr.spectral_index_scale" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate spectral index scale.
 Adjusts the weights for events in an energy dependent way according to a
 shift in spectral index, applied about a user-defined energy pivot.</p>
@@ -570,7 +772,7 @@ shift in spectral index, applied about a user-defined energy pivot.</p>
 
 </section>
 <section id="module-pisa.stages.flux.mceq_barr_red">
-<span id="pisa-stages-flux-mceq-barr-red-module"></span><h2>pisa.stages.flux.mceq_barr_red module<a class="headerlink" href="#module-pisa.stages.flux.mceq_barr_red" title="Link to this heading"></a></h2>
+<span id="pisa-stages-flux-mceq-barr-red-module"></span><h2>pisa.stages.flux.mceq_barr_red module<a class="headerlink" href="#module-pisa.stages.flux.mceq_barr_red" title="Link to this heading">¶</a></h2>
 <p>Stage to implement the inclusive neutrino flux as calculated with MCEq,
 and the systematic flux variations based on the Barr scheme.</p>
 <p>It requires spline tables created by the <cite>pisa/scripts/create_barr_sys_tables_mceq.py</cite>
@@ -578,7 +780,7 @@ Pre-generated tables can be found at <a href="#id3"><span class="problematic" id
 <p>Tom Stuttard, Ida Storehaug, Philipp Eller, Summer Blot</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr_red.apply_sys_loop">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr_red.</span></span><span class="sig-name descname"><span class="pre">apply_sys_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu_flux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradients</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#apply_sys_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.apply_sys_loop" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr_red.</span></span><span class="sig-name descname"><span class="pre">apply_sys_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu_flux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradients</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#apply_sys_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.apply_sys_loop" title="Link to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Calculation:</dt><dd><ol class="arabic simple">
 <li><p>Start from nominal flux</p></li>
@@ -606,13 +808,13 @@ C = num gradients</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr_red.init_test">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr_red.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.init_test" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr_red.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.init_test" title="Link to this definition">¶</a></dt>
 <dd><p>Instantiation example</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr_red.mceq_barr_red">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr_red.</span></span><span class="sig-name descname"><span class="pre">mceq_barr_red</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_file</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#mceq_barr_red"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr_red.</span></span><span class="sig-name descname"><span class="pre">mceq_barr_red</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_file</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#mceq_barr_red"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
 <p>Stage that uses gradients calculated with MCEq to handle flux uncertainties.
 This stage calculates flux variations relative to a nominal flux that must
@@ -675,19 +877,19 @@ to meson production (barr variables) are added.</p>
 depending on modifications to the Barr params.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr_red.mceq_barr_red.antipion_production">
-<span class="sig-name descname"><span class="pre">antipion_production</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">barr_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pion_ratio</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#mceq_barr_red.antipion_production"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red.antipion_production" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">antipion_production</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">barr_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pion_ratio</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#mceq_barr_red.antipion_production"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red.antipion_production" title="Link to this definition">¶</a></dt>
 <dd><p>Combine pi+ param and pi+/pi- ratio to get pi- param</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr_red.mceq_barr_red.compute_function">
-<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#mceq_barr_red.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red.compute_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#mceq_barr_red.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red.compute_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr_red.mceq_barr_red.setup_function">
-<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#mceq_barr_red.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red.setup_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#mceq_barr_red.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red.setup_function" title="Link to this definition">¶</a></dt>
 <dd><p>Implement in services (subclasses of Stage)</p>
 </dd></dl>
 
@@ -695,7 +897,7 @@ depending on modifications to the Barr params.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.mceq_barr_red.spectral_index_scale">
-<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr_red.</span></span><span class="sig-name descname"><span class="pre">spectral_index_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#spectral_index_scale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.spectral_index_scale" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.mceq_barr_red.</span></span><span class="sig-name descname"><span class="pre">spectral_index_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_pivot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/mceq_barr_red.html#spectral_index_scale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.mceq_barr_red.spectral_index_scale" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate spectral index scale.
 Adjusts the weights for events in an energy dependent way according to a
 shift in spectral index, applied about a user-defined energy pivot.</p>
@@ -703,39 +905,167 @@ shift in spectral index, applied about a user-defined energy pivot.</p>
 
 </section>
 <section id="module-pisa.stages.flux">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pisa.stages.flux" title="Link to this heading"></a></h2>
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pisa.stages.flux" title="Link to this heading">¶</a></h2>
 </section>
 </section>
 
-
-           </div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="pisa.stages.likelihood.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">pisa.stages.likelihood package</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="pisa.stages.discr_sys.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">pisa.stages.discr_sys package</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2014–2026, The IceCube Collaboration
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pisa.stages.discr_sys.html" class="btn btn-neutral float-left" title="pisa.stages.discr_sys package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pisa.stages.likelihood.html" class="btn btn-neutral float-right" title="pisa.stages.likelihood package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/icecube/pisa" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
     </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">pisa.stages.flux package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#pisa-stages-flux-airs-module">pisa.stages.flux.airs module</a></li>
+<li><a class="reference internal" href="#module-pisa.stages.flux.astrophysical">pisa.stages.flux.astrophysical module</a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.astrophysical.apply_sys_loop"><code class="docutils literal notranslate"><span class="pre">apply_sys_loop()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.astrophysical.astrophysical"><code class="docutils literal notranslate"><span class="pre">astrophysical</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.astrophysical.astrophysical.apply_function"><code class="docutils literal notranslate"><span class="pre">astrophysical.apply_function()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.astrophysical.astrophysical.compute_function"><code class="docutils literal notranslate"><span class="pre">astrophysical.compute_function()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.astrophysical.astrophysical.setup_function"><code class="docutils literal notranslate"><span class="pre">astrophysical.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.stages.flux.astrophysical.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.astrophysical.spectral_index_scale"><code class="docutils literal notranslate"><span class="pre">spectral_index_scale()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.stages.flux.barr_simple">pisa.stages.flux.barr_simple module</a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.barr_simple.apply_ratio_scale"><code class="docutils literal notranslate"><span class="pre">apply_ratio_scale()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.barr_simple.apply_sys_kernel"><code class="docutils literal notranslate"><span class="pre">apply_sys_kernel()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.barr_simple.barr_simple"><code class="docutils literal notranslate"><span class="pre">barr_simple</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.barr_simple.barr_simple.compute_function"><code class="docutils literal notranslate"><span class="pre">barr_simple.compute_function()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.barr_simple.barr_simple.setup_function"><code class="docutils literal notranslate"><span class="pre">barr_simple.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.stages.flux.barr_simple.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.barr_simple.spectral_index_scale"><code class="docutils literal notranslate"><span class="pre">spectral_index_scale()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.stages.flux.daemon_flux">pisa.stages.flux.daemon_flux module</a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.daemon_flux.daemon_flux"><code class="docutils literal notranslate"><span class="pre">daemon_flux</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.daemon_flux.daemon_flux.compute_function"><code class="docutils literal notranslate"><span class="pre">daemon_flux.compute_function()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.daemon_flux.daemon_flux.setup_function"><code class="docutils literal notranslate"><span class="pre">daemon_flux.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.stages.flux.daemon_flux.evaluate_flux_map"><code class="docutils literal notranslate"><span class="pre">evaluate_flux_map()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.daemon_flux.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.daemon_flux.make_2d_flux_map"><code class="docutils literal notranslate"><span class="pre">make_2d_flux_map()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.stages.flux.hillasg">pisa.stages.flux.hillasg module</a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.hillasg.hillasg"><code class="docutils literal notranslate"><span class="pre">hillasg</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.hillasg.hillasg.compute_function"><code class="docutils literal notranslate"><span class="pre">hillasg.compute_function()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.hillasg.hillasg.setup_function"><code class="docutils literal notranslate"><span class="pre">hillasg.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.stages.flux.hillasg.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.stages.flux.honda_ip">pisa.stages.flux.honda_ip module</a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.honda_ip.honda_ip"><code class="docutils literal notranslate"><span class="pre">honda_ip</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.honda_ip.honda_ip.compute_function"><code class="docutils literal notranslate"><span class="pre">honda_ip.compute_function()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.honda_ip.honda_ip.setup_function"><code class="docutils literal notranslate"><span class="pre">honda_ip.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.stages.flux.honda_ip.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.stages.flux.mceq_barr">pisa.stages.flux.mceq_barr module</a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr.apply_sys_loop"><code class="docutils literal notranslate"><span class="pre">apply_sys_loop()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr.mceq_barr"><code class="docutils literal notranslate"><span class="pre">mceq_barr</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr.mceq_barr.antipion_production"><code class="docutils literal notranslate"><span class="pre">mceq_barr.antipion_production()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr.mceq_barr.compute_function"><code class="docutils literal notranslate"><span class="pre">mceq_barr.compute_function()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr.mceq_barr.setup_function"><code class="docutils literal notranslate"><span class="pre">mceq_barr.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr.spectral_index_scale"><code class="docutils literal notranslate"><span class="pre">spectral_index_scale()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.stages.flux.mceq_barr_red">pisa.stages.flux.mceq_barr_red module</a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr_red.apply_sys_loop"><code class="docutils literal notranslate"><span class="pre">apply_sys_loop()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr_red.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red"><code class="docutils literal notranslate"><span class="pre">mceq_barr_red</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red.antipion_production"><code class="docutils literal notranslate"><span class="pre">mceq_barr_red.antipion_production()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red.compute_function"><code class="docutils literal notranslate"><span class="pre">mceq_barr_red.compute_function()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr_red.mceq_barr_red.setup_function"><code class="docutils literal notranslate"><span class="pre">mceq_barr_red.setup_function()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.stages.flux.mceq_barr_red.spectral_index_scale"><code class="docutils literal notranslate"><span class="pre">spectral_index_scale()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.stages.flux">Module contents</a></li>
+</ul>
+</li>
+</ul>
 
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2025, The IceCube/PINGU Collaboration.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
+          </div>
         </div>
       </div>
-    </section>
+      
+      
+    </aside>
   </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+</div><script src="_static/documentation_options.js?v=69b63715"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
 </html>
