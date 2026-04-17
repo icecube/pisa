@@ -133,8 +133,10 @@ def myjit(func):
         assert source[0].strip().startswith("@myjit")
         source = "\n".join(source[1:]) + "\n"
         source = source.replace("cuda.local.array", "np.empty")
-        exec(source)
-        new_py_func = eval(func.__name__)
+        # use locals dict with global imports visible
+        local_scope = {}
+        exec(source, globals(), local_scope) # pass globals explicitly
+        new_py_func = local_scope[func.__name__]
         new_nb_func = jit(new_py_func, nopython=True)
         # needs to be exported to globals
         globals()[func.__name__] = new_nb_func
@@ -176,29 +178,40 @@ def conjugate_transpose(A, B):
     [f"({XX}[:, :], {XX}[:, :])" for XX in [FX, CX]], "(i, j) -> (j, i)", target=TARGET,
 )
 def conjugate_transpose_guf(A, out):
-    """gufunc that calls conjugate_transpose"""
-    conjugate_transpose(A, out)
+    """gufunc - inlined conjugate_transpose logic for Python 3.13 compatibility"""
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            out[j, i] = A[i, j].conjugate()
 
 
 def test_conjugate_transpose():
-    """Unit tests of `conjugate_transpose` and `conjugate_transpose_guf`"""
+    """Unit tests of `conjugate_transpose`, `conjugate_transpose_guf`, and @myjit decorator"""
+    # test with complex numbers
     A = (np.linspace(1, 12, 12) + 1j * np.linspace(21, 32, 12)).reshape(4, 3).astype(CX)
-    B = np.ones((3, 4), dtype=CX)
+    B_guf = np.ones((3, 4), dtype=CX)
+    B_myjit = np.ones((3, 4), dtype=CX)
 
-    conjugate_transpose_guf(A, B)
+    # test guvectorize version
+    conjugate_transpose_guf(A, B_guf)
+    # test @myjit version
+    conjugate_transpose(A, B_myjit)
 
-    test = B
+    # conjugate-transpose the numpy way as reference
     ref = A.conj().T
-    assert np.allclose(test, ref, **ALLCLOSE_KW), f"test:\n{test}\n!= ref:\n{ref}"
+    assert np.allclose(B_guf, ref, **ALLCLOSE_KW), f"guf test:\n{B_guf}\n!= ref:\n{ref}"
+    assert np.allclose(B_myjit, ref, **ALLCLOSE_KW), f"myjit test:\n{B_myjit}\n!= ref:\n{ref}"
 
+    # test with real numbers
     A = np.linspace(1, 12, 12, dtype=FX).reshape(3, 4)
-    B = np.ones((4, 3), dtype=FX)
+    B_guf = np.ones((4, 3), dtype=FX)
+    B_myjit = np.ones((4, 3), dtype=FX)
 
-    conjugate_transpose_guf(A, B)
+    conjugate_transpose_guf(A, B_guf)
+    conjugate_transpose(A, B_myjit)
 
-    test = B
     ref = A.conj().T
-    assert np.allclose(test, ref, **ALLCLOSE_KW), f"test:\n{test}\n!= ref:\n{ref}"
+    assert np.allclose(B_guf, ref, **ALLCLOSE_KW), f"guf test:\n{B_guf}\n!= ref:\n{ref}"
+    assert np.allclose(B_myjit, ref, **ALLCLOSE_KW), f"myjit test:\n{B_myjit}\n!= ref:\n{ref}"
 
     logging.info("<< PASS : test_conjugate_transpose >>")
 
@@ -227,31 +240,37 @@ def conjugate(A, B):
     [f"({XX}[:, :], {XX}[:, :])" for XX in [FX, CX]], "(i, j) -> (i, j)", target=TARGET,
 )
 def conjugate_guf(A, out):
-    """gufunc that calls `conjugate`"""
-    conjugate(A, out)
+    """gufunc - inlined conjugate logic for Python 3.13 compatibility"""
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            out[i, j] = A[i, j].conjugate()
 
 
 def test_conjugate():
-    """Unit tests of `conjugate` and `conjugate_guf`"""
+    """Unit tests of `conjugate`, `conjugate_guf`, and @myjit decorator"""
+    # test with complex numbers
     A = (np.linspace(1, 12, 12) + 1j * np.linspace(21, 32, 12)).reshape(4, 3).astype(CX)
+    B_guf = np.ones((4, 3), dtype=CX)
+    B_myjit = np.ones((4, 3), dtype=CX)
 
-    B = np.ones((4, 3), dtype=CX)
+    conjugate_guf(A, B_guf)
+    conjugate(A, B_myjit)
 
-    conjugate_guf(A, B)
-
-    test = B
     ref = A.conj()
+    assert np.allclose(B_guf, ref, **ALLCLOSE_KW), f"guf test:\n{B_guf}\n!= ref:\n{ref}"
+    assert np.allclose(B_myjit, ref, **ALLCLOSE_KW), f"myjit test:\n{B_myjit}\n!= ref:\n{ref}"
 
-    assert np.allclose(test, ref, **ALLCLOSE_KW), f"test:\n{test}\n!= ref:\n{ref}"
-
+    # test with real numbers
     A = np.linspace(1, 12, 12, dtype=FX).reshape(3, 4)
-    B = np.ones((3, 4), dtype=FX)
+    B_guf = np.ones((3, 4), dtype=FX)
+    B_myjit = np.ones((3, 4), dtype=FX)
 
-    conjugate_guf(A, B)
+    conjugate_guf(A, B_guf)
+    conjugate(A, B_myjit)
 
-    test = B
     ref = A.conj()
-    assert np.allclose(test, ref, **ALLCLOSE_KW), f"test:\n{test}\n!= ref:\n{ref}"
+    assert np.allclose(B_guf, ref, **ALLCLOSE_KW), f"guf test:\n{B_guf}\n!= ref:\n{ref}"
+    assert np.allclose(B_myjit, ref, **ALLCLOSE_KW), f"myjit test:\n{B_myjit}\n!= ref:\n{ref}"
 
     logging.info("<< PASS : test_conjugate >>")
 
@@ -279,21 +298,29 @@ def matrix_dot_matrix(A, B, C):
     target=TARGET,
 )
 def matrix_dot_matrix_guf(A, B, out):
-    """gufunc that calls matrix_dot_matrix"""
-    matrix_dot_matrix(A, B, out)
+    """gufunc - inlined matrix_dot_matrix logic for Python 3.13 compatibility"""
+    for j in range(B.shape[1]):
+        for i in range(A.shape[0]):
+            out[i, j] = 0.0
+            for n in range(B.shape[0]):
+                out[i, j] += A[i, n] * B[n, j]
 
 
 def test_matrix_dot_matrix():
-    """Unit tests of `matrix_dot_matrix` and `matrix_dot_matrix_guf`"""
+    """Unit tests of `matrix_dot_matrix`, `matrix_dot_matrix_guf`, and @myjit decorator"""
     A = np.linspace(1, 12, 12, dtype=FTYPE).reshape(3, 4)
     B = np.linspace(1, 12, 12, dtype=FTYPE).reshape(4, 3)
-    C = np.ones((3, 3), dtype=FTYPE)
+    C_guf = np.ones((3, 3), dtype=FTYPE)
+    C_myjit = np.ones((3, 3), dtype=FTYPE)
 
-    matrix_dot_matrix_guf(A, B, C)
+    # test guvectorize version
+    matrix_dot_matrix_guf(A, B, C_guf)
+    # test @myjit version
+    matrix_dot_matrix(A, B, C_myjit)
 
-    test = C
     ref = np.dot(A, B).astype(FTYPE)
-    assert np.allclose(test, ref, **ALLCLOSE_KW), f"test:\n{test}\n!= ref:\n{ref}"
+    assert np.allclose(C_guf, ref, **ALLCLOSE_KW), f"guf test:\n{C_guf}\n!= ref:\n{ref}"
+    assert np.allclose(C_myjit, ref, **ALLCLOSE_KW), f"myjit test:\n{C_myjit}\n!= ref:\n{ref}"
 
     logging.info("<< PASS : test_matrix_dot_matrix >>")
 
@@ -320,21 +347,28 @@ def matrix_dot_vector(A, v, w):
     target=TARGET,
 )
 def matrix_dot_vector_guf(A, B, out):
-    """gufunc that calls matrix_dot_vector"""
-    matrix_dot_vector(A, B, out)
+    """gufunc - inlined matrix_dot_vector logic for Python 3.13 compatibility"""
+    for i in range(A.shape[0]):
+        out[i] = 0.0
+        for j in range(A.shape[1]):
+            out[i] += A[i, j] * B[j]
 
 
 def test_matrix_dot_vector():
-    """Unit tests of `matrix_dot_vector` and `matrix_dot_vector_guf`"""
+    """Unit tests of `matrix_dot_vector`, `matrix_dot_vector_guf`, and @myjit decorator"""
     A = np.linspace(1, 12, 12, dtype=FTYPE).reshape(4, 3)
     v = np.linspace(1, 3, 3, dtype=FTYPE)
-    w = np.ones(4, dtype=FTYPE)
+    w_guf = np.ones(4, dtype=FTYPE)
+    w_myjit = np.ones(4, dtype=FTYPE)
 
-    matrix_dot_vector_guf(A, v, w)
+    # test guvectorize version
+    matrix_dot_vector_guf(A, v, w_guf)
+    # test @myjit version
+    matrix_dot_vector(A, v, w_myjit)
 
-    test = w
     ref = np.dot(A, v).astype(FTYPE)
-    assert np.allclose(test, ref, **ALLCLOSE_KW), f"test:\n{test}\n!= ref:\n{ref}"
+    assert np.allclose(w_guf, ref, **ALLCLOSE_KW), f"guf test:\n{w_guf}\n!= ref:\n{ref}"
+    assert np.allclose(w_myjit, ref, **ALLCLOSE_KW), f"myjit test:\n{w_myjit}\n!= ref:\n{ref}"
 
     logging.info("<< PASS : test_matrix_dot_vector >>")
 
@@ -358,19 +392,25 @@ def clear_matrix(A):
     [f"({XX}[:, :], {XX}[:, :])" for XX in [FX, CX]], "(i, j) -> (i, j)", target=TARGET,
 )
 def clear_matrix_guf(dummy, out):  # pylint: disable=unused-argument
-    """gufunc that calls `clear_matrix`"""
-    clear_matrix(out)
+    """gufunc - inlined clear_matrix logic for Python 3.13 compatibility"""
+    for i in range(out.shape[0]):
+        for j in range(out.shape[1]):
+            out[i, j] = 0
 
 
 def test_clear_matrix():
-    """Unit tests of `clear_matrix` and `clear_matrix_guf`"""
-    A = np.ones((4, 3), dtype=FTYPE)
+    """Unit tests of `clear_matrix`, `clear_matrix_guf`, and @myjit decorator"""
+    A_guf = np.ones((4, 3), dtype=FTYPE)
+    A_myjit = np.ones((4, 3), dtype=FTYPE)
 
-    clear_matrix_guf(A, A)
+    # test guvectorize version
+    clear_matrix_guf(A_guf, A_guf)
+    # test @myjit version
+    clear_matrix(A_myjit)
 
-    test = A
     ref = np.zeros((4, 3), dtype=FTYPE)
-    assert np.array_equal(test, ref), f"test:\n{test}\n!= ref:\n{ref}"
+    assert np.array_equal(A_guf, ref), f"guf test:\n{A_guf}\n!= ref:\n{ref}"
+    assert np.array_equal(A_myjit, ref), f"myjit test:\n{A_myjit}\n!= ref:\n{ref}"
 
     logging.info("<< PASS : test_clear_matrix >>")
 
@@ -394,20 +434,25 @@ def copy_matrix(A, B):
     [f"({XX}[:, :], {XX}[:, :])" for XX in [FX, CX]], "(i, j) -> (i, j)", target=TARGET,
 )
 def copy_matrix_guf(A, out):
-    """gufunc that calls `copy_matrix`"""
-    copy_matrix(A, out)
+    """gufunc - inlined copy_matrix logic for Python 3.13 compatibility"""
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            out[i, j] = A[i, j]
 
 
 def test_copy_matrix():
-    """Unit tests of `copy_matrix` and `copy_matrix_guf`"""
+    """Unit tests of `copy_matrix`, `copy_matrix_guf`, and @myjit decorator"""
     A = np.ones((3, 3), dtype=FTYPE)
-    B = np.zeros((3, 3), dtype=FTYPE)
+    B_guf = np.zeros((3, 3), dtype=FTYPE)
+    B_myjit = np.zeros((3, 3), dtype=FTYPE)
 
-    copy_matrix_guf(A, B)
+    # test guvectorize version
+    copy_matrix_guf(A, B_guf)
+    # test @myjit version
+    copy_matrix(A, B_myjit)
 
-    test = B
-    ref = A
-    assert np.array_equal(test, ref), f"test:\n{test}\n!= ref:\n{ref}"
+    assert np.array_equal(B_guf, A), f"guf test:\n{B_guf}\n!= ref:\n{A}"
+    assert np.array_equal(B_myjit, A), f"myjit test:\n{B_myjit}\n!= ref:\n{A}"
 
     logging.info("<< PASS : test_copy_matrix >>")
 

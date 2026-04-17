@@ -300,7 +300,7 @@ def do_setup():
         author_email='analysis@icecube.wisc.edu',
         url='https://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=3.8,<3.13', # f-strings, kwarg/dict ordering require Py>=3.6, daemonflux 0.8.0 requires Py>=3.8, Py 3.13: error in utils/numba_tools.py
+        python_requires='>=3.8,<3.15', # daemonflux 0.8.0 requires Py>=3.8
         setup_requires=SETUP_REQUIRES,
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRAS_REQUIRE,
