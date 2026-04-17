@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.config_parser - PISA 0+untagged.1.gcfb3566 documentation</title>
+        <title>pisa.utils.config_parser - PISA 0+untagged.1.gd239808 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.gcfb3566 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.gd239808 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.gcfb3566 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.gd239808 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -1528,6 +1528,20 @@
             <span class="n">empty_lines_in_values</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">file_iterators</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Python &gt; 3.12 _comment_prefixes &amp; _inline_comment_prefixes attributes</span>
+        <span class="c1"># of RawConfigParser removed in favour of:</span>
+        <span class="c1"># * 3.13: _prefixes of type types.SimpleNamespace</span>
+        <span class="c1"># * 3.14: _comments of type configparser._CommentSpec</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_prefixes&quot;</span><span class="p">):</span>
+            <span class="c1"># Python 3.13: just extract the values (=defaults) again</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_comment_prefixes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prefixes</span><span class="o">.</span><span class="n">full</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_inline_comment_prefixes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prefixes</span><span class="o">.</span><span class="n">inline</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_comments&quot;</span><span class="p">):</span>
+            <span class="c1"># Python 3.14: processed and combined into a compiled regex</span>
+            <span class="c1"># -&gt; would need to deconstruct self.pattern.pattern</span>
+            <span class="c1"># -&gt; instead, just explicitly set the defaults here</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_comment_prefixes</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="s1">&#39;;&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_inline_comment_prefixes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
 
 <div class="viewcode-block" id="PISAConfigParser.set">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.config_parser.PISAConfigParser.set">[docs]</a>
@@ -1945,7 +1959,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=b7289380"></script>
+</div><script src="../../../_static/documentation_options.js?v=aedf1f85"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
