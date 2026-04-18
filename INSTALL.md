@@ -9,7 +9,7 @@ This guide will enable you to _use_ PISA within about five minutes. If you are m
     * In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.
 1. In your terminal, create and activate a new conda environment, with a Python version compatible with the Python requirements below<br>
     ```bash
-    conda create -n <ENV NAME> python=3.12
+    conda create -n <ENV NAME> python=3.14
     conda activate <ENV NAME>
     ```
 1. If your system doesn't already have it, install [git](https://git-scm.com) into this environment. (We use `mamba` as a drop-in replacement for the `conda` package manager.)
@@ -101,7 +101,7 @@ Install the latest Miniforge Python distribution for either Mac or Linux (as you
 
 It is recommended to keep the base environment stable. Therefore, create and activate a new conda environment, with a Python version compatible with the Python requirements below:<br>
  ```bash
- conda create -n <ENV NAME> python=3.12
+ conda create -n <ENV NAME> python=3.14
  conda activate <ENV NAME>
  ```
 A shell prompt with `<ENV NAME>` name in parentheses should now confirm the successful activation.
@@ -206,7 +206,7 @@ In this case, the old files have to be removed manually (along with any associat
 
 With the exception of `Python` itself (and possibly `git`), the installation methods outlined above should not demand the _manual_ prior installation of any Python or non-Python requirements for PISA.
 Support for all of these comes pre-packaged or as `conda`/`mamba`-installable packages in the Miniforge Python distribution.
-* [python](http://www.python.org) — version >= 3.8 and < 3.13 required (tested to work with: 3.10, 3.11, 3.12)
+* [python](http://www.python.org) — version >= 3.8 and < 3.15 required (tested to work with >= 3.10)
   * Miniforge & CVMFS: built in
 * [pip](https://pip.pypa.io) version >= 1.8 required
   * Miniforge & CVMFS: built in
@@ -216,16 +216,22 @@ Support for all of these comes pre-packaged or as `conda`/`mamba`-installable pa
     `sudo apt install git`
   * it is already installed on IceCube's Cobalt nodes
 
-Required Python modules whose installation is taken care of by pip are specified in [setup.py](setup.py).
+Required Python modules whose installation is taken care of by pip are specified in [setup.py](https://github.com/icecube/pisa/blob/master/setup.py).
 
 ### Optional Dependencies
 
 Some of the following optional dependencies must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, or conda/mamba to install the below before running the PISA installation.
 
 * [emcee](https://github.com/dfm/emcee) Required for MCMC sampling functionality in the `llh_client`& `llh_server` utils modules and the `analysis` module.
+* [Furo Sphinx Theme](https://pradyunsg.me/furo/) Sphinx extension HTML theme. (Required to compile PISA's documentation.)
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [GLoBES wrapper](https://github.com/atrettin/GLoBES_wrapper) Required for `osc.globes` service.
 * [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for `data.licloader_weighter` service.
+* [linkify-it-py](https://github.com/tsutsu3/linkify-it-py) MyST-Parser extension for converting bare URLs into hyperlinks. (Required to compile PISA's documentation.)
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [MCEq](https://github.com/mceq-project/MCEq) Required for `create_barr_sys_tables_mceq.py` script.
+* [MyST-NB](https://myst-nb.readthedocs.io/) Sphinx extension for compiling markdown and jupyter notebooks. (Required to compile PISA's documentation.)
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
 * [OpenMP](https://openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
@@ -234,25 +240,25 @@ Some of the following optional dependencies must be installed manually prior to 
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [Pytest](https://docs.pytest.org/) Python testing framework. Used by a couple unit tests.
   * Installed alongside PISA if you specify option `['develop']` to `pip`
-* [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)
-  * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Required for `absorption.earth_absorption` service, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's Python support (documented here https://github.com/IceCubeOpenSource/pisa/issues/430), you need at least version 6.12.04 of ROOT.
-* [Sphinx >= 1.3](https://www.sphinx-doc.org)
+* [Sphinx >= 1.3](https://www.sphinx-doc.org) Documentation generator. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
-* [Read the Docs Sphinx Theme](https://github.com/readthedocs/sphinx_rtd_theme)
+* [Sphinx Github Changelog](https://sphinx-github-changelog.readthedocs.io) Sphinx extension for building a changelog from GitHub releases. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [versioneer](https://github.com/python-versioneer/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
   * Installed alongside PISA if you specify option `['develop']` to `pip`
-* [black](https://github.com/psf/black) Format your Python code, _automatically_, with typically very nice results!
 
 ### Compile the documentation
 
-In case you installed the optional "develop" dependencies, you can compile a (new) version of the documentation to html via
+In case you installed the optional "develop" dependencies, you can compile a (new) version of the documentation to html locally. Be aware that the above Sphinx Github Changelog extension requires authentication using a GitHub API token.
+If you don't have a suitable personal access token yet, generate one with a public-repo scope and assign it to the `GITHUB_TOKEN` environment variable before running `make` below.
+
+In case code structure has changed, regenerate the source files that document all of PISA's (sub-)packages and modules by executing
 ```bash
 cd $PISA && sphinx-apidoc -f -o docs/source pisa
 ```
 
-In case code structure has changed, rebuild the API documentation by executing
+Finally, rebuild the HTML documentation by executing
 ```bash
 cd $PISA/docs && make html
 ```

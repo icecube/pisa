@@ -115,12 +115,14 @@ INSTALL_REQUIRES = [
 
 EXTRAS_REQUIRE = {
     'develop': [
+        'furo',
+        'linkify-it-py',
+        'myst-nb',
         'pylint>=4.0',
-        'recommonmark',
-        'sphinx>=1.3',
-        'sphinx_rtd_theme',
-        'versioneer',
         'pytest',
+        'sphinx>=1.3',
+        'sphinx_github_changelog',
+        'versioneer',
     ],
     # TODO: get mceq install to work... this is non-trivial since that
     # project isn't exactly cleanly instllable via pip already, plus it
@@ -298,7 +300,7 @@ def do_setup():
         author_email='analysis@icecube.wisc.edu',
         url='https://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=3.8,<3.13', # f-strings, kwarg/dict ordering require Py>=3.6, daemonflux 0.8.0 requires Py>=3.8, Py 3.13: error in utils/numba_tools.py
+        python_requires='>=3.8,<3.15', # daemonflux 0.8.0 requires Py>=3.8
         setup_requires=SETUP_REQUIRES,
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRAS_REQUIRE,

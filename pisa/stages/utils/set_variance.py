@@ -10,6 +10,7 @@ from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils import vectorizer
 from pisa.core.binning import MultiDimBinning
+from pisa_tests.test_services import TEST_BINNING
 
 __all__ = [
     "set_variance", "apply_floor", "apply_floor_gufunc",
@@ -107,4 +108,4 @@ def set_constant_gufunc(val, out):
 
 def init_test(**param_kwargs):
     """Instantiation example"""
-    return set_variance(expected_total_mc=100)
+    return set_variance(expected_total_mc=100, calc_mode=TEST_BINNING, apply_mode=TEST_BINNING)

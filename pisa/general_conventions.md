@@ -18,10 +18,10 @@
 
 # Documentation conventions
 
-Documentation comes in two forms: ***docstrings*** and ***standalone files*** (either markdown **.md** files or reStricturedText **.rst** files). Docstrings are the most important for physics and framework developers to consider, and can (and should) be quite far-ranging in their scope. Standalone files are reserved for guides (install guide, developer's guide, user's guide, quick-start, etc.) and one README.md file within each directory to document the directory's raison d'être, or what is common to all of the things contained in the directory.
+Documentation comes in two forms: ***docstrings*** and ***standalone files*** (either [markdown](https://en.wikipedia.org/wiki/Markdown) **.md** files or [reStructuredText](https://en.wikipedia.org/wiki/ReStructuredText) **.rst** files). Docstrings are the most important for physics and framework developers to consider, and can (and should) be quite far-ranging in their scope. Standalone files are reserved for guides (install guide, developer's guide, user's guide, quick-start, etc.) and one README.md file within each directory to document the directory's raison d'être, or what is common to all of the things contained in the directory.
 
-* All documentation is run through [Sphinx](http://www.sphinx-doc.org) using the [Napoleon](http://sphinxcontrib-napoleon.readthedocs.io) (to understand Numpy-style docstrings) and [Recommonmark](http://recommonmark.readthedocs.io) (to understand Markdown syntax) extensions, so the final arbiter of whether a docstring is formatted "correctly" is the output generated using these.
-Refer to those links for how to format docstrings / Markdown to produce a desired result.
+* All documentation is run through [Sphinx](http://www.sphinx-doc.org) using the [Napoleon](http://sphinxcontrib-napoleon.readthedocs.io) (to understand Numpy-style docstrings) and [MyST-NB](https://myst-nb.readthedocs.io) (to understand Markdown syntax and juypter notebooks) extensions, so the final arbiter of whether a docstring is formatted "correctly" is the output generated using these.
+Refer to those links for how to format docstrings, markdown, and notebooks to produce a desired result.
 
 ## Docstrings
 
@@ -41,7 +41,6 @@ Docstrings should be formatted according to the NumPy/SciPy convention.
 * [PEP257: General Python docstring conventions](https://www.python.org/dev/peps/pep-0257/)
 * [NumPy/SciPy documentation style guide](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard)
 * [Example NumPy docstrings in code](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html)
-* [Recommonmark translates markdown into reST](http://recommonmark.readthedocs.io/en/latest/auto_structify.html)
 
 ## Standalone files
 
