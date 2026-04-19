@@ -70,20 +70,21 @@ __license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 SUPPORTED_LOCAL_SCIPY_MINIMIZERS = (
     'cobyla', 'l-bfgs-b', 'nelder-mead', 'slsqp', 'trust-constr'
 )
-"""Local scipy minimizers that PISA currently supports via this interface."""
+"""Local SciPy minimizers that PISA currently supports via this interface."""
 
 MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
 MINIMIZERS_ACCEPTING_CONSTRS = ('cobyla', 'slsqp', 'trust-constr', 'cobyqa')
-"""Minimizers that allow constraints to be passed. According to
-scipy docs, cobyla and slsqp require dictionaries, whereas
-trust-constr and cobyqa require constraints to be passed as `LinearConstraint`
-or `NonlinearConstraint` instances. However, as of now, the conversion to the
-form required by the minimizer is done internally by scipy. Hence, this global
-variable merely serves documentation purposes right now. Note that cobyqa is
-only added in scipy version 1.14.0."""
+"""Minimizers that allow constraints to be passed. All of these accept inequalities,
+and 'slsqp' and 'trust-constr' in addition accept equalities. As of SciPy 1.16.0,
+slsqp requires dictionaries, whereas trust-constr, cobyla and cobyqa require constraints
+to be passed as :external+scipy:py:class:`~scipy.optimize.LinearConstraint` or
+:external+scipy:py:class:`~scipy.optimize.NonlinearConstraint` instances. However,
+as of now, the conversion to the form required by the minimizer is done internally by
+SciPy. Hence, this global variable merely serves documentation purposes right now. Note
+that cobyqa is only added in SciPy version 1.14.0."""
 
 
 # TODO: Observed or known scipy minimization issues that might be fixable with scipy updates:
@@ -485,11 +486,12 @@ class Analysis():
     """An analysis class that performs a flexible (global, local, nested, ...) fit of
     a hypothesis to data.
 
-    Full analyses with functionality beyond just fitting (doing scans, for example)
-    are outside the scope of this class and should be defined by the user.
+    Full analyses with functionality beyond just fitting, such as scans/profiles,
+    are outside the scope of this class and should be defined by the user (for example
+    by subclassing this class, see section on custom fitting methods below).
 
-    Every fit is run with the `fit_recursively` method, where the fit strategy is
-    defined by the three arguments `method`, `method_kwargs` and
+    Every fit is run with the :py:meth:`fit_recursively` method, where the fit strategy
+    is defined by the three arguments `method`, `method_kwargs` and
     `local_fit_kwargs` (see documentation of :py:meth:`fit_recursively` below for
     other arguments.) The `method` argument determines which sub-routine should be
     run, `method_kwargs` is a dictionary with any keyword arguments of that
@@ -499,8 +501,8 @@ class Analysis():
     `method`, `method_kwargs` and `local_fit_kwargs`. In this way, sub-routines
     can be arbitrarily stacked to define complex fit strategies.
 
-    The fit result is returned as a `HypoFitResult` instance. By default, this
-    does not include the potentially large fit history (empty) or the binned
+    The fit result is returned as a :py:class:`HypoFitResult` instance. By default,
+    this does not include the potentially large fit history (empty) or the binned
     metric maps, but they need to be requested from `fit_recursively` explicitly,
     as demonstrated in the examples below.
 
@@ -508,7 +510,7 @@ class Analysis():
     ----------
     pprint : bool, default: True
         Whether to show live updates of minimizer progress (overridden by
-        `blindness`).
+        :py:attr:`blindness`).
 
     blindness : bool or int, default: False
         Whether to carry out a blind analysis. If True or 1, this hides actual
@@ -521,8 +523,9 @@ class Analysis():
     --------
 
     A canonical standard oscillation fit fits octants in `theta23` separately and then
-    runs a scipy minimizer to optimize locally in each octant. The arguments that would
-    produce that result when passed to `fit_recursively` are:
+    runs a :external+scipy:py:mod:`scipy minimizer <scipy.optimize>` to optimize
+    locally in each octant. The arguments that would produce that result when passed to
+    `fit_recursively` are:
     ::
         method = "octants"
         method_kwargs = {
@@ -613,7 +616,7 @@ class Analysis():
             "local_fit_kwargs": None  # no further nesting available
         }
 
-    and then run the fit with
+    and then run a :py:func:`"chi2" <pisa.utils.stats.chi2>` fit with
     ::
         best_fit_info = ana.fit_recursively(
             data_dist,
@@ -633,10 +636,10 @@ class Analysis():
 
     Adding inequality constraints to algorithms that support it is possible by writing a
     lambda function in a string that expects to get the current parameters as a
-    `ParamSet` and returns a float. The result will satisfy that the passed function
-    stays `negative` (to be consistent with scipy). The string will be passed to
-    `eval` to build the callable function. For example, a silly way to bound
-    `delta_index` > 0.1 would be:
+    :py:class:`~.ParamSet` and returns a float. The result will ensure
+    that the passed function stays *positive* (to be consistent with SciPy, cf. below).
+    The string will be passed to :external+python:py:func:`eval` to build the callable function.
+    For example, a silly way to bound `delta_index` > 0.1 would be:
     ::
         "method_kwargs": {
             "algorithm": "NLOPT_LN_COBYLA",
@@ -691,6 +694,75 @@ class Analysis():
             "population": 100,
         }
 
+    **SciPy Options**
+
+    PISA supports the local algorithms in :py:data:`SUPPORTED_LOCAL_SCIPY_MINIMIZERS`.
+    It also supports the global algorithms "differential_evolution", "basinhopping",
+    "dual_annealing", and "shgo". Of these, all but "differential_evolution" allow
+    configuring local subsidiary algorithms. Both inequality and equality
+    :external+scipy:ref:`constraints <tutorial-sqlsp>` can be added to
+    :py:data:`algorithms that support them <MINIMIZERS_ACCEPTING_CONSTRS>`.
+
+    Step by step, let us define a strategy consisting of
+    :external+scipy:py:func:`Dual Annealing <scipy.optimize.dual_annealing>` together
+    with :external+scipy:doc:`local SLSQP minimization <reference/optimize.minimize-slsqp>`,
+    with both equality and inequality constraints for some fit parameters.
+    First, set up the "global" algorithm only:
+    ::
+        scipy_settings = {
+            "method": "scipy",
+            "method_kwargs": {
+                "global_method": "dual_annealing",
+                "options": {
+                    "maxiter": 10,
+                    "seed": 0,
+                    # other options that can be set here:
+                    # initial_temp, restart_temp_ratio, visit, accept, maxfun, no_local_search, rng
+                },
+            }
+        }
+
+    Second, load an SLSQP configuration from a file (included in PISA):
+    ::
+        local_settings = from_file("settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.json")
+
+    Third, require `theta23` to remain > 42 degrees via an inequality constraint and
+    `delta_index` to stay fixed at -0.1 via an equality constraint, by inserting a
+    list of constraint dicts into the SLSQP settings:
+    ::
+        # constraint function can be callable or string
+        constrs_list = [
+            {'type': 'eq',
+             'fun': f'lambda params: params.delta_index.m_as("dimensionless") + 0.1'},
+            {'type': 'ineq',
+             'fun': lambda params: params.theta23.m_as("degree") - 42}
+        ]
+        local_settings["options"]["value"]["constraints"] = constrs_list
+
+    Fourth, insert the SLSQP configuration with constraints into the global settings:
+    ::
+        scipy_settings["local_fit_kwargs"] = local_settings
+
+    Finally, run a :py:func:`"chi2" <pisa.utils.stats.chi2>` fit with
+    ::
+        best_fit_info = ana.fit_recursively(
+            data_dist,
+            dm,
+            "chi2",
+            None,
+            store_fit_history=False,
+            include_metric_maps=True,
+            **scipy_settings
+        )
+
+    , where no fit history will be kept in memory or be part of `best_fit_info`.
+
+    .. caution::
+
+       Non-negligible constraint violations or stepping out of bounds may occur when
+       global SciPy optimization is used in combination with constraints! This will
+       hopefully get fixed soon.
+
     **Custom fitting methods**
 
     Custom fitting methods are added by subclassing the analysis. The fit function
@@ -699,9 +771,9 @@ class Analysis():
     be called by setting `"method": "scipy"` in the fit strategy dict.
 
     The function has to accept the parameters `data_dist`, `hypo_maker`, `metric`,
-    `external_priors_penalty`, `method_kwargs`, and `local_fit_kwargs`. See docstring
-    of `fit_recursively` for descriptions of these arguments. The return value
-    of the function must be a `HypoFitResult` object. As an example, the following
+    `external_priors_penalty`, `method_kwargs`, and `local_fit_kwargs`. See
+    :py:meth:`fit_recursively` for descriptions of these arguments. The return value
+    of the function must be a :py:class:`HypoFitResult`. As an example, the following
     sub-class of `Analysis` has a custom fit method that, nonsensically,
     always sets 42 degrees as the starting value for theta23:
     ::
@@ -784,7 +856,7 @@ class Analysis():
             "best" fit.
 
         metric : string or iterable of strings
-            Metric by which to evaluate the fit. See documentation of Map.
+            Metric by which to evaluate the fit. See documentation of :py:class:`.Map`.
 
         external_priors_penalty : func
             User defined prior penalty function, which takes `hypo_maker` and
@@ -2615,15 +2687,10 @@ class Analysis():
         self._nit += 1
 
 
-# provide an alias for backwards compatibility
 BasicAnalysis = Analysis
+"""Simple alias of :py:class:`Analysis` for backwards compatibility. Note:
+both `__name__` and `__qualname__` of `BasicAnalysis` evaluate to "Analysis".
 """
->> BasicAnalysis.__name__
-"Analysis"
->> BasicAnalysis.__qualname__
-"Analysis"
-"""
-
 
 def test_analysis(pprint=False):
     """Test recursive fit strategies with Analysis."""

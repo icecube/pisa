@@ -52,7 +52,7 @@ def get_separate_octant_params(
 
     Parameters
     ----------
-    hypo_maker : DistributionMaker or Detector
+    hypo_maker : DistributionMaker or Detectors
         The hypothesis maker being used by the fitter
     angle_name : string
         Name of the angle for which to create separate octant params.

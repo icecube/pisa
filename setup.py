@@ -116,6 +116,7 @@ INSTALL_REQUIRES = [
 EXTRAS_REQUIRE = {
     'develop': [
         'furo',
+        'intersphinx-registry',
         'linkify-it-py',
         'myst-nb',
         'pylint>=4.0',
