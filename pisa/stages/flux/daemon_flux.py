@@ -5,18 +5,20 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.
 Maria Liubarska, J.P. Yanez 2023
 """
 
-import numpy as np
 from daemonflux import Flux
 from daemonflux import __version__ as daemon_version
 
+import numpy as np
+from packaging.version import Version
+from scipy import interpolate
+
 from pisa import FTYPE
+from pisa.core.binning import MultiDimBinning
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.random_numbers import get_random_state
-from scipy import interpolate
-from packaging.version import Version
 
 __all__ = ['MIN_VERSION', 'daemon_flux', 'make_2d_flux_map',
            'evaluate_flux_map', 'init_test']
@@ -125,16 +127,23 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             'true_coszen',
             'nubar',
         )
+        # event-by-event or binned fluxes; no apply_function
+        supported_reps = {
+            'calc_mode': ["events", MultiDimBinning],
+            'apply_mode': [None],
+        }
 
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
     def setup_function(self):
-        self.data.representation = self.calc_mode
-
+        """
+        Just prepare empty nue(bar) & numu(bar) atmos. flux arrays on setup.
+        """
         for container in self.data:
             container['nu_flux'] = np.empty((container.size, 2), dtype=FTYPE)
 
