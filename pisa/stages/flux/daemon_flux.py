@@ -26,6 +26,9 @@ __all__ = ['MIN_VERSION', 'daemon_flux', 'make_2d_flux_map',
 MIN_VERSION = "0.8.0"
 """Minimum daemonflux package version for correct chi2 prior penalty"""
 
+ENERGY_GRID_GEV = np.logspace(-1, 5, 500, dtype=FTYPE)
+"""Default array of energies at which to evaluate fluxes"""
+
 class daemon_flux(Stage):  # pylint: disable=invalid-name
     """
     DAEMON flux stage
@@ -152,8 +155,6 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         """
         Compute nominal atmospheric fluxes of nue(bar) and numu(bar).
         """
-        self.data.representation = self.calc_mode
-
         # get modified parameters (in units of sigma)
         modif_param_dict = {}
         for i, k in enumerate(self.daemon_params):
@@ -196,7 +197,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
 
 def make_2d_flux_map(flux_obj,
                      particle='numuflux',
-                     egrid=np.logspace(-1, 5, 500),
+                     egrid=None,
                      params=None,
                      ):
     """
@@ -218,23 +219,30 @@ def make_2d_flux_map(flux_obj,
         Bivariate spline approximation of flux over energy-coszen grid.
         See `daemonflux.Flux.flux()` for units.
     """
+    if egrid is None:
+        egrid = ENERGY_GRID_GEV
     if params is None:
         params = {}
-    icangles = list(flux_obj.zenith_angles)
-    icangles_array = np.array(icangles, dtype=float)
-    mysort = icangles_array.argsort()
-    icangles = np.array(icangles)[mysort][::-1]
+    # flux_obj.zenith_angles is list of strings of values in deg between 0° & 180°
+    # -> make ascending array first
+    icangles_asc = np.array(sorted(map(float, flux_obj.zenith_angles), reverse=False), dtype=FTYPE)
 
-    flux_ref = np.zeros([len(egrid), len(icangles)])
-    costheta_angles = np.zeros(len(icangles))
+    # Obtain flux from daemonflux: expects ascending zenith angles in deg
+    flux_ref = flux_obj.flux(
+        energy=egrid,
+        zenith_deg=icangles_asc,
+        quantity=particle,
+        params=params
+    )
+    # Now need to flip zenith angle dimension so we can interpolate in costheta
+    # with increasing costheta
+    flux_ref_lr = np.fliplr(flux_ref)
+    costheta_angles_asc = np.cos(np.deg2rad(icangles_asc))[::-1]
 
-    for index in range(len(icangles)):
-        costheta_angles[index] = np.cos(np.deg2rad(float(icangles[index])))
-        flux_ref[:,index] = flux_obj.flux(egrid, icangles[index], particle, params)
-
-    fcn = interpolate.RectBivariateSpline(egrid,
-                                          costheta_angles,
-                                          flux_ref)
+    # Return interpolant which can be evaluate in costheta later
+    fcn = interpolate.RectBivariateSpline(
+        x=egrid, y=costheta_angles_asc, z=flux_ref_lr
+    )
     return fcn
 
 
