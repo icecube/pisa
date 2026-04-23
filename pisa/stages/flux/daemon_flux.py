@@ -12,7 +12,7 @@ import numpy as np
 from packaging.version import Version
 from scipy import interpolate
 
-from pisa import FTYPE
+from pisa import FTYPE, ureg
 from pisa.core.binning import MultiDimBinning
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
@@ -26,7 +26,7 @@ __all__ = ['MIN_VERSION', 'daemon_flux', 'make_2d_flux_map',
 MIN_VERSION = "0.8.0"
 """Minimum daemonflux package version for correct chi2 prior penalty"""
 
-ENERGY_GRID_GEV = np.logspace(-1, 5, 500, dtype=FTYPE)
+ENERGY_GRID_GEV = np.logspace(-1, 5, 500, dtype=FTYPE) * ureg.GeV
 """Default array of energies at which to evaluate fluxes"""
 
 class daemon_flux(Stage):  # pylint: disable=invalid-name
@@ -220,12 +220,13 @@ def make_2d_flux_map(flux_obj,
         See `daemonflux.Flux.flux()` for units.
     """
     if egrid is None:
-        egrid = ENERGY_GRID_GEV
+        egrid = ENERGY_GRID_GEV.m_as("GeV")
     if params is None:
         params = {}
     # flux_obj.zenith_angles is list of strings of values in deg between 0° & 180°
     # -> make ascending array first
-    icangles_asc = np.array(sorted(map(float, flux_obj.zenith_angles), reverse=False), dtype=FTYPE)
+    icangles_asc = np.array(sorted(map(float, flux_obj.zenith_angles),
+                                   reverse=False), dtype=FTYPE)
 
     # Obtain flux from daemonflux: expects ascending zenith angles in deg
     flux_ref = flux_obj.flux(
@@ -239,7 +240,7 @@ def make_2d_flux_map(flux_obj,
     flux_ref_lr = np.fliplr(flux_ref)
     costheta_angles_asc = np.cos(np.deg2rad(icangles_asc))[::-1]
 
-    # Return interpolant which can be evaluate in costheta later
+    # Return interpolant which can be evaluated in costheta later
     fcn = interpolate.RectBivariateSpline(
         x=egrid, y=costheta_angles_asc, z=flux_ref_lr
     )
