@@ -35,9 +35,9 @@ __all__ = [
     'test_to_json_from_json',
 ]
 
-__author__ = 'S. Boeser, J.L. Lanfranchi'
+__author__ = 'S. Boeser, J.L. Lanfranchi, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2019, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ def from_json(filename, cls=None):
 
     """
     # Import here to avoid circular imports
-    from pisa.utils.log import logging
+    # pylint: disable=import-outside-toplevel
     from pisa.utils.resources import open_resource
 
     if cls is not None:
@@ -235,8 +235,8 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
 
     """
     # Import here to avoid circular imports
+    # pylint: disable=import-outside-toplevel
     from pisa.utils.fileio import check_file_exists
-    from pisa.utils.log import logging
 
     if hasattr(content, 'to_json'):
         return content.to_json(filename, indent=indent, overwrite=overwrite,
@@ -285,7 +285,7 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
 
 class NumpyEncoder(json.JSONEncoder):
     """
-    Subclass of ::class::`json.JSONEncoder` that overrides `default` method to
+    Subclass of `simplejson.JSONEncoder` that overrides `default` method to
     allow writing numpy arrays and other special objects PISA uses to JSON
     files.
     """
@@ -332,22 +332,41 @@ class NumpyEncoder(json.JSONEncoder):
         # should simply raise an exception.
         return super().default(obj)
 
+class NumpyDecoder(json.JSONDecoder):
+    """
+    Subclass of `simplejson.JSONDecoder`: decode JSON array(s) as numpy.ndarray;
+    also returns python strings instead of unicode.
 
-if version.parse(json.__version__) >= version.parse("3.19.1"):
-    class NumpyDecoder(json.JSONDecoder):
-        """Decode JSON array(s) as numpy.ndarray; also returns python strings
-        instead of unicode."""
-        def __init__(
-            self,
-            encoding=None,
-            object_hook=None,
-            parse_float=None,
-            parse_int=None,
-            parse_constant=None,
-            strict=True,
-            allow_nan=True,
-            object_pairs_hook=None,
-        ):
+    Notes
+    ------
+    * simplejson v4 added init parameter `array_hook` to `JSONDecoder`
+
+      * TODO: does this obviate the need for this custom decoder class?
+      * -> don't expose as init parameter for now
+
+    * simplejson v3.19.0 added init parameter `allow_nan=False` to `JSONDecoder`
+      (prior default behavior was to allow `NaN`, `Infinity`, `-Infinity`)
+    """
+    def __init__(
+        self,
+        encoding=None,
+        object_hook=None,
+        parse_float=None,
+        parse_int=None,
+        parse_constant=None,
+        strict=True,
+        object_pairs_hook=None,
+        allow_nan=True
+    ):
+        # Initialize `JSONDecoder` with arguments depending on detected version
+        parsed_version = version.parse(json.__version__)
+        if parsed_version < version.parse("3.19"):
+            if not allow_nan:
+                logging.warning(
+                    "simplejson version %s detected, which cannot be prevented"
+                    " from accepting non-standard float values 'NaN',"
+                    " 'Infinity', and '-Infinity'!", parsed_version
+                )
             super().__init__(
                 encoding=encoding,
                 object_hook=object_hook,
@@ -355,237 +374,161 @@ if version.parse(json.__version__) >= version.parse("3.19.1"):
                 parse_int=parse_int,
                 parse_constant=parse_constant,
                 strict=strict,
+                object_pairs_hook=object_pairs_hook,
+            )
+        elif parsed_version < version.parse("4.0"):
+            super().__init__(
+                encoding=encoding,
+                object_hook=object_hook,
+                parse_float=parse_float,
+                parse_int=parse_int,
+                parse_constant=parse_constant,
+                strict=strict,
+                object_pairs_hook=object_pairs_hook,
+                allow_nan=allow_nan
+            )
+        else:
+            # Explicitly init with `array_hook=None` in >= v4 for clarity
+            super().__init__(
+                encoding=encoding,
+                object_hook=object_hook,
+                parse_float=parse_float,
+                parse_int=parse_int,
+                parse_constant=parse_constant,
+                strict=strict,
+                object_pairs_hook=object_pairs_hook,
                 allow_nan=allow_nan,
-                object_pairs_hook=object_pairs_hook,
+                array_hook=None
             )
-            # Only need to override the default array handler
-            self.parse_array = self.json_array_numpy
-            self.scan_once = json.scanner.py_make_scanner(self)
+        # Only need to override the default array handler
+        # (self.parse_array = JSONArray in JSONDecoder)
+        self.parse_array = self.json_array_numpy
+        # TODO: Need the following line? Isn't this precisely the definition of
+        # the `scan_once` attribute of the base class?
+        self.scan_once = json.scanner.py_make_scanner(self)
+        # Note: in the case of an array, `scan_once` calls our array handler.
+        # Simplejson v4.0 calls it with three, no longer with two, positional
+        # arguments, namely with `array_hook` in addition to a state (`s_and_end`)
+        # and `scan_once`.
 
-        def json_array_numpy(self, s_and_end, scan_once, **kwargs):
-            """Interpret arrays (lists by default) as numpy arrays where this does
-            not yield a string or object array; also handle conversion of
-            particularly-formatted input to pint Quantities."""
-            # Use the default array parser to get list-ified version of the data
-            values, end = json.decoder.JSONArray(s_and_end, scan_once, **kwargs)
+    def json_array_numpy(self, s_and_end, scan_once, array_hook=None, **kwargs):
+        """Interpret arrays (lists by default) as numpy arrays where this does
+        not yield a string or object array; also handle conversion of
+        particularly-formatted input to pint Quantities.
 
-            # Assumption for all below logic is the result is a Sequence (i.e., has
-            # attribute `__len__`)
-            assert isinstance(values, Sequence), str(type(values)) + "\n" + str(values)
+        See `simplejson.decoder.JSONArray` for parameters.
 
-            if len(values) == 0:
+        Notes
+        -----
+        The parameter `array_hook=None` was added for compatibility with
+        simplejson v4.0 but has no effect. (`*args` would have been an
+        alternative, but this way forces us to explicitly address changes
+        of the call signatures in simplejson). A warning is emitted when
+        it is attempted to be set.
+
+        """
+        if array_hook is not None:
+            logging.warning(
+                "The array_hook argument is ignored by this custom array handler!"
+            )
+        # Use the default array parser to get list-ified version of the data
+        values, end = json.decoder.JSONArray(s_and_end, scan_once, **kwargs)
+
+        # Assumption for all below logic is the result is a Sequence (i.e., has
+        # attribute `__len__`)
+        assert isinstance(values, Sequence), str(type(values)) + "\n" + str(values)
+
+        if len(values) == 0:
+            return values, end
+
+        try:
+            # -- Check for pint quantity -- #
+
+            if (
+                isinstance(values, ureg.Quantity)
+                or any(isinstance(val, ureg.Quantity) for val in values)
+            ):
+                return values, end
+
+            # Quantity tuple (`quantity.to_tuple()`) with a scalar produces from
+            # the raw JSON, e.g.,
+            #
+            #       [9.8, [['meter', 1.0], ['second', -2.0]]]
+            #
+            # or an ndarray (here of shape (2, 3)) produces from the raw JSON,
+            # e.g.,
+            #
+            #       [[[0, 1, 2], [2, 3, 4]], [['meter', 1.0], ['second', -2.0]]]
+            #
+            if (
+                len(values) == 2
+                and isinstance(values[1], Sequence)
+                and all(
+                    isinstance(subval, Sequence)
+                    and len(subval) == 2
+                    and isinstance(subval[0], string_types)
+                    and isinstance(subval[1], Number)
+                    for subval in values[1]
+                )
+            ):
+                values = ureg.Quantity.from_tuple(values)
+                return values, end
+
+            # Units part of quantity tuple (`quantity.to_tuple()[1]`)
+            # e.g. m / s**2 is represented as .. ::
+            #
+            #       [['meter', 1.0], ['second', -2.0]]
+            #
+            # --> Simply return, don't perform further conversion
+            if (
+                isinstance(values[0], Sequence)
+                and all(
+                    len(subval) == 2
+                    and isinstance(subval[0], string_types)
+                    and isinstance(subval[1], Number)
+                    for subval in values
+                )
+            ):
+                return values, end
+
+            # Individual unit (`quantity.to_tuple()[1][0]`)
+            # e.g. s^-2 is represented as .. ::
+            #
+            #     ['second', -2.0]
+            #
+            # --> Simply return, don't perform further conversion
+            if (
+                len(values) == 2
+                and isinstance(values[0], string_types)
+                and isinstance(values[1], Number)
+            ):
                 return values, end
 
             try:
-                # -- Check for pint quantity -- #
-
-                if (
-                    isinstance(values, ureg.Quantity)
-                    or any(isinstance(val, ureg.Quantity) for val in values)
-                ):
-                    return values, end
-
-                # Quantity tuple (`quantity.to_tuple()`) with a scalar produces from
-                # the raw JSON, e.g.,
-                #
-                #       [9.8, [['meter', 1.0], ['second', -2.0]]]
-                #
-                # or an ndarray (here of shape (2, 3)) produces from the raw JSON,
-                # e.g.,
-                #
-                #       [[[0, 1, 2], [2, 3, 4]], [['meter', 1.0], ['second', -2.0]]]
-                #
-                if (
-                    len(values) == 2
-                    and isinstance(values[1], Sequence)
-                    and all(
-                        isinstance(subval, Sequence)
-                        and len(subval) == 2
-                        and isinstance(subval[0], string_types)
-                        and isinstance(subval[1], Number)
-                        for subval in values[1]
-                    )
-                ):
-                    values = ureg.Quantity.from_tuple(values)
-                    return values, end
-
-                # Units part of quantity tuple (`quantity.to_tuple()[1]`)
-                # e.g. m / s**2 is represented as .. ::
-                #
-                #       [['meter', 1.0], ['second', -2.0]]
-                #
-                # --> Simply return, don't perform further conversion
-                if (
-                    isinstance(values[0], Sequence)
-                    and all(
-                        len(subval) == 2
-                        and isinstance(subval[0], string_types)
-                        and isinstance(subval[1], Number)
-                        for subval in values
-                    )
-                ):
-                    return values, end
-
-                # Individual unit (`quantity.to_tuple()[1][0]`)
-                # e.g. s^-2 is represented as .. ::
-                #
-                #     ['second', -2.0]
-                #
-                # --> Simply return, don't perform further conversion
-                if (
-                    len(values) == 2
-                    and isinstance(values[0], string_types)
-                    and isinstance(values[1], Number)
-                ):
-                    return values, end
-
-                try:
-                    ndarray_values = np.asarray(values)
-                except ValueError:
-                    return values, end
-
-                # Things like lists of dicts, or mixed types, will result in an
-                # object array; these are handled in PISA as lists, not numpy
-                # arrays, so return the pre-converted (list) version of `values`.
-                #
-                # Similarly, sequences of strings should stay lists of strings, not
-                # become numpy arrays.
-                if issubclass(ndarray_values.dtype.type, (np.object_, np.str_, str)):
-                    return values, end
-
-                return ndarray_values, end
-
-            except TypeError:
-                return values, end
-else:
-    # without allow_nan parameter
-    class NumpyDecoder(json.JSONDecoder):
-        """Decode JSON array(s) as numpy.ndarray; also returns python strings
-        instead of unicode."""
-        def __init__(
-            self,
-            encoding=None,
-            object_hook=None,
-            parse_float=None,
-            parse_int=None,
-            parse_constant=None,
-            strict=True,
-            object_pairs_hook=None,
-        ):
-            super().__init__(
-                encoding=encoding,
-                object_hook=object_hook,
-                parse_float=parse_float,
-                parse_int=parse_int,
-                parse_constant=parse_constant,
-                strict=strict,
-                object_pairs_hook=object_pairs_hook,
-            )
-            # Only need to override the default array handler
-            self.parse_array = self.json_array_numpy
-            self.scan_once = json.scanner.py_make_scanner(self)
-
-        def json_array_numpy(self, s_and_end, scan_once, **kwargs):
-            """Interpret arrays (lists by default) as numpy arrays where this does
-            not yield a string or object array; also handle conversion of
-            particularly-formatted input to pint Quantities."""
-            # Use the default array parser to get list-ified version of the data
-            values, end = json.decoder.JSONArray(s_and_end, scan_once, **kwargs)
-
-            # Assumption for all below logic is the result is a Sequence (i.e., has
-            # attribute `__len__`)
-            assert isinstance(values, Sequence), str(type(values)) + "\n" + str(values)
-
-            if len(values) == 0:
+                ndarray_values = np.asarray(values)
+            except ValueError:
                 return values, end
 
-            try:
-                # -- Check for pint quantity -- #
-
-                if (
-                    isinstance(values, ureg.Quantity)
-                    or any(isinstance(val, ureg.Quantity) for val in values)
-                ):
-                    return values, end
-
-                # Quantity tuple (`quantity.to_tuple()`) with a scalar produces from
-                # the raw JSON, e.g.,
-                #
-                #       [9.8, [['meter', 1.0], ['second', -2.0]]]
-                #
-                # or an ndarray (here of shape (2, 3)) produces from the raw JSON,
-                # e.g.,
-                #
-                #       [[[0, 1, 2], [2, 3, 4]], [['meter', 1.0], ['second', -2.0]]]
-                #
-                if (
-                    len(values) == 2
-                    and isinstance(values[1], Sequence)
-                    and all(
-                        isinstance(subval, Sequence)
-                        and len(subval) == 2
-                        and isinstance(subval[0], string_types)
-                        and isinstance(subval[1], Number)
-                        for subval in values[1]
-                    )
-                ):
-                    values = ureg.Quantity.from_tuple(values)
-                    return values, end
-
-                # Units part of quantity tuple (`quantity.to_tuple()[1]`)
-                # e.g. m / s**2 is represented as .. ::
-                #
-                #       [['meter', 1.0], ['second', -2.0]]
-                #
-                # --> Simply return, don't perform further conversion
-                if (
-                    isinstance(values[0], Sequence)
-                    and all(
-                        len(subval) == 2
-                        and isinstance(subval[0], string_types)
-                        and isinstance(subval[1], Number)
-                        for subval in values
-                    )
-                ):
-                    return values, end
-
-                # Individual unit (`quantity.to_tuple()[1][0]`)
-                # e.g. s^-2 is represented as .. ::
-                #
-                #     ['second', -2.0]
-                #
-                # --> Simply return, don't perform further conversion
-                if (
-                    len(values) == 2
-                    and isinstance(values[0], string_types)
-                    and isinstance(values[1], Number)
-                ):
-                    return values, end
-
-                try:
-                    ndarray_values = np.asarray(values)
-                except ValueError:
-                    return values, end
-
-                # Things like lists of dicts, or mixed types, will result in an
-                # object array; these are handled in PISA as lists, not numpy
-                # arrays, so return the pre-converted (list) version of `values`.
-                #
-                # Similarly, sequences of strings should stay lists of strings, not
-                # become numpy arrays.
-                if issubclass(ndarray_values.dtype.type, (np.object_, np.str_, str)):
-                    return values, end
-
-                return ndarray_values, end
-
-            except TypeError:
+            # Things like lists of dicts, or mixed types, will result in an
+            # object array; these are handled in PISA as lists, not numpy
+            # arrays, so return the pre-converted (list) version of `values`.
+            #
+            # Similarly, sequences of strings should stay lists of strings, not
+            # become numpy arrays.
+            if issubclass(ndarray_values.dtype.type, (np.object_, np.str_, str)):
                 return values, end
+
+            return ndarray_values, end
+
+        except TypeError:
+            return values, end
 
 # TODO: include more basic types in testing (strings, etc.)
 def test_to_json_from_json():
     """Unit tests for writing various types of objects to and reading from JSON
     files (including bz2-compressed and xor-scrambled files)"""
     # pylint: disable=unused-variable
+    # pylint: disable=import-outside-toplevel
     from shutil import rmtree
     from pisa.utils.comparisons import recursiveEquality
 
