@@ -1,5 +1,5 @@
 """
-PISA pi stage to apply HNL specific re-weighting
+Stage to apply HNL specific re-weighting
 """
 
 from __future__ import absolute_import, print_function, division
@@ -77,15 +77,24 @@ def re_weight_hnl(
 
 class weight_hnl(Stage):  # pylint: disable=invalid-name
     """
-    PISA pi stage to apply HNL specific re-weighting.
+    Stage to apply HNL specific re-weighting.
 
     This re-weights HNL events from sampling 1/L to target exponential and applies .
 
     Parameters
     ----------
-    params
-        Expected params are .. ::
+    params : ParamSet
+        Must have parameters::
+
             U_tau4_sq : dimensionless Quantity
+
+    Notes
+    -----
+
+    Expected container keys are::
+
+        'mHNL', 'hnl_true_energy', 'hnl_proper_lifetime', 'hnl_distance_min',
+        'hnl_distance_max', 'hnl_decay_width', 'weights'
     """
 
     def __init__(
@@ -93,7 +102,6 @@ class weight_hnl(Stage):  # pylint: disable=invalid-name
         **std_kwargs,
     ):
         expected_params = ("U_tau4_sq",)
-
         expected_container_keys = (
             'mHNL',
             'hnl_true_energy',
@@ -103,11 +111,15 @@ class weight_hnl(Stage):  # pylint: disable=invalid-name
             'hnl_decay_width',
             'weights',
         )
-
+        # Implements no setup_function+compute_function
+        supported_reps = {
+            'calc_mode': [None],
+        }
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 

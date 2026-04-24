@@ -19,14 +19,16 @@ class grid(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-
+    grid_binning : :py:class:`~.MultiDimBinning`
         Binning object defining the grid to be generated
 
     entity : str
-        `entity` arg to be passed to `MultiDimBinning.meshgrid` (see that
-        fucntion docs for details)
+        `entity` arg to be passed to :py:meth:`~.MultiDimBinning.meshgrid`
 
+    output_names : array_like
+        List of output names (event types)
     """
+
     def __init__(
         self,
         grid_binning,
@@ -35,20 +37,24 @@ class grid(Stage):  # pylint: disable=invalid-name
         **std_kwargs,
     ):
         expected_params = ()
+        expected_container_keys=()
 
         # store args
         self.grid_binning = grid_binning
         self.entity = entity
         self.output_names = output_names
 
+        # only intended to work with calc_mode="events"
+        supported_reps = {
+            'calc_mode': ["events"],
+        }
         # init base class
         super(grid, self).__init__(
             expected_params=expected_params,
-            expected_container_keys=(),
+            expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
-
-        assert self.calc_mode == "events"
         assert self.output_names is not None
 
     def setup_function(self):
@@ -82,7 +88,6 @@ class grid(Stage):  # pylint: disable=invalid-name
             container['weights'] = np.ones(size, dtype=FTYPE)
 
             self.data.add_container(container)
-
 
     def apply_function(self):
         # reset weights

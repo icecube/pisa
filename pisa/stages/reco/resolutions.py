@@ -15,14 +15,14 @@ __all__ = ['resolutions', 'init_test']
 
 class resolutions(Stage):  # pylint: disable=invalid-name
     """
-    stage to change the reconstructed information by a given amount
-    This can be used to esimate the impact of improved recosntruction
-    resolutions for instance
+    Stage to change the reconstructed information by a given amount.
+    This can be used to estimate the impact of improved reconstruction
+    resolutions for instance.
 
     Parameters
     ----------
-    params
-        Expected params .. ::
+    params : ParamSet
+        Must have parameters::
 
             energy_improvement : quantity (dimensionless)
                scale the reco error down by this fraction
@@ -32,27 +32,25 @@ class resolutions(Stage):  # pylint: disable=invalid-name
                 applies a shift to the classification parameter [if relative_pid=False]
                 scales the pid error down by this fraction [if relative_pid=True]
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "true_energy"
-            "true_coszen"
-            "reco_energy"
-            "reco_coszen"
-            "pid"
+    Expected container keys are::
 
+        "true_energy", "true_coszen", "reco_energy", "reco_coszen", "pid"
     """
+
     def __init__(
         self,
         relative_pid=False,
         **std_kwargs
     ):
-
+        # FIXME: not meant to be expected_params, as only setup_function implemented
         expected_params = (
             'energy_improvement',
             'coszen_improvement',
             'pid_improvement',
         )
-
         expected_container_keys = (
             'true_energy',
             'true_coszen',
@@ -60,19 +58,20 @@ class resolutions(Stage):  # pylint: disable=invalid-name
             'reco_coszen',
             'pid',
         )
-
-        # init base class
+        supported_reps = {
+            "calc_mode": ["events"],
+            "apply_mode": [None]
+        }
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
         self.relative_pid = relative_pid
 
     def setup_function(self):
-
-        self.data.representation = self.apply_mode
 
         for container in self.data:
             logging.info('Changing energy resolutions')

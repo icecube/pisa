@@ -48,8 +48,10 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
         nominal flux (since MCEq isued to derive these gradients). This is only relevent if using a 
         different nominal flux, e.g. Honda et al 2025
 
+    Parameters
+    ----------
     params : ParamSet
-        Must exclusively have parameters: .. ::
+        Must have parameters::
 
             delta_index : quantity (dimensionless)
                 Shift in the spectral index of the neutrino flux. Prior with a mean of 0.
@@ -78,15 +80,13 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
                 Uncertainty on K- and K+ production is assumed to be
                 uncorrelated as the ratio is badly determined.
 
-        Expected container keys are .. ::
-
-            "true_energy"
-            "true_coszen"
-            "nubar_flux_nominal"
-            "nubar"
-
     Notes
     -----
+
+    Expected container keys are::
+
+        "true_energy", "true_coszen", "nubar_flux_nominal", "nubar"
+
     The nominal flux is calculated ahead of time using MCEq,
     then multiplied with a shift in spectral index, and then modifications due
     to meson production (barr variables) are added.
@@ -179,7 +179,6 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             "delta_index",
             "energy_pivot",
         )
-
         expected_container_keys = [
             'true_energy',
             'true_coszen',
@@ -187,6 +186,10 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
         ]
         if use_honda_nominal_flux:
             expected_container_keys.append('nubar_flux_nominal')
+        # Implements no apply_function (implicit caching! FIXME)
+        supported_reps = {
+            'apply_mode': [None],
+        }
 
         # store args
         self.table_file = table_file
@@ -198,9 +201,9 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
-
 
     def setup_function(self):
 

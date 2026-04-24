@@ -15,18 +15,24 @@ from pisa.core.container import Container
 # TODO: docstrings
 class sqlite_loader(Stage):  # pylint: disable=invalid-name
     """
-    SQLite loader PISA Pi class
+    SQLite loader class
+
     Parameters
     ----------
     database : path to sqlite database
-    **kwargs
-        Passed to Stage
+
+    output_names : array_like
+        List of output names (event types)
+
+    post_fix : str
+
+
     """
     def __init__(
         self,
         database,
         output_names,
-        post_fix = '_pred',
+        post_fix='_pred',
         **std_kwargs,
     ):
 

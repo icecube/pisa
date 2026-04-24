@@ -27,7 +27,6 @@ class adhoc_sys(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-
     variable_name : str
         Name of the variable to correct data/MC agreement for. The variable must be
         loaded in the data loading stage and it must be present in the loaded JSON file.
@@ -36,7 +35,15 @@ class adhoc_sys(Stage):  # pylint: disable=invalid-name
         Path to the file which contains the binning and the scale factors. The JSON
         file must contain a dictionary in which, for each variable, a 1D binning and
         an array of factors. This file is produced externally from PISA.
+
+    Notes
+    -----
+
+    Expected container keys are::
+
+        "weights", `variable_name`
     """
+
     def __init__(
         self,
         data=None,
@@ -47,16 +54,13 @@ class adhoc_sys(Stage):  # pylint: disable=invalid-name
     ):
 
         expected_params = ()
-
         expected_container_keys = [
             'weights', variable_name
         ]
-
         supported_reps = {
-            'calc_mode': 'events',
-            'apply_mode': 'events'
+            'calc_mode': ['events'],
+            'apply_mode': ['events']
         }
-
         # init base class
         super().__init__(
             expected_params=expected_params,

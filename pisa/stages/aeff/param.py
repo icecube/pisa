@@ -25,7 +25,7 @@ __all__ = ['load_aeff_param', 'param', 'init_test']
 
 __author__ = 'T.C. Arlen, T. Ehrhardt, S. Wren, J. Weldert'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -137,19 +137,19 @@ class param(Stage): # pylint: disable=invalid-name
     Parameters
     ----------
     params : ParamSet or sequence with which to instantiate a ParamSet.
-        Expected params are .. ::
+        Must have parameters::
 
             aeff_energy_paramfile : string
             aeff_coszen_paramfile : string
             livetime : Quantity [time]
             aeff_scale : Quantity [dimensionless]
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "true_energy"
-            "true_coszen"
-            "weights"
+    Expected container keys are::
 
+        "true_energy", "true_coszen",  "weights"
     """
 
     def __init__(
@@ -162,16 +162,20 @@ class param(Stage): # pylint: disable=invalid-name
             'livetime',
             'aeff_scale'
         )
-
         expected_container_keys = (
             'true_energy',
             'true_coszen',
             'weights',
         )
-
+        # Implements no setup_function+compute_function
+        supported_reps = {
+            'calc_mode': [None],
+        }
+        # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 

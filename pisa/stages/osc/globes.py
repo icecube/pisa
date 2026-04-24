@@ -1,5 +1,5 @@
 """
-PISA pi stage wrapping GLoBES for the calculation of neutrino oscillation probabilities.
+Stage wrapping GLoBES for the calculation of neutrino oscillation probabilities.
 
 Allows for the calculation of sterile neutrino oscillation probabilities.
 This needs Andrii's GLoBES wrapper, which has been forked to be
@@ -32,16 +32,20 @@ __all__ = ['globes', 'init_test']
 
 class globes(Stage):  # pylint: disable=invalid-name
     """
-    GLoBES PISA Pi class
+    GLoBES class
 
     Parameters
     ----------
     earth_model : PREM file path
+
     globes_wrapper : path to globes wrapper
+
     detector_depth : float
+
     prop_height : quantity (dimensionless)
+
     params : ParamSet or sequence with which to instantiate a ParamSet.
-        Expected params .. ::
+        Must have parameters::
 
             theta12 : quantity (angle)
             theta13 : quantity (angle)
@@ -53,16 +57,13 @@ class globes(Stage):  # pylint: disable=invalid-name
             theta34 : quantity (angle)
             deltacp : quantity (angle)
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "true_energy"
-            "true_coszen"
-            "nubar"
-            "flav"
-            "nu_flux"
-            "weights"
-
+    Expected container keys are::
+        "true_energy", "true_coszen", "nubar", "flav", "nu_flux", "weights"
     """
+
     def __init__(
         self,
         earth_model,
@@ -131,9 +132,6 @@ class globes(Stage):  # pylint: disable=invalid-name
         # whether it is in the core or in the mantle. Therefore, we just multiply by
         # one to give GLoBES the raw densities.
         self.layers.setElecFrac(1., 1., 1.)
-
-        # set the correct data mode
-        self.data.representation = self.calc_mode
 
         # --- calculate the layers ---
         if self.data.is_map:
@@ -229,8 +227,6 @@ class globes(Stage):  # pylint: disable=invalid-name
                   0.0
                  ]
         self.globes_calc.SetParametersArr(params)
-        # set the correct data mode
-        self.data.representation = self.calc_mode
 
         for container in self.data:
             # standard oscillations are only applied to charged current events,

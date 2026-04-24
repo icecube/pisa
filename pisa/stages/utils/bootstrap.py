@@ -17,7 +17,7 @@ from pisa.utils.log import logging, set_verbosity
 
 __author__ = "A. Trettin"
 
-__license__ = """Copyright (c) 2022, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -43,6 +43,13 @@ class bootstrap(Stage):  # pylint: disable=invalid-name
     ----------
     seed : int, optional
         Seed for the random number generator.
+
+    Notes
+    -----
+
+    Expected container keys are::
+
+        "weights"
     """
 
     def __init__(
@@ -54,11 +61,14 @@ class bootstrap(Stage):  # pylint: disable=invalid-name
         expected_container_keys = (
             'weights',
         )
-
+        supported_reps = {
+            'calc_mode': ["events"],
+        }
         # init base class
         super().__init__(
             expected_params=(),
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 

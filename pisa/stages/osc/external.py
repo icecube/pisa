@@ -23,12 +23,8 @@ class external(Stage):
 
     Parameters
     ----------
-    params
-
-        osc_prob : callable
-            the external function
-
-        Expected params .. ::
+    params : ParamSet
+        Must have parameters::
 
             detector_depth : float
             earth_model : PREM file path
@@ -37,18 +33,22 @@ class external(Stage):
             YeO : quantity (dimensionless)
             YeM : quantity (dimensionless)
 
-        Expected container keys are .. ::
+    Attributes
+    ----------
+    osc_prob : callable
+        the external function
+    external_params :
+    layers : :py:class:`~.layers.Layers`
+    YeI : quantity (dimensionless)
+    YeO : quantity (dimensionless)
+    YeM : quantity (dimensionless)
 
-            "true_energy"
-            "true_coszen"
-            "nubar"
-            "flav"
-            "nu_flux"
-            "weights"
-
-    **kwargs
-        Other kwargs are handled by Stage
+    Notes
     -----
+
+    Expected container keys are::
+
+        "true_energy", "true_coszen", "nubar", "flav", "nu_flux", "weights"
     """
   
     def __init__(
@@ -64,7 +64,6 @@ class external(Stage):
           'YeO',
           'YeM',
         )
-
         expected_container_keys = (
             'true_energy',
             'true_coszen',
@@ -73,8 +72,6 @@ class external(Stage):
             'nu_flux',
             'weights'
         )
-      
-
         # init base class
         super().__init__(
             expected_params=expected_params,

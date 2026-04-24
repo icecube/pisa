@@ -17,24 +17,23 @@ __all__ = ['toy_event_generator', 'init_test']
 
 class toy_event_generator(Stage):  # pylint: disable=invalid-name
     """
-    random toy event generator PISA Pi class
+    random toy event generator class
 
     Parameters
     ----------
+    output_names : array_like
+        List of output names (event types)
 
-    output_names : str
-        list of output names
-
-    params
-        Expected params .. ::
+    params : ParamSet
+        Must have parameters::
 
             n_events : int
                 Number of events to be generated per output name
             random
             seed : int
                 Seed to be used for random
-
     """
+
     def __init__(
         self,
         output_names,

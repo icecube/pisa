@@ -386,7 +386,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
     Parameters
     ----------
     params : ParamSet
-        Must exclusively have parameters:
+        Must have parameters::
 
         perfect_reco : bool
             If True, use "perfect reco": reco == true, numu(bar)_cc -> tracks, rest to cascades
@@ -410,11 +410,12 @@ class simple_param(Stage):  # pylint: disable=invalid-name
         cascade_pid : float
             The numerical 'pid' variable value to assign for cascades
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "true_energy"
-            "true_coszen"
+    Expected container keys are::
 
+        "true_energy", "true_coszen"
     """
 
     def __init__(self,
@@ -422,23 +423,26 @@ class simple_param(Stage):  # pylint: disable=invalid-name
                 ):
 
         expected_params = (
-            "perfect_reco", #TODO move these to constructor args? (yes, please)
+            "perfect_reco", #FIXME move these to constructor args? (yes, please)
             "reco_energy_params",
             "reco_coszen_params",
             "pid_track_params",
             "track_pid",
             "cascade_pid",
         )
-
         expected_container_keys = (
             'true_energy',
             'true_coszen',
         )
-
+        # Implements no apply_function (TODO: does any calc_mode work?)
+        supported_reps = {
+            'apply_mode': [None],
+        }
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 

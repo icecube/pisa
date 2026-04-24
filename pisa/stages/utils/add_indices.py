@@ -1,5 +1,5 @@
 '''
-PISA module to prep incoming data into formats that are
+Module to prep incoming data into formats that are
 compatible with the mc_uncertainty likelihood formulation
 
 This module takes in events containers from the pipeline, and
@@ -24,40 +24,33 @@ __all__ = ['add_indices']
 
 class add_indices(Stage):  # pylint: disable=invalid-name
     """
-    PISA Pi stage to map out the index of the analysis
+    Stage to map out the index of the analysis
     binning where each event falls into.
 
-    Parameters
-    ----------
-    params
-        foo : Quantity
-        bar : Quanitiy with time dimension
-
-    Notes:
-    ------
+    Notes
+    -----
     - input and calc specs are predetermined in the module
-        (inputs from the config files will be disregarded)
-
+      (inputs from the config files will be disregarded)
     - stage appends an array quantity called bin_indices
     - stage also appends an array mask to access events by
       bin index later in the pipeline
-
     """
-
-    # this is the constructor with default arguments
 
     def __init__(self,
                  **std_kwargs,
                  ):
-
-
+        # has no apply_function, but uses both in setup_function
+        supported_reps = {
+            "calc_mode": ["events"],
+            "apply_mode": [MultiDimBinning],
+        }
         # init base class
         super().__init__(
             expected_params=(),
             expected_container_keys=(),
+            supported_reps=supported_reps,
             **std_kwargs,
         )
-
 
     def setup_function(self):
         '''

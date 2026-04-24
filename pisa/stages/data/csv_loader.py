@@ -1,5 +1,5 @@
 """
-A Stage to load data from a CSV datarelease format file into a PISA pi ContainerSet
+A Stage to load data from a CSV datarelease format file into a ContainerSet
 """
 
 from __future__ import absolute_import, print_function, division
@@ -13,14 +13,15 @@ from pisa.utils.resources import find_resource
 from pisa.core.container import Container
 from pisa.utils.format import split
 
+__all__ = ['csv_loader', 'init_test']
+
 
 class csv_loader(Stage):  # pylint: disable=invalid-name
     """
-    CSV file loader PISA Pi class
+    CSV file loader class
 
     Parameters
     ----------
-
     events_file : str or sequence of str
         csv file path(s)
 
@@ -50,8 +51,8 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
     scale_aeff : bool, default: False
         Convert effective area from cm^2 to m^2 (PISA flux tables are stored in m^2)
         if given in cm^2.
-
     """
+
     def __init__(
         self,
         events_file,
@@ -91,10 +92,16 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
             self.dis_idx = None
         self.scale_aeff = scale_aeff
 
+        # apply_function sets representation to "events", so only accept that
+        # to be transparent
+        supported_reps = {
+            'apply_mode': ["events"],
+        }
         # init base class
         super().__init__(
             expected_params=(),
             expected_container_keys=(),
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
