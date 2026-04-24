@@ -49,7 +49,8 @@ from pisa.utils.stats import (METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE,
 
 __all__ = ['SUPPORTED_LOCAL_SCIPY_MINIMIZERS', 'MINIMIZERS_USING_SYMM_GRAD',
            'MINIMIZERS_ACCEPTING_CONSTRS', 'Analysis', 'BasicAnalysis', 'Counter',
-           'HypoFitResult']
+           'HypoFitResult', 'test_analysis', 'test_constrained_minimization',
+           'global_scipy_minimization']
 
 __author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, E. Bourbeau, A. Trettin, T. Ehrhardt'
 
@@ -519,6 +520,9 @@ class Analysis():
         fitted parameters are also prevented from being stored in fit info
         dictionaries.
 
+
+    .. _fitting-tutorial:
+
     Examples
     --------
 
@@ -652,6 +656,13 @@ class Analysis():
             ]
         }
 
+    .. seealso::
+
+       Code example in :py:func:`test_constrained_minimization`
+          COBYLA fit using example pipeline with inequality constraint on
+          theta23
+
+
     Adding inequality constraints to algorithms that don't support it can be done by
     either nesting the local fit in the `constrained_fit` method or to use NLOPT's
     AUGLAG method that adds a penalty for constraint violations internally. For example,
@@ -762,6 +773,11 @@ class Analysis():
        Non-negligible constraint violations or stepping out of bounds may occur when
        global SciPy optimization is used in combination with constraints! This will
        hopefully get fixed soon.
+
+    .. seealso::
+
+       Code examples in :py:func:`test_constrained_minimization` and :py:func:`global_scipy_minimization`
+          Fits using example pipeline and different scipy solvers and constraint types
 
     **Custom fitting methods**
 
@@ -2693,8 +2709,7 @@ both `__name__` and `__qualname__` of `BasicAnalysis` evaluate to "Analysis".
 """
 
 def test_analysis(pprint=False):
-    """Test recursive fit strategies with Analysis."""
-
+    """Test recursive fit strategies on an :py:class:`Analysis` sub-class."""
     ###### Make Pipeline Configuration #########
     #  We make a configuration of two pipelines where some, but not all, parameters
     #  are shared between them. This checks for memory inconsistencies.
@@ -3023,10 +3038,9 @@ def test_analysis(pprint=False):
 
 
 def test_constrained_minimization(pprint=False):
-    """Test scipy solvers without or with equality and inequality
-    constraints. All are run with default options as set by
-    `set_minimizer_defaults`."""
-
+    """Test SciPy solvers without or with equality and inequality constraints.
+    All are run with default options as set by :py:func:`.set_minimizer_defaults`.
+    """
     config = 'settings/pipeline/fast_example.cfg'
     dm = DistributionMaker(config)
     data_dist = dm.get_outputs(return_sum=True)
@@ -3251,7 +3265,7 @@ def test_constrained_minimization(pprint=False):
 
 #TODO: rename to test_global_scipy_minimization to reinclude in unit-test auto detection
 def global_scipy_minimization(pprint=False):
-
+    """Test global SciPy solvers with constraints."""
     config = 'settings/pipeline/fast_example.cfg'
     dm = DistributionMaker(config)
     dm.params.fix("theta23") # make it converge faster

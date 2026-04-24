@@ -9,6 +9,6 @@ Carrying out a custom fitting routine
 
 .. raw:: html
 
-   <meta http-equiv="refresh" content="0; url=../pisa.analysis.html#pisa.analysis.analysis.Analysis" />
+   <meta http-equiv="refresh" content="0; url=../pisa.analysis.html#fitting-tutorial" />
 
-See :py:class:`~pisa.analysis.analysis.Analysis` class.
+See :py:class:`~pisa.analysis.analysis.Analysis` class and the :ref:`fitting tutorial <fitting-tutorial>`.

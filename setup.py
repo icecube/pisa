@@ -98,7 +98,7 @@ INSTALL_REQUIRES = [
     'scipy>=1.6',
     'pandas',
     'setuptools>18.5,<81', # keep in INSTALL_REQUIRES for python>=3.12 to still be able to use pkg_resources
-    'simplejson>=3.19.1,<4', # allow_nan added to decoder in 3.19.1, TODO: >=4: TypeError: NumpyDecoder.json_array_numpy() takes 3 positional arguments but 4 were given
+    'simplejson>=3.19.1', # allow_nan added to decoder in 3.19.1
     'tables',
     'tabulate',
     'uncertainties',
