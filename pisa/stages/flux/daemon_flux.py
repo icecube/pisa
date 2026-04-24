@@ -20,14 +20,14 @@ from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.random_numbers import get_random_state
 
-__all__ = ['MIN_VERSION', 'daemon_flux', 'make_2d_flux_map',
+__all__ = ['MIN_VERSION', 'ENERGY_GRID', 'daemon_flux', 'make_2d_flux_map',
            'evaluate_flux_map', 'init_test']
 
 MIN_VERSION = "0.8.0"
 """Minimum daemonflux package version for correct chi2 prior penalty"""
 
-ENERGY_GRID_GEV = np.logspace(-1, 5, 500, dtype=FTYPE) * ureg.GeV
-"""Default array of energies at which to evaluate fluxes"""
+ENERGY_GRID = np.logspace(-1, 5, 500, dtype=FTYPE) * ureg.GeV
+"""Default array of true neutrino energies at which to evaluate fluxes"""
 
 class daemon_flux(Stage):  # pylint: disable=invalid-name
     """
@@ -38,7 +38,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
 
     calibration_file: str, optional
         Path to the calibration file to be used
-    
+
     params: ParamSet
         Must have parameters::
 
@@ -208,7 +208,7 @@ def make_2d_flux_map(flux_obj,
     flux_obj : daemonflux.Flux
     particle : str (default: "numuflux")
         Type of flux to be returned. See `daemonflux.flux.Flux.quantities`.
-    egrid : float or np.ndarray (default: np.logspace(-1, 5, 500))
+    egrid : float or ndarray (default: :py:data:`ENERGY_GRID`)
         True energy/energies in GeV at which to compute flux.
     params : Dict[str, float], optional
         Dictionary of parameter values for off-baseline shifts.
@@ -220,7 +220,7 @@ def make_2d_flux_map(flux_obj,
         See `daemonflux.Flux.flux()` for units.
     """
     if egrid is None:
-        egrid = ENERGY_GRID_GEV.m_as("GeV")
+        egrid = ENERGY_GRID.m_as("GeV")
     if params is None:
         params = {}
     # flux_obj.zenith_angles is list of strings of values in deg between 0° & 180°
@@ -254,17 +254,17 @@ def evaluate_flux_map(flux_map, true_energy, true_coszen):
     Parameters
     ----------
     flux_map : scipy.interpolate.RectBivariateSpline
-    true_energy : Sequence
-        List of true energies in GeV at which to evaluate.
-    true_coszen : Sequence
-        List of true coszens at which to evaluate.
+    true_energy : array_like
+        True energies in GeV at which to evaluate
+    true_coszen : array_like
+        True coszens at which to evaluate
 
     Returns
     -------
-    np.ndarray
+    ndarray
         Flux in units of 1/(GeV m² s sr)
     """
-    # flux unit conversion factor (see See daemonflux.Flux.flux())
+    # flux unit conversion factor (see daemonflux.Flux.flux())
     uconv = true_energy**-3 * 1e4
     return flux_map.ev(true_energy, true_coszen) * uconv
 
