@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.jsons - PISA 0+untagged.1.gd239808 documentation</title>
+        <title>pisa.utils.jsons - PISA 0+untagged.1.g36ae09b documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.gd239808 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.g36ae09b documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.gd239808 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g36ae09b documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -316,9 +316,9 @@
     <span class="s1">&#39;test_to_json_from_json&#39;</span><span class="p">,</span>
 <span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Boeser, J.L. Lanfranchi&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Boeser, J.L. Lanfranchi, T. Ehrhardt&#39;</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2019, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
 <span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
@@ -413,7 +413,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Import here to avoid circular imports</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
+    <span class="c1"># pylint: disable=import-outside-toplevel</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">open_resource</span>
 
     <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -530,8 +530,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Import here to avoid circular imports</span>
+    <span class="c1"># pylint: disable=import-outside-toplevel</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_file_exists</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s1">&#39;to_json&#39;</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">content</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
@@ -583,7 +583,7 @@
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyEncoder">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">NumpyEncoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Subclass of ::class::`json.JSONEncoder` that overrides `default` method to</span>
+<span class="sd">    Subclass of `simplejson.JSONEncoder` that overrides `default` method to</span>
 <span class="sd">    allow writing numpy arrays and other special objects PISA uses to JSON</span>
 <span class="sd">    files.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -634,148 +634,43 @@
 </div>
 
 
-
-<span class="k">if</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;3.19.1&quot;</span><span class="p">):</span>
-    <span class="k">class</span><span class="w"> </span><span class="nc">NumpyDecoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode JSON array(s) as numpy.ndarray; also returns python strings</span>
-<span class="sd">        instead of unicode.&quot;&quot;&quot;</span>
-        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">object_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">parse_float</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">parse_int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">parse_constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">object_pairs_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="p">):</span>
-            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-                <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
-                <span class="n">object_hook</span><span class="o">=</span><span class="n">object_hook</span><span class="p">,</span>
-                <span class="n">parse_float</span><span class="o">=</span><span class="n">parse_float</span><span class="p">,</span>
-                <span class="n">parse_int</span><span class="o">=</span><span class="n">parse_int</span><span class="p">,</span>
-                <span class="n">parse_constant</span><span class="o">=</span><span class="n">parse_constant</span><span class="p">,</span>
-                <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
-                <span class="n">allow_nan</span><span class="o">=</span><span class="n">allow_nan</span><span class="p">,</span>
-                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">object_pairs_hook</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="c1"># Only need to override the default array handler</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">parse_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_array_numpy</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scan_once</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">py_make_scanner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">json_array_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Interpret arrays (lists by default) as numpy arrays where this does</span>
-<span class="sd">            not yield a string or object array; also handle conversion of</span>
-<span class="sd">            particularly-formatted input to pint Quantities.&quot;&quot;&quot;</span>
-            <span class="c1"># Use the default array parser to get list-ified version of the data</span>
-            <span class="n">values</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">JSONArray</span><span class="p">(</span><span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-            <span class="c1"># Assumption for all below logic is the result is a Sequence (i.e., has</span>
-            <span class="c1"># attribute `__len__`)</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-            <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># -- Check for pint quantity -- #</span>
-
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span>
-                    <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">)</span>
-                <span class="p">):</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="c1"># Quantity tuple (`quantity.to_tuple()`) with a scalar produces from</span>
-                <span class="c1"># the raw JSON, e.g.,</span>
-                <span class="c1">#</span>
-                <span class="c1">#       [9.8, [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
-                <span class="c1">#</span>
-                <span class="c1"># or an ndarray (here of shape (2, 3)) produces from the raw JSON,</span>
-                <span class="c1"># e.g.,</span>
-                <span class="c1">#</span>
-                <span class="c1">#       [[[0, 1, 2], [2, 3, 4]], [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
-                <span class="c1">#</span>
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
-                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                    <span class="p">)</span>
-                <span class="p">):</span>
-                    <span class="n">values</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="c1"># Units part of quantity tuple (`quantity.to_tuple()[1]`)</span>
-                <span class="c1"># e.g. m / s**2 is represented as .. ::</span>
-                <span class="c1">#</span>
-                <span class="c1">#       [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]</span>
-                <span class="c1">#</span>
-                <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
-                        <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span>
-                    <span class="p">)</span>
-                <span class="p">):</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="c1"># Individual unit (`quantity.to_tuple()[1][0]`)</span>
-                <span class="c1"># e.g. s^-2 is represented as .. ::</span>
-                <span class="c1">#</span>
-                <span class="c1">#     [&#39;second&#39;, -2.0]</span>
-                <span class="c1">#</span>
-                <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
-                <span class="p">):</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">ndarray_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="c1"># Things like lists of dicts, or mixed types, will result in an</span>
-                <span class="c1"># object array; these are handled in PISA as lists, not numpy</span>
-                <span class="c1"># arrays, so return the pre-converted (list) version of `values`.</span>
-                <span class="c1">#</span>
-                <span class="c1"># Similarly, sequences of strings should stay lists of strings, not</span>
-                <span class="c1"># become numpy arrays.</span>
-                <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">ndarray_values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">object_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="k">return</span> <span class="n">ndarray_values</span><span class="p">,</span> <span class="n">end</span>
-
-            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="c1"># without allow_nan parameter</span>
 <div class="viewcode-block" id="NumpyDecoder">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyDecoder">[docs]</a>
-    <span class="k">class</span><span class="w"> </span><span class="nc">NumpyDecoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode JSON array(s) as numpy.ndarray; also returns python strings</span>
-<span class="sd">        instead of unicode.&quot;&quot;&quot;</span>
-        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">object_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">parse_float</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">parse_int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">parse_constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">object_pairs_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NumpyDecoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Subclass of `simplejson.JSONDecoder`: decode JSON array(s) as numpy.ndarray;</span>
+<span class="sd">    also returns python strings instead of unicode.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    ------</span>
+<span class="sd">    * simplejson v4 added init parameter `array_hook` to `JSONDecoder`</span>
+
+<span class="sd">      * TODO: does this obviate the need for this custom decoder class?</span>
+<span class="sd">      * -&gt; don&#39;t expose as init parameter for now</span>
+
+<span class="sd">    * simplejson v3.19.0 added init parameter `allow_nan=False` to `JSONDecoder`</span>
+<span class="sd">      (prior default behavior was to allow `NaN`, `Infinity`, `-Infinity`)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">object_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_float</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">object_pairs_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
+        <span class="c1"># Initialize `JSONDecoder` with arguments depending on detected version</span>
+        <span class="n">parsed_version</span> <span class="o">=</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parsed_version</span> <span class="o">&lt;</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;3.19&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_nan</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;simplejson version </span><span class="si">%s</span><span class="s2"> detected, which cannot be prevented&quot;</span>
+                    <span class="s2">&quot; from accepting non-standard float values &#39;NaN&#39;,&quot;</span>
+                    <span class="s2">&quot; &#39;Infinity&#39;, and &#39;-Infinity&#39;!&quot;</span><span class="p">,</span> <span class="n">parsed_version</span>
+                <span class="p">)</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
                 <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
                 <span class="n">object_hook</span><span class="o">=</span><span class="n">object_hook</span><span class="p">,</span>
@@ -785,107 +680,154 @@
                 <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
                 <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">object_pairs_hook</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="c1"># Only need to override the default array handler</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">parse_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_array_numpy</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scan_once</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">py_make_scanner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">parsed_version</span> <span class="o">&lt;</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;4.0&quot;</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+                <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+                <span class="n">object_hook</span><span class="o">=</span><span class="n">object_hook</span><span class="p">,</span>
+                <span class="n">parse_float</span><span class="o">=</span><span class="n">parse_float</span><span class="p">,</span>
+                <span class="n">parse_int</span><span class="o">=</span><span class="n">parse_int</span><span class="p">,</span>
+                <span class="n">parse_constant</span><span class="o">=</span><span class="n">parse_constant</span><span class="p">,</span>
+                <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
+                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">object_pairs_hook</span><span class="p">,</span>
+                <span class="n">allow_nan</span><span class="o">=</span><span class="n">allow_nan</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Explicitly init with `array_hook=None` in &gt;= v4 for clarity</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+                <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+                <span class="n">object_hook</span><span class="o">=</span><span class="n">object_hook</span><span class="p">,</span>
+                <span class="n">parse_float</span><span class="o">=</span><span class="n">parse_float</span><span class="p">,</span>
+                <span class="n">parse_int</span><span class="o">=</span><span class="n">parse_int</span><span class="p">,</span>
+                <span class="n">parse_constant</span><span class="o">=</span><span class="n">parse_constant</span><span class="p">,</span>
+                <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
+                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">object_pairs_hook</span><span class="p">,</span>
+                <span class="n">allow_nan</span><span class="o">=</span><span class="n">allow_nan</span><span class="p">,</span>
+                <span class="n">array_hook</span><span class="o">=</span><span class="kc">None</span>
+            <span class="p">)</span>
+        <span class="c1"># Only need to override the default array handler</span>
+        <span class="c1"># (self.parse_array = JSONArray in JSONDecoder)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_array_numpy</span>
+        <span class="c1"># TODO: Need the following line? Isn&#39;t this precisely the definition of</span>
+        <span class="c1"># the `scan_once` attribute of the base class?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_once</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">py_make_scanner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># Note: in the case of an array, `scan_once` calls our array handler.</span>
+        <span class="c1"># Simplejson v4.0 calls it with three, no longer with two, positional</span>
+        <span class="c1"># arguments, namely with `array_hook` in addition to a state (`s_and_end`)</span>
+        <span class="c1"># and `scan_once`.</span>
 
 <div class="viewcode-block" id="NumpyDecoder.json_array_numpy">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyDecoder.json_array_numpy">[docs]</a>
-        <span class="k">def</span><span class="w"> </span><span class="nf">json_array_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Interpret arrays (lists by default) as numpy arrays where this does</span>
-<span class="sd">            not yield a string or object array; also handle conversion of</span>
-<span class="sd">            particularly-formatted input to pint Quantities.&quot;&quot;&quot;</span>
-            <span class="c1"># Use the default array parser to get list-ified version of the data</span>
-            <span class="n">values</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">JSONArray</span><span class="p">(</span><span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">json_array_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="n">array_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpret arrays (lists by default) as numpy arrays where this does</span>
+<span class="sd">        not yield a string or object array; also handle conversion of</span>
+<span class="sd">        particularly-formatted input to pint Quantities.</span>
 
-            <span class="c1"># Assumption for all below logic is the result is a Sequence (i.e., has</span>
-            <span class="c1"># attribute `__len__`)</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<span class="sd">        See `simplejson.decoder.JSONArray` for parameters.</span>
 
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The parameter `array_hook=None` was added for compatibility with</span>
+<span class="sd">        simplejson v4.0 but has no effect. (`*args` would have been an</span>
+<span class="sd">        alternative, but this way forces us to explicitly address changes</span>
+<span class="sd">        of the call signatures in simplejson). A warning is emitted when</span>
+<span class="sd">        it is attempted to be set.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">array_hook</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;The array_hook argument is ignored by this custom array handler!&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Use the default array parser to get list-ified version of the data</span>
+        <span class="n">values</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">JSONArray</span><span class="p">(</span><span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Assumption for all below logic is the result is a Sequence (i.e., has</span>
+        <span class="c1"># attribute `__len__`)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># -- Check for pint quantity -- #</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Quantity tuple (`quantity.to_tuple()`) with a scalar produces from</span>
+            <span class="c1"># the raw JSON, e.g.,</span>
+            <span class="c1">#</span>
+            <span class="c1">#       [9.8, [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
+            <span class="c1">#</span>
+            <span class="c1"># or an ndarray (here of shape (2, 3)) produces from the raw JSON,</span>
+            <span class="c1"># e.g.,</span>
+            <span class="c1">#</span>
+            <span class="c1">#       [[[0, 1, 2], [2, 3, 4]], [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
+            <span class="c1">#</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Units part of quantity tuple (`quantity.to_tuple()[1]`)</span>
+            <span class="c1"># e.g. m / s**2 is represented as .. ::</span>
+            <span class="c1">#</span>
+            <span class="c1">#       [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]</span>
+            <span class="c1">#</span>
+            <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span>
+                <span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Individual unit (`quantity.to_tuple()[1][0]`)</span>
+            <span class="c1"># e.g. s^-2 is represented as .. ::</span>
+            <span class="c1">#</span>
+            <span class="c1">#     [&#39;second&#39;, -2.0]</span>
+            <span class="c1">#</span>
+            <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
+            <span class="p">):</span>
                 <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
 
             <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># -- Check for pint quantity -- #</span>
+                <span class="n">ndarray_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
 
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span>
-                    <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">)</span>
-                <span class="p">):</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+            <span class="c1"># Things like lists of dicts, or mixed types, will result in an</span>
+            <span class="c1"># object array; these are handled in PISA as lists, not numpy</span>
+            <span class="c1"># arrays, so return the pre-converted (list) version of `values`.</span>
+            <span class="c1">#</span>
+            <span class="c1"># Similarly, sequences of strings should stay lists of strings, not</span>
+            <span class="c1"># become numpy arrays.</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">ndarray_values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">object_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
 
-                <span class="c1"># Quantity tuple (`quantity.to_tuple()`) with a scalar produces from</span>
-                <span class="c1"># the raw JSON, e.g.,</span>
-                <span class="c1">#</span>
-                <span class="c1">#       [9.8, [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
-                <span class="c1">#</span>
-                <span class="c1"># or an ndarray (here of shape (2, 3)) produces from the raw JSON,</span>
-                <span class="c1"># e.g.,</span>
-                <span class="c1">#</span>
-                <span class="c1">#       [[[0, 1, 2], [2, 3, 4]], [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
-                <span class="c1">#</span>
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
-                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                    <span class="p">)</span>
-                <span class="p">):</span>
-                    <span class="n">values</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+            <span class="k">return</span> <span class="n">ndarray_values</span><span class="p">,</span> <span class="n">end</span>
 
-                <span class="c1"># Units part of quantity tuple (`quantity.to_tuple()[1]`)</span>
-                <span class="c1"># e.g. m / s**2 is represented as .. ::</span>
-                <span class="c1">#</span>
-                <span class="c1">#       [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]</span>
-                <span class="c1">#</span>
-                <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
-                        <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span>
-                    <span class="p">)</span>
-                <span class="p">):</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="c1"># Individual unit (`quantity.to_tuple()[1][0]`)</span>
-                <span class="c1"># e.g. s^-2 is represented as .. ::</span>
-                <span class="c1">#</span>
-                <span class="c1">#     [&#39;second&#39;, -2.0]</span>
-                <span class="c1">#</span>
-                <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
-                <span class="p">):</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">ndarray_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="c1"># Things like lists of dicts, or mixed types, will result in an</span>
-                <span class="c1"># object array; these are handled in PISA as lists, not numpy</span>
-                <span class="c1"># arrays, so return the pre-converted (list) version of `values`.</span>
-                <span class="c1">#</span>
-                <span class="c1"># Similarly, sequences of strings should stay lists of strings, not</span>
-                <span class="c1"># become numpy arrays.</span>
-                <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">ndarray_values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">object_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
-                    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
-
-                <span class="k">return</span> <span class="n">ndarray_values</span><span class="p">,</span> <span class="n">end</span>
-
-            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span></div>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span></div>
 </div>
 
 
@@ -896,6 +838,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for writing various types of objects to and reading from JSON</span>
 <span class="sd">    files (including bz2-compressed and xor-scrambled files)&quot;&quot;&quot;</span>
     <span class="c1"># pylint: disable=unused-variable</span>
+    <span class="c1"># pylint: disable=import-outside-toplevel</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">shutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">rmtree</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursiveEquality</span>
 
@@ -1019,7 +962,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=aedf1f85"></script>
+</div><script src="../../../_static/documentation_options.js?v=79e1f489"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
