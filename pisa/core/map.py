@@ -1605,56 +1605,62 @@ class Map(object):
 
     def llh(self, expected_values, binned=False):
         """Calculate the total log-likelihood value between this map and the
-        map described by `expected_values`. See metric() for details.
+        map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "llh", binned)
 
+    def poisson_llh(self, expected_values, binned=False):
+        """Calculate the total Poissonian log-likelihood value between this map
+        and the map described by `expected_values`. See :py:meth:`metric`.
+        """
+        return self.metric(expected_values, "poisson_llh", binned)
+
     def mcllh_mean(self, expected_values, binned=False):
         """Calculate the total LMean log-likelihood value between this map and
-        the map described by `expected_values`. See metric() for details.
+        the map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "mcllh_mean", binned)
 
     def mcllh_eff(self, expected_values, binned=False):
         """Calculate the total LEff log-likelihood value between this map and
-        the map described by `expected_values`. See metric() for details.
+        the map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "mcllh_eff", binned)
 
     def conv_llh(self, expected_values, binned=False):
         """Calculate the total convoluted log-likelihood value between this map
-        and the map described by `expected_values`. See metric() for details.
+        and the map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "conv_llh", binned)
 
     def barlow_llh(self, expected_values, binned=False):
         """Calculate the total barlow log-likelihood value between this map and
-        the map described by `expected_values`. See metric() for details.
+        the map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "barlow_llh", binned)
 
     def mod_chi2(self, expected_values, binned=False):
         """Calculate the total modified chi2 value between this map and the map
-        described by `expected_values`. See metric() for details.
+        described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "mod_chi2", binned)
 
     def correct_chi2(self, expected_values, binned=False):
         """Calculate the total correct chi2 value between this map and the map
-        described by `expected_values`. See metric() for details.
+        described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "correct_chi2", binned)
 
     def chi2(self, expected_values, binned=False):
         """Calculate the total chi-squared value between this map and the map
-        described by `expected_values`. See metric() for details.
+        described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "chi2", binned)
 
     def signed_sqrt_mod_chi2(self, expected_values, binned=False):
         """Calculate the binwise (signed) square-root of the modified chi2 value
-        between this map and the map described by `expected_values`. See
-        metric() for details.
+        between this map and the map described by `expected_values`.
+        See :py:meth:`metric`.
         """
         return self.metric(expected_values, "signed_sqrt_mod_chi2", binned)
 

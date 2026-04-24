@@ -13,13 +13,17 @@ remove build directory before re-running sphinx-build.
 with a public repo scope and assign it to GITHUB_TOKEN before building the documentation
 """
 
+import os
+import sys
+
+# should keep track of URLs of Python ecosystem project docs
+from intersphinx_registry import get_intersphinx_mapping
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-import os
-import sys
 sys.path.insert(0, os.path.abspath('../..'))
+
 import pisa
 
 
@@ -48,6 +52,7 @@ extensions = [ # TODO: need all these?
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon', # for numpy-style docstrings
+    'sphinx.ext.intersphinx', # for cross-referencing external projects' docs
     'sphinx_github_changelog', # to include changelog generated from GitHub release notes
     'myst_nb', # for including jupyter notebooks
     #'sphinx_tippy', # for tooltips on links (TODO: get to work)
@@ -66,6 +71,20 @@ source_suffix = {
 
 # make sure the target is unique
 autosectionlabel_prefix_document = True
+
+# -- intersphinx configuration -----------------------------------------------
+# To look up all available targets in python docs, for instance:
+# python -m sphinx.ext.intersphinx https://docs.python.org/3/objects.inv
+
+# these projects' inventory files will be downloaded on build
+intersphinx_mapping = get_intersphinx_mapping(
+    packages={"python", "scipy"},
+)
+
+# Don't allow intersphinx to resolve non-external references -> need to use :external+domain:,
+# e.g. :external+scipy:py:mod:`scipy.optimize`
+# https://docs.readthedocs.com/platform/latest/guides/intersphinx.html#using-intersphinx
+intersphinx_disabled_reftypes = ["*"]
 
 
 # -- myst-nb configuration ---------------------------------------------------

@@ -98,7 +98,7 @@ INSTALL_REQUIRES = [
     'scipy>=1.6',
     'pandas',
     'setuptools>18.5,<81', # keep in INSTALL_REQUIRES for python>=3.12 to still be able to use pkg_resources
-    'simplejson>=3.19.1', # allow_nan added to decoder
+    'simplejson>=3.19.1', # allow_nan added to decoder in 3.19.1
     'tables',
     'tabulate',
     'uncertainties',
@@ -116,6 +116,7 @@ INSTALL_REQUIRES = [
 EXTRAS_REQUIRE = {
     'develop': [
         'furo',
+        'intersphinx-registry',
         'linkify-it-py',
         'myst-nb',
         'pylint>=4.0',
