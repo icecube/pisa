@@ -6,7 +6,7 @@ functionality is built-in.
 from __future__ import absolute_import, division
 
 from copy import deepcopy
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 import inspect
 from time import time
 
@@ -56,8 +56,8 @@ class Stage():
     supported_reps : dict
         Dictionary containing the representations allowed for calc_mode and
         apply_mode. If nothing is specified, Container.array_representations
-        plus MultiDimBinning is assumed. Should have keys `calc_mode` and/or
-        `apply_mode`, they will be created if not there.
+        plus MultiDimBinning is assumed. Should have keys "calc_mode" and/or
+        "apply_mode", they will be created if not there.
 
     calc_mode : pisa.core.binning.MultiDimBinning, str, or None
         Specify the default data representation for `setup()` and `compute()`
@@ -150,11 +150,18 @@ class Stage():
 
         if supported_reps is None:
             supported_reps = {}
+
         assert isinstance(supported_reps, Mapping)
-        if 'calc_mode' not in supported_reps:
-            supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning]
-        if 'apply_mode' not in supported_reps:
-            supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
+        for mode_str in ['calc_mode', 'apply_mode']:
+            if mode_str not in supported_reps:
+                # reps for this mode not yet defined -> allow all
+                supported_reps[mode_str] = list(Container.array_representations) + [MultiDimBinning]
+            else:
+                # reps for this mode already defined -> listify
+                if (isinstance(supported_reps[mode_str], str)
+                    or not isinstance(supported_reps[mode_str], Sequence)):
+                    supported_reps[mode_str] = [supported_reps[mode_str]]
+
         self.supported_reps = supported_reps
 
         self._check_representation(rep=calc_mode, mode='calc_mode', allow_None=True)
@@ -317,18 +324,18 @@ class Stage():
             # Should be removed once stages explicitely set modes.
             if None not in self.supported_reps[mode] and not allow_None:
                 raise ValueError(
-                    f"{mode} {rep} is not supported by {self.stage_name}"
+                    f"{mode}='{rep}' is not supported by {self.stage_name}"
                     f".{self.service_name}"
                 )
         elif isinstance(rep, str):
             if rep not in self.supported_reps[mode]:
                 raise ValueError(
-                    f"{mode} {rep} is not supported by {self.stage_name}"
+                    f"{mode}='{rep}' is not supported by {self.stage_name}"
                     f".{self.service_name}"
                 )
         elif type(rep) not in self.supported_reps[mode]:
             raise ValueError(
-                f"{mode} {type(rep)} is not supported by {self.stage_name}"
+                f"{mode} of type {type(rep)} is not supported by {self.stage_name}"
                 f".{self.service_name}"
             )
 
