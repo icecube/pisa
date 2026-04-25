@@ -61,6 +61,7 @@ class globes(Stage):  # pylint: disable=invalid-name
     -----
 
     Expected container keys are::
+
         "true_energy", "true_coszen", "nubar", "flav", "nu_flux", "weights"
     """
 

@@ -34,7 +34,7 @@ class two_nu_osc(Stage):  # pylint: disable=invalid-name
 
         "true_energy", "true_coszen", "nu_flux", "weights"
 
-    For two-neutrino model, there is only one mass-splitting term
+    For two-neutrino model, there is only one mass-splitting term.
     Atmospheric mixing angle is approximated by theta (sin^2(2*theta))
     """
 

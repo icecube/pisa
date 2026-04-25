@@ -38,13 +38,9 @@ class prob3(Stage):  # pylint: disable=invalid-name
     r"""
     Extended Prob3-like oscillations class.
 
-    Expected container keys are:
-            "true_energy",
-            "true_coszen",
-            "nubar",
-            "flav",
-            "nu_flux",
-            "weights"
+    Expected container keys are::
+
+        "true_energy", "true_coszen", "nubar", "flav", "nu_flux", "weights"
 
     Parameters
     ----------
@@ -125,8 +121,8 @@ class prob3(Stage):  # pylint: disable=invalid-name
         one. See e.g. https://inspirehep.net/literature/2658147 (JHEP 08(2023)101)
         for such an analysis in the literature.
 
-    params
-        expected params are .. ::
+    params : ParamSet
+        Must have parameters::
 
             detector_depth : float
             earth_model : PREM file path
@@ -166,7 +162,6 @@ class prob3(Stage):  # pylint: disable=invalid-name
 
     **std_kwargs
         Other kwargs are handled by Stage
-
     """
 
     def __init__(

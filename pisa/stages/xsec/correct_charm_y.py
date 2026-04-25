@@ -26,8 +26,8 @@ class correct_charm_y(Stage):
     nubar_cc_container_keys : list of strings
         list of all anti-neutrino charged current container keys
 
-    Notes:
-    ------
+    Notes
+    -----
     THIS STAGE IS FOR MC TESTING ONLY - do *NOT* use in real analysis!!!
 
     Expected container keys are::

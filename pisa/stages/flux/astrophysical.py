@@ -29,8 +29,8 @@ class astrophysical(Stage):  # pylint: disable=invalid-name
     -----
 
     Expected container keys are::
-        "true_energy", "true_coszen", "initial_weights"
 
+        "true_energy", "true_coszen", "initial_weights"
 
     TODO: flavor ratio as a parameter? Save for later.
     """

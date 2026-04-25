@@ -1,9 +1,9 @@
 """
 A stage to apply nutau cross-section uncertainties as implemented in
-https://github.com/marialiubarska/nutau_xsec
+https://github.com/marialiubarska/nutau_xsec.
 It interpolates between different nutau CC cross section models as compared in this
 paper:
-https://arxiv.org/pdf/1008.2984.pdf?fname=cm&font=TypeI
+https://arxiv.org/pdf/1008.2984.pdf
 """
 
 import pickle
@@ -27,7 +27,7 @@ class nutau_xsec(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    xsec_file : (string)
+    xsec_file : string
         Path to pickled interpolated function. Default is included in PISA in
         `pisa_examples/resources/cross_sections/interp_nutau_xsec_protocol2.pckl`
 
@@ -42,6 +42,7 @@ class nutau_xsec(Stage):  # pylint: disable=invalid-name
     -----
 
     Expected container keys are::
+
         "true_energy", "weights"
     """
 

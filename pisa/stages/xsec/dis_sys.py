@@ -37,6 +37,7 @@ class dis_sys(Stage): # pylint: disable=invalid-name
 
     params : ParamSet
         Must have parameters::
+
             dis_csms : quantity (dimensionless)  [if combine_components=True]
             or
             dis_csms_tot, dis_csms_diff : quantity (dimensionless)  [if combine_components=False]
