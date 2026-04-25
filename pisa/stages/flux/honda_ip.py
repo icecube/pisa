@@ -50,7 +50,7 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
         )
         # Implements no apply_function
         supported_reps = {
-            'apply_mode': [None],
+            'apply_mode': None,
         }
         # init base class
         super().__init__(

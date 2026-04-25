@@ -102,9 +102,13 @@ class simple_data_loader(Stage):  # pylint: disable=invalid-name
         # their values
         expected_params = ()
 
+        # Even though service implements setup_function (recording event
+        # properties), representations of new containers in there are explicitly
+        # set to "events" (naturally). Hence, choice of calc_mode has no impact.
+        # Make decision not to accept setting calc_mode.
         supported_reps = {
-            'calc_mode': [None],
-            'apply_mode': ["events"],
+            'calc_mode': None,
+            'apply_mode': "events",
         }
 
         # init base class

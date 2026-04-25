@@ -58,7 +58,7 @@ class aeff(Stage):  # pylint: disable=invalid-name
         )
         # Implements no setup_function+compute_function
         supported_reps = {
-            'calc_mode': [None],
+            'calc_mode': None,
         }
         # init base class
         super().__init__(

@@ -188,7 +188,7 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             expected_container_keys.append('nubar_flux_nominal')
         # Implements no apply_function (implicit caching! FIXME)
         supported_reps = {
-            'apply_mode': [None],
+            'apply_mode': None,
         }
 
         # store args

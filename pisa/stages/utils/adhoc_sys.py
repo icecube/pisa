@@ -58,8 +58,8 @@ class adhoc_sys(Stage):  # pylint: disable=invalid-name
             'weights', variable_name
         ]
         supported_reps = {
-            'calc_mode': ['events'],
-            'apply_mode': ['events']
+            'calc_mode': 'events',
+            'apply_mode': 'events'
         }
         # init base class
         super().__init__(

@@ -46,7 +46,7 @@ class grid(Stage):  # pylint: disable=invalid-name
 
         # only intended to work with calc_mode="events"
         supported_reps = {
-            'calc_mode': ["events"],
+            'calc_mode': "events",
         }
         # init base class
         super(grid, self).__init__(

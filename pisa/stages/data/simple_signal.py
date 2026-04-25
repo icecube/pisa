@@ -23,7 +23,7 @@ __all__ = ['simple_signal', 'init_test']
 
 class simple_signal(Stage):  # pylint: disable=invalid-name
     """
-    random toy event generator class
+    random toy event generator class (FIXME)
 
     Parameters
     ----------
@@ -35,7 +35,6 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
             random
             seed : int
                 Seed to be used for random
-
     """
 
     def __init__(
@@ -61,8 +60,8 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
         # FIXME: apply_mode=MultiDimBinning is assumed in setup_function, but
         # apply_function sets rep. to "events"
         supported_reps = {
-            'calc_mode': ["events"],
-            'apply_mode': [MultiDimBinning]
+            'calc_mode': "events",
+            'apply_mode': MultiDimBinning
         }
         # init base class
         super().__init__(

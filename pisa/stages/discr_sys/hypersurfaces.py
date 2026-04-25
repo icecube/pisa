@@ -115,7 +115,7 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
                 # this will cause a warning about missing presence of 'errors'
                 # because hist adds this key during apply
         supported_reps = {
-            'calc_mode': [MultiDimBinning],
+            'calc_mode': MultiDimBinning,
         }
         # -- Initialize base class -- #
         super().__init__(

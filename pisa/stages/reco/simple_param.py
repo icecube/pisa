@@ -436,7 +436,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
         )
         # Implements no apply_function (TODO: does any calc_mode work?)
         supported_reps = {
-            'apply_mode': [None],
+            'apply_mode': None,
         }
         # init base class
         super().__init__(

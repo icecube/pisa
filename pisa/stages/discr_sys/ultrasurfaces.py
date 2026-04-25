@@ -190,7 +190,7 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
 
         # evaluation only works on event-by-event basis
         supported_reps = {
-            'calc_mode': ["events"],
+            'calc_mode': "events",
         }
         # -- Initialize base class -- #
         super().__init__(

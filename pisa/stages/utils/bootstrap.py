@@ -62,7 +62,7 @@ class bootstrap(Stage):  # pylint: disable=invalid-name
             'weights',
         )
         supported_reps = {
-            'calc_mode': ["events"],
+            'calc_mode': "events",
         }
         # init base class
         super().__init__(

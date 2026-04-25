@@ -77,7 +77,7 @@ class generalized_llh_params(Stage):  # pylint: disable=invalid-name
         ]
         # TODO: uses custom representations in setup_function
         supported_reps = {
-            'apply_mode' : [MultiDimBinning]
+            'apply_mode': MultiDimBinning
         }
 
         if not 'apply_mode' in std_kwargs:

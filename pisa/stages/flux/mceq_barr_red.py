@@ -167,7 +167,7 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
         )
         # Implements no apply_function (implicit caching! FIXME)
         supported_reps = {
-            'apply_mode': [None],
+            'apply_mode': None,
         }
 
         # Using Honda for nominal flux. Keys should already exist

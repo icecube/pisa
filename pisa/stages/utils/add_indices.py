@@ -41,8 +41,8 @@ class add_indices(Stage):  # pylint: disable=invalid-name
                  ):
         # has no apply_function, but uses both in setup_function
         supported_reps = {
-            "calc_mode": ["events"],
-            "apply_mode": [MultiDimBinning],
+            "calc_mode": "events",
+            "apply_mode": MultiDimBinning,
         }
         # init base class
         super().__init__(

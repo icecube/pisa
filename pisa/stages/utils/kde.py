@@ -89,8 +89,8 @@ class kde(Stage):  # pylint: disable=invalid-name
                 self.stashed_errors = None
 
         supported_reps = {
-            'calc_mode': ['events'],
-            'apply_mode': [MultiDimBinning],
+            'calc_mode': 'events',
+            'apply_mode': MultiDimBinning,
         }
 
         # init base class

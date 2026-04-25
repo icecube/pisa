@@ -104,7 +104,7 @@ class csv_hypersurfaces(Stage):
             expected_container_keys.append('errors')
 
         supported_reps = {
-            'calc_mode':  [MultiDimBinning],
+            'calc_mode':  MultiDimBinning,
             'apply_mode': [MultiDimBinning, 'events'],
         }
 

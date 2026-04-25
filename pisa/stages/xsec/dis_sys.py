@@ -75,7 +75,7 @@ class dis_sys(Stage): # pylint: disable=invalid-name
         )
         # explicitly sets "events" rep. in setup_function -> be transparent
         supported_reps = {
-            'calc_mode': ["events"],
+            'calc_mode': "events",
         }
         # init base class
         super().__init__(

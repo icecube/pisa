@@ -65,7 +65,7 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
         )
         # Implements no apply_function (implicit caching! FIXME)
         supported_reps = {
-            'apply_mode': [None],
+            'apply_mode': None,
         }
         # init base class
         super().__init__(

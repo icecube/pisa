@@ -36,7 +36,7 @@ class csv_data_hist(Stage):  # pylint: disable=invalid-name
         expected_container_keys = ()
         # Implements no apply_function
         supported_reps = {
-            'apply_mode': [None],
+            'apply_mode': None,
         }
         # init base class
         super().__init__(

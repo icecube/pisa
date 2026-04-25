@@ -58,9 +58,10 @@ class resolutions(Stage):  # pylint: disable=invalid-name
             'reco_coszen',
             'pid',
         )
+        # Implements no apply_function
         supported_reps = {
-            "calc_mode": ["events"],
-            "apply_mode": [None]
+            "calc_mode": "events",
+            "apply_mode": None
         }
         super().__init__(
             expected_params=expected_params,

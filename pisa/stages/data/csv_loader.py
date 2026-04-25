@@ -93,9 +93,9 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
         self.scale_aeff = scale_aeff
 
         # apply_function sets representation to "events", so only accept that
-        # to be transparent
+        # to be transparent (TODO: any calc_mode fine?)
         supported_reps = {
-            'apply_mode': ["events"],
+            'apply_mode': "events",
         }
         # init base class
         super().__init__(
