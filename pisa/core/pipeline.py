@@ -701,13 +701,17 @@ class Pipeline():
             if isinstance(s.apply_mode, MultiDimBinning) and ref_binning is None:
                 ref_binning = s.apply_mode
                 ref_name = f"{s.stage_name}.{s.service_name}"
-                if isinstance(self.output_binning, MultiDimBinning) and ref_binning != self.output_binning:
+                if (isinstance(self.output_binning, MultiDimBinning) and
+                    ref_binning != self.output_binning):
                     raise ValueError(
                         f"Stage {ref_name} has '{s.apply_mode}' as apply_mode, which "
                         f"deviates from the pipeline output binning {self.output_binning}. "
                         "This configuration would result in an unreliable pipeline output."
                     )
-            elif ref_binning is not None and s.apply_mode != ref_binning:
+            elif (ref_binning is not None and s.apply_mode is not None and
+                  s.apply_mode != ref_binning):
+                # TODO: In case apply_mode=None, check whether calc_mode == ref_binning?
+                # (see also TODO in assert_varbinning_compat).
                 raise ValueError(
                     f"Stage {s.stage_name}.{s.service_name} has '{s.apply_mode}'"
                     " as apply_mode, which deviates from a previously detected "
@@ -724,11 +728,15 @@ class Pipeline():
         ------
         ValueError
             if at least one stage has apply_mode!='events'
-
         """
         incompat = []
         for s in self.stages:
-            if not s.apply_mode == 'events':
+            # TODO: Check below still allows pipeline setups with any calc_mode,
+            # even though we cannot prevent compute to produce the service's
+            # output in a binned representation. Is this all we can and should
+            # do in terms of validating the general setup?
+            if s.apply_mode is not None and s.apply_mode != 'events':
+                # not None: apply_function is implemented -> require 'events'
                 incompat.append(s)
         if len(incompat) >= 1:
             str_incompat = ", ".join(
