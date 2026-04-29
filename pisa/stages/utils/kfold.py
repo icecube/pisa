@@ -51,6 +51,12 @@ class kfold(Stage):  # pylint: disable=invalid-name
         by the number of splits
     shuffle (bool, optional): shuffle indeces before splitting
 
+    Notes
+    -----
+
+    Expected container keys are::
+
+        "weights"
     """
 
     def __init__(
@@ -67,11 +73,14 @@ class kfold(Stage):  # pylint: disable=invalid-name
         expected_container_keys = (
             'weights',
         )
-
+        supported_reps = {
+            'calc_mode': "events",
+        }
         # init base class
         super().__init__(
             expected_params=(),
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 

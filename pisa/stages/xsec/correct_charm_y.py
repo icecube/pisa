@@ -26,10 +26,13 @@ class correct_charm_y(Stage):
     nubar_cc_container_keys : list of strings
         list of all anti-neutrino charged current container keys
 
-    Notes:
-    ------
+    Notes
+    -----
     THIS STAGE IS FOR MC TESTING ONLY - do *NOT* use in real analysis!!!
 
+    Expected container keys are::
+
+        'true_energy', 'true_coszen', 'bjorken_y', 'weights'
 
     References
     ----------
@@ -38,8 +41,8 @@ class correct_charm_y(Stage):
 
     Slides showing use for check with oscNext VS (osc. call, 19 Dec 2022): 
     https://drive.google.com/file/d/14h0WYWPWn7yS7wLQpyMAPTenfKfFAq3k/view?usp=drive_link
-
     """
+
     def __init__(
             self,
             nu_cc_container_keys = ['nue_cc', 'numu_cc', 'nutau_cc'],

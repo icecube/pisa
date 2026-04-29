@@ -1,5 +1,5 @@
 """
-stage to implement getting the contribution to fluxes from astrophysical neutrino sources
+Stage to implement getting the contribution to fluxes from astrophysical neutrino sources
 """
 import numpy as np
 
@@ -19,17 +19,18 @@ class astrophysical(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    params
-        Expected params are .. ::
+    params : ParamSet
+        Must have parameters::
 
             astro_delta : quantity (dimensionless)
             astro_norm : quantity (dimensionless)
-            
-        Expected container keys are .. ::
 
-            "true_energy"
-            "true_coszen"
-            "initial_weights"
+    Notes
+    -----
+
+    Expected container keys are::
+
+        "true_energy", "true_coszen", "initial_weights"
 
     TODO: flavor ratio as a parameter? Save for later.
     """
@@ -63,7 +64,6 @@ class astrophysical(Stage):  # pylint: disable=invalid-name
         """
         Setup the nominal flux
         """
-        self.data.representation = self.calc_mode
         for container in self.data:
             container["astro_weights"] = np.ones(container.size, dtype=FTYPE)
             container["astro_flux"] = np.ones(container.size, dtype=FTYPE)
@@ -91,8 +91,6 @@ class astrophysical(Stage):  # pylint: disable=invalid-name
         """
         Tilt it, scale it, bop it
         """
-        self.data.representation = self.calc_mode
-
         delta = self.params.astro_delta.value.m_as("dimensionless")
         norm = self.params.astro_norm.value
 

@@ -20,21 +20,25 @@ __all__ = ['airs', 'init_test']
 
 class airs(Stage):  # pylint: disable=invalid-name
     """
+    Stage to implement the atmospheric density uncertainty.
+    Uses the neutrino fluxes calculated in the mceq_barr stage, and scales the weights.
+
     Parameters
     ----------
     airs_spline : spline containing the 1-sigma shifts from AIRS data
 
     params : ParamSet
-        Must exclusively have parameters: .. ::
+        Must have parameters::
 
             airs_scale : quantity (dimensionless)
                 the scale by which the weights are perturbed via the airs 1-sigma shift
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "true_energy"
-            "true_coszen"
-            "weights"
+    Expected container keys are::
+
+        "true_energy", "true_coszen", "weights"
     """
 
     def __init__(self, airs_spline, **std_kwargs):
@@ -44,13 +48,11 @@ class airs(Stage):  # pylint: disable=invalid-name
         expected_params = [
             "airs_scale",
         ]
-
         expected_container_keys = (
             'true_energy',
             'true_coszen',
             'weights',
         )
-
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,

@@ -20,21 +20,21 @@ class genie_sys(Stage): # pylint: disable=invalid-name
 
     Parameters
     ----------
-    params
-        Must contain ::
+    params : ParamSet
+        Must have parameters::
 
-        parameters specified in interactions (dimensionless)
+            parameters specified in `interactions` (dimensionless)
 
     Notes
     -----
-    Requires the events have the following keys for each included interaction ::
 
-        linear_fit_{name}
-            Genie linear coefficient for interaction {name}
-        quad_fit_{name}
-            Genie quadratic coefficient for interaction {name}
+    Expected container keys are::
 
+        "linear_fit_{name}" (Genie linear coefficient for interaction {name}),
+        "quad_fit_{name}" (Genie quadratic coefficient for interaction {name}),
+        "weights"
     """
+
     def __init__(
         self,
         interactions="Genie_Ma_QE, Genie_Ma_RES",

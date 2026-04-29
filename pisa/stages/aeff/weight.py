@@ -1,5 +1,5 @@
 """
-PISA pi stage to apply weights
+Stage to apply weights
 """
 
 from __future__ import absolute_import, print_function, division
@@ -13,25 +13,26 @@ __all__ = ['weight', 'init_test']
 
 class weight(Stage):  # pylint: disable=invalid-name
     """
-    PISA Pi stage to apply weights.
+    Stage to apply weights.
     This assumes a weight has already been calculated.
     The weight is then multiplied by the livetime to get an event count.
 
     Parameters
     ----------
-
     params : ParamSet or sequence with which to instantiate a ParamSet.
-        Expected params are: .. ::
+        Must have parameters::
 
             livetime : Quantity [time]
                 Detector livetime for scaling template
             weight_scale : Quantity [dimensionless]
                 Overall scaling/normalisation of template
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "weights"
+    Expected container keys are::
 
+        "weights"
     """
     def __init__(
         self,
@@ -41,18 +42,20 @@ class weight(Stage):  # pylint: disable=invalid-name
             'livetime',
             'weight_scale',
         )
-
         expected_container_keys = (
             'weights',
         )
-
+        # Implements no setup_function+compute_function
+        supported_reps = {
+            'calc_mode': None,
+        }
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
-
 
     @profile
     def apply_function(self):

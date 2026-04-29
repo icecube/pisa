@@ -24,23 +24,6 @@ class dis_sys(Stage): # pylint: disable=invalid-name
 
     Parameters
     ----------
-    data
-    params
-        Must contain ::
-            dis_csms : quantity (dimensionless)  [if combine_components=True]
-            or
-            dis_csms_tot, dis_csms_diff : quantity (dimensionless)  [if combine_components=False]
-
-        Expected container keys are .. ::
-
-            "true_energy"
-            "bjorken_y"
-            "dis"
-            "nubar"
-            "weights"
-
-
-
     combine_components : bool
         False -> allow the total and differential components to fit individually (params will then be: dis_csms_tot, dis_csms_diff)
         True -> vary the total and differential components together (param will then be: dis_csms)
@@ -52,17 +35,21 @@ class dis_sys(Stage): # pylint: disable=invalid-name
         Below what energy (in GeV) to extrapolate
         Defaults to 100. CSMS not considered reliable below 50-100 GeV
 
+    params : ParamSet
+        Must have parameters::
+
+            dis_csms : quantity (dimensionless)  [if combine_components=True]
+            or
+            dis_csms_tot, dis_csms_diff : quantity (dimensionless)  [if combine_components=False]
+
     Notes
     -----
-    Requires the events have the following keys ::
-        true_energy
-            Neutrino energy in GeV
-        bjorken_y
-            Inelasticity
-        dis
-            1 if event is DIS, else 0
 
+    Expected container keys are::
+
+        "true_energy", "bjorken_y", "dis", "nubar", "weights"
     """
+
     def __init__(
         self,
         extrapolation_type='constant',
@@ -80,7 +67,6 @@ class dis_sys(Stage): # pylint: disable=invalid-name
                 'dis_csms_tot',
                 'dis_csms_diff',
             )
-
         expected_container_keys = (
             'true_energy',
             'bjorken_y',
@@ -88,11 +74,15 @@ class dis_sys(Stage): # pylint: disable=invalid-name
             'nubar',
             'weights',
         )
-
+        # explicitly sets "events" rep. in setup_function -> be transparent
+        supported_reps = {
+            'calc_mode': "events",
+        }
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 

@@ -23,19 +23,18 @@ __all__ = ['simple_signal', 'init_test']
 
 class simple_signal(Stage):  # pylint: disable=invalid-name
     """
-    random toy event generator PISA class
+    random toy event generator class (FIXME)
 
     Parameters
     ----------
-    params
-        Expected params .. ::
+    params : ParamSet
+        Must have parameters::
 
             n_events : int
                 Number of events to be generated per output name
             random
             seed : int
                 Seed to be used for random
-
     """
 
     def __init__(
@@ -55,15 +54,19 @@ class simple_signal(Stage):  # pylint: disable=invalid-name
             'mu',
             'sigma'
         )
-
+        expected_container_keys = ()
+        # setup_function sets representation to "events", so only accept that
+        # to be transparent
+        # FIXME: apply_mode=MultiDimBinning is assumed in setup_function, but
+        # apply_function sets rep. to "events"
         supported_reps = {
-            'apply_mode': [MultiDimBinning]
+            'calc_mode': "events",
+            'apply_mode': MultiDimBinning
         }
-
         # init base class
         super().__init__(
             expected_params=expected_params,
-            expected_container_keys=(),
+            expected_container_keys=expected_container_keys,
             supported_reps=supported_reps,
             **std_kwargs,
         )

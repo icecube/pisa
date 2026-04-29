@@ -1,5 +1,5 @@
 """
-A Stage to load data from a PISA style hdf5 file into a PISA pi ContainerSet
+A Stage to load data from a PISA style hdf5 file into a ContainerSet
 """
 
 #TODO This class has become decreasingly "simple"! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task
@@ -19,11 +19,10 @@ __all__ = ['simple_data_loader', 'init_test']
 
 class simple_data_loader(Stage):  # pylint: disable=invalid-name
     """
-    HDF5 file loader PISA Pi class
+    HDF5 file loader class
 
     Parameters
     ----------
-
     events_file : hdf5 file path
         output from make_events, including flux weights
         and Genie systematics coefficients
@@ -67,8 +66,8 @@ class simple_data_loader(Stage):  # pylint: disable=invalid-name
     Looks for `initial_weights` fields in events file, which will serve
     as nominal weights for all events included.
     No fields named `weights` may already be present.
-
     """
+
     def __init__(self,
                  events_file,
                  mc_cuts,
@@ -103,9 +102,13 @@ class simple_data_loader(Stage):  # pylint: disable=invalid-name
         # their values
         expected_params = ()
 
+        # Even though service implements setup_function (recording event
+        # properties), representations of new containers in there are explicitly
+        # set to "events" (naturally). Hence, choice of calc_mode has no impact.
+        # Make decision not to accept setting calc_mode.
         supported_reps = {
-            'calc_mode': [None],
-            'apply_mode': ["events"],
+            'calc_mode': None,
+            'apply_mode': "events",
         }
 
         # init base class

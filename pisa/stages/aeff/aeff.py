@@ -1,5 +1,5 @@
 """
-PISA pi stage to apply effective area weights
+Stage to apply effective area weights
 """
 
 from __future__ import absolute_import, print_function, division
@@ -14,7 +14,7 @@ __all__ = ['aeff', 'init_test']
 
 class aeff(Stage):  # pylint: disable=invalid-name
     """
-    PISA Pi stage to apply aeff weights.
+    Stage to apply aeff weights.
 
     This combines the detector effective area with the flux weights calculated
     in an earlier stage to compute the weights.
@@ -24,8 +24,8 @@ class aeff(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    params
-        Expected params are .. ::
+    params : ParamSet
+        Must have parameters::
 
             livetime : Quantity with time units
             aeff_scale : dimensionless Quantity
@@ -33,13 +33,14 @@ class aeff(Stage):  # pylint: disable=invalid-name
             nutau_norm : dimensionless Quantity
             nu_nc_norm : dimensionless Quantity
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "weights"
-            "weighted_aeff"
+    Expected container keys are::
 
-
+        "weights", "weighted_aeff"
     """
+
     def __init__(
         self,
         **std_kwargs,
@@ -51,16 +52,19 @@ class aeff(Stage):  # pylint: disable=invalid-name
             'nutau_norm',
             'nu_nc_norm',
         )
-
         expected_container_keys = (
             'weights',
             'weighted_aeff',
         )
-
+        # Implements no setup_function+compute_function
+        supported_reps = {
+            'calc_mode': None,
+        }
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
