@@ -42,7 +42,7 @@ __all__ = ["Pipeline", "test_Pipeline", "parse_args", "main"]
 
 __author__ = "J.L. Lanfranchi, P. Eller"
 
-__license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -898,12 +898,13 @@ def test_Pipeline():
     #
     binned_apply_mode = pipeline.output_binning
     assert isinstance(binned_apply_mode, MultiDimBinning)
-    pipeline.stages[1].apply_mode = binned_apply_mode
+    # osc.prob3 apply_mode:
+    pipeline.stages[2].apply_mode = binned_apply_mode
     try:
         out = pipeline.get_outputs()
     except ValueError:
-        # Needs to fail: going from a binned output (after flux) to events
-        # (after osc.)
+        # Needs to fail: going from a binned output (after osc.) to events
+        # (after aeff)
         pass
     else:
         assert False
@@ -911,7 +912,8 @@ def test_Pipeline():
     #
     # Test: passing a custom output binning to get_outputs
     #
-    pipeline.stages[1].apply_mode = "events"
+    # reset apply mode
+    pipeline.stages[2].apply_mode = "events"
     # first get the original event distribution as reference
     out = pipeline.get_outputs()
     counts_tot = sum(out.num_entries.values())
@@ -928,7 +930,7 @@ def test_Pipeline():
     # a split into two event selections has to result in two MapSets
     assert len(out) == 2
     # a binned apply_mode has to result in a ValueError
-    # first get a pre-existing binning
+    # first get a pre-existing binning (set calc_mode of osc.prob3 as apply_mode)
     binned_calc_mode = p.stages[2].calc_mode
     assert isinstance(binned_calc_mode, MultiDimBinning)
     p.stages[2].apply_mode = binned_calc_mode
