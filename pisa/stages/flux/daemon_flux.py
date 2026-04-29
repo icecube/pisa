@@ -88,7 +88,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
                 " running 'pip install daemonflux --upgrade'.",
                 daemon_version, MIN_VERSION
             )
-            raise RuntimeError('detected daemonflux version < 0.8.0')
+            raise RuntimeError(f'Detected daemonflux version < {MIN_VERSION}')
 
         # create daemonflux Flux object
         self.flux_obj = Flux(location='IceCube', use_calibration=True,
