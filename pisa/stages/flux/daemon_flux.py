@@ -5,6 +5,8 @@ by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.
 Maria Liubarska, J.P. Yanez 2023
 """
 
+import time
+
 from daemonflux import Flux
 from daemonflux import __version__ as daemon_version
 import fast_interp
@@ -30,6 +32,7 @@ MIN_VERSION = "0.8.0"
 ENERGY_GRID = np.logspace(-1, 5, 500, dtype=FTYPE) * ureg.GeV
 """Default array of true neutrino energies at which to request fluxes
 from daemonflux"""
+
 
 class daemon_flux(Stage):  # pylint: disable=invalid-name
     """
@@ -210,6 +213,8 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             particle='antinue', params=modif_param_dict
         )
 
+        ntot = 0
+        start_t = time.time()
         # Obtain modified fluxes using provided parameters at desired points
         # in true_energy and true_coszen now
         for container in self.data:
@@ -227,6 +232,9 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             container['nu_flux'][:, 0] = nue_flux
             container['nu_flux'][:, 1] = numu_flux
             container.mark_changed("nu_flux")
+            ntot += len(container['true_energy'])
+        stop_t = time.time()
+        logging.info("PISA spline evaluation time (s, %d) events): %s", ntot, f"{stop_t - start_t:.2e}")
 
 
     def make_2d_flux_map(self, particle='numuflux', params=None):
@@ -250,7 +258,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         """
         if params is None:
             params = {}
-
+        start_t = time.time()
         # Obtain flux from daemonflux: expects ascending zenith angles in deg
         # TODO: Why does flux_obj need these to be handed back to it again?
         flux_ref = self.flux_obj.flux(
@@ -259,17 +267,20 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             quantity=particle,
             params=params
         )
+        stop_t = time.time()
+        logging.info("daemonflux %s flux generation duration (s): %s", particle, f"{stop_t - start_t:.2e}")
         # Now flip zenith angle dimension so we can interpolate in costheta
         # with increasing costheta
         flux_ref_lr = np.fliplr(flux_ref)
 
+        start_t = time.time()
         # Return interpolant which can be evaluated later
         if not self.fast_interp:
             fcn = interpolate.RectBivariateSpline(
                 x=self.egrid, y=self.costheta_angles_asc, z=flux_ref_lr
             )
         else:
-            # TODO: optimise arguments?
+            # TODO: optimise/adapt arguments?
             fcn = fast_interp.interp2d(
                 a=[min(self.egrid_log), min(self.costheta_angles_asc)],
                 b=[max(self.egrid_log), max(self.costheta_angles_asc)],
@@ -280,6 +291,8 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
                 c=[True, True],
                 e=[0, 0]
             )
+        stop_t = time.time()
+        logging.info("splining duration (s): %s", f"{stop_t - start_t:.2e}")
         return fcn
 
 
