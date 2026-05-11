@@ -1,8 +1,165 @@
 """
-Class to hold generic data in container.
-he data can be unbinned or binned or scalar, while
-translation methods between such different representations
-are provided.
+**Container module---data storage and transformation system**
+
+Data is stored in *multiple representations* simultaneously, with automatic translation
+between representations as needed.
+
+A single :py:class:`Container` holds multiple data variables (e.g., energy,
+cosine zenith) that may exist in different :py:attr:`~Container.representations`.
+A :py:class:`ContainerSet` manages multiple of these together with their
+representations.
+
+A *representation* defines the form in which data is stored:
+
+- "events"---:py:attr:`array representation <Container.array_representations>`
+
+  - raw individual events stored as 1D or higher-dimensional array
+  - each element corresponds to individual event's value
+  - most flexible but computationally intensive for large samples
+  - primary source representation for translating to binned data
+
+- "log_events"---:py:attr:`array representation <Container.array_representations>`
+
+  - logarithmic version of events
+  - used when computing probabilities or working with log-space naturally
+
+- :py:class:`.MultiDimBinning`---:py:meth:`map <Container.get_map>` or
+  :py:meth:`histogram <Container.get_hist>` representation
+
+  - specifies multi-dimensional binning (e.g., energy vs. cosine zenith)
+  - data stored (possibly flattened) according to given binning
+  - each bin contains aggregated (histogrammed or averaged) data
+
+Representations are identified by their :external+python:py:func:`hash` value.
+Hence, multiple `MultiDimBinning` (e.g., coarse vs. fine, or for different dimensions,
+for instance generator-level/truth vs. reconstructed) representations may coexist.
+
+When :py:attr:`validity = True <Container.validity>` for multiple representations
+of the same data (e.g., energy), a :py:attr:`~Container.precedence` system determines
+which representation to use as the source for translation, implemented by
+:py:meth:`~pisa.core.container.Container.find_valid_representation`. (As of now, all
+representations have precedence = 0, however!)
+
+For each variable, the container tracks which representations have valid (up-to-date)
+copies of that variable:
+``self.validity['variable_name'][representation_hash] = True/False``
+
+When data for some variable is modified in one representation---through the
+:py:meth:`~pisa.core.container.Container.__setitem__` dunder method
+(cf. :external+python:py:meth:`Python docs <object.__setitem__>`)---
+
+1. that representation is marked as *valid* for that variable, and
+2. all other representations are marked as *invalid*.
+
+If custom validity configuration is required, the methods
+:py:meth:`~Container.mark_changed` and :py:meth:`~Container.mark_valid` may be
+called and the attribute :py:attr:`~Container.validity` manipulated as desired.
+For example, histogramming weighted events and assigning the resulting histogram
+to ``container['weights']`` in a binned representation does not mathematically
+invalidate the weights in the 'events' representation. Hence, one can set::
+
+    container.validity['weights'][hash('events')] = True
+
+in order to ensure that PISA does not attempt to translate from binned → "events"
+when event-by-event weights are requested (see below). Instead, the exact
+event-by-event weights will remain available.
+
+When accessing data with an invalid source representation,
+:py:meth:`~Container.auto_translate` is triggered, which ensures synchronization
+across representations as needed, i.e., on demand.
+
+There are different translation modes available, defined on a per-variable basis
+in the :py:attr:`~Container.tranlation_modes` (sic!) dictionary attribute, with a
+default of "average" (see :py:attr:`~Container.default_translation_mode`):
+
+- "average" mode (default)---for quantities where bin-averaging makes sense
+
+  - examples: oscillation probabilities, energy reconstruction parameters
+
+- "sum" mode---for quantities where summation makes sense
+
+  - examples: event weights, raw counts
+
+Specify translation mode for a given variable::
+
+    container.translation_modes['variable_name'] = 'average' # (or 'sum')
+
+
+The `Container` supports *three primary transformation types* (source-target combinations):
+
+- "events" ↔ "log_events" (requires "average" mode)
+
+  - "events" → "log_events": ``sample = np.log(events)``
+  - "log_events" → "events": ``sample = np.exp(log_events)``
+  - properties: invertible, one-to-one mapping
+
+- "events" ↔ binned
+
+  - "events" → binned (implemented for both translation modes, :py:meth:`~Container.array_to_binned`)
+
+    - histograms unbinned event sample into specified `MultiDimBinning`
+    - in "average" mode: computes bin averages (for normalized quantities)
+    - in "sum" mode: computes bin sums (for counts)
+    - handles log-space dimensions (transforms to log before histogramming)
+
+  - binned → events (requires "average" mode, :py:meth:`~Container.binned_to_array`)
+
+    - performs :py:func:`lookup <.translation.lookup>` on binned histogram to recover
+      event-by-event variables
+    - handles log-space dimensions (transforms to log before lookup)
+
+- binned ↔ binned (requires "average" mode, :py:meth:`~Container.resample`)
+
+  - performs :py:func:`resampling <.translation.resample>` of binned histogram to
+    recover new histogram with different binnings in the same dimensions
+
+
+The `Container` provides transparent access via
+:py:meth:`~pisa.core.container.Container.__getitem__`::
+
+    container.representation = 'events' # set desired representation
+    data = container['variable_name']   # auto-translates if needed
+
+Access mechanism:
+  1. check if data exists in current representation
+  2. if not, search for valid representation of this variable
+  3. if valid representation found: auto-translate to current representation
+  4. if no valid representation: raise exception
+  5. return data in current representation
+
+For binned representations:
+  * binning dimension arrays accessible by dimension name
+  * example: ``container['energy']`` returns energy bin coordinates (if 'energy'
+    is a binning dimension)
+
+Beyond histogram data, containers can store *auxiliary metadata*::
+
+    container.set_aux_data('metadata_key', arbitrary_python_object)
+    value = container['metadata_key']  # retrieved like regular data
+
+Properties:
+  * not tied to any representation
+  * not translated (same across all representations)
+  * useful for storing configuration, cut information, boolean flags etc.
+  * included in :py:attr:`~Container.all_keys_incl_aux_data`
+
+
+For managing multiple related containers via a :py:class:`ContainerSet`::
+
+    container_set = ContainerSet('dataset_name', [container1, container2, ...])
+    container_set.representation = binning  # applied to all containers
+    mapset = container_set.get_mapset('variable')  # returns MapSet of all
+
+Features:
+  * unified representation management across containers
+  * linking containers for treatment as single :py:class:`VirtualContainer`
+  * finding shared variables across containers
+  * automatic :py:class:`~.MapSet` generation for analysis
+
+See individual class docstrings (:py:class:`Container`, :py:class:`ContainerSet`, 
+:py:class:`VirtualContainer`) for detailed API documentation.
+
+==============================================================================
 """
 
 from __future__ import absolute_import, print_function
@@ -22,18 +179,15 @@ from pisa.utils.log import logging
 
 
 class ContainerSet():
-    """
-    Class to hold a set of container objects
+    """Class to hold a set of :py:class:`Container` objects.
 
     Parameters
     ----------
     name : str
-
-    containers : list or None
-
+    containers : list of :py:class:`Container` or None
     representation : MultiDimBinning, "events" or None
-
     """
+
     def __init__(self, name, containers=None, representation=None):
         self.name = name
         self.linked_containers = []
@@ -51,7 +205,7 @@ class ContainerSet():
 
     @property
     def is_map(self):
-        '''Is current representation a map/grid'''
+        '''Is current representation a map/grid?'''
         if len(self.containers):
             return self.containers[0].is_map
 
@@ -82,18 +236,17 @@ class ContainerSet():
 
     @property
     def names(self):
+        """Return list of names of included containers."""
         return [c.name for c in self.containers]
 
     def get_shared_keys(self, rep_indep=True):
-        """
-        Get a tuple of all keys shared among contained containers.
+        """Get a tuple of all keys shared among contained containers.
 
         Parameters
         ----------
         rep_indep : bool
             Whether all keys should be considered, not just those in
             the current representation (default: `True`)
-
         """
         if len(self.containers) == 0:
             return ()
@@ -107,19 +260,16 @@ class ContainerSet():
 
     def link_containers(self, key, names):
         """Link containers together. When containers are linked, they are
-        treated as a single (virtual) container for binned data
+        treated as a single (virtual) container for binned data.
 
         Parameters
         ----------
         key : str
             name of linked object
-
         names : list
             name of containers to be linked under the given key
-
         """
         # intersection of names for linking and available names
-
         link_names = set(names) & set(self.names)
         if len(link_names) < len(names):
             logging.warning(
@@ -135,7 +285,7 @@ class ContainerSet():
             logging.warning("None of the containers exist, skipping %s"%(key))
 
     def unlink_containers(self):
-        """Unlink all container"""
+        """Unlink all containers."""
         logging.trace('Unlinking all containers')
         for c in self.linked_containers:
             c.unlink()
@@ -163,25 +313,23 @@ class ContainerSet():
 
     def __iter__(self):
         """Iterate over individual non-linked containers and virtual containers
-        for the ones that are linked together
+        for the ones that are linked together.
         """
         containers_to_be_iterated = [c for c in self.containers if not c.linked] + self.linked_containers
         return iter(containers_to_be_iterated)
 
     def get_mapset(self, key, error=None):
-        """For a given key, get a MapSet
+        """For a given key, get a `MapSet`.
 
         Parameters
         ----------
         key : str
-
         error : None or str
             specify a key that errors are read from
 
         Returns
         -------
         map_set : MapSet
-
         """
         maps = []
         for container in self:
@@ -190,32 +338,28 @@ class ContainerSet():
 
     @property
     def glob_aux_data_keys(self):
-        """Returns the names of the objects stored in the global auxiliary data."""
+        """Return names of objects stored in the global auxiliary data."""
         return self._glob_aux_data.keys()
 
 
 class VirtualContainer():
-    """
-    Class providing a virtual container for linked individual containers
+    """Class providing a "virtual container" for linked individual containers,
+    which should just behave like a normal container.
 
-    It should just behave like a normal container
+    For reading, it just uses one container as representative
+    (no checking at the moment if the others actually contain the same data).
 
-    For reading, it just uses one container as a representative
-    (no checking at the moment if the others actually contain the same data)
-
-    For writing, it creates one object that is added to all containers
+    For writing, it creates one object that is added to all containers.
 
     Parameters
     ----------
     name : str
-
     containers : list
-
     """
 
     def __init__(self, name, containers):
         self.name = name
-        # check and set link flag
+        # check and set `linked` flag
         for container in containers:
             if container.linked:
                 raise ValueError(
@@ -229,7 +373,7 @@ class VirtualContainer():
         return f'VirtualContainer containing {[c.name for c in self]}'
 
     def unlink(self):
-        '''Reset link flag and copy all accessed keys'''
+        """Reset `linked` flag to `False`."""
         # reset flag
         for container in self:
             container.linked = False
@@ -238,7 +382,7 @@ class VirtualContainer():
         return iter(self.containers)
 
     def __getitem__(self, key):
-        # should we check they're all the same?
+        # TODO: should we check they're all the same?
         return self.containers[0][key]
 
     def __setitem__(self, key, value):
@@ -246,25 +390,28 @@ class VirtualContainer():
             container[key] = value
 
     def set_aux_data(self, key, val):
-        '''See `Container.set_aux_data`'''
+        """See :py:meth:`Container.set_aux_data`."""
         for container in self:
             container.set_aux_data(key, val)
 
     def mark_changed(self, key):
-        '''Copy data under this key from representative container into
-        all others and then mark all as changed (see `Container.mark_changed`)'''
+        """Copy data under this key from representative container into
+        all others and then mark all as changed (see
+        :py:meth:`Container.mark_changed`).
+        """
         for container in self.containers[1:]:
             container[key] = np.copy(self.containers[0][key])
         for container in self:
             container.mark_changed(key)
 
     def mark_valid(self, key):
-        '''See `Container.mark_valid`'''
+        """See :py:meth:`Container.mark_valid`."""
         for container in self:
             container.mark_valid(key)
 
     @property
     def representation(self):
+        """See :py:attr:`Container.representation`."""
         return self.containers[0].representation
 
     @representation.setter
@@ -274,26 +421,67 @@ class VirtualContainer():
 
     @property
     def shape(self):
+        """See :py:attr:`Container.shape`."""
         return self.containers[0].shape
 
     @property
     def size(self):
+        """See :py:attr:`Container.size`."""
         return np.prod(self.shape)
 
 
 class Container():
-    """
-    Container to hold data in multiple representations
+    """Container to hold data in multiple representations.
 
-    Parameters:
-    -----------
+    A Container manages variables across multiple possible representations. The
+    key feature is automatic translation: when you request data in a
+    representation that isn't currently valid, the container automatically
+    delivers a translation from a valid representation.
 
-    name : str
-        name of container
+    Parameters
+    ----------
+        name : str
+            Identifier for this container
 
-    representation : hashable object, e.g. str or MultiDimBinning
-        Representation in which to initialize the container
+        representation : hashable object, e.g. `str` or :py:class:`.MultiDimBinning`
+            Initial representation. Can be one of: "events" (unbinned event array,
+            default), "log_events" (log-transformed event array), `MultiDimBinning`.
+            Representation can be changed anytime via property setter.
 
+    Attributes
+    ----------
+        linked : bool (default: False)
+            Whether container is linked to another (see :py:class:`VirtualContainer`)
+
+        data : dict[representation_hash][variable_name] -> ndarray
+            Raw data storage, organized by representation then variable
+
+        _aux_data : dict[key] -> object
+            Auxiliary data not tied to any representation
+
+        validity : dict[variable_name][representation_hash] -> bool
+            Tracks which representations have current valid data
+
+        precedence : dict[representation_hash] -> int
+            Precedence for choosing translation source (lower = higher priority).
+            Currently 0 for every representation (TODO).
+
+        tranlation_modes : dict[variable_name] -> str
+            Translation mode to use for each variable, e.g. for binning or
+            resampling: "average" (default) or "sum".
+
+        _representations : dict[representation_hash] -> hashable object, e.g. `str` or :py:class:`.MultiDimBinning`
+            Representation storage, organized by hash value
+
+    See also
+    --------
+    :py:class:`VirtualContainer` : for linking multiple `Container` instances
+    :py:class:`ContainerSet` : for managing multiple `Container` instances
+
+    Notes
+    -----
+    See :py:mod:`module docstring <.container>` for an overview of the whole representation-transformation
+    system.
     """
 
     default_translation_mode = "average"
@@ -338,12 +526,13 @@ class Container():
     
     @property
     def representation(self):
+        """Return current rep."""
         return self._representation
-
     
     def set_aux_data(self, key, val):
         '''Add any auxiliary data, which will not be translated or
-        tied to a specific representation'''
+        tied to a specific representation.
+        '''
         if key in self.all_keys:
             raise KeyError(f'Key {key} already exsits')
 
@@ -366,6 +555,7 @@ class Container():
         
     @property
     def shape(self):
+        """Return array shape of current rep."""
         if self.is_map:
             return self.representation.shape
         if len(self.keys) == 0:
@@ -375,24 +565,31 @@ class Container():
 
     @property
     def size(self):
+        """Return array size of current rep."""
         return np.prod(self.shape)
     
     @property
     def num_dims(self):
+        """Return no. of dimensions of current rep."""
         if self.is_map:
             return self.representation.num_dims
         return 1
     
     @property
     def representations(self):
+        """Return all available reps."""
         return tuple(self._representations.values())
     
     @property
     def representation_keys(self):
+        """Return hash values of all available reps."""
         return tuple(self._representations.keys())
     
     @property
     def keys(self):
+        """Return all keys of the current representation (incl. binning
+        dimensions) if applicable.
+        """
         keys = tuple(self.current_data.keys())
         if self.is_map:
             keys += tuple(self.representation.names)
@@ -400,26 +597,28 @@ class Container():
 
     @property
     def keys_incl_aux_data(self):
-        '''same as keys, but including auxiliary data'''
+        '''Same as :py:attr:`keys`, but including auxiliary data.'''
         return list(self.keys) + list(self._aux_data.keys())
     
     @property
     def all_keys(self):
-        '''return all available keys, regardless of representation'''
+        '''Return all available keys, regardless of representation.'''
         return list(self.validity.keys())
 
     @property
     def all_keys_incl_aux_data(self):
-        '''same as `all_keys`, but including auxiliary data'''
+        '''Same as :py:attr:`all_keys`, but including auxiliary data.'''
         return self.all_keys + list(self._aux_data.keys())
         
     @property
     def is_map(self):
-        '''Is current representation a map/grid'''
+        '''Whether current representation is a map/grid.'''
         return isinstance(self.representation, MultiDimBinning)
         
     def mark_changed(self, key):
-        '''mark a key as changed and only what is in the current representation is valid'''
+        '''Mark a key as changed and only what is in the current representation
+        as valid.
+        '''
         # invalidate all
         for rep in self.validity[key]:
             self.validity[key][rep] = False
@@ -428,7 +627,7 @@ class Container():
             self.mark_valid(key)
 
     def mark_valid(self, key):
-        '''validate data as is in current representation, regardless'''
+        '''Validate data as is in current representation, regardless.'''
         self.validity[key][hash(self.representation)] = True
         
     def __getitem__(self, key):
@@ -436,7 +635,16 @@ class Container():
         return data
     
     def __setitem__(self, key, data):
-        
+        """Set or overwrite data for some variable, validating the current
+        and invalidating all other representations. Also, the default translation
+        mode is adopted for the variable (unless a mode has already been set).
+
+        Parameters
+        ----------
+        key : string
+            identifier
+        data : ndarray, :py:class:`~.Map` or (array, binning)-tuple
+        """
         if self.is_map:
             if key in self.representation.names:
                 raise Exception(f'Cannot add variable {key}, as it is a binning dimension')
@@ -448,14 +656,14 @@ class Container():
         self.mark_changed(key)
        
     def __add_data(self, key, data):
-        """
+        """Add data for a given variable, after performing consistency checks
+        or flattening it.
+
         Parameters
         ----------
         key : string
             identifier
-        data : ndarray, PISA Map or (array, binning)-tuple
-        is_flat : bool
-            is the data already flattened (i.e. the binning dimensions unrolled)
+        data : ndarray, :py:class:`~.Map` or (array, binning)-tuple
         """
         if isinstance(data, np.ndarray):
             
@@ -500,6 +708,11 @@ class Container():
             
             
     def __get_data(self, key):
+        """Return data for the given variable, automatically translating
+        it into the current representation if necessary. If the current
+        representation is a binning and `key` one of its dimensions, returns
+        an array containing the unrolled binning.
+        """
         if self.is_map:
             binning = self.representation
             # check if key is binning dimension
@@ -519,7 +732,6 @@ class Container():
         if not valid:
             self.auto_translate(key)
             #raise ValueError('Invalid data as it was changed in a different representation!')
-        
 
         return self.current_data[key]
     
@@ -547,7 +759,7 @@ class Container():
         return data.reshape(full_shape), binning
 
     def get_map(self, key, error=None):
-        """Return binned data in the form of a PISA map"""
+        """Return binned data in the form of a :py:class:`~.Map`"""
         hist, binning = self.get_hist(key)
         if error is not None:
             error_hist = np.abs(self.get_hist(error)[0])
@@ -557,17 +769,17 @@ class Container():
         return Map(name=self.name, hist=hist, error_hist=error_hist, binning=binning)
     
     def __iter__(self):
-        """iterate over all keys in container"""
+        """Iterate over all keys in container"""
         return self.keys
     
     def translate(self, key, src_representation):
-        '''translate variable from source representation
+        '''Translate variable from source representation.
         
+        Parameters
+        ----------
         key : str
         src_representation : representation present in container
-        
         '''
-        
         assert hash(src_representation) in self.representation_keys
         
         dest_representation = self.representation
@@ -654,14 +866,14 @@ class Container():
         return representation
         
     def resample(self, key, src_representation, dest_representation):
-        """Resample a binned key into a different binning
+        """Resample a binned key into a different binning.
+
         Parameters
         ----------
         key : str
-        src_representation : MultiDimBinning
-        dest_representation : MultiDimBinning
+        src_representation : :py:class:`.MultiDimBinning`
+        dest_representation : :py:class:`.MultiDimBinning`
         """
-        
         logging.debug('Resampling %s'%(key))
 
         self.representation = src_representation
@@ -674,20 +886,18 @@ class Container():
         return new_hist      
         
     def array_to_binned(self, key, src_representation, dest_representation, averaged=True):
-        """Histogram data array into binned data
+        """Histogram data array into binned data.
+
         Parameters
         ----------
         key : str
         src_representation : str
-        dest_representation : MultiDimBinning
-        #averaged : bool
-        #    if True, the histogram entries are averages of the numbers that
-        #    end up in a given bin. This for example must be used when oscillation
-        #    probabilities are translated.....otherwise we end up with probability*count
-        #    per bin
-        Notes
-        -----
-        right now, CPU-only
+        dest_representation : :py:class:`.MultiDimBinning`
+        averaged : bool (default: True)
+            if True, the histogram entries are averages of the numbers that
+            end up in a given bin. This for example must be used when oscillation
+            probabilities are translated.....otherwise we end up with probability*count
+            per bin
         """
         # TODO: make work for n-dim
         logging.trace('Transforming %s array to binned data'%(key))
@@ -725,7 +935,6 @@ class Container():
 
     def binned_to_array(self, key, src_representation, dest_representation):
         """Augmented binned data to array data"""
-
         logging.trace('Transforming %s binned to array data'%(key))
         
         self.representation = src_representation
@@ -787,7 +996,7 @@ class Container():
 
 
 def test_container():
-    """Unit tests for Container class."""
+    """Unit tests for :py:class:`Container` class."""
 
     # NOTE: Right now the numbers are tuned so that the weights are identical
     # per bin. If you change binning that's likely not the case anymore and you
@@ -839,6 +1048,7 @@ def test_container():
 
 
 def test_container_set():
+    """Unit tests for :py:class:`ContainerSet` class."""
     container1 = Container('test1')
     container2 = Container('test2')
 
