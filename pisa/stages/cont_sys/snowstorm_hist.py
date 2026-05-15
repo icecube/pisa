@@ -11,6 +11,7 @@ from pisa.core.binning import MultiDimBinning
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.core.translation import histogram
+from pisa.utils.comparisons import FTYPE_PREC
 
 __all__ = [
     "snowstorm_hist",
@@ -57,9 +58,13 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
     simulation_dists_params : list of tuples of floats
         Parameters of the simulation distributions. (mean, std) for 'gauss' and
         (min, max) for 'uniform'.
-    additional_params : list of str
+    additional_params : list of str (default None)
         Parameters that are no detector systematics but if changed require a
         re-calculation of the gradients (e.g. osc params).
+    tolerances : list of float (default None)
+        Tolerances for 'additional_params'. If a parameter is changed by more than
+        its tolerance during a fit, the gradients are re-calculated. 'None' will
+        result in a tolerance that corresponds to the machine precision.
     params : ParamSet
         Note that the params required to be in `params` are those listed in 
         `systematics` plus those listed in `additional_params`.
@@ -71,6 +76,7 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         simulation_dists,
         simulation_dists_params,
         additional_params=None,
+        tolerances=None,
         **std_kwargs,
     ):
 
@@ -104,6 +110,16 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         else:
             self.additional_params = additional_params
         assert isinstance(self.additional_params, list)
+
+        if isinstance(tolerances, str):
+            self.tol = eval(tolerances)
+        elif tolerances is None:
+            self.tol = [FTYPE_PREC] * len(self.additional_params)
+        else:
+            self.tol = tolerances
+        assert isinstance(self.tol, list)
+        assert len(self.tol) == len(self.additional_params)
+        self.tol = np.array(self.tol)
 
         self.grads = {}
         """Place to store gradients to save computing time."""
@@ -146,8 +162,8 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
     def compute_function(self):
         # First check if we need to calculate the gradients or if we can use the already stored ones.
         # We need to calculate if an additional params value or the apply_mode changed
-        additional_params_values = [self.params[p].m for p in self.additional_params]
-        if additional_params_values != self.additional_params_values:
+        additional_params_values = np.array([self.params[p].m for p in self.additional_params])
+        if self.additional_params_values is None or np.any(np.abs(additional_params_values - self.additional_params_values) > self.tol):
             calc_grads = True
             self.additional_params_values = additional_params_values
         elif np.prod(self.apply_mode.shape) != len(self.grads[self.data.names[0]][self.systematics[0]]):
