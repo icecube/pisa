@@ -157,10 +157,10 @@ class Stage():
             supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
         self.supported_reps = supported_reps
 
-        self._check_representation(rep=calc_mode, mode='calc_mode', allow_None=True)
+        self._check_representation(rep=calc_mode, mode='calc_mode', always_allow_none=True)
         self._calc_mode = calc_mode
 
-        self._check_representation(rep=apply_mode, mode='apply_mode', allow_None=True)
+        self._check_representation(rep=apply_mode, mode='apply_mode', always_allow_none=True)
         self._apply_mode = apply_mode
 
         self._error_method = error_method
@@ -274,7 +274,8 @@ class Stage():
         in standalone mode, rerun `setup()` if has already been executed at
         least once."""
         if value != self.calc_mode:
-            self._check_representation(rep=value, mode='calc_mode')
+            self._check_representation(rep=value, mode='calc_mode',
+                                       always_allow_none=False)
             self._calc_mode = value
             if self.in_standalone_mode and self.param_hash is not None:
                 # Only in standalone mode: repeat setup automatically only if
@@ -308,14 +309,15 @@ class Stage():
     def apply_mode(self, value):
         """Set `apply_mode` after checking the validity of `value`"""
         if value != self.apply_mode:
-            self._check_representation(rep=value, mode='apply_mode')
+            self._check_representation(rep=value, mode='apply_mode',
+                                       always_allow_none=False)
             self._apply_mode = value
 
-    def _check_representation(self, rep, mode, allow_None=False):
+    def _check_representation(self, rep, mode, always_allow_none=False):
         if rep is None:
-            # allow_None is used to always allow None in the init of a stage.
-            # Should be removed once stages explicitely set modes.
-            if None not in self.supported_reps[mode] and not allow_None:
+            # `always_allow_none` is used to always allow None in the init of a stage
+            # (allows writing init_test functions that don't already decide on modes)
+            if None not in self.supported_reps[mode] and not always_allow_none:
                 raise ValueError(
                     f"{mode} {rep} is not supported by {self.stage_name}"
                     f".{self.service_name}"
@@ -465,6 +467,9 @@ class Stage():
 
             self._check_exp_keys_in_data(error_on_missing=False)
 
+        # check that current calc_mode is compatible with supported reps. at all
+        self._check_representation(rep=self.calc_mode, mode='calc_mode',
+                                   always_allow_none=False)
         if self.calc_mode is not None:
             self.data.representation = self.calc_mode
 
@@ -492,6 +497,9 @@ class Stage():
             logging.trace("cached output")
             return
 
+        # be overly cautious and check consistency of current calc_mode
+        self._check_representation(rep=self.calc_mode, mode='calc_mode',
+                                   always_allow_none=False)
         if self.calc_mode is not None:
             self.data.representation = self.calc_mode
 
@@ -510,6 +518,9 @@ class Stage():
 
     def apply(self):
 
+        # be overly cautious and check consistency of current apply_mode
+        self._check_representation(rep=self.apply_mode, mode='apply_mode',
+                                   always_allow_none=False)
         if self.apply_mode is not None:
             self.data.representation = self.apply_mode
 

@@ -899,11 +899,38 @@ def test_Pipeline():
         pass
     else:
         assert False
+    # reset apply_mode
+    pipeline.stages[1].apply_mode = "events"
+
+    #
+    # Test: prevent computing outputs with representations deviating
+    #       from supported ones in simple_data_loader
+    # First, setter mustn't accept apply_mode = None when it was != None
+    try:
+        pipeline.stages[0].apply_mode = None
+    except ValueError:
+        pass
+    else:
+        assert False
+    # now we initialise with simple_data_loader apply_mode set to None (has to work)
+    config = parse_pipeline_config("settings/pipeline/example.cfg")
+    config[list(config.keys())[1]]['apply_mode'] = None
+    invalid_pipeline = Pipeline(config)
+    # try to get outputs: has to fail, as apply_mode = None not supported by
+    # simple_data_loader
+    try:
+        _ = invalid_pipeline.get_outputs()
+    except ValueError:
+        pass
+    else:
+        assert False
+    # need to be able to set from None -> "events" and then get outputs
+    invalid_pipeline.stages[0].apply_mode = "events"
+    _ = invalid_pipeline.get_outputs()
 
     #
     # Test: passing a custom output binning to get_outputs
     #
-    pipeline.stages[1].apply_mode = "events"
     # first get the original event distribution as reference
     out = pipeline.get_outputs()
     counts_tot = sum(out.num_entries.values())
