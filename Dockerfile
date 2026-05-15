@@ -18,8 +18,8 @@ RUN mkdir -p $PISA
 # Link pisa folder
 COPY . $PISA
 
-# Create virtual env. with Python 3.12, activate it, and install PISA (non-editable is important with uv here) + jupyter notebook
-RUN uv venv --python 3.12 .venv && . .venv/bin/activate && uv pip install $PISA && uv pip install notebook
+# Create virtual env. with Python 3.14, activate it, and install PISA (non-editable is important with uv here) + jupyter notebook
+RUN uv venv --python 3.14 .venv && . .venv/bin/activate && uv pip install $PISA && uv pip install notebook
 
 # Expose the Jupyter server port
 EXPOSE 8888
