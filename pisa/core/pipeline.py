@@ -908,8 +908,8 @@ def test_Pipeline():
         pass
     else:
         assert False
-    # reset apply_mode
-    pipeline.stages[1].apply_mode = "events"
+    # reset apply mode
+    pipeline.stages[2].apply_mode = "events"
 
     #
     # Test: prevent computing outputs with representations deviating
@@ -940,8 +940,6 @@ def test_Pipeline():
     #
     # Test: passing a custom output binning to get_outputs
     #
-    # reset apply mode
-    pipeline.stages[2].apply_mode = "events"
     # first get the original event distribution as reference
     out = pipeline.get_outputs()
     counts_tot = sum(out.num_entries.values())

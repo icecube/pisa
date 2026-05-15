@@ -92,10 +92,9 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
             self.dis_idx = None
         self.scale_aeff = scale_aeff
 
-        # apply_function sets representation to "events", so only accept that
-        # to be transparent (TODO: any calc_mode fine?)
         supported_reps = {
-            'apply_mode': "events",
+            "calc_mode": "events",
+            "apply_mode": "events",
         }
         # init base class
         super().__init__(
@@ -167,9 +166,6 @@ class csv_loader(Stage):  # pylint: disable=invalid-name
             )
 
     def apply_function(self):
-        # reset data representation to events
-        self.data.representation = "events"
-
         # reset weights to initial weights prior to downstream stages running
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])
