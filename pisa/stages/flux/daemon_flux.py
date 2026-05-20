@@ -289,7 +289,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         -------
         fcn : interpolant
             Bivariate spline approximation of flux over energy-coszen grid.
-           `scipy.interpolate.RectBivariateSpline` if not `fast_interp`,
+            `scipy.interpolate.RectBivariateSpline` if not `fast_interp`,
             otherwise `fast_interp.interp2d`. See `daemonflux.Flux.flux()` for
             units.
         """
