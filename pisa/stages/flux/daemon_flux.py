@@ -2,8 +2,15 @@
 Implementation of DAEMON flux (https://arxiv.org/abs/2303.00022)
 by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.
 
-Maria Liubarska, J.P. Yanez 2023
+Module originally authored by Maria Liubarska, J.P. Yañez 2023
 """
+# TODO:
+# * does every parameter affect all fluxes (i.e., further caching potential)?
+# * remove piecewise (manual) timings for production
+# * any benefit from optimising/adapting arguments of fast_interp.interp2d?
+# * why does there not seem to be any speed up from parallel (multi-threaded)
+# interpolant evaluation in fast_interp mode even though true_energy.size >
+# fast_interp.fast_interp.serial_cutoffs[2]?
 
 import time
 
@@ -16,7 +23,7 @@ from packaging.version import Version
 from scipy import interpolate
 
 from pisa import FTYPE, ureg
-from pisa.core.binning import MultiDimBinning
+from pisa.core.binning import MultiDimBinning, OneDimBinning
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.comparisons import ALLCLOSE_KW
@@ -47,6 +54,11 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
     use_fast_interp : bool (default: False)
         Whether to use numba-accelerated flux interpolation
         (experimental)
+
+    energy_grid : array-like (default: None)
+        Array of true neutrino energies at which to request fluxes
+        from daemonflux. If `None`, the default :py:data:`ENERGY_GRID`
+        will be used.
 
     params: ParamSet
         Must have parameters::
@@ -85,9 +97,12 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
 
     """
 
-    def __init__(self, calibration_file=None, use_fast_interp=False, **std_kwargs):
+    def __init__(self, calibration_file=None, use_fast_interp=False, energy_grid=None,
+                 **std_kwargs):
         self.cal_file = calibration_file
-        logging.debug('DAEMON flux calibration file: %s', self.cal_file)
+        if self.cal_file is not None:
+            logging.debug('Requested custom DAEMON flux calibration file: %s',
+                          self.cal_file)
 
         if Version(daemon_version) < Version(MIN_VERSION):
             logging.fatal(
@@ -111,17 +126,40 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         self.icangles_asc = np.array(sorted(map(float, self.flux_obj.zenith_angles),
                                        reverse=False), dtype=FTYPE)
         self.costheta_angles_asc = np.cos(np.deg2rad(self.icangles_asc))[::-1]
-        self.egrid = ENERGY_GRID.m_as("GeV")
+
+        if energy_grid is None:
+            energy_grid = ENERGY_GRID.m_as("GeV")
+        else:
+            # user requested a custom grid
+            if isinstance(energy_grid, str):
+                energy_grid = eval(energy_grid)
+            # required to be specified with energy units
+            assert (hasattr(energy_grid, "magnitude") and
+                    energy_grid.is_compatible_with("GeV"))
+            energy_grid = energy_grid.m_as("GeV")
+            if not isinstance(energy_grid, (list, np.ndarray)):
+                energy_grid = [energy_grid]
+            logging.debug("Requested custom energy grid (GeV) to pass to daemonflux: "
+                          "%s", energy_grid)
+        self.egrid = energy_grid
+
         if self.fast_interp:
             logging.debug("Using daemon_flux service with fast interpolation...")
             # Obtain uniform spacings in interpolation dimensions:
             # Cosine zenith we got from daemonflux
             costheta_deltas = self.costheta_angles_asc[1:] - self.costheta_angles_asc[:-1]
             # TODO: These deltas don't quite seem to agree at desired precision, looks
-            # like numerical inaccuracy
+            # like numerical inaccuracy.
             #assert np.allclose(costheta_delta[0], costheta_deltas, **ALLCLOSE_KW)
             self.costheta_delta = costheta_deltas[0]
 
+            if not OneDimBinning.is_bin_spacing_log_uniform(self.egrid):
+                # Could in principle relax this, but then couldn't just assume that
+                # log(energy) is uniform.
+                raise ValueError(
+                    "Energy grid required to have log-uniform spacing"
+                    " (energy_grid=np.logspace(...)) when fast_interp=True."
+                )
             # Energy dimension is made uniform by taking log
             self.egrid_log = np.log10(self.egrid)
             egrid_log_deltas = self.egrid_log[1:] - self.egrid_log[:-1]
@@ -199,7 +237,6 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         self.params['daemon_chi2'].value = self.flux_obj.chi2(modif_param_dict)
 
         # Compute flux maps
-        # TODO: Does every parameter affect all fluxes (caching potential)?
         flux_map_numu = self.make_2d_flux_map(
             particle='numu', params=modif_param_dict
         )
@@ -234,7 +271,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             container.mark_changed("nu_flux")
             ntot += len(container['true_energy'])
         stop_t = time.time()
-        logging.info("PISA spline evaluation time (s, %d) events): %s", ntot, f"{stop_t - start_t:.2e}")
+        logging.info("PISA spline evaluation time (s, %d events): %s", ntot, f"{stop_t - start_t:.2e}")
 
 
     def make_2d_flux_map(self, particle='numuflux', params=None):
@@ -280,7 +317,6 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
                 x=self.egrid, y=self.costheta_angles_asc, z=flux_ref_lr
             )
         else:
-            # TODO: optimise/adapt arguments?
             fcn = fast_interp.interp2d(
                 a=[min(self.egrid_log), min(self.costheta_angles_asc)],
                 b=[max(self.egrid_log), max(self.costheta_angles_asc)],
@@ -318,7 +354,6 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         if not self.fast_interp:
             return flux_map.ev(true_energy, true_coszen) * uconv
         # Remember to transform into log-energy space again before evaluating
-        #TODO: No benefit from parallel execution even though true_energy.size > fast_interp.fast_interp.serial_cutoffs[2]?
         return flux_map(np.log10(true_energy), true_coszen) * uconv
 
 
