@@ -3,14 +3,22 @@ Implementation of DAEMON flux (https://arxiv.org/abs/2303.00022)
 by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.
 
 Module originally authored by Maria Liubarska, J.P. Yañez 2023
+
+TODO/Notes:
+* does every parameter affect all fluxes (i.e., further caching potential)?
+* remove piecewise (manual) timings for production
+* any benefit from optimising/adapting arguments of fast_interp.interp2d?
+* We only seem to get performance benefits from fast_interp package when
+  its JIT target is "parallel", even when numba.get_num_threads() = 1
+  (PISA_NUM_THREADS=1). The latter is ensured when TARGET="cpu".
+  This parallel compilation happens whenever true_energy.size >
+  fast_interp.fast_interp.serial_cutoffs[2] (default value: 400).
+  Accordingly, the number of events/grid size needs to exceed this.
+  Serial compilation seems to be much slower than not using fast_interp
+  in the first place, at least for the public 3-year event sample with
+  calc_mode="events". However, it could be enforced by calling:
+  fast_interp.set_serial_cutoffs(dimension=2, cutoff=np.inf).
 """
-# TODO:
-# * does every parameter affect all fluxes (i.e., further caching potential)?
-# * remove piecewise (manual) timings for production
-# * any benefit from optimising/adapting arguments of fast_interp.interp2d?
-# * why does there not seem to be any speed up from parallel (multi-threaded)
-# interpolant evaluation in fast_interp mode even though true_energy.size >
-# fast_interp.fast_interp.serial_cutoffs[2]?
 
 import time
 
@@ -100,6 +108,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
     def __init__(self, calibration_file=None, use_fast_interp=False, energy_grid=None,
                  **std_kwargs):
         self.cal_file = calibration_file
+        """Custom daemonflux calibration file"""
         if self.cal_file is not None:
             logging.debug('Requested custom DAEMON flux calibration file: %s',
                           self.cal_file)
@@ -114,18 +123,18 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             )
             raise RuntimeError(f'Detected daemonflux version < {MIN_VERSION}')
 
-        # numba-accelerated flux interpolation
         self.fast_interp = use_fast_interp
+        """Use numba-accelerated flux interpolation"""
 
-        # create daemonflux Flux object
         self.flux_obj = Flux(location='IceCube', use_calibration=True,
                              cal_file=self.cal_file)
+        """daemonflux flux object"""
 
         # self.flux_obj.zenith_angles is list of strings of (approx.) uniformly-spaced
         # values in deg between 0° & 180° -> make ascending array first
-        self.icangles_asc = np.array(sorted(map(float, self.flux_obj.zenith_angles),
+        self._icangles_asc = np.array(sorted(map(float, self.flux_obj.zenith_angles),
                                        reverse=False), dtype=FTYPE)
-        self.costheta_angles_asc = np.cos(np.deg2rad(self.icangles_asc))[::-1]
+        self._costheta_angles_asc = np.cos(np.deg2rad(self._icangles_asc))[::-1]
 
         if energy_grid is None:
             energy_grid = ENERGY_GRID.m_as("GeV")
@@ -141,19 +150,19 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
                 energy_grid = [energy_grid]
             logging.debug("Requested custom energy grid (GeV) to pass to daemonflux: "
                           "%s", energy_grid)
-        self.egrid = energy_grid
+        self._egrid = energy_grid
 
         if self.fast_interp:
             logging.debug("Using daemon_flux service with fast interpolation...")
             # Obtain uniform spacings in interpolation dimensions:
             # Cosine zenith we got from daemonflux
-            costheta_deltas = self.costheta_angles_asc[1:] - self.costheta_angles_asc[:-1]
+            costheta_deltas = self._costheta_angles_asc[1:] - self._costheta_angles_asc[:-1]
             # TODO: These deltas don't quite seem to agree at desired precision, looks
             # like numerical inaccuracy.
             #assert np.allclose(costheta_delta[0], costheta_deltas, **ALLCLOSE_KW)
-            self.costheta_delta = costheta_deltas[0]
+            self._costheta_delta = costheta_deltas[0]
 
-            if not OneDimBinning.is_bin_spacing_log_uniform(self.egrid):
+            if not OneDimBinning.is_bin_spacing_log_uniform(self._egrid):
                 # Could in principle relax this, but then couldn't just assume that
                 # log(energy) is uniform.
                 raise ValueError(
@@ -161,23 +170,23 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
                     " (energy_grid=np.logspace(...)) when fast_interp=True."
                 )
             # Energy dimension is made uniform by taking log
-            self.egrid_log = np.log10(self.egrid)
-            egrid_log_deltas = self.egrid_log[1:] - self.egrid_log[:-1]
+            self._egrid_log = np.log10(self._egrid)
+            egrid_log_deltas = self._egrid_log[1:] - self._egrid_log[:-1]
             if not np.allclose(egrid_log_deltas[0], egrid_log_deltas, **ALLCLOSE_KW):
                 raise ValueError("Need uniformly-spaced log-energy values!")
-            self.egrid_log_delta = egrid_log_deltas[0]
+            self._egrid_log_delta = egrid_log_deltas[0]
 
-        # get parameter names from daemonflux
         self.daemon_names = self.flux_obj.params.known_parameters
+        """Parameter names from daemonflux"""
 
-        # make parameter names pisa config compatible and add prefix
         self.daemon_params = ['daemon_' +
             p.replace('pi+','pi').replace('pi-','antipi')
             .replace('K+','K').replace('K-','antiK') for p in self.daemon_names
         ]
+        """PISA config-compatible parameter names with added prefixes"""
 
-        # Add daemon_chi2 internal parameter to carry on chi2 penalty
-        # from daemonflux (using covar. matrix)
+        # Internal parameter to carry on chi2 penalty from daemonflux (using
+        # covariance matrix)
         daemon_chi2 = Param(
             name='daemon_chi2',
             nominal_value=0., value=0.,
@@ -299,8 +308,8 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         # Obtain flux from daemonflux: expects ascending zenith angles in deg
         # TODO: Why does flux_obj need these to be handed back to it again?
         flux_ref = self.flux_obj.flux(
-            energy=self.egrid,
-            zenith_deg=self.icangles_asc,
+            energy=self._egrid,
+            zenith_deg=self._icangles_asc,
             quantity=particle,
             params=params
         )
@@ -314,13 +323,13 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         # Return interpolant which can be evaluated later
         if not self.fast_interp:
             fcn = interpolate.RectBivariateSpline(
-                x=self.egrid, y=self.costheta_angles_asc, z=flux_ref_lr
+                x=self._egrid, y=self._costheta_angles_asc, z=flux_ref_lr
             )
         else:
             fcn = fast_interp.interp2d(
-                a=[min(self.egrid_log), min(self.costheta_angles_asc)],
-                b=[max(self.egrid_log), max(self.costheta_angles_asc)],
-                h=[self.egrid_log_delta, self.costheta_delta],
+                a=[min(self._egrid_log), min(self._costheta_angles_asc)],
+                b=[max(self._egrid_log), max(self._costheta_angles_asc)],
+                h=[self._egrid_log_delta, self._costheta_delta],
                 f=flux_ref_lr,
                 k=3,
                 p=[False, False],
