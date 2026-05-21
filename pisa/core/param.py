@@ -22,7 +22,7 @@ import numpy as np
 import pint
 from six import string_types
 
-from pisa import ureg
+from pisa import ureg, FTYPE
 from pisa.core.prior import Prior
 from pisa.utils import callable
 from pisa.utils import jsons
@@ -264,6 +264,7 @@ class Param:
 
     @value.setter
     def value(self, val):
+        """Value is set to whatever data type `val` has."""
         # Strings, bools, and `None` are simply used as-is; otherwise, enforce
         # input have units (or default to units of `dimensionless`)
         if not (val is None or isinstance(val, (string_types, bool))):
@@ -377,6 +378,10 @@ class Param:
 
     @_rescaled_value.setter
     def _rescaled_value(self, rval):
+        # Don't assume rval and values in self.range already respect FTYPE.
+        # Instead, explicitly cast to FTYPE in various places so that minimisation
+        # does not simply change parameter value to np.float64 regardless of global
+        # PISA setting (see issue #905).
         srange = self.range
         if srange is None:
             raise ValueError('Cannot rescale without a range specified'
@@ -386,22 +391,38 @@ class Param:
                 '%s: `rval`=%.15e, but cannot be outside [0, 1]'
                 % (self.name, rval)
             )
-        rval = np.min([1., rval])  # make exactly 1. if rounding error occurred
+        # Make exactly 1. if rounding error occurred and return native float
+        rval = min(1., float(rval))
         srange0 = srange[0].m_as(self._units)
         srange1 = srange[1].m_as(self._units)
         if self.scales_as_log:
-            # it is possible that the entire value range is negative, taking the
-            # absolute value only inside log() produces the correct sign
-            self._value = np.exp(rval*(np.log(np.abs(srange1)) - np.log(np.abs(srange0)))) * srange0 * self._units
+            # It is possible that the entire value range is negative, taking the
+            # absolute value only inside log() produces the correct sign.
+            self._value = FTYPE(np.exp(rval*(np.log(np.abs(srange1)) - np.log(np.abs(srange0)))) * srange0) * self._units
         else:
-            self._value = (srange0 + (srange1 - srange0)*rval) * self._units
+            self._value = FTYPE(srange0 + (srange1 - srange0)*rval) * self._units
         # In some rare cases (one case being rval = 1., range = (-0.5, 0.3)), a rounding
         # error can occur that sets the value outside the allowed range. We clip the
         # value back to the range if that happens.
         # Using the standard setter method instead of writing to _value so that we
         # auto-convert in case the range is defined in different units.
-        if self.value > max(srange): self.value = max(srange)
-        if self.value < min(srange): self.value = min(srange)
+        # Also take care of ensuring correct FTYPE here (range
+        # might not adhere to it).
+        srange_max, srange_min = max(srange), min(srange)
+        if self.value > srange_max:
+            logging.trace(f"Clipping {self.name} value to range maximum")
+            if hasattr(srange_max, 'units'):
+                # FIXME: casting from float to numpy.float32 causes value outside range error
+                self.value = FTYPE(srange_max.m) * srange_max.units
+            else:
+                self.value = FTYPE(srange_max)
+        if self.value < srange_min:
+            logging.trace(f"Clipping {self.name} value to range minimum")
+            if hasattr(srange_min, 'units'):
+                # FIXME: casting from float to numpy.float32 causes value outside range error
+                self.value = FTYPE(srange_min.m) * srange_min.units
+            else:
+                self.value = FTYPE(srange_min)
         self.validate_value(self.value)
 
     @property
@@ -1777,9 +1798,9 @@ def test_Param():
         ), msg
         # check nothing breaks when we go to the edges
         p0.value = p0.range[0]
-        assert p0._rescaled_value == 0.
+        assert recursiveEquality(p0._rescaled_value, 0.)
         p0.value = p0.range[1]
-        assert p0._rescaled_value == 1.
+        assert recursiveEquality(p0._rescaled_value, 1.)
         p0.value = value_prescale
         p0._rescaled_value = 1.
         msg = (
