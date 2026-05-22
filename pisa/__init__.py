@@ -240,13 +240,14 @@ numba.set_num_threads(PISA_NUM_THREADS)
 # final choice for OpenMP number of threads
 OMP_NUM_THREADS = min(PISA_NUM_THREADS, OMP_NUM_THREADS)
 
-PISA_HIST_THREADING = 'auto' # pylint: disable=invalid-name
-"""Granular control of strategy for threading in histogram operations.
+PISA_HIST_THREADING = 'off' # pylint: disable=invalid-name
+"""Granular control of strategy for threading in PISA (fast-)histogram operations.
 choices:
-  - 'auto' (default): use PISA_NUM_THREADS when TARGET='parallel', else no threading
-  - 'off': disable threading completely
-  - N (integer > 0): use N threads for histogram operations regardless of TARGET
-Set via PISA_HIST_THREADING env var"""
+  - 'off' (default): Disable threading completely (as it adds significant
+    overhead to typical applications).
+  - 'auto': Use PISA_NUM_THREADS when TARGET='parallel', else no threading
+  - N (integer > 0): Use N threads for histogram operations regardless of TARGET
+Set via PISA_HIST_THREADING environment variable"""
 
 if 'PISA_HIST_THREADING' in os.environ:
     pisa_hist_threading = os.environ['PISA_HIST_THREADING'].strip().lower()
