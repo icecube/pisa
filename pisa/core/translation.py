@@ -25,7 +25,7 @@ from collections.abc import Iterable
 
 from concurrent.futures import ThreadPoolExecutor
 
-from pisa import FTYPE, TARGET, PISA_NUM_THREADS
+from pisa import FTYPE, TARGET, PISA_NUM_THREADS, PISA_HIST_THREADING
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging, set_verbosity
@@ -132,10 +132,23 @@ def histogram(sample, weights, binning, averaged, apply_weights=True):
     return flat_hist
 
 def _threaded_fh_histogramdd(sample, weights, bins, bin_range):
-    if not TARGET == "parallel":
-        return fh.histogramdd(sample=sample, weights=weights, bins=bins, range=bin_range)
+    """Conditionally apply histogram threading based on PISA_HIST_THREADING
+    setting.
+    """
+    # Determine number of splits
+    splits = None
+    if PISA_HIST_THREADING == 'auto':
+        # Auto mode: use threading only for parallel TARGET
+        if TARGET == 'parallel':
+            splits = PISA_NUM_THREADS
+    elif PISA_HIST_THREADING > 0:
+        # Explicit thread count (takes precedence)
+        splits = PISA_HIST_THREADING
+    # else: PISA_HIST_THREADING == 'off' -> splits stays None (disabled)
 
-    splits = PISA_NUM_THREADS
+    if splits is None or splits < 2:
+        return fh.histogramdd(sample=sample, weights=weights, bins=bins,
+                              range=bin_range)
 
     with ThreadPoolExecutor(max_workers=splits) as pool:
         chunk = len(sample[0]) // splits
