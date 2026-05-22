@@ -16,8 +16,6 @@ from copy import deepcopy
 
 import numpy as np
 from numba import guvectorize
-
-import numba
 from numba import njit, prange
 # When binnings are fully regular, we can use this for super speed
 import fast_histogram as fh
@@ -30,8 +28,7 @@ from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.numba_tools import myjit
-from pisa.utils import vectorizer
-from pisa.utils.profiler import line_profile, profile
+from pisa.utils.profiler import profile
 
 __all__ = [
     'resample',
@@ -141,10 +138,11 @@ def _threaded_fh_histogramdd(sample, weights, bins, bin_range):
         # Auto mode: use threading only for parallel TARGET
         if TARGET == 'parallel':
             splits = PISA_NUM_THREADS
-    elif PISA_HIST_THREADING > 0:
+    elif PISA_HIST_THREADING == 'off':
+        pass # splits stays None (disabled)
+    else:
         # Explicit thread count (takes precedence)
-        splits = PISA_HIST_THREADING
-    # else: PISA_HIST_THREADING == 'off' -> splits stays None (disabled)
+        splits = PISA_HIST_THREADING # int > 0
 
     if splits is None or splits < 2:
         return fh.histogramdd(sample=sample, weights=weights, bins=bins,

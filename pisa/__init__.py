@@ -257,8 +257,8 @@ if 'PISA_HIST_THREADING' in os.environ:
     else:
         try:
             PISA_HIST_THREADING = int(pisa_hist_threading) # pylint: disable=invalid-name
-            if PISA_HIST_THREADING < 0:
-                raise ValueError('must be >= 0')
+            if PISA_HIST_THREADING <= 0:
+                raise ValueError('must be > 0')
         except ValueError as exc:
             raise ValueError(
                 f'Environment variable PISA_HIST_THREADING="{pisa_hist_threading}" '
