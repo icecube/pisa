@@ -143,9 +143,7 @@ class Pipeline():
         table = []
         for i, s in enumerate(self.stages):
             table.append([i, s.__class__.__name__, s.calc_mode, s.apply_mode])
-            table[-1].append(s.setup_function.__func__.__module__ == s.__class__.__module__)
-            table[-1].append(s.compute_function.__func__.__module__ == s.__class__.__module__)
-            table[-1].append(s.apply_function.__func__.__module__ == s.__class__.__module__)
+            table[-1] += [s.has_setup, s.has_compute, s.has_apply]
             table[-1] += [len(s.params.fixed), len(s.params.free)]
         return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
 

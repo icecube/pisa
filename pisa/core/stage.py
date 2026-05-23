@@ -190,6 +190,13 @@ class Stage():
         """Data based on which stage may make computations and which it may
         modify"""
 
+        self.has_setup = type(self).setup_function is not Stage.setup_function
+        """Whether subclass overrides :py:meth:`setup_function`"""
+        self.has_compute = type(self).compute_function is not Stage.compute_function
+        """Whether subclass overrides :py:meth:`compute_function`"""
+        self.has_apply = type(self).apply_function is not Stage.apply_function
+        """Whether subclass overrides :py:meth:`apply_function`"""
+
     def __repr__(self):
         return 'Stage "%s"'%(self.__class__.__name__)
 
