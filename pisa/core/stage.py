@@ -148,22 +148,47 @@ class Stage():
         else:
             self._debug_mode = None
 
+        self.has_setup = type(self).setup_function is not Stage.setup_function
+        """Whether subclass overrides :py:meth:`setup_function`"""
+        self.has_compute = type(self).compute_function is not Stage.compute_function
+        """Whether subclass overrides :py:meth:`compute_function`"""
+        self.has_apply = type(self).apply_function is not Stage.apply_function
+        """Whether subclass overrides :py:meth:`apply_function`"""
+
+        # Subclass might not have set supported_reps attribute
         if supported_reps is None:
             supported_reps = {}
 
         assert isinstance(supported_reps, Mapping)
-        for mode_str in ['calc_mode', 'apply_mode']:
+        mode_keys = ('calc_mode', 'apply_mode')
+        assert set(supported_reps.keys()).issubset(mode_keys)
+        # Default configuration of supported representations, using information
+        # about overridden methods, unless subclass already defined them
+        # (don't question the values chosen by the subclass)
+        for mode_str in mode_keys:
             if mode_str not in supported_reps:
-                # reps for this mode not yet defined -> allow all
-                supported_reps[mode_str] = list(Container.array_representations) + [MultiDimBinning]
+                # Reps. for this mode not yet defined -> use information about
+                # overridden methods
+                mode_allowed = (
+                    self.has_setup or self.has_compute if mode_str == 'calc_mode'
+                    else self.has_apply
+                )
+                # either allow all representations or require setting mode to None
+                supported_reps[mode_str] = (
+                    list(Container.array_representations) + [MultiDimBinning]
+                    if mode_allowed else [None]
+                )
             else:
-                # reps for this mode already defined -> listify
+                # Reps. for this mode defined by subclass -> listify if needed
                 if (isinstance(supported_reps[mode_str], str)
                     or not isinstance(supported_reps[mode_str], Sequence)):
                     supported_reps[mode_str] = [supported_reps[mode_str]]
 
         self.supported_reps = supported_reps
+        """Dictionary of supported representations. Override in subclass if desired."""
 
+        # Check consistency of requested modes, allowing None in any case
+        # (inconsequential while we're only at initialisation)
         self._check_representation(rep=calc_mode, mode='calc_mode', always_allow_none=True)
         self._calc_mode = calc_mode
 
@@ -189,13 +214,6 @@ class Stage():
         self.data = data
         """Data based on which stage may make computations and which it may
         modify"""
-
-        self.has_setup = type(self).setup_function is not Stage.setup_function
-        """Whether subclass overrides :py:meth:`setup_function`"""
-        self.has_compute = type(self).compute_function is not Stage.compute_function
-        """Whether subclass overrides :py:meth:`compute_function`"""
-        self.has_apply = type(self).apply_function is not Stage.apply_function
-        """Whether subclass overrides :py:meth:`apply_function`"""
 
     def __repr__(self):
         return 'Stage "%s"'%(self.__class__.__name__)
