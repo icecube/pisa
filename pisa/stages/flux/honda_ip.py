@@ -30,6 +30,7 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
 
     Notes
     -----
+    Implements no apply.
 
     Expected container keys are::
 
@@ -48,15 +49,10 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
             'true_energy',
             'true_coszen',
         )
-        # Implements no apply_function
-        supported_reps = {
-            'apply_mode': None,
-        }
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
-            supported_reps=supported_reps,
             **std_kwargs,
         )
 

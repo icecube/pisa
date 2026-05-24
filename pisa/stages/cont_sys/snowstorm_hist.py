@@ -111,7 +111,8 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         self.central_values = []
         """Central values of the systematic parameters in the snowstorm set."""
 
-        # evaluation only works on event-by-event basis
+        # Evaluation only works on event-by-event basis, and apply_mode can be
+        # detected automatically for convenience
         supported_reps = {
             'calc_mode': "events",
             'apply_mode': [None, MultiDimBinning],

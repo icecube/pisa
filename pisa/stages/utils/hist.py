@@ -43,6 +43,7 @@ class hist(Stage):  # pylint: disable=invalid-name
         if apply_unc_weights:
             expected_container_keys.append('unc_weights')
 
+        # apply_mode can be detected automatically for convenience
         supported_reps = {
             'calc_mode': [MultiDimBinning, "events"],
             'apply_mode': [None, MultiDimBinning],

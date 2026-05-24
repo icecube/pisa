@@ -60,12 +60,12 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             daemon_GSF_5 : quantity (dimensionless)
             daemon_GSF_6 : quantity (dimensionless)
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "true_energy"
-            "true_coszen"
-            "nubar"
+    Expected container keys are::
 
+        "true_energy", "true_coszen", "nubar"
     """
 
     def __init__(

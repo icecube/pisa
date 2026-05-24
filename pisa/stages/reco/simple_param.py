@@ -412,6 +412,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
 
     Notes
     -----
+    Implements no apply.
 
     Expected container keys are::
 
@@ -434,22 +435,16 @@ class simple_param(Stage):  # pylint: disable=invalid-name
             'true_energy',
             'true_coszen',
         )
-        # Implements no apply_function (TODO: does any calc_mode work?)
-        supported_reps = {
-            'apply_mode': None,
-        }
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
-            supported_reps=supported_reps,
             **std_kwargs,
         )
 
     def setup_function(self):
 
         #TODO Could add a number of discrete cases here that can be selected betweeen, e.g. ICU baseline (LoI?), DeepCore current best, etc...
-
 
         # Get params
         perfect_reco = self.params.perfect_reco.value

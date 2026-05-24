@@ -82,6 +82,7 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
 
     Notes
     -----
+    Implements no apply, so assumes implicit caching of nominal fluxes (FIXME).
 
     Expected container keys are::
 
@@ -186,10 +187,6 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
         ]
         if use_honda_nominal_flux:
             expected_container_keys.append('nubar_flux_nominal')
-        # Implements no apply_function (implicit caching! FIXME)
-        supported_reps = {
-            'apply_mode': None,
-        }
 
         # store args
         self.table_file = table_file
@@ -201,7 +198,6 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
-            supported_reps=supported_reps,
             **std_kwargs,
         )
 

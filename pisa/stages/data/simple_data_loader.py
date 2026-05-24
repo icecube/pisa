@@ -66,6 +66,7 @@ class simple_data_loader(Stage):  # pylint: disable=invalid-name
     Looks for `initial_weights` fields in events file, which will serve
     as nominal weights for all events included.
     No fields named `weights` may already be present.
+    Setting of `calc_mode` is not accepted.
     """
 
     def __init__(self,

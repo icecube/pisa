@@ -96,8 +96,6 @@ class atm_muons(Stage):  # pylint: disable=invalid-name
     @profile
     def apply_function(self):
 
-        #self.data.representation = self.calc_mode
-
         # Apply muon normalisation/scaling
         atm_muon_scale = self.params['atm_muon_scale'].value.m_as("dimensionless")
 

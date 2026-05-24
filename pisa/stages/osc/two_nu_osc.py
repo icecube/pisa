@@ -29,6 +29,7 @@ class two_nu_osc(Stage):  # pylint: disable=invalid-name
 
     Notes
     -----
+    Implements neither setup nor compute.
 
     Expected container keys are::
 
@@ -52,15 +53,10 @@ class two_nu_osc(Stage):  # pylint: disable=invalid-name
             'nu_flux',
             'weights'
         )
-        # Implements no setup_function+compute_function
-        supported_reps = {
-            'calc_mode': None,
-        }
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
-            supported_reps=supported_reps,
             **std_kwargs,
         )
 

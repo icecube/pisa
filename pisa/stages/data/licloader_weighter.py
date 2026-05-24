@@ -76,6 +76,8 @@ class licloader_weighter(Stage):  # pylint: disable=invalid-name
             LW.ConstantFlux(1.0 / n_files), self.xs_obj, self.lic_files
         )
 
+        #FIXME: why no call to Stage init?
+
     def setup_function(self):
         """
         Load in the lic files, build the weighters, and get all the one-weights. To get the true

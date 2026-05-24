@@ -22,6 +22,10 @@ class csv_data_hist(Stage):  # pylint: disable=invalid-name
     ----------
     events_file : str
         csv file path
+
+    Notes
+    -----
+    Implements no apply.
     """
 
     def __init__(self,
@@ -34,15 +38,10 @@ class csv_data_hist(Stage):  # pylint: disable=invalid-name
 
         expected_params = ()
         expected_container_keys = ()
-        # Implements no apply_function
-        supported_reps = {
-            'apply_mode': None,
-        }
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
-            supported_reps=supported_reps,
             **std_kwargs,
         )
 
