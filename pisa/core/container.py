@@ -426,6 +426,8 @@ class Container():
             
         if key in self.current_data.keys():
             self.mark_valid(key)
+        logging.trace("Marked changed variable '%s' in current representation '%s'.",
+                      key, self.representation)
 
     def mark_valid(self, key):
         '''validate data as is in current representation, regardless'''
