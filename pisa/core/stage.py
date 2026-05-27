@@ -164,15 +164,14 @@ class Stage():
         assert set(supported_reps.keys()).issubset(mode_keys)
         # Default configuration of supported representations, using information
         # about overridden methods, unless subclass already defined them
-        # (don't question the values chosen by the subclass)
         for mode_str in mode_keys:
+            mode_allowed = (
+                self.has_setup or self.has_compute if mode_str == 'calc_mode'
+                else self.has_apply
+            )
             if mode_str not in supported_reps:
                 # Reps. for this mode not yet defined -> use information about
                 # overridden methods
-                mode_allowed = (
-                    self.has_setup or self.has_compute if mode_str == 'calc_mode'
-                    else self.has_apply
-                )
                 # either allow all representations or require setting mode to None
                 supported_reps[mode_str] = (
                     list(Container.array_representations) + [MultiDimBinning]
@@ -183,6 +182,19 @@ class Stage():
                 if (isinstance(supported_reps[mode_str], str)
                     or not isinstance(supported_reps[mode_str], Sequence)):
                     supported_reps[mode_str] = [supported_reps[mode_str]]
+
+            if not mode_allowed and supported_reps[mode_str] != [None]:
+                # TODO: Pipeline currently only checks apply_modes
+                # for consistency
+                logging.warning(
+                    "Service %s.%s purports to support %ss=%s,"
+                    " even though it does not implement the corresponding"
+                    " functions. As a result, PISA could be tricked into"
+                    " accepting a pipeline configuration which performs unphysical"
+                    " representation transformations. Only proceed if you understand"
+                    " what you are doing.", self.stage_name, self.service_name,
+                    mode_str, supported_reps[mode_str]
+                )
 
         self.supported_reps = supported_reps
         """Dictionary of supported representations. Override in subclass if desired."""
