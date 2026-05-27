@@ -1,0 +1,35 @@
+name: Benchmark pipeline performance
+
+env:
+  PYTHON_VERSION: "3.14"
+
+on:
+  workflow_dispatch
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+          - { target: "cpu", nthreads: 1 }
+          - { target: "parallel", nthreads: 4 } # ubuntu-latest provides 4 cpus
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Run benchmark (PISA_TARGET=${{ matrix.config.target }}, PISA_NUM_THREADS=${{ matrix.config.nthreads }})
+        env:
+          PISA_TARGET: ${{ matrix.config.target }}
+          PISA_NUM_THREADS: ${{ matrix.config.nthreads }}
+        run: |
+          python pisa/scripts/benchmark_pipeline_performance.py
