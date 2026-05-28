@@ -6,7 +6,7 @@ The method is based on this paper: https://arxiv.org/pdf/1909.01530
 
 import numpy as np
 
-from pisa import ureg
+from pisa import ureg, FTYPE
 from pisa.core.binning import MultiDimBinning
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
@@ -57,9 +57,19 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
     simulation_dists_params : list of tuples of floats
         Parameters of the simulation distributions. (mean, std) for 'gauss' and
         (min, max) for 'uniform'.
-    additional_params : list of str
+    additional_params : list of str (default None)
         Parameters that are no detector systematics but if changed require a
         re-calculation of the gradients (e.g. osc params).
+    tolerances : list of float (default None)
+        Numerical tolerances for `additional_params`, to be given in the same order.
+        If none are given (default), all gradients will be updated each time at least
+        one parameter value changes (most accurate but slowest option). If tolerances
+        *are* given, though, and *all* parameters move away from their initial values
+        by *less* than the specified tolerances over the course of a single fit, gradients
+        will *never* be re-calculated. Only once at least one parameter's overall delta
+        exceeds its corresponding tolerance the gradients will be updated (and a new
+        reference point set). Subsequent modfications of the parameter vector will
+        then be compared to this updated referenced point.
     params : ParamSet
         Note that the params required to be in `params` are those listed in 
         `systematics` plus those listed in `additional_params`.
@@ -71,6 +81,7 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         simulation_dists,
         simulation_dists_params,
         additional_params=None,
+        tolerances=None,
         **std_kwargs,
     ):
 
@@ -104,6 +115,16 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         else:
             self.additional_params = additional_params
         assert isinstance(self.additional_params, list)
+
+        if isinstance(tolerances, str):
+            self.tol = eval(tolerances)
+        elif tolerances is None:
+            self.tol = [0] * len(self.additional_params)
+        else:
+            self.tol = tolerances
+        assert isinstance(self.tol, list)
+        assert len(self.tol) == len(self.additional_params)
+        self.tol = np.array(self.tol, dtype=FTYPE)
 
         self.grads = {}
         """Place to store gradients to save computing time."""
@@ -146,8 +167,8 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
     def compute_function(self):
         # First check if we need to calculate the gradients or if we can use the already stored ones.
         # We need to calculate if an additional params value or the apply_mode changed
-        additional_params_values = [self.params[p].m for p in self.additional_params]
-        if additional_params_values != self.additional_params_values:
+        additional_params_values = np.array([self.params[p].m for p in self.additional_params], dtype=FTYPE)
+        if self.additional_params_values is None or np.any(np.abs(additional_params_values - self.additional_params_values) > self.tol):
             calc_grads = True
             self.additional_params_values = additional_params_values
         elif np.prod(self.apply_mode.shape) != len(self.grads[self.data.names[0]][self.systematics[0]]):

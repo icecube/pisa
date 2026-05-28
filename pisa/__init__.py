@@ -70,6 +70,7 @@ __all__ = [
     'TARGET',
     'OMP_NUM_THREADS',
     'PISA_NUM_THREADS',
+    'PISA_HIST_THREADING',
     'FTYPE',
     'CTYPE',
     'ITYPE',
@@ -85,10 +86,10 @@ __version__ = get_versions()['version']
 """PISA version is automatically constructed from versioneer/git info"""
 
 
-ureg = UnitRegistry() # pylint: disable=invalid-name
+ureg = UnitRegistry()
 """Single Pint unit registry that should be used by all PISA code"""
 
-Q_ = ureg.Quantity # pylint: disable=invalid-name
+Q_ = ureg.Quantity
 """Shortcut for Quantity that uses central PISA Pint unit regeistry"""
 
 
@@ -97,7 +98,7 @@ CACHE_DIR = '~/.cache/pisa'
 """Root directory for storing PISA cache files"""
 
 # message later on written to stderr for user convenience
-ini_msgs = [] # pylint: disable=invalid-name
+ini_msgs = []
 
 # PISA users can define cache directory directly via PISA_CACHE_DIR env var;
 # PISA_CACHE_DIR has priority over XDG_CACHE_HOME, so it is checked first
@@ -127,19 +128,19 @@ if 'OMP_NUM_THREADS' in os.environ:
     OMP_NUM_THREADS = int(os.environ['OMP_NUM_THREADS'])
     assert OMP_NUM_THREADS >= 1
 
-NUMBA_CUDA_AVAIL = False
+NUMBA_CUDA_AVAIL = False # pylint: disable=invalid-name
 def dummy_func(x):
     """Decorate to to see if Numba actually works"""
     x += 1
 
 try:
-    from numba import cuda
+    from numba import cuda # pylint: disable=ungrouped-imports
     assert cuda.gpus, 'No GPUs detected'
     cuda.jit('void(float64)')(dummy_func)
 except Exception:
     pass
 else:
-    NUMBA_CUDA_AVAIL = True
+    NUMBA_CUDA_AVAIL = True # pylint: disable=invalid-name
 finally:
     if 'cuda' in globals() or 'cuda' in locals():
         #if NUMBA_CUDA_AVAIL:
@@ -179,19 +180,19 @@ ITYPE = np.int32 if FTYPE == np.float32 else np.int64
 del FLOAT32_STRINGS, FLOAT64_STRINGS
 
 # set default target
-TARGET = 'cpu'
+TARGET = 'cpu' # pylint: disable=invalid-name
 
-cpu_targets = ['cpu', 'numba'] # pylint: disable=invalid-name
-parallel_targets = ['parallel', 'multicore'] # pylint: disable=invalid-name
-gpu_targets = ['cuda', 'gpu', 'numba-cuda'] # pylint: disable=invalid-name
+cpu_targets = ['cpu', 'numba']
+parallel_targets = ['parallel', 'multicore']
+gpu_targets = ['cuda', 'gpu', 'numba-cuda']
 
 if 'PISA_TARGET' in os.environ:
     PISA_TARGET = os.environ['PISA_TARGET']
     ini_msgs.append('PISA_TARGET env var is defined as: "%s"' % PISA_TARGET)
-    try_target = PISA_TARGET.strip().lower() # pylint: disable=invalid-name
+    try_target = PISA_TARGET.strip().lower()
     if try_target in gpu_targets:
         if NUMBA_CUDA_AVAIL:
-            TARGET = 'cuda'
+            TARGET = 'cuda' # pylint: disable=invalid-name
         else:
             raise ValueError(
                 'Environment var PISA_TARGET="%s" set, even though numba-cuda'
@@ -199,9 +200,9 @@ if 'PISA_TARGET' in os.environ:
             )
     elif try_target in cpu_targets or try_target in parallel_targets:
         if try_target in cpu_targets:
-            TARGET = 'cpu'
+            TARGET = 'cpu' # pylint: disable=invalid-name
         elif try_target in parallel_targets:
-            TARGET = 'parallel'
+            TARGET = 'parallel' # pylint: disable=invalid-name
     else:
         raise ValueError(
             'Environment var PISA_TARGET="%s" is unrecognized.\n'
@@ -226,24 +227,59 @@ if 'PISA_NUM_THREADS' in os.environ:
                          "PISA_TARGET is not `parallel`.\n")
         PISA_NUM_THREADS = 1
 elif TARGET == 'parallel':
-    PISA_NUM_THREADS = numba.config.NUMBA_NUM_THREADS
+    PISA_NUM_THREADS = numba.config.NUMBA_NUM_THREADS # pylint: disable=no-member
 
 if TARGET == 'cpu':
     # making sure that we can definitely rely on the fact that the number of threads
     # will be 1 if the TARGET is `cpu` (some stages might do that)
     assert PISA_NUM_THREADS == 1
 
+# initialize numba thread count immediately
+numba.set_num_threads(PISA_NUM_THREADS)
+
+# final choice for OpenMP number of threads
 OMP_NUM_THREADS = min(PISA_NUM_THREADS, OMP_NUM_THREADS)
+
+PISA_HIST_THREADING = 'off' # pylint: disable=invalid-name
+"""Granular control of strategy for threading in PISA (fast-)histogram operations.
+Choices:
+
+- 'off' (default): Disable threading completely (as it adds significant
+  overhead to typical applications).
+- 'auto': Use :py:data:`PISA_NUM_THREADS` when `TARGET='parallel'`, else no threading.
+- N (integer > 0): Use N threads for histogram operations regardless of `TARGET`.
+
+Set via `PISA_HIST_THREADING` environment variable."""
+
+if 'PISA_HIST_THREADING' in os.environ:
+    pisa_hist_threading = os.environ['PISA_HIST_THREADING'].strip().lower()
+    if pisa_hist_threading in ('auto', ''):
+        PISA_HIST_THREADING = 'auto' # pylint: disable=invalid-name
+    elif pisa_hist_threading == '0' or pisa_hist_threading in ('false', 'off', 'no'):
+        PISA_HIST_THREADING = 'off' # pylint: disable=invalid-name
+    else:
+        try:
+            PISA_HIST_THREADING = int(pisa_hist_threading) # pylint: disable=invalid-name
+            if PISA_HIST_THREADING <= 0:
+                raise ValueError('must be > 0')
+        except ValueError as exc:
+            raise ValueError(
+                f'Environment variable PISA_HIST_THREADING="{pisa_hist_threading}" '
+                'unrecognized:\n'
+                '  For "auto" mode (PISA_NUM_THREADS) set to "auto" or empty string.\n'
+                '  To disable histogram threading set to "0", "false", "no", or "off".\n'
+                '  For N threads (precedence over PISA_NUM_THREADS) set to integer > 0.'
+            ) from exc
 
 # Define HASH_SIGFIGS to set hashing precision based on FTYPE above; value here
 # is default (i.e. for FTYPE == np.float64)
-HASH_SIGFIGS = 12
+HASH_SIGFIGS = 12 # pylint: disable=invalid-name
 """Round to this many significant figures for hashing numbers, such that
 machine precision doesn't cause effectively equivalent numbers to hash
 differently."""
 
 if FTYPE == np.float32:
-    HASH_SIGFIGS = 5
+    HASH_SIGFIGS = 5 # pylint: disable=invalid-name
 
 EPSILON = 10**(-HASH_SIGFIGS)
 """Best precision considering HASH_SIGFIGS (which is chosen kinda ad-hoc but
@@ -278,7 +314,7 @@ elif FTYPE == np.float64:
     ftype_msg = 'PISA is running in double precision (FP64) mode' # pylint: disable=invalid-name
 else:
     raise ValueError('FTYPE must be one of `np.float32` or `np.float64`. Got'
-                     ' %s instead.' %FTYPE)
+                     f' {FTYPE} instead.')
 ini_msgs.append(ftype_msg)
 del ftype_msg
 
@@ -290,8 +326,20 @@ elif TARGET == 'parallel':
     target_msg = f'numba is running on CPU (multicore) with {PISA_NUM_THREADS} cores' # pylint: disable=invalid-name
 elif TARGET == 'cuda':
     target_msg = 'numba is running on GPU' # pylint: disable=invalid-name
+else:
+    raise ValueError('TARGET must be one of `None`, "cpu", "parallel", or "cuda".'
+                     f' Got {TARGET} instead.')
 ini_msgs.append(target_msg)
 del target_msg
+
+if PISA_HIST_THREADING == 'auto':
+    hist_threading_msg = 'PISA histogram threading is in auto mode (PISA_NUM_THREADS)' # pylint: disable=invalid-name
+elif PISA_HIST_THREADING == 'off':
+    hist_threading_msg = 'PISA histogram threading is disabled' # pylint: disable=invalid-name
+else:
+    hist_threading_msg = f'PISA histogram threading will use {PISA_HIST_THREADING} thread(s)' # pylint: disable=invalid-name
+ini_msgs.append(hist_threading_msg)
+del hist_threading_msg
 
 sys.stderr.write("<< "+"; ".join(ini_msgs)+" >>\n")
 del ini_msgs
