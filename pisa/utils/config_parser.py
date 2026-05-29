@@ -254,7 +254,7 @@ from configparser import (
 import numpy as np
 from uncertainties import ufloat, ufloat_fromstr
 
-from pisa import ureg
+from pisa import ureg, FTYPE
 from pisa.utils.fileio import from_file
 from pisa.utils.format import split
 from pisa.utils.hash import hash_obj
@@ -511,7 +511,7 @@ def parse_param(config, section, selector, fullname, pname, value):
         if 'sigma' in range_:
             sigma = value.s * value.units # pylint: disable=unused-variable
         range_ = range_.replace('[', 'np.array([')
-        range_ = range_.replace(']', '])')
+        range_ = range_.replace(']', '], dtype=FTYPE)')
         # Strip out uncertainties from value itself (as we will rely on the
         # prior from here on out)
         kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used

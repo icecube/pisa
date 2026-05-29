@@ -36,6 +36,7 @@ from pisa.utils.stats import ALL_METRICS, CHI2_METRICS, LLH_METRICS
 from pisa.utils.comparisons import FTYPE_PREC
 from pisa.utils.callable import Funct
 from pisa.utils.resources import find_resource
+from pisa.utils.format import format_num
 
 __all__ = [
     'Param',
@@ -893,7 +894,7 @@ class ParamSet(MutableSequence, Set):
                 table.append([p.name, p.value, p.nominal_value, p.range, p.prior, p.units, p.is_fixed])
             else:
                 if p.range is not None:
-                    range_fmt = [r.m for r in p.range]
+                    range_fmt = [float(format_num(r.m, sigfigs=6)) for r in p.range]
                 else:
                     range_fmt = None
                 if p.prior is not None:
