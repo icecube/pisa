@@ -438,23 +438,41 @@ class Container():
         return data
     
     def __setitem__(self, key, data):
-        
+        """Set `self[key]` to `data`.
+
+        Invalidates all representations but the current one, which is set to
+        valid, and set the translation mode to
+        :py:attr:`Container.default_translation_mode`, unless the string "weight"
+        is part of `key`, in which case the translation mode is set to "sum".
+
+        Parameters
+        ----------
+        key : string
+            data identifier/variable
+        data : ndarray, PISA Map or (array, binning)-tuple
+            data sample to add to the container
+        """
         if self.is_map:
             if key in self.representation.names:
-                raise Exception(f'Cannot add variable {key}, as it is a binning dimension')
-        
-        self.__add_data(key, data)                
-        if not key in self.tranlation_modes.keys():
-            self.tranlation_modes[key] = self.default_translation_mode
-        
+                raise Exception(
+                    f'Cannot add variable {key}, as it is a binning dimension'
+                )
+
+        self.__add_data(key, data)
+
+        if not key in self.tranlation_modes:
+            if "weight" in key.lower():
+                self.tranlation_modes[key] = "sum"
+            else:
+                self.tranlation_modes[key] = self.default_translation_mode
         self.mark_changed(key)
-       
+
     def __add_data(self, key, data):
         """
         Parameters
         ----------
         key : string
-            identifier
+            data identifier/variable
         data : ndarray, PISA Map or (array, binning)-tuple
         is_flat : bool
             is the data already flattened (i.e. the binning dimensions unrolled)
@@ -561,49 +579,53 @@ class Container():
     def __iter__(self):
         """iterate over all keys in container"""
         return self.keys
-    
+
     def translate(self, key, src_representation):
-        '''translate variable from source representation
-        
+        '''Translate data for variable `key` from source rep. to current rep.
+
+        Afterwards, both source and destination representation will be valid.
+
+        Parameters
+        ----------
         key : str
-        src_representation : representation present in container
-        
+            data identifier/variable
+        src_representation : hashable object, e.g. str or MultiDimBinning
+            some representation present in container
         '''
-        
         assert hash(src_representation) in self.representation_keys
-        
+
         dest_representation = self.representation
 
         if hash(src_representation) == hash(dest_representation):
             # nothing to do
-            return    
-    
+            return
+
         from_map = isinstance(src_representation, MultiDimBinning)
         to_map = isinstance(dest_representation, MultiDimBinning)
-    
-        if self.tranlation_modes[key] == 'average':            
+
+        if self.tranlation_modes[key] == 'average':
             if from_map and to_map:
                 out = self.resample(key, src_representation, dest_representation)
                 self.representation = dest_representation
                 self[key] = out
-                
+
             elif to_map:
                 out = self.array_to_binned(key, src_representation, dest_representation)
                 self.representation = dest_representation
                 self[key] = out
-                
+
             elif from_map:
                 out = self.binned_to_array(key, src_representation, dest_representation)
                 self.representation = dest_representation
-                self[key] = out   
-                
+                self[key] = out
+
             elif src_representation == "events" and dest_representation == "log_events":
                 self.representation = "events"
                 logging.trace(f"Container `{self.name}`: taking log of {key}")
                 sample = np.log(self[key])
                 self.representation = dest_representation
                 self[key] = sample
-            
+
             elif src_representation == "log_events" and dest_representation == "events":
                 self.representation = "log_events"
                 sample = np.exp(self[key])
@@ -611,8 +633,11 @@ class Container():
                 self[key] = sample
 
             else:
-                raise NotImplementedError(f"translating {src_representation} to {dest_representation}")
-                
+                raise NotImplementedError(
+                    f"Translating {src_representation} to {dest_representation}"
+                    " in 'average' mode!"
+                )
+
         elif self.tranlation_modes[key] == 'sum':
             if from_map and to_map:
                 raise NotImplementedError("Map to Map in sum mode needs to integrate over bins.")
@@ -623,15 +648,22 @@ class Container():
                 self[key] = out
 
             else:
-                raise NotImplementedError()
+                # destination rep. is an event-by-event rep., no matter the source rep.
+                raise NotImplementedError(
+                    f"Translating {src_representation} to {dest_representation}"
+                    " in 'sum' mode!"
+                )
 
         else:
-            raise NotImplementedError()
-            
+            raise NotImplementedError(
+                f"Unknown translation mode for variable '{key}':"
+                f" {self.tranlation_modes[key]}!"
+            )
+
         # validate source!
         self.validity[key][hash(src_representation)] = True
 
-        
+
     def auto_translate(self, key):
         src_representation = self.find_valid_representation(key)
         if src_representation is None:
