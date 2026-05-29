@@ -1,10 +1,10 @@
 # Workflow adapted from https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images#publishing-images-to-github-packages
 name: Create and publish a Docker image
 
-# Run when a release is created or when triggered manually
+# Run when a release or pre-release is published or when triggered manually
 on:
   release:
-    types: [created]
+    types: [published]
   workflow_dispatch:
 
 # Two custom environment variables for the workflow, which are used for the Container registry domain (here: GitHub packages), and a name for the Docker image
