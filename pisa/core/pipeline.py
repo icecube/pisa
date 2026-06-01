@@ -425,12 +425,12 @@ class Pipeline():
                 if isinstance(output_key, tuple):
                     assert len(output_key) == 2
                     cc[output_key[0]] = c[output_key[0]][keep]
-                    cc.tranlation_modes[output_key[0]] = 'sum'
+                    cc.translation_modes[output_key[0]] = 'sum'
                     cc[output_key[1]] = np.square(c[output_key[0]][keep])
-                    cc.tranlation_modes[output_key[1]] = 'sum'
+                    cc.translation_modes[output_key[1]] = 'sum'
                 else:
                     cc[output_key] = c[output_key][keep]
-                    cc.tranlation_modes[output_key] = 'sum'
+                    cc.translation_modes[output_key] = 'sum'
 
                 containers.append(cc)
 

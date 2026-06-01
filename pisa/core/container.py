@@ -37,8 +37,10 @@ for instance generator-level/truth vs. reconstructed) representations may coexis
 When :py:attr:`validity = True <Container.validity>` for multiple representations
 of the same data (e.g., energy), a :py:attr:`~Container.precedence` system determines
 which representation to use as the source for translation, implemented by
-:py:meth:`~pisa.core.container.Container.find_valid_representation`. (As of now, all
-representations have precedence = 0, however!)
+:py:meth:`~pisa.core.container.Container.find_valid_representation`.
+
+.. attention::
+    As of now, all representations have precedence = 0, however!
 
 For each variable, the container tracks which representations have valid (up-to-date)
 copies of that variable:
@@ -64,28 +66,32 @@ in order to ensure that PISA does not attempt to translate from binned → "even
 when event-by-event weights are requested (see below). Instead, the exact
 event-by-event weights will remain available.
 
-When accessing data with an invalid source representation,
+When accessing data in a currently invalid representation,
 :py:meth:`~Container.auto_translate` is triggered, which ensures synchronization
-across representations as needed, i.e., on demand.
+across representations as needed, i.e., on demand. The feasibility and details
+of the translation depend on the **translation mode** assigned to the desired
+variable though: as specified by :py:attr:`~Container.valid_translation_modes`,
+there are two translation modes available, defined on a per-variable basis in the
+:py:attr:`~Container.translation_modes` dictionary attribute:
 
-There are different translation modes available, defined on a per-variable basis
-in the :py:attr:`~Container.tranlation_modes` (sic!) dictionary attribute, with a
-default of "average" (see :py:attr:`~Container.default_translation_mode`):
-
-- "average" mode (default)---for quantities where bin-averaging makes sense
+- "average" mode---select for quantities where bin-averaging makes sense
 
   - examples: oscillation probabilities, energy reconstruction parameters
 
-- "sum" mode---for quantities where summation makes sense
+- "sum" mode---select for quantities where summation makes sense
 
   - examples: event weights, raw counts
 
-Specify translation mode for a given variable::
+By default, when data for some variable is initially entered into the container,
+the translation mode is assumed to be "sum" by PISA whenever "weight" is part of
+the variable name (cf. :py:meth:`~pisa.core.container.Container.__setitem__`),
+otherwise "average". This choice can be overridden straightforwardly by
+specifying::
 
     container.translation_modes['variable_name'] = 'average' # (or 'sum')
 
 
-The `Container` supports *three primary transformation types* (source-target combinations):
+The `Container` supports **three primary transformation types** (**source-target combinations**):
 
 - "events" ↔ "log_events" (requires "average" mode)
 
@@ -123,9 +129,17 @@ The `Container` provides transparent access via
 Access mechanism:
   1. check if data exists in current representation
   2. if not, search for valid representation of this variable
-  3. if valid representation found: auto-translate to current representation
-  4. if no valid representation: raise exception
-  5. return data in current representation
+  3. if valid representation found, and resulting source-target pair supported
+     for chosen translation mode: auto-translate to current representation;
+     otherwise: raise exception
+  4. return data in current representation
+
+.. attention::
+    Keep in mind that the above implies that weight-like data will not be translatable
+    from binned → binned, binned → "events", or binned → "log_events"
+    (unless its translation mode has been explicitly overriden and set to "average").
+    In order to enable such transformations, knowledge of the weight distributions
+    within each bin would have to be assumed/exploited.
 
 For binned representations:
   * binning dimension arrays accessible by dimension name
@@ -150,6 +164,11 @@ For managing multiple related containers via a :py:class:`ContainerSet`::
     container_set.representation = binning  # applied to all containers
     mapset = container_set.get_mapset('variable')  # returns MapSet of all
 
+A `ContainerSet` can store *global auxiliary metadata*::
+
+    container_set['metadata_key'] = arbitrary_python_object # name must be unlike any container's
+    value = container_set['metadata_key']
+
 Features:
   * unified representation management across containers
   * linking containers for treatment as single :py:class:`VirtualContainer`
@@ -166,16 +185,16 @@ from __future__ import absolute_import, print_function
 
 from collections.abc import Sequence
 from collections import defaultdict
+import re
 
 import numpy as np
-import re
 
 from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.map import Map, MapSet
 from pisa.core.translation import histogram, lookup, resample
 from pisa.utils.comparisons import ALLCLOSE_KW
-from pisa.utils.log import logging
+from pisa.utils.log import logging, set_verbosity
 
 
 class ContainerSet():
@@ -466,9 +485,9 @@ class Container():
             Precedence for choosing translation source (lower = higher priority).
             Currently 0 for every representation (TODO).
 
-        tranlation_modes : dict[variable_name] -> str
+        translation_modes : dict[variable_name] -> str
             Translation mode to use for each variable, e.g. for binning or
-            resampling: "average" (default) or "sum".
+            resampling: "average" or "sum".
 
         _representations : dict[representation_hash] -> hashable object, e.g. `str` or :py:class:`.MultiDimBinning`
             Representation storage, organized by hash value
@@ -484,10 +503,8 @@ class Container():
     system.
     """
 
-    default_translation_mode = "average"
-    translation_modes = ("average", "sum")
+    valid_translation_modes = ("average", "sum")
     array_representations = ("events", "log_events")
-
 
     def __init__(self, name, representation='events'):
         self.name = name
@@ -505,7 +522,7 @@ class Container():
 
         # translation mode
         # dict of form [variable]
-        self.tranlation_modes = {}
+        self.translation_modes = {}
 
         # Actual data
         # dict of form [representation_hash][variable]
@@ -640,8 +657,7 @@ class Container():
         """Set `self[key]` to `data`.
 
         Invalidates all representations but the current one, which is set to
-        valid, and set the translation mode to
-        :py:attr:`Container.default_translation_mode`, unless the string "weight"
+        valid, and set the translation mode to "average", unless the string "weight"
         is part of `key`, in which case the translation mode is set to "sum", or
         unless a mode has already been set.
 
@@ -660,11 +676,11 @@ class Container():
 
         self.__add_data(key, data)
 
-        if not key in self.tranlation_modes:
+        if not key in self.translation_modes:
             if "weight" in key.lower():
-                self.tranlation_modes[key] = "sum"
+                self.translation_modes[key] = "sum"
             else:
-                self.tranlation_modes[key] = self.default_translation_mode
+                self.translation_modes[key] = "average"
         self.mark_changed(key)
 
     def __add_data(self, key, data):
@@ -735,11 +751,10 @@ class Container():
         if not key in self.keys:
             if key in self.all_keys:
                 self.auto_translate(key)
-                #raise KeyError(f'Data {key} not present in chosen representation')
             else:
                 if key in self._aux_data.keys():
                     return self._aux_data[key]
-                raise KeyError(f'Data {key} not present in Container')
+                raise KeyError(f'Key "{key}" not present in Container "{self.name}"')
         
         valid = self.validity[key][hash(self.representation)]
         if not valid:
@@ -759,7 +774,7 @@ class Container():
         """Return reshaped data as normal n-dimensional histogram"""
         assert self.is_map, 'Cannot retrieve hists from non-map data'
         
-        # retrieve in case needs translation
+        # retrieve in case needs translation (TODO: unnecessary, cf. data = ...?)
         self[key]
 
         binning = self.representation
@@ -808,7 +823,7 @@ class Container():
         from_map = isinstance(src_representation, MultiDimBinning)
         to_map = isinstance(dest_representation, MultiDimBinning)
 
-        if self.tranlation_modes[key] == 'average':
+        if self.translation_modes[key] == 'average':
             if from_map and to_map:
                 out = self.resample(key, src_representation, dest_representation)
                 self.representation = dest_representation
@@ -843,11 +858,11 @@ class Container():
                     " in 'average' mode!"
                 )
 
-        elif self.tranlation_modes[key] == 'sum':
+        elif self.translation_modes[key] == 'sum':
             if from_map and to_map:
                 raise NotImplementedError("Map to Map in sum mode needs to integrate over bins.")
 
-            elif to_map:
+            if to_map:
                 out = self.array_to_binned(key, src_representation, dest_representation, averaged=False)
                 self.representation = dest_representation
                 self[key] = out
@@ -860,9 +875,9 @@ class Container():
                 )
 
         else:
-            raise NotImplementedError(
+            raise ValueError(
                 f"Unknown translation mode for variable '{key}':"
-                f" {self.tranlation_modes[key]}!"
+                f" '{self.translation_modes[key]}'!"
             )
 
         # validate source!
@@ -1025,6 +1040,9 @@ class Container():
 def test_container():
     """Unit tests for :py:class:`Container` class."""
 
+    # 1st set of tests
+    # ----------------
+
     # NOTE: Right now the numbers are tuned so that the weights are identical
     # per bin. If you change binning that's likely not the case anymore and you
     # inevitably end up with averaged values over bins, which are then not
@@ -1043,7 +1061,7 @@ def test_container():
 
     binning_x = OneDimBinning(name='x', num_bins=100, is_lin=True, domain=[0, 100])
     binning_y = OneDimBinning(name='y', num_bins=100, is_lin=True, domain=[0, 100])
-    binning = MultiDimBinning([binning_x, binning_y])
+    binning = MultiDimBinning(name='xy binning', dimensions=[binning_x, binning_y])
 
     logging.trace('Testing container and translation methods')
 
@@ -1072,6 +1090,57 @@ def test_container():
     a = container['w']
 
     assert np.allclose(a, w, **ALLCLOSE_KW), f'test:\n{a}\n!= ref:\n{w}'
+
+    # 2nd set of tests
+    # ----------------
+    # NOTE: Also uses x, y, w arrays but doesn't depend on numerical values
+
+    logging.trace('Testing container representation and validity management')
+
+    container = Container('nue', 'events')
+    for weight_key in ('weights', 'initial_weights', 'oneweight'):
+        container[weight_key] = w
+        assert container.translation_modes[weight_key] == 'sum'
+    container['x'] = x
+    assert container.translation_modes['x'] == 'average'
+    container['y'] = y
+    assert container.translation_modes['y'] == 'average'
+
+    container.representation = binning
+    binning_hash = hash(binning)
+    for k in container.all_keys:
+        if 'weight' in k:
+            container[k] *= 1.0 # invalidates 'events' rep. when __setitem__ called
+            assert container.validity[k][binning_hash]
+            assert not container.validity[k][hash('events')]
+
+    # Setting invalid mode for binning dimension is irrelevant/ignored
+    # when attempting to get it in the binned rep.
+    container.translation_modes['y'] = 'median'
+    _ = container['y']
+    _ = container['x'] # should work just as well
+
+    # However, for other variables, setting invalid mode needs to fail when
+    # attempting to translate (here from binning -> 'events')
+    container.translation_modes['oneweight'] = 'division'
+    container.representation = 'events'
+    try:
+        container['oneweight']
+    except ValueError:
+        pass
+
+    # For the weight-like quantities with translation mode set to 'sum', no
+    # translation back to 'events' is implemented
+    for weight_key in ('weights', 'initial_weights'):
+        try:
+            container[weight_key]
+        except NotImplementedError:
+            pass
+
+    # However, if we set 'events' rep. validity to True, this has to work again,
+    # because no translation is necessary
+    container.validity['weights'][hash('events')] = True
+    _ = container['weights']
 
 
 def test_container_set():
@@ -1133,5 +1202,6 @@ def test_container_set():
 
 
 if __name__ == '__main__':
+    set_verbosity(3)
     test_container()
     test_container_set()
