@@ -477,6 +477,7 @@ class Pipeline():
             outputs = self._get_outputs_varbinning(output_binning, output_key)
 
         if original_binning is not None:
+            # reset (FIXME: overrides all binned apply_modes)
             self.output_binning = original_binning
 
         return outputs
@@ -772,6 +773,13 @@ class Pipeline():
             self.assert_exclusive_varbinning(output_binning=binning)
         self.data["output_binning"] = binning
         if isinstance(binning, MultiDimBinning):
+            for s in self.stages:
+                if isinstance(s.apply_mode, MultiDimBinning):
+                    # FIXME: this was also done to avoid rebinning
+                    logging.warning("Setting apply_mode of service '%s.%s' to"
+                                    " pipeline output binning %s",
+                                    s.stage_name, s.service_name, binning)
+                    s.apply_mode = binning
             # The `ContainerSet` `self.data` has an updated "output_binning",
             # so re-setup `self` (and all included services).
             self.setup()
@@ -855,20 +863,17 @@ def test_Pipeline():
         #current_mat = new_mat
 
     #
-    # Test: detection of inconsistent apply_mode combinations
+    # Test: check allowed apply_mode combinations
     #
-    binned_apply_mode = pipeline.output_binning
+    binned_apply_mode = pipeline.stages[2].calc_mode
     assert isinstance(binned_apply_mode, MultiDimBinning)
     # osc.prob3 apply_mode:
     pipeline.stages[2].apply_mode = binned_apply_mode
-    try:
-        out = pipeline.get_outputs()
-    except ValueError:
-        # Needs to fail: going from a binned output (after osc.) to events
-        # (after aeff)
-        pass
-    else:
-        assert False
+    assert pipeline.stages[3].apply_mode == "events"
+    # allowed right now: going from a binned output (after osc.) to events
+    # (after aeff)
+    _ = pipeline.get_outputs()
+
     # reset apply mode
     pipeline.stages[2].apply_mode = "events"
 
@@ -905,7 +910,9 @@ def test_Pipeline():
     out = pipeline.get_outputs()
     counts_tot = sum(out.num_entries.values())
     # use an oversampled output binning instead and ensure identical total count
-    out2 = pipeline.get_outputs(output_binning=pipeline.output_binning.oversample(2))
+    oversampled_binning = MultiDimBinning(pipeline.output_binning).oversample(2)
+    assert oversampled_binning.size == 8 * pipeline.output_binning.size
+    out2 = pipeline.get_outputs(output_binning=oversampled_binning)
     counts_tot2 = sum(out2.num_entries.values())
     assert np.isclose(counts_tot2, counts_tot)
 
