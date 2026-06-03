@@ -5,11 +5,8 @@ Calculation of Earth layers and electron densities.
 
 from __future__ import division
 
+import numba
 import numpy as np
-try:
-    import numba
-except ImportError:
-    numba = None
 
 from pisa import FTYPE
 from pisa.utils.fileio import from_file
@@ -19,7 +16,7 @@ __all__ = ['extCalcLayers', 'Layers']
 
 __author__ = 'P. Eller','E. Bourbeau'
 
-__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -34,17 +31,8 @@ __license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
  limitations under the License.'''
 
 
-if numba is None:
-    class jit(object):
-        """Decorator class to mimic Numba's `jit` when Numba is missing"""
-        def __init__(self, *args, **kwargs):
-            pass
-        def __call__(self, *args):
-            return args[0]
-else:
-    jit = numba.jit
-    ftype = numba.typeof(FTYPE(1))
-
+jit = numba.jit
+ftype = numba.typeof(FTYPE(1))
 
 
 @jit(nopython=True, nogil=True, cache=True)
@@ -181,7 +169,7 @@ def extCalcLayers(cz,
     return number_of_layers, densities, densities_neutron_weighted, distances
 
 
-class Layers(object):
+class Layers():
     """
     Calculate the path through earth for a given layer model with densities
     (PREM [1]), the electron fractions (Ye) and an array of coszen values
@@ -436,16 +424,18 @@ class Layers(object):
         #
         # TODO: insert extra radii is the electron density boundaries
         #       don't match the current layer boundaries
-        
+
         #
-        # Weight the density properly
+        # Weight the density properly (always need to start from the
+        # unweighted = unmodified rhos to allow for multiple subsequent changes of the
+        # electron fractions, i.e., to avoid compounding effect!)
         #
-        density_inner = self.rhos * self.YeFrac[0] * (self.radii <= R_INNER)
-        density_outer = self.rhos * self.YeFrac[1] * (self.radii <= R_OUTER) * (self.radii > R_INNER)
-        density_mantle = self.rhos * self.YeFrac[2] * (self.radii <= R_MANTLE) * (self.radii > R_OUTER)
+        density_inner = self.rhos_unweighted * self.YeFrac[0] * (self.radii <= R_INNER)
+        density_outer = self.rhos_unweighted * self.YeFrac[1] * (self.radii <= R_OUTER) * (self.radii > R_INNER)
+        density_mantle = self.rhos_unweighted * self.YeFrac[2] * (self.radii <= R_MANTLE) * (self.radii > R_OUTER)
 
         weighted_densities = density_inner + density_outer + density_mantle
-        
+
         self.rhos = weighted_densities
 
     def weight_density_to_YnFrac(self):
@@ -468,9 +458,11 @@ class Layers(object):
         #       don't match the current layer boundaries
 
         #
-        # Weight the density properly
+        # Weight the density properly (always need to start from the
+        # unweighted = unmodified rhos to allow for multiple subsequent changes of the
+        # electron fractions, i.e., to avoid compounding effect!)
         #
-        density_inner = self.rhos * self.YnFrac[0] * (self.radii <= R_INNER)
+        density_inner = self.rhos_unweighted * self.YnFrac[0] * (self.radii <= R_INNER)
         density_outer = (
             self.rhos_unweighted
             * self.YnFrac[1]
@@ -673,8 +665,111 @@ def test_layers_3():
     assert np.allclose(np.sum(distance_segments, axis=1), vacuum_distances, **ALLCLOSE_KW), 'ERROR: distance mismatch: {0} vs {1}'.format(np.sum(distance_segments, axis=1), vacuum_distances)
 
     logging.info('<< PASS : test_Layers 3 >>')
-    
 
+def test_layers_4():
+    '''
+    TEST IV: Verify that repeatedly setting electron fractions yields
+    consistent densities (see issue #868).
+    '''
+    # pylint: disable=import-outside-toplevel
+    from pisa.utils.comparisons import ALLCLOSE_KW
+    import copy
+
+    logging.debug('Testing reproducibility of electron fraction modifications...')
+    layer = Layers('osc/PREM_4layer.dat', detector_depth=1., prop_height=20.)
+    # store the unweighted density at initialization for later comparison
+    rhos_unweighted_initial = copy.deepcopy(layer.rhos_unweighted)
+
+    # test coszen values (same as in test 3)
+    cz_values = np.array([1., 0, -0.4461133826191877, -1.], dtype=FTYPE)
+
+    # first electron fraction set (dito)
+    YeI_1, YeO_1, YeM_1 = 0.4656, 0.4656, 0.4957
+    layer.setElecFrac(YeI_1, YeO_1, YeM_1)
+    layer.calcLayers(cz=cz_values)
+
+    # store first results
+    density_1st_call = copy.deepcopy(layer.density)
+
+    logging.debug('First setElecFrac call (YeI=0.4656, YeO=0.4656, YeM=0.4957):')
+    logging.debug('  density: %s', density_1st_call)
+
+    # change electron fractions to different values
+    YeI_2, YeO_2, YeM_2 = 0.5, 0.5, 0.5
+    layer.setElecFrac(YeI_2, YeO_2, YeM_2)
+    layer.calcLayers(cz=cz_values)
+
+    density_2nd_call = copy.deepcopy(layer.density)
+    rhos_2nd_call = copy.deepcopy(layer.rhos)
+
+    logging.debug('Second setElecFrac call (YeI=0.5, YeO=0.5, YeM=0.5):')
+    logging.debug('  density: %s', density_2nd_call)
+
+    # Manually compute expected weighted densities from unweighted reference
+    # to verify the calculation is correct
+    R_INNER = 1221.5
+    R_OUTER = 3480.
+    R_MANTLE = 6371.
+
+    expected_rhos_2nd = (
+        rhos_unweighted_initial * YeI_2 * (layer.radii <= R_INNER) +
+        rhos_unweighted_initial * YeO_2 * (layer.radii <= R_OUTER) * (layer.radii > R_INNER) +
+        rhos_unweighted_initial * YeM_2 * (layer.radii <= R_MANTLE) * (layer.radii > R_OUTER)
+    )
+
+    assert np.allclose(rhos_2nd_call, expected_rhos_2nd, **ALLCLOSE_KW), \
+        'FAILED: Second call densities do not match expected calculation.'
+
+    # reset back to original electron fractions
+    layer.setElecFrac(YeI_1, YeO_1, YeM_1)
+    layer.calcLayers(cz=cz_values)
+
+    density_reset_call = copy.deepcopy(layer.density)
+
+    logging.debug('Reset to original setElecFrac call (YeI=0.4656, YeO=0.4656, YeM=0.4957):')
+    logging.debug('  density: %s', density_reset_call)
+
+    # call once more to verify consistency
+    layer.setElecFrac(YeI_1, YeO_1, YeM_1)
+    layer.calcLayers(cz=cz_values)
+
+    density_final_call = copy.deepcopy(layer.density)
+
+    logging.debug('Final setElecFrac call (same as first):')
+    logging.debug('  density: %s', density_final_call)
+
+    # assertions
+    logging.debug('Asserting density reproducibility...')
+
+    # resetting to original fractions should give original densities
+    assert np.allclose(density_1st_call, density_reset_call, **ALLCLOSE_KW), \
+        f'FAILED: Resetting to original fractions should reproduce original densities.\n' \
+        f'First call: {density_1st_call}\n' \
+        f'Reset call: {density_reset_call}'
+
+    # multiple identical calls should give identical results
+    assert np.allclose(density_reset_call, density_final_call, **ALLCLOSE_KW), \
+        f'FAILED: Multiple identical setElecFrac calls should produce identical results.\n' \
+        f'Reset call: {density_reset_call}\n' \
+        f'Final call: {density_final_call}'
+
+    # verify that changing fractions actually changes densities
+    assert not np.allclose(density_1st_call, density_2nd_call, **ALLCLOSE_KW), \
+        f'FAILED: Different electron fractions should produce different densities.\n' \
+        f'First call: {density_1st_call}\n' \
+        f'Second call: {density_2nd_call}'
+
+    # verify rhos_unweighted remains constant (it should never change)
+    assert np.allclose(rhos_unweighted_initial, layer.rhos_unweighted, **ALLCLOSE_KW), \
+        'FAILED: rhos_unweighted should not change across setElecFrac calls'
+
+    # test that electron + neutron fractions sum to 1 for each layer region
+    for i, (YeFrac, YnFrac) in enumerate(zip(layer.YeFrac, layer.YnFrac)):
+        # each Ye and Yn pair should sum to 1
+        assert np.isclose(YeFrac + YnFrac, 1.0, **ALLCLOSE_KW), \
+            f'FAILED: YeFrac[{i}] + YnFrac[{i}] != 1.0'
+
+    logging.info('<< PASS : test_Layers 4 >>')
 
 
 if __name__ == '__main__':
@@ -682,3 +777,4 @@ if __name__ == '__main__':
     test_layers_1()
     test_layers_2()
     test_layers_3()
+    test_layers_4()

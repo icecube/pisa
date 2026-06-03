@@ -16,8 +16,6 @@ from copy import deepcopy
 
 import numpy as np
 from numba import guvectorize
-
-import numba
 from numba import njit, prange
 # When binnings are fully regular, we can use this for super speed
 import fast_histogram as fh
@@ -25,13 +23,12 @@ from collections.abc import Iterable
 
 from concurrent.futures import ThreadPoolExecutor
 
-from pisa import FTYPE, TARGET, PISA_NUM_THREADS
+from pisa import FTYPE, TARGET, PISA_NUM_THREADS, PISA_HIST_THREADING
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.numba_tools import myjit
-from pisa.utils import vectorizer
-from pisa.utils.profiler import line_profile, profile
+from pisa.utils.profiler import profile
 
 __all__ = [
     'resample',
@@ -132,10 +129,24 @@ def histogram(sample, weights, binning, averaged, apply_weights=True):
     return flat_hist
 
 def _threaded_fh_histogramdd(sample, weights, bins, bin_range):
-    if not TARGET == "parallel":
-        return fh.histogramdd(sample=sample, weights=weights, bins=bins, range=bin_range)
+    """Conditionally apply histogram threading based on PISA_HIST_THREADING
+    setting.
+    """
+    # Determine number of splits
+    splits = None
+    if PISA_HIST_THREADING == 'auto':
+        # Auto mode: use threading only for parallel TARGET
+        if TARGET == 'parallel':
+            splits = PISA_NUM_THREADS
+    elif PISA_HIST_THREADING == 'off':
+        pass # splits stays None (disabled)
+    else:
+        # Explicit thread count (takes precedence)
+        splits = PISA_HIST_THREADING # int > 0
 
-    splits = PISA_NUM_THREADS
+    if splits is None or splits < 2:
+        return fh.histogramdd(sample=sample, weights=weights, bins=bins,
+                              range=bin_range)
 
     with ThreadPoolExecutor(max_workers=splits) as pool:
         chunk = len(sample[0]) // splits

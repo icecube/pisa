@@ -244,13 +244,13 @@ class mceq_barr(Stage):  # pylint: disable=invalid-name
             # Would rather use multi-dim arrays here but limited by fact that
             # numba only supports 1/2D versions of numpy functions
             container["nu_flux_nominal"] = np.full(
-                flux_container_shape, np.NaN, dtype=FTYPE
+                flux_container_shape, np.nan, dtype=FTYPE
             )
             container["nu_flux_mceq"] = np.full(
-                flux_container_shape, np.NaN, dtype=FTYPE
+                flux_container_shape, np.nan, dtype=FTYPE
             )
-            container["nu_flux"] = np.full(flux_container_shape, np.NaN, dtype=FTYPE)
-            container["gradients"] = np.full(gradients_shape, np.NaN, dtype=FTYPE)
+            container["nu_flux"] = np.full(flux_container_shape, np.nan, dtype=FTYPE)
+            container["gradients"] = np.full(gradients_shape, np.nan, dtype=FTYPE)
 
         # Also create an array container to hold the gradient parameter values
         # Only want this once, e.g. not once per container

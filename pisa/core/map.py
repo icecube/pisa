@@ -172,7 +172,7 @@ def rebin(hist, orig_binning, new_binning, normalize_values=True):
         else:
             orig_edges = orig_dim.bin_edges
             new_edges = new_dim.bin_edges
-        if not np.all(new_edges == orig_edges):
+        if not len(new_edges) == len(orig_edges) or not np.allclose(new_edges, orig_edges, **ALLCLOSE_KW):
             orig_edge_idx = np.array([np.where(orig_edges == n)
                                       for n in new_edges]).ravel()
             hist = np.add.reduceat(hist, orig_edge_idx[:-1],
@@ -1217,6 +1217,7 @@ class Map(object):
                     loc=orig_hist[valid_mask], scale=sigma[valid_mask],
                     random_state=random_state
                 )
+                gauss = np.clip(gauss, a_min=0, a_max=None)
 
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
                 hist_vals[valid_mask] = poisson.rvs(
@@ -1604,56 +1605,62 @@ class Map(object):
 
     def llh(self, expected_values, binned=False):
         """Calculate the total log-likelihood value between this map and the
-        map described by `expected_values`. See metric() for details.
+        map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "llh", binned)
 
+    def poisson_llh(self, expected_values, binned=False):
+        """Calculate the total Poissonian log-likelihood value between this map
+        and the map described by `expected_values`. See :py:meth:`metric`.
+        """
+        return self.metric(expected_values, "poisson_llh", binned)
+
     def mcllh_mean(self, expected_values, binned=False):
         """Calculate the total LMean log-likelihood value between this map and
-        the map described by `expected_values`. See metric() for details.
+        the map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "mcllh_mean", binned)
 
     def mcllh_eff(self, expected_values, binned=False):
         """Calculate the total LEff log-likelihood value between this map and
-        the map described by `expected_values`. See metric() for details.
+        the map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "mcllh_eff", binned)
 
     def conv_llh(self, expected_values, binned=False):
         """Calculate the total convoluted log-likelihood value between this map
-        and the map described by `expected_values`. See metric() for details.
+        and the map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "conv_llh", binned)
 
     def barlow_llh(self, expected_values, binned=False):
         """Calculate the total barlow log-likelihood value between this map and
-        the map described by `expected_values`. See metric() for details.
+        the map described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "barlow_llh", binned)
 
     def mod_chi2(self, expected_values, binned=False):
         """Calculate the total modified chi2 value between this map and the map
-        described by `expected_values`. See metric() for details.
+        described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "mod_chi2", binned)
 
     def correct_chi2(self, expected_values, binned=False):
         """Calculate the total correct chi2 value between this map and the map
-        described by `expected_values`. See metric() for details.
+        described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "correct_chi2", binned)
 
     def chi2(self, expected_values, binned=False):
         """Calculate the total chi-squared value between this map and the map
-        described by `expected_values`. See metric() for details.
+        described by `expected_values`. See :py:meth:`metric`.
         """
         return self.metric(expected_values, "chi2", binned)
 
     def signed_sqrt_mod_chi2(self, expected_values, binned=False):
         """Calculate the binwise (signed) square-root of the modified chi2 value
-        between this map and the map described by `expected_values`. See
-        metric() for details.
+        between this map and the map described by `expected_values`.
+        See :py:meth:`metric`.
         """
         return self.metric(expected_values, "signed_sqrt_mod_chi2", binned)
 
@@ -1759,7 +1766,7 @@ class Map(object):
         # Apply bin mask, if one exists
         # Set masked off elements to NaN (handling both cases where the hst is either a simple array, or has uncertainties)
         if self.binning.mask is not None :
-            hist[~self.binning.mask] = ufloat(np.NaN, np.NaN) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.NaN #TODO Is there a better way to check if this is a uarray?
+            hist[~self.binning.mask] = ufloat(np.nan, np.nan) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.nan #TODO Is there a better way to check if this is a uarray?
 
         # Done
         return hist
@@ -3205,12 +3212,12 @@ def test_Map():
                  binning=[e_binning, cz_binning, az_binning])
     m_new = m_orig.reorder_dimensions(['azimuth', 'energy', 'coszen'])
 
-    assert np.alltrue(m_orig[:, 0, 0].hist.flatten() ==
-                      m_new[0, :, 0].hist.flatten())
-    assert np.alltrue(m_orig[0, :, 0].hist.flatten() ==
-                      m_new[0, 0, :].hist.flatten())
-    assert np.alltrue(m_orig[0, 0, :].hist.flatten() ==
-                      m_new[:, 0, 0].hist.flatten())
+    assert np.all(m_orig[:, 0, 0].hist.flatten() ==
+                  m_new[0, :, 0].hist.flatten())
+    assert np.all(m_orig[0, :, 0].hist.flatten() ==
+                  m_new[0, 0, :].hist.flatten())
+    assert np.all(m_orig[0, 0, :].hist.flatten() ==
+                  m_new[:, 0, 0].hist.flatten())
 
     for dim in m_orig.binning.names:
         assert m_orig[:, 0, 0].binning[dim] == m_new[0, :, 0].binning[dim]

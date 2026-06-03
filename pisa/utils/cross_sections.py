@@ -157,7 +157,7 @@ class CrossSections(FlavIntData):
                     h1_e, h1_xs = extractData(rfile, key)
 
                     tot_xs = h1_xs*2 + o16_xs*1
-                    assert np.alltrue(h1_e == o16_e)
+                    assert np.all(h1_e == o16_e)
                     ext_e = o16_e
 
                 elif ver == 'genie_2.8.6':
@@ -175,7 +175,7 @@ class CrossSections(FlavIntData):
                 if energy is None:
                     energy = ext_e
 
-                assert np.alltrue(ext_e == energy)
+                assert np.all(ext_e == energy)
 
                 # Note that units in the ROOT files are [1e-38 cm^2] but PISA
                 # requires units of [m^2], so this conversion is made here.

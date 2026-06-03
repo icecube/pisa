@@ -1,1 +1,0 @@
-../../../pisa/core/README.md

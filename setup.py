@@ -3,7 +3,7 @@
 
 """
 Allows for PISA installation. Tested with `pip`. Use the environment variable
-`CC` to pass a custom compiler to the instller. (GCC and Clang should both
+`CC` to pass a custom compiler to the installer. (GCC and Clang should both
 work; OpenMP support--an optional dependency--is only available for recent
 versions of the latter).
 
@@ -52,7 +52,7 @@ __all__ = [
 
 __author__ = 'S. Boeser, J.L. Lanfranchi, P. Eller, M. Hieronymus'
 
-__license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -78,10 +78,9 @@ __license__ = '''Copyright (c) 2014-2025, The IceCube Collaboration
 SETUP_REQUIRES = [
     'pip>=1.8',
     'setuptools>18.5', # versioneer requires >18.5
-    'numpy>=1.17,<1.23',
-    'scipy>=1.6,<1.14',
-    'cython~=0.29.0', # needed for the setup and for the install
-    'scikit-learn<=1.1.2',
+    'numpy>=1.17',
+    'scipy>=1.6',
+    'cython',
 ]
 
 INSTALL_REQUIRES = [
@@ -94,19 +93,20 @@ INSTALL_REQUIRES = [
     'line_profiler',
     'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
     'numba>=0.53', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
-    'numpy>=1.17,<1.23',
-    'pint<=0.19', # property pint.quantity._Quantity no longer exists in 0.20
-    'scipy>=1.6,<1.14',
+    'numpy>=1.17',
+    'pint>=0.20', # property pint.quantity._Quantity no longer exists in 0.20 (TODO: test whether versions >=0.20 actually required)
+    'scipy>=1.6',
     'pandas',
-    'simplejson==3.18.4',
+    'setuptools>18.5,<81', # keep in INSTALL_REQUIRES for python>=3.12 to still be able to use pkg_resources
+    'simplejson>=3.19.1', # allow_nan added to decoder in 3.19.1
     'tables',
     'tabulate',
     'uncertainties',
-    'llvmlite', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
+    'llvmlite',
     'py-cpuinfo',
     'sympy',
-    'cython~=0.29.0', # needed for the setup and for the install
-    'scikit-learn<=1.1.2',
+    'cython',
+    'scikit-learn',
     'pyarrow',
     'tqdm',
     'daemonflux>=0.8.0',
@@ -115,12 +115,15 @@ INSTALL_REQUIRES = [
 
 EXTRAS_REQUIRE = {
     'develop': [
-        'pylint>=1.7',
-        'recommonmark',
-        'sphinx>=1.3',
-        'sphinx_rtd_theme',
-        'versioneer',
+        'furo',
+        'intersphinx-registry',
+        'linkify-it-py',
+        'myst-nb',
+        'pylint>=4.0',
         'pytest',
+        'sphinx>=1.3',
+        'sphinx_github_changelog',
+        'versioneer',
     ],
     # TODO: get mceq install to work... this is non-trivial since that
     # project isn't exactly cleanly instllable via pip already, plus it
@@ -234,7 +237,7 @@ def do_setup():
         long_description = f.read()
 
     # Collect (build-able) external modules and package_data
-    ext_modules = [Extension('pisa.utils.llh_defs.poisson_gamma_mixtures', 
+    ext_modules = [Extension('pisa.utils.llh_defs.poisson_gamma_mixtures',
                                 sources = ['pisa/utils/llh_defs/poisson_gamma_mixtures.pyx',
                                            'pisa/utils/llh_defs/poisson_gamma.c'])
                   ]
@@ -284,7 +287,7 @@ def do_setup():
     ]
 
     cmdclasses = {'build': CustomBuild, 'build_ext': CustomBuildExt}
-    cmdclasses.update(versioneer.get_cmdclass())
+    cmdclasses = versioneer.get_cmdclass(cmdclasses)
 
     # Now do the actual work
     setup(
@@ -296,9 +299,9 @@ def do_setup():
         license='Apache 2.0',
         author='The IceCube Collaboration',
         author_email='analysis@icecube.wisc.edu',
-        url='http://github.com/icecubeopensource/pisa',
+        url='https://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=3.6', # f-strings, kwarg/dict ordering require Py>=3.6
+        python_requires='>=3.8,<3.15', # daemonflux 0.8.0 requires Py>=3.8
         setup_requires=SETUP_REQUIRES,
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRAS_REQUIRE,
@@ -318,7 +321,7 @@ def do_setup():
                 # Scripts in core dir
                 'pisa-detectors = pisa.core.detectors:main',
                 'pisa-distribution_maker = pisa.core.distribution_maker:main',
-                'pisa-pipeline = pisa.core.pipeline:main', #FIXME
+                'pisa-pipeline = pisa.core.pipeline:main',
 
                 # Scripts in scripts dir
                 'pisa-add_flux_to_events_file = pisa.scripts.add_flux_to_events_file:main',
@@ -335,6 +338,7 @@ def do_setup():
                 'pisa-test_covariance = pisa_tests.test_covariance:main',
                 'pisa-test_example_pipelines = pisa_tests.test_example_pipelines:main',
                 'pisa-test_kde_stage = pisa_tests.test_kde_stage:main',
+                'pisa-test_services = pisa_tests.test_services:main'
             ]
         }
     )

@@ -15,7 +15,7 @@
 
 PISA is a software written to analyze the results (or expected results) of an experiment based on Monte Carlo (MC) simulation.
 
-In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](https://icecube.wisc.edu/), including the [DeepCore](https://arxiv.org/abs/1109.6096) and the planned [Upgrade](https://arxiv.org/abs/2307.15295) low-energy in-fill arrays.
+In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](https://icecube.wisc.edu/), including the [DeepCore](https://arxiv.org/abs/1109.6096) and the [Upgrade](https://arxiv.org/abs/2509.13066) low-energy in-fill arrays.
 
 > [!NOTE]
 > However, any experiment can make use of PISA for analyzing expected and actual results.
@@ -87,7 +87,8 @@ outputs['nutau_cc'].plot(ax=axes[2], cmap='RdYlBu_r', vmin=0, vmax=1);
 
 # Containerization
 
-PISA includes a [Dockerfile](Dockerfile) that can be used to containerize the software (e.g. with docker or singularity). More information on how to do this can be found [here](https://github.com/icecube/wg-oscillations-fridge/blob/master/docs/CONTAINER_INSTRUCTIONS.md) (access restricted).
+In case you do not want to install PISA, we provide pre-built [Docker](https://docs.docker.com) images [here](https://github.com/orgs/icecube/packages?repo_name=pisa). You can download a given image via `docker pull ghcr.io/icecube/pisa:<tag>`, where `<tag>` has to be replaced by the desired release tag or `master`. Each image is built using the [Dockerfile](Dockerfile) included in PISA.
+You can also use it to containerize PISA yourself (with Docker or [Singularity](https://docs.sylabs.io/guides/latest/user-guide/)). Instructions can be found [here](https://github.com/icecube/wg-oscillations-fridge/blob/master/docs/CONTAINER_INSTRUCTIONS.md) (access restricted).
 
 # Contributions
 

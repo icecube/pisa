@@ -264,6 +264,7 @@ def init_test(**param_kwargs):
         'reco_coszen', num_bins=10, is_lin=True, domain=[-1, 0.1], tex=r'\cos{\theta}_{\rm reco}'
     )
     dd_pid = OneDimBinning('pid', bin_edges=[0.55, 0.75, 1.], tex=r'{\rm PID}')
+    binning = MultiDimBinning([dd_en, dd_cz, dd_pid], name='oscNext_verification')
 
     return csv_hypersurfaces(
         fit_results_file='events/hs_test.csv',
@@ -271,5 +272,6 @@ def init_test(**param_kwargs):
         inter_param='dm31',
         links={'test':['test1_cc', 'test2_nc']},
         params=param_set,
-        calc_mode=MultiDimBinning([dd_en, dd_cz, dd_pid], name='oscNext_verification'),
+        calc_mode=binning,
+        apply_mode=binning,
     )
