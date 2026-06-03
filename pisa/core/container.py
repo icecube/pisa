@@ -83,10 +83,9 @@ there are two translation modes available, defined on a per-variable basis in th
   - examples: event weights, raw counts
 
 By default, when data for some variable is initially entered into the container,
-the translation mode is assumed to be "sum" by PISA whenever "weight" is part of
-the variable name (cf. :py:meth:`~pisa.core.container.Container.__setitem__`),
-otherwise "average". This choice can be overridden straightforwardly by
-specifying::
+the translation mode is assumed to be "sum" by PISA only for variables in
+:py:attr:`~pisa.core.container.Container.sum_mode_keys`, otherwise "average".
+This choice can be overridden straightforwardly by specifying::
 
     container.translation_modes['variable_name'] = 'average' # (or 'sum')
 
@@ -504,7 +503,11 @@ class Container():
     """
 
     valid_translation_modes = ("average", "sum")
+    """Available translation modes"""
+    sum_mode_keys = () # TODO
+    """Variables for which "sum" is assumed as default translation mode"""
     array_representations = ("events", "log_events")
+    """Available unbinned data representations"""
 
     def __init__(self, name, representation='events'):
         self.name = name
@@ -677,7 +680,7 @@ class Container():
         self.__add_data(key, data)
 
         if not key in self.translation_modes:
-            if "weight" in key.lower():
+            if key in self.sum_mode_keys:
                 self.translation_modes[key] = "sum"
             else:
                 self.translation_modes[key] = "average"
@@ -1098,9 +1101,6 @@ def test_container():
     logging.trace('Testing container representation and validity management')
 
     container = Container('nue', 'events')
-    for weight_key in ('weights', 'initial_weights', 'oneweight'):
-        container[weight_key] = w
-        assert container.translation_modes[weight_key] == 'sum'
     container['x'] = x
     assert container.translation_modes['x'] == 'average'
     container['y'] = y
@@ -1122,25 +1122,13 @@ def test_container():
 
     # However, for other variables, setting invalid mode needs to fail when
     # attempting to translate (here from binning -> 'events')
+    container['oneweight'] = w
     container.translation_modes['oneweight'] = 'division'
     container.representation = 'events'
     try:
         container['oneweight']
     except ValueError:
         pass
-
-    # For the weight-like quantities with translation mode set to 'sum', no
-    # translation back to 'events' is implemented
-    for weight_key in ('weights', 'initial_weights'):
-        try:
-            container[weight_key]
-        except NotImplementedError:
-            pass
-
-    # However, if we set 'events' rep. validity to True, this has to work again,
-    # because no translation is necessary
-    container.validity['weights'][hash('events')] = True
-    _ = container['weights']
 
 
 def test_container_set():
