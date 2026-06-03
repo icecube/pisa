@@ -50,7 +50,6 @@ Also note that where a service implements `FTYPE` and relies on C extension code
 | `data.licloader_weighter`     | ✗ | ✗ | ✓ | ✗ |
 | `data.meows_loader`           | ✗ | ✗ | ✓ | ✗ |
 | `data.simple_data_loader`     | ✗ | ✗ | ✓ | ✗ |
-| `data.simple_signal`          | ✗ | ✗ | ✓ | ✗ |
 | `data.sqlite_loader`          | ✗ | ✗ | ✓ | ✗ |
 | `data.toy_event_generator`    | ✗ | ✗ | ✓ | ✗ |
 | `discr_sys.hypersurfaces`     | ✗ | ✗ | ✓ | ✗ |

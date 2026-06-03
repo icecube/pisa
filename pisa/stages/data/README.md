@@ -4,7 +4,7 @@ This folder contains various stages designed to either load existing data, or cr
 
 ## Services
 
-Several services are available, though only `simple_data_loader` is used an regularly maintained in the context of oscillation analyses:
+Several services are available, though only `simple_data_loader` is used an regularly maintained in the context of oscillation analyses. A selection follows:
 
 ### simple_data_loader
 
@@ -13,10 +13,6 @@ This is the main service used by all oscNext oscillation analyses. Loads pisa-co
 ### toy_event_generator
 
 This service creates a set of toy MC neutrino events, based on an arbitrary choice of flux. This fake data is binned using the same convention as the normal oscillation analysis (ie, events are binned in energy, coszen and PID)
-
-### simple
-
-This service creates a simple, 1D dataset consisting of a gaussian signal on top of a uniform background. Useful to make simple checks on minimization and likelihood implementations. `super_simple_pipeline.cfg` provides an example pipeline that ca be used to run this service
 
 ### csv_data_hist
 
