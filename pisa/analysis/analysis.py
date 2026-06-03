@@ -485,10 +485,11 @@ def get_separate_octant_params(
 
     # Also get case 2, e.g. the other octant
     case2_octant_index = 0 if case1_octant_index == 1 else 1
+    angle_case2.range = octants[case2_octant_index]
     angle_case2.value = 2*inflection_point - angle_case2.value
     # Also setting nominal value so that `reset_free` won't try to set it out of bounds
     angle_case2.nominal_value = angle_case2.value
-    angle_case2.range = octants[case2_octant_index]
+    
 
     return angle_orig, angle_case1, angle_case2
 

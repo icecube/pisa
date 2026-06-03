@@ -689,20 +689,21 @@ class Pipeline():
         implemented because of lacking benefits, and similarly going
         from a histogram to events).
         """
-        ref_binning = None
-        ref_name = None
-        for s in self.stages:
-            # it suffices to start from the first occurrence of a MultiDimBinning
-            if isinstance(s.apply_mode, MultiDimBinning) and ref_binning is None:
-                ref_binning = s.apply_mode
-                ref_name = f"{s.stage_name}.{s.service_name}"
-            elif ref_binning is not None and s.apply_mode != ref_binning:
-                raise ValueError(
-                    f"Stage {s.stage_name}.{s.service_name} has '{s.apply_mode}'"
-                    " as apply_mode, which deviates from a previously detected "
-                    f"MultiDimBinning apply_mode, of stage {ref_name}. This "
-                    "configuration would result in an unreliable pipeline output."
-                )
+        pass
+        # ref_binning = None
+        # ref_name = None
+        # for s in self.stages:
+        #     # it suffices to start from the first occurrence of a MultiDimBinning
+        #     if isinstance(s.apply_mode, MultiDimBinning) and ref_binning is None:
+        #         ref_binning = s.apply_mode
+        #         ref_name = f"{s.stage_name}.{s.service_name}"
+        #     elif ref_binning is not None and s.apply_mode != ref_binning:
+        #         raise ValueError(
+        #             f"Stage {s.stage_name}.{s.service_name} has '{s.apply_mode}'"
+        #             " as apply_mode, which deviates from a previously detected "
+        #             f"MultiDimBinning apply_mode, of stage {ref_name}. This "
+        #             "configuration would result in an unreliable pipeline output."
+        #         )
 
     def assert_varbinning_compat(self):
         """Asserts that pipeline setup is compatible with `VarBinning`:

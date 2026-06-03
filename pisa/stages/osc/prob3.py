@@ -506,7 +506,10 @@ class prob3(Stage):  # pylint: disable=invalid-name
 
         # update the outputted weights
         for container in self.data:
-            container['weights'] *= (container['nu_flux'][:,0] * container['prob_e']) + (container['nu_flux'][:,1] * container['prob_mu'])
+            if container.name in ["nuall_nc", "nuallbar_nc"]:
+                container['weights'] *= container['nu_flux'][:,0] + container['nu_flux'][:,1]
+            else:
+                container['weights'] *= (container['nu_flux'][:,0] * container['prob_e']) + (container['nu_flux'][:,1] * container['prob_mu'])
 
 
 def init_test(**param_kwargs):
