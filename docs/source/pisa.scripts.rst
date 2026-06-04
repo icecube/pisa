@@ -12,6 +12,14 @@ pisa.scripts.add\_flux\_to\_events\_file module
    :show-inheritance:
    :undoc-members:
 
+pisa.scripts.benchmark\_pipeline\_performance module
+----------------------------------------------------
+
+.. automodule:: pisa.scripts.benchmark_pipeline_performance
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 pisa.scripts.compare module
 ---------------------------
 

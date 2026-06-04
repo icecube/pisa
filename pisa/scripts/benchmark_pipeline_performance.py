@@ -15,9 +15,27 @@ from pisa.core.distribution_maker import Pipeline
 from pisa.utils.fileio import to_file
 from pisa.utils.log import Levels, logging, set_verbosity
 
+__all__ = ['PIPELINE_CFGS_TO_TEST', 'NTEMPLATES', 'PFX', 'get_get_outputs_time',
+           'create_benchmark_result', 'write_benchmark_json', 'parse_args', 'main']
+
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
+
 PIPELINE_CFGS_TO_TEST = ["settings/pipeline/IceCube_3y_neutrinos_daemon.cfg",
 "settings/pipeline/IceCube_3y_neutrinos.cfg", "settings/pipeline/IceCube_3y_muons.cfg"
 ]
+"""Pipeline config files in PISA package to test by default"""
 
 NTEMPLATES = 50
 """Number of random Asimov templates to produce by default (no caching)"""
@@ -29,25 +47,26 @@ script vs. output from test functions being run"""
 
 def get_get_outputs_time(pipeline):
     """
-    Just extract minimum+average get_outputs() execution time from a profiled pipeline.
-    
-    Note that first call to get_outputs() typically includes compilation overhead
+    Just extract minimum+average :py:meth:`~.pipeline.Pipeline.get_outputs()` execution
+    time from a profiled pipeline.
+
+    Note that first call to `get_outputs()` typically includes compilation overhead
     (numba JIT). We thus just exclude it.
-    
+
     Parameters
     ----------
-    pipeline : pisa.core.pipeline.Pipeline
-        pipeline instance with profile=True that has been run via get_outputs()
-    
+    pipeline : Pipeline
+        Pipeline instance with `profile=True` that has been run via `get_outputs()`
+
     Returns
     -------
     minim, avg, maxim : float
-        Minimum, average, maximum get_outputs() time in seconds.
-    
+        Minimum, average, maximum `get_outputs()` time in seconds
+
     Raises
     ------
     ValueError
-        If the pipeline has no recorded get_outputs times.
+        If the pipeline has no recorded `get_outputs()` times
     """
     times = pipeline._get_outputs_times # pylint: disable=protected-access
 
@@ -71,20 +90,20 @@ def get_get_outputs_time(pipeline):
 def create_benchmark_result(pipeline_config_name, target, nthreads, time_s, range_s):
     """
     Create a single benchmark result entry in github-action-benchmark format.
-    
+
     Parameters
     ----------
     pipeline_config_name : str
         Name/path of the pipeline config being benchmarked
     target : str
-        PISA_TARGET value ('cpu' or 'parallel')
+        :py:data:`~pisa.TARGET` value
     nthreads : int
-        PISA_NUM_THREADS value
+        :py:data:`~pisa.PISA_NUM_THREADS` value
     time_s : float
         Execution time metric (average) in seconds
     range_s : float
         Execution time variation in seconds
-    
+
     Returns
     -------
     dict
@@ -106,18 +125,18 @@ def write_benchmark_json(results, output_path, commit_sha=None, commit_msg=None)
     """
     Write benchmark results to JSON file in github-action-benchmark format.
     Adds timestamp and possibly commit information for improved manual tracking.
-    
+
     Parameters
     ----------
     results : list of dict
-        List of benchmark result dictionaries (from create_benchmark_result)
+        List of benchmark result dictionaries (from :py:func:`~create_benchmark_result`)
     output_path : str or Path
         Path where JSON file should be written
     commit_sha : str, optional
         Git commit SHA (for provenance tracking)
     commit_msg : str, optional
         Git commit message (for provenance tracking)
-    
+
     Returns
     -------
     Path

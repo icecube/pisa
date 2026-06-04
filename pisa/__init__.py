@@ -181,6 +181,7 @@ del FLOAT32_STRINGS, FLOAT64_STRINGS
 
 # set default target
 TARGET = 'cpu' # pylint: disable=invalid-name
+"""Numba compilation target"""
 
 cpu_targets = ['cpu', 'numba']
 parallel_targets = ['parallel', 'multicore']
