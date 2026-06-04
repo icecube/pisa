@@ -72,6 +72,18 @@ source_suffix = {
 # make sure the target is unique
 autosectionlabel_prefix_document = True
 
+# -- autodoc configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+
+# Just documenting all dunder members clutters docs, so select a few which have
+# useful docstrings in PISA (extend if desired). Alternatively, can specify
+# 'exclude-members' in dictionary below.
+special_members_to_doc = '__getitem__, __setitem__'
+
+autodoc_default_options = {
+    'special-members': special_members_to_doc
+}
+
 # -- intersphinx configuration -----------------------------------------------
 # To look up all available targets in python docs, for instance:
 # python -m sphinx.ext.intersphinx https://docs.python.org/3/objects.inv

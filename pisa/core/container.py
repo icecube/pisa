@@ -660,15 +660,15 @@ class Container():
         """Set `self[key]` to `data`.
 
         Invalidates all representations but the current one, which is set to
-        valid, and set the translation mode to "average", unless the string "weight"
-        is part of `key`, in which case the translation mode is set to "sum", or
-        unless a mode has already been set.
+        valid, and set the translation mode to "average", unless the `key` is
+        part of :py:attr:`~Container.sum_mode_keys`, in which case the
+        translation mode is set to "sum", or unless a mode has already been set.
 
         Parameters
         ----------
         key : string
             data identifier/variable
-        data : ndarray, :py:class:`~.Map` or (array, binning)-tuple
+        data : ndarray, :py:class:`~.Map` or (binning, array)-tuple
             data sample to add to the container
         """
         if self.is_map:
@@ -694,7 +694,7 @@ class Container():
         ----------
         key : string
             data identifier/variable
-        data : ndarray, :py:class:`~.Map` or (array, binning)-tuple
+        data : ndarray, :py:class:`~.Map` or (binning, array)-tuple
             data sample to add to the container
         """
         if isinstance(data, np.ndarray):
