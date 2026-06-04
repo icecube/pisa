@@ -894,6 +894,8 @@ class ParamSet(MutableSequence, Set):
                 table.append([p.name, p.value, p.nominal_value, p.range, p.prior, p.units, p.is_fixed])
             else:
                 if p.range is not None:
+                    # convert range to float values that will be displayed nicer than e.g. numpy floats.
+                    # sigfigs=6 catches "machine precission errors" when converting single to double precission.
                     range_fmt = [float(format_num(r.m, sigfigs=6)) for r in p.range]
                 else:
                     range_fmt = None

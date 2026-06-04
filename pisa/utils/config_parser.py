@@ -511,7 +511,7 @@ def parse_param(config, section, selector, fullname, pname, value):
         if 'sigma' in range_:
             sigma = value.s * value.units # pylint: disable=unused-variable
         range_ = range_.replace('[', 'np.array([')
-        range_ = range_.replace(']', '], dtype=FTYPE)')
+        range_ = range_.replace(']', '], dtype=FTYPE)') #range should have pisa FTYPE
         # Strip out uncertainties from value itself (as we will rely on the
         # prior from here on out)
         kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
