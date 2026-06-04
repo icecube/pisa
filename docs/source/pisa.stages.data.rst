@@ -60,14 +60,6 @@ pisa.stages.data.simple\_data\_loader module
    :show-inheritance:
    :undoc-members:
 
-pisa.stages.data.simple\_signal module
---------------------------------------
-
-.. automodule:: pisa.stages.data.simple_signal
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 pisa.stages.data.sqlite\_loader module
 --------------------------------------
 
