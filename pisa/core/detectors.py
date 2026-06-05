@@ -26,7 +26,7 @@ from pisa.core.param import ParamSet, Param
 from pisa.utils.config_parser import PISAConfigParser
 from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import set_verbosity, logging, Levels
+from pisa.utils.log import set_verbosity, logging
 from pisa.utils.random_numbers import get_random_state
 
 
@@ -95,7 +95,6 @@ class Detectors(object):
                 raise NameError(f'Shared param {sp} exists in {N} detectors but only a free param in {n} detectors.')
 
         self.init_params()
-        self.params_hash = self.get_params_hash()
 
     def __repr__(self):
         return self.tabulate(tablefmt="presto")
@@ -137,12 +136,12 @@ class Detectors(object):
 
 
     def run(self):
-        for distribution_maker in self:
+        for distribution_maker in self._distribution_makers:
             distribution_maker.run()
 
     def setup(self):
         """Setup (reset) all distribution makers"""
-        for d in self:
+        for d in self._distribution_makers:
             d.setup()
 
     def get_outputs(self, **kwargs):
@@ -182,7 +181,7 @@ class Detectors(object):
             self.init_params()
 
     def select_params(self, selections, error_on_missing=True):
-        for distribution_maker in self:
+        for distribution_maker in self._distribution_makers:
             distribution_maker.select_params(selections=selections, error_on_missing=error_on_missing)
         self.init_params()
 
@@ -205,14 +204,14 @@ class Detectors(object):
         """
         params = ParamSet()
         for p_name in self.shared_params:
-            for distribution_maker in self:
+            for distribution_maker in self._distribution_makers:
                 try:
                     params.extend(distribution_maker.params[p_name])
                     break  # shared param found, can continue with the next shared param
                 except:
                     continue # shared param was not in this DistributionMaker, so search in the next one
 
-        for distribution_maker in self:
+        for distribution_maker in self._distribution_makers:
             for param in distribution_maker.params:
                 if param.name in self.shared_params:
                     continue # shared param is already in param set, can continue with the next param
@@ -224,6 +223,7 @@ class Detectors(object):
                 else:
                     params.extend(param)
         self._params = params
+        self.params_hash = self.get_params_hash()
 
     @property
     def shared_param_ind_list(self):
@@ -234,7 +234,7 @@ class Detectors(object):
         if not self.shared_params: return []
 
         shared_param_ind_list = []
-        for distribution_maker in self:
+        for distribution_maker in self._distribution_makers:
             free_names = distribution_maker.params.free.names
             spi = []
             for p_name in free_names:
@@ -246,7 +246,7 @@ class Detectors(object):
     @property
     def param_selections(self):
         selections = None
-        for distribution_maker in self:
+        for distribution_maker in self._distribution_makers:
             if selections != None and sorted(distribution_maker.param_selections) != selections:
                 raise AssertionError('Different param_selections for different detectors.')
             selections = sorted(distribution_maker.param_selections)
@@ -287,7 +287,7 @@ class Detectors(object):
         num_events_per_bin = self.num_events_per_bin
 
         indices = []
-        for i, d in enumerate(self.distribution_makers):
+        for i, d in enumerate(self._distribution_makers):
             empty_counts = num_events_per_bin[i] == 0
             indices.append(np.where(empty_counts)[0])
         return indices
@@ -301,7 +301,7 @@ class Detectors(object):
         values : a list of quantities
 
         """
-        for dist_maker in self:
+        for dist_maker in self._distribution_makers:
             dist_values = []
             for dist_name in dist_maker.params.free.names:
                 for name, value in zip(self.params.free.names, values):
@@ -311,6 +311,7 @@ class Detectors(object):
                         v = value
                 dist_values.append(v)
             dist_maker.set_free_params(dist_values)
+        self.init_params()
 
     def randomize_free_params(self, random_state=None):
         if random_state is None:
@@ -323,18 +324,21 @@ class Detectors(object):
 
     def reset_all(self):
         """Reset both free and fixed parameters to their nominal values."""
-        for d in self:
+        for d in self._distribution_makers:
             d.reset_all()
+        self.init_params()
 
     def reset_free(self):
         """Reset only free parameters to their nominal values."""
-        for d in self:
+        for d in self._distribution_makers:
             d.reset_free()
+        self.init_params()
 
     def set_nominal_by_current_values(self):
         """Define the nominal values as the parameters' current values."""
-        for d in self:
+        for d in self._distribution_makers:
             d.set_nominal_by_current_values()
+        self.init_params()
 
     def _set_rescaled_free_params(self, rvalues):
         """Set free param values given a simple list of [0,1]-rescaled,
@@ -344,7 +348,7 @@ class Detectors(object):
             rvalues = list(rvalues)
 
         if self.shared_params == []:
-            for d in self:
+            for d in self._distribution_makers:
                 rp = []
                 for j in range(len(d.params.free)):
                     rp.append(rvalues.pop(0))
@@ -363,6 +367,8 @@ class Detectors(object):
                 for j in range(len(spi[i])):
                     rp.insert(spi[i][j][0], sp[spi[i][j][1]])
                 self._distribution_makers[i]._set_rescaled_free_params(rp)
+
+        self.init_params()
 
 
 def test_Detectors():
@@ -388,7 +394,7 @@ def test_Detectors():
     model.params.opt_eff_lateral.value = 20 # shared parameter
     model.params.aeff_scale.value = 2       # only changes value for detector1
 
-    model.update_params(model.params)
+    model.update_params(model.params, False)
 
     o0 = model.distribution_makers[0].params.opt_eff_lateral.value.magnitude
     o1 = model.distribution_makers[1].params.opt_eff_lateral.value.magnitude
