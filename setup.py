@@ -111,6 +111,7 @@ INSTALL_REQUIRES = [
     'tqdm',
     'daemonflux>=0.8.0',
     'packaging',
+    'fast_interp @ git+https://github.com/dbstein/fast_interp.git'
 ]
 
 EXTRAS_REQUIRE = {
@@ -307,6 +308,7 @@ def do_setup():
         extras_require=EXTRAS_REQUIRE,
         dependency_links=[
             'git+https://github.com/icecubeopensource/kde.git#egg=kde',
+            'git+https://github.com/dbstein/fast_interp.git#egg=fast_interp',
             #'git+https://github.com/afedynitch/MCEq.git#egg=MCEq',
         ],
         packages=find_packages(),
