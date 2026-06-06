@@ -32,3 +32,7 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: docs/build/html
+        # Destination directory in gh-pages not root but docs/
+        destination_dir: docs
+        # Don't delete other existing files
+        keep_files: true
