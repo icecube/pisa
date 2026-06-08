@@ -9,6 +9,8 @@ on:
     tags:
       - '*'
 
+# cancel in-progress run for current workflow when new workflow starts       
+# (github.run_id only as fallback, just in case, as per "control workflow concurrency" HOWTO)
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
