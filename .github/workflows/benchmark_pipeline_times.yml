@@ -1,0 +1,80 @@
+# Get many example pipeline outputs with serial and parallel execution,
+# record the times, and create plots with historical records for each
+# execution configuration in GitHub pages. Can use the created artifacts
+# to analyse timings manually, for example when running this on a pull
+# request branch to judge whether performance would be impacted.
+
+# Important note: benchmark action only runs (and pushes) on push to master,
+# or on workflow_dispatch if the user explicitly checks the push_results checkbox.
+# On manual runs without checking the box, results will still be uploaded as artifacts,
+# but won't be pushed to gh-pages.
+
+name: Benchmark pipeline performance
+
+env:
+  PYTHON_VERSION: "3.14"
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      push_results:
+        description: 'Push results to gh-pages'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+          - { target: "cpu", nthreads: 1 }
+          - { target: "parallel", nthreads: 4 } # each free ubuntu-latest runner provides 4 cpus
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Run benchmark (PISA_TARGET=${{ matrix.config.target }}, PISA_NUM_THREADS=${{ matrix.config.nthreads }})
+        env:
+          PISA_TARGET: ${{ matrix.config.target }}
+          PISA_NUM_THREADS: ${{ matrix.config.nthreads }}
+        run: |
+          python pisa/scripts/benchmark_pipeline_performance.py
+
+      # Note: In case matrix jobs pushing simultaneously to gh-pages causes conflicts or other issues, move this to a sequential
+      # "push-results" job (would need to download all artifacts into benchmark_results first and then execute this action)
+      - name: Upload benchmark results
+        if: github.event_name == 'push' || github.event.inputs.push_results == 'true'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: "customSmallerIsBetter"
+          # Need a dedicated filename per target/nthreads combination because artifact name cannot be specified
+          # with "archive" parameter set to "false" (file uploaded as is, not zipped).
+          # Needs to correspond to the filename the benchmarking script uses.
+          output-file-path: benchmark_results/results_target_${{ matrix.config.target }}_nthreads_${{ matrix.config.nthreads }}.json
+          # Access token to deploy GitHub Pages branch
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          gh-pages-branch: "gh-pages"
+          benchmark-data-dir-path: "dev/bench"
+          # no alert-threshold, comment-on-alert, fail-on-alert, or comment-always, as these are useless without a pull_request trigger
+
+      - name: Upload benchmark results as artifact
+        uses: actions/upload-artifact@v7
+        with:
+          path: benchmark_results/results_target_${{ matrix.config.target }}_nthreads_${{ matrix.config.nthreads }}.json
+          archive: false
+          retention-days: 7
