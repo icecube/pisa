@@ -36,6 +36,8 @@ jobs:
           - { target: "parallel", nthreads: 4 } # each free ubuntu-latest runner provides 4 cpus
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
