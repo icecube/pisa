@@ -1,0 +1,1353 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+        <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>pisa.utils.comparisons - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=9e02ad1e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Navigation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../stubs/install_stub.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorials.html">Tutorials</a><input aria-label="Toggle navigation of Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/glossary_stub.html">PISA Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../notebooks/IceCube_3y_oscillations_example.html">PISA Example Using Public IceCube Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/howto_perform_fit_redirect.html">Carrying out a custom fitting routine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../notebooks/pisa_modes.html">PISA stage modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/howto_pipeline_config_redirect.html">Pipeline configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/units_uncertainties_stub.html">Units and Uncertainties</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../contributing.html">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/contributing_stub.html">How to contribute to PISA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/howto_service_stub.html">Creating a service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/data_storage_trafo_redirect.html">Data pipeline system (storage &amp; transformation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/globals_stub.html">Global constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../pisa.html">Python API</a><input aria-label="Toggle navigation of Python API" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../pisa.stages.html">pisa.stages package</a><input aria-label="Toggle navigation of pisa.stages package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.absorption.html">pisa.stages.absorption package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.aeff.html">pisa.stages.aeff package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.background.html">pisa.stages.background package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.cont_sys.html">pisa.stages.cont_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.data.html">pisa.stages.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.discr_sys.html">pisa.stages.discr_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.flux.html">pisa.stages.flux package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.likelihood.html">pisa.stages.likelihood package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../pisa.stages.osc.html">pisa.stages.osc package</a><input aria-label="Toggle navigation of pisa.stages.osc package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../pisa.stages.osc.prob3numba.html">pisa.stages.osc.prob3numba package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.reco.html">pisa.stages.reco package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.utils.html">pisa.stages.utils package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.xsec.html">pisa.stages.xsec package</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../pisa.utils.html">pisa.utils package</a><input aria-label="Toggle navigation of pisa.utils package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.utils.hypersurface.html">pisa.utils.hypersurface package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.utils.llh_defs.html">pisa.utils.llh_defs package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../stubs/license_stub.html">License</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for pisa.utils.comparisons</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Utilities for comparing things.</span>
+
+<span class="sd">`recursiveEquality` and `recursiveAllclose` traverse into potentially nested</span>
+<span class="sd">datstructures and compare all elements for equality.</span>
+<span class="sd">`normQuant` performs the same kind of traversal, but returns a normalized</span>
+<span class="sd">version of the input object whereby &quot;essentially-equal&quot; things are returned as</span>
+<span class="sd">&quot;actually-equal&quot; objects.</span>
+
+<span class="sd">These functions are at the heart of hashing behaving as one expects, and this</span>
+<span class="sd">in turn is essential for caching to work correctly.</span>
+
+<span class="sd">.. important:: Read carefully how each function in this module defines</span>
+<span class="sd">   &quot;equality&quot; for various datatypes so you understand what two things being</span>
+<span class="sd">   &quot;equal&quot; based upon these functions *actually* means.</span>
+
+<span class="sd">   E.g., (nan == nan) == True, uncorrelated uncertainties are equal if both</span>
+<span class="sd">   their nominal values and standard deviations are equal regardless if they</span>
+<span class="sd">   come from independent random variables, etc.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Number</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">six</span><span class="w"> </span><span class="kn">import</span> <span class="n">string_types</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">AffineScalarFunc</span><span class="p">,</span> <span class="n">Variable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">ufloat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uncertainties</span><span class="w"> </span><span class="kn">import</span> <span class="n">unumpy</span> <span class="k">as</span> <span class="n">unp</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span><span class="p">,</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">HASH_SIGFIGS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;FTYPE_PREC&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;EQUALITY_SIGFIGS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;EQUALITY_PREC&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ALLCLOSE_KW&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;NP_TYPES&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SEQ_TYPES&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;MAP_TYPES&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;COMPLEX_TYPES&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;isvalidname&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;isscalar&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;isbarenumeric&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;isunitless&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;recursiveEquality&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;recursiveAllclose&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;normQuant&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;interpret_quantity&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_isscalar&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_isunitless&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_recursiveEquality&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_normQuant&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2019, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="n">FTYPE_PREC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+<span class="sd">&quot;&quot;&quot;Machine precision (&quot;eps&quot;) for PISA&#39;s FTYPE (float datatype)&quot;&quot;&quot;</span>
+
+<span class="n">FTYPE_SIGFIGS</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">FTYPE_PREC</span><span class="p">))))</span>
+<span class="sd">&quot;&quot;&quot;Significant figures possible given PISA&#39;s FTYPE&quot;&quot;&quot;</span>
+
+<span class="n">EQUALITY_SIGFIGS</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">HASH_SIGFIGS</span><span class="p">,</span> <span class="n">FTYPE_SIGFIGS</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Significant figures for performing equality comparisons&quot;&quot;&quot;</span>
+
+<span class="n">EQUALITY_PREC</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**-</span><span class="n">EQUALITY_SIGFIGS</span>
+<span class="sd">&quot;&quot;&quot;Precision (&quot;rtol&quot;) for performing equality comparisons&quot;&quot;&quot;</span>
+
+<span class="n">ALLCLOSE_KW</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">rtol</span><span class="o">=</span><span class="n">EQUALITY_PREC</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">FTYPE_PREC</span><span class="p">,</span> <span class="n">equal_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Keyword args to pass to all calls to numpy.allclose&quot;&quot;&quot;</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span>
+    <span class="s2">&quot;HASH_SIGFIGS=</span><span class="si">%d</span><span class="s2">, FTYPE_SIGFIGS=</span><span class="si">%d</span><span class="s2">, EQUALITY_PREC=</span><span class="si">%s</span><span class="s2">, FTYPE_PREC=</span><span class="si">%s</span><span class="s2">, ALLCLOSE_KW=</span><span class="si">%s</span><span class="s2">&quot;</span>
+    <span class="o">%</span> <span class="p">(</span><span class="n">HASH_SIGFIGS</span><span class="p">,</span> <span class="n">FTYPE_SIGFIGS</span><span class="p">,</span> <span class="n">EQUALITY_PREC</span><span class="p">,</span> <span class="n">FTYPE_PREC</span><span class="p">,</span> <span class="n">ALLCLOSE_KW</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># Derive the following number via:</span>
+<span class="c1"># &gt;&gt;&gt; from sympy import log, N</span>
+<span class="c1"># &gt;&gt;&gt; str(N(log(2, 10), 40))</span>
+<span class="n">LOG10_2</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="s1">&#39;0.3010299956639811952137388947244930267682&#39;</span><span class="p">)</span>
+
+<span class="n">NP_TYPES</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">)</span>
+<span class="n">SEQ_TYPES</span> <span class="o">=</span> <span class="p">(</span><span class="n">Sequence</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">)</span>
+<span class="n">MAP_TYPES</span> <span class="o">=</span> <span class="p">(</span><span class="n">Mapping</span><span class="p">,)</span>
+<span class="n">COMPLEX_TYPES</span> <span class="o">=</span> <span class="n">NP_TYPES</span> <span class="o">+</span> <span class="n">SEQ_TYPES</span> <span class="o">+</span> <span class="n">MAP_TYPES</span>
+
+
+<div class="viewcode-block" id="isvalidname">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.isvalidname">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">isvalidname</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name that is valid to use for a Python variable&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\W|^(?=\d)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="isscalar">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.isscalar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">isscalar</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if input is a scalar object.</span>
+
+<span class="sd">    Best check found for now as to scalar-ness (works for pint,</span>
+<span class="sd">    uncertainties, lists, tuples, numpy arrays, ...) but not tested against all</span>
+<span class="sd">    things.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    numpy.isscalar</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)))</span>
+        <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="isbarenumeric">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.isbarenumeric">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">isbarenumeric</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if input is a numerical datatype (including arrays of numbers) but</span>
+<span class="sd">    without units. Note that for these purposes, booleans are *not* considered</span>
+<span class="sd">    numerical datatypes.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">is_bare_numeric</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+        <span class="n">is_bare_numeric</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">object_</span>
+        <span class="p">):</span>
+            <span class="n">is_bare_numeric</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Number</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="n">is_bare_numeric</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">is_bare_numeric</span></div>
+
+
+
+<div class="viewcode-block" id="isunitless">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.isunitless">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">isunitless</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if input is unitless. Only the first scalar element of an Iterable</span>
+<span class="sd">    (or arbitrarily nested Iterables) is checked if it has units.</span>
+
+<span class="sd">    Strings and bools are considered to be unit-less.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    isunitless : bool</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError if a Mapping is encountered</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot test a Mapping (`x` is of type </span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">string_types</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">isunitless</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="recursiveEquality">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.recursiveEquality">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursiveEquality</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">allclose_kw</span><span class="o">=</span><span class="n">ALLCLOSE_KW</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively verify equality between two objects `x` and `y`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x, y</span>
+<span class="sd">        Objects to be compared</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Possibly unintuitive behaviors:</span>
+<span class="sd">      * Sequences of any type evaluate equal if their contents are the same.</span>
+<span class="sd">        E.g., a list can equal a tuple.</span>
+
+<span class="sd">      * Mappings of any type evaluate equal if their contents are the same.</span>
+<span class="sd">        E.g. a dict can equal an OrderedDict.</span>
+
+<span class="sd">      * nan SHOULD equal nan, +inf SHOULD equal +inf, and -inf SHOULD equal -inf</span>
+<span class="sd">        ... but this ***only*** holds true (as of now) if those values are in</span>
+<span class="sd">        numpy arrays! (TODO!)</span>
+
+<span class="sd">      * Two pint units with same __repr__ but that were derived from different</span>
+<span class="sd">        unit registries evaluate to be equal. (This is contrary to pint&#39;s</span>
+<span class="sd">        implementation of equality comparisons, which is careful in case a</span>
+<span class="sd">        unit is defined differently in different registries. We&#39;ll assume this</span>
+<span class="sd">        isn&#39;t done here in PISA, until a use case arises where this is no</span>
+<span class="sd">        longer a good assumption.)</span>
+
+<span class="sd">      * Two pint units that are compatible but different (even just in</span>
+<span class="sd">        magnitude prefix) evaluate to be unequal.</span>
+
+<span class="sd">        This behavior is chosen for the case where numbers are given</span>
+<span class="sd">        independently of their units, and hence the automatic conversion</span>
+<span class="sd">        facility available for comparing pint quantities is not available.</span>
+<span class="sd">        The only reliable way to test equality for these &quot;less intelligent&quot;</span>
+<span class="sd">        objects is to ensure that both the numerical values are exactly equal</span>
+<span class="sd">        and that the units are exactly equal; the latter includes order of</span>
+<span class="sd">        magnitude prefixes (micro, milli, ..., giga, etc.).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=protected-access</span>
+
+    <span class="c1"># NOTE: The order in which types are compared below matters, so change</span>
+    <span class="c1"># order carefully.</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;hashable_state&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;hashable_state&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">hashable_state</span><span class="p">)</span>
+
+    <span class="c1"># pint units; allow for comparing across different registries, for</span>
+    <span class="c1"># pragmatic (but possibly not the most correct) reasons...</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Unit</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Unit</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;type(x)=</span><span class="si">%s</span><span class="s1"> but type(y)=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">repr</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;x:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;y:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># pint quantities</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;type(x)=</span><span class="si">%s</span><span class="s1"> but type(y)=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># use a string for `x`&#39;s units so we can compare across unit</span>
+        <span class="c1"># registries; this should do what we want in PISA, but note that in</span>
+        <span class="c1"># general this can be problematic since units can be redefined in</span>
+        <span class="c1"># different unit registries</span>
+        <span class="n">xunit</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">converted_y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">xunit</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">pint</span><span class="o">.</span><span class="n">DimensionalityError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Incompatible units: x.units=</span><span class="si">%s</span><span class="s1">, y.units=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+                          <span class="n">x</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span> <span class="n">converted_y</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
+
+    <span class="c1"># Simple things can be compared directly</span>
+    <span class="k">elif</span> <span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">COMPLEX_TYPES</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">COMPLEX_TYPES</span><span class="p">))</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">y</span><span class="p">:</span>
+            <span class="n">is_eq</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">allclose_kw</span><span class="p">):</span>
+                    <span class="n">is_eq</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_eq</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Simple types (type(x)=</span><span class="si">%s</span><span class="s1">, type(y)=</span><span class="si">%s</span><span class="s1">) not equal.&#39;</span><span class="p">,</span>
+                              <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;x:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;y:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># Numpy types</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">NP_TYPES</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">NP_TYPES</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;shape(x): </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;shape(y): </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">NP_TYPES</span><span class="p">):</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
+            <span class="n">first_element</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">flat</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
+            <span class="n">first_element</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">flat</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">allclose_kw</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;x:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;y:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">first_element</span><span class="p">,</span> <span class="p">(</span><span class="n">AffineScalarFunc</span><span class="p">,</span> <span class="n">Variable</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="o">**</span><span class="n">allclose_kw</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="o">**</span><span class="n">allclose_kw</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">y</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;x:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;y:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># dict</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">xkeys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">xkeys</span> <span class="o">!=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;xkeys:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">xkeys</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;ykeys:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">xkeys</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;not equal found at key: &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># Non-numpy sequence</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;len(x): </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;len(y): </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">):</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;xs:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">xs</span><span class="p">)</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;ys:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">ys</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># Unhandled</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unhandled type(s): </span><span class="si">%s</span><span class="s1">, x=</span><span class="si">%s</span><span class="s1">, y=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+
+    <span class="c1"># Returns above only occur if comparisons evaluate to False; therefore, if</span>
+    <span class="c1"># you make it here, everything is equal.</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+<span class="c1"># TODO: Get recursiveAllclose working as recursiveEquality does.</span>
+
+<div class="viewcode-block" id="recursiveAllclose">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.recursiveAllclose">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursiveAllclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively verify close-equality between two objects x and y. If</span>
+<span class="sd">    structure is different between the two objects, returns False</span>
+
+<span class="sd">    args and kwargs are passed into numpy.allclose() function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: until the below has been verified, refuse to run</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;recursiveAllclose not implemented yet&#39;</span><span class="p">)</span>
+    <span class="c1"># None</span>
+    <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="c1"># Scalar</span>
+    <span class="k">elif</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="c1"># np.allclose doesn&#39;t handle some dtypes</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">eq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">eq</span> <span class="o">=</span> <span class="n">x</span> <span class="o">==</span> <span class="n">y</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">eq</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="c1"># Dict</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">xkeys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">xkeys</span> <span class="o">!=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">xkeys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">recursiveAllclose</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+    <span class="c1"># Sequence</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="c1"># NOTE: A list is allowed to be allclose to a tuple so long</span>
+            <span class="c1"># as the contents are allclose</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">recursiveAllclose</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="c1"># NOTE: A numpy array only evalutes to allclose if compared to</span>
+            <span class="c1"># another numpy array</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="c1"># np.allclose doesn&#39;t handle arrays of some dtypes</span>
+            <span class="c1"># TODO: this can be rolled into the above clause, I think</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">eq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="n">eq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">eq</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unhandled type(s): </span><span class="si">%s</span><span class="s1">, x=</span><span class="si">%s</span><span class="s1">, y=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unhandled type(s): </span><span class="si">%s</span><span class="s1">, x=</span><span class="si">%s</span><span class="s1">, y=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+    <span class="c1"># If you make it to here, must be close</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+<span class="c1"># TODO: add an arg and logic to round to a number of significand *bits* (as</span>
+<span class="c1"># opposed to digits) (or even a fixed number of bits that align with special</span>
+<span class="c1"># floating point spec values -- like half, single, double) for more precise</span>
+<span class="c1"># control (and possibly faster comp), esp. if we decide to move to FP32 or</span>
+<span class="c1"># (even more critical) FP16?</span>
+<div class="viewcode-block" id="normQuant">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.normQuant">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normQuant</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">full_norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize quantities such that two things that *should* be equal are</span>
+<span class="sd">    returned as identical objects.</span>
+
+<span class="sd">    Handles floating point numbers, pint quantities, uncertainties, and</span>
+<span class="sd">    combinations thereof as standalone objects or in sequences, dicts, or numpy</span>
+<span class="sd">    ndarrays. Numerical precision issues and equal quantities represented in</span>
+<span class="sd">    differently-scaled or different systems of units come out identically.</span>
+
+<span class="sd">    Outputs from this function (**not** the inputs) deemed to be equal by the</span>
+<span class="sd">    above logic will compare to be equal (via the `==` operator and via</span>
+<span class="sd">    `pisa.utils.comparisons.recursiveEquality`) and will also hash to equal</span>
+<span class="sd">    values (via `pisa.utils.hash.hash_obj`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    obj</span>
+<span class="sd">        Object to be normalized.</span>
+
+<span class="sd">    sigfigs : None or int &gt; 0</span>
+<span class="sd">        Number of digits to which to round numbers&#39; significands; if None, do</span>
+<span class="sd">        not round numbers.</span>
+
+<span class="sd">    full_norm : bool</span>
+<span class="sd">        If True, does full translation and normalization which is good across</span>
+<span class="sd">        independent invocations and is careful about normalizing units, etc.</span>
+<span class="sd">        If false, certain assumptions are made that modify the behavior</span>
+<span class="sd">        described below in the Notes section which help speed things up in the</span>
+<span class="sd">        case of e.g. a minimizer run, where we know certain things won&#39;t</span>
+<span class="sd">        change:</span>
+<span class="sd">        * Units are not normalized. They are assumed to stay the same from</span>
+<span class="sd">          run to run.</span>
+<span class="sd">        * sigfigs are not respected; full significant figures are returned</span>
+<span class="sd">          (since it takes time to round all values appropriately).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    normed_obj : object roughly of same type as input `obj`</span>
+<span class="sd">        Simple types are returned as the same type as at the input, Numpy</span>
+<span class="sd">        ndarrays are returned in the same shape and representation as the</span>
+<span class="sd">        input, Mappings (dicts) are returned as OrderedDict, and all other</span>
+<span class="sd">        sequences or iterables are returned as (possibly nested) lists.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Conversion logic by `obj` type or types found within `obj`:</span>
+
+<span class="sd">    * **Sequences and OrderedDicts** (but not numpy arrays) are iterated</span>
+<span class="sd">      through recursively.</span>
+<span class="sd">    * **Mappings without ordering** (e.g. dicts) are iterated through</span>
+<span class="sd">      recursively after sorting their keys, and are returned as</span>
+<span class="sd">      OrderedDicts (such that the output is always consistent when</span>
+<span class="sd">      serialized).</span>
+<span class="sd">    * **Sequences** (not numpy arrays) are iterated through recursively.</span>
+<span class="sd">    * **Numpy ndarrays** are treated as the below data types (according to the</span>
+<span class="sd">      array&#39;s dtype).</span>
+<span class="sd">    * **Simple objects** (non-floating point / non-sequence / non-numpy / etc.)</span>
+<span class="sd">      are returned unaltered (e.g. strings).</span>
+<span class="sd">    * **Pint quantities** (numbers with units): Convert to their base units.</span>
+<span class="sd">    * **Floating-point numbers** (including the converted pint quantities):</span>
+<span class="sd">      Round values to `sigfigs` significant figures.</span>
+<span class="sd">    * **Numbers with uncertainties** (via the `uncertainties` module) have</span>
+<span class="sd">      their nominal values rounded as above but their standard deviations are</span>
+<span class="sd">      rounded to the same order of magnitude (*not* number of significant</span>
+<span class="sd">      figures) as the nominal.</span>
+<span class="sd">      Therefore passing obj=10.23+/-0.25 and sigfigs=2 returns 10+/-0.0.</span>
+<span class="sd">      Note that **correlations are lost** in the outputs of this function, so</span>
+<span class="sd">      equality of the output requires merely having equal nomial values and</span>
+<span class="sd">      equal standard deviations.</span>
+<span class="sd">      The calculations leading to these equal numbers might have used</span>
+<span class="sd">      independent random variables to arrive at them, however, and so the</span>
+<span class="sd">      `uncertainties` module would have evaluated them to be unequal. [1]</span>
+
+<span class="sd">    To achieve rounding that masks floating point precision issues, set</span>
+<span class="sd">    `sigfigs` to a value *less than* the number of decimal digits used for the</span>
+<span class="sd">    significand of the calculation floating point precision.</span>
+
+<span class="sd">    For reference, the IEEE 754 floating point standard [2] uses the following:</span>
+
+<span class="sd">    * FP16 (half precision): **3.31** significand decimal digits (11 bits)</span>
+<span class="sd">    * FP32 (single precision): **7.22** significand decimal digits (24 bits)</span>
+<span class="sd">    * FP64 (double precision): **15.95** significand decimal digits (53 bits)</span>
+<span class="sd">    * FP128 (quad precision): **34.02** significand decimal digits (113 bits)</span>
+
+<span class="sd">    Logic for rounding the significand for numpy arrays was derived from [3].</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] https://github.com/lebigot/uncertainties/blob/master/uncertainties/test_uncertainties.py#L436</span>
+
+<span class="sd">    [2] https://en.wikipedia.org/wiki/IEEE_floating_point</span>
+
+<span class="sd">    [3] http://stackoverflow.com/questions/18915378, answer by user BlackGriffin.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Pint quantities hash to unequal values if specified in different scales or</span>
+<span class="sd">    different systems of units (even if the underlying physical quantity is</span>
+<span class="sd">    identical).</span>
+
+<span class="sd">    &gt;&gt;&gt; from pisa import ureg</span>
+<span class="sd">    &gt;&gt;&gt; from pisa.utils.hash import hash_obj</span>
+<span class="sd">    &gt;&gt;&gt; q0 = 1 * ureg.m</span>
+<span class="sd">    &gt;&gt;&gt; q1 = 100 * ureg.cm</span>
+<span class="sd">    &gt;&gt;&gt; q0 == q1</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; hash_obj(q0) == hash_obj(q1)</span>
+<span class="sd">    False</span>
+
+<span class="sd">    Even the `to_base_units()` method fails for hashing to equal values, as</span>
+<span class="sd">    `q0` is a float and `q1` is an integer.</span>
+
+<span class="sd">    &gt;&gt;&gt; hash_obj(q0.to_base_units()) == hash_obj(q1.to_base_units())</span>
+<span class="sd">    False</span>
+
+<span class="sd">    Even if both quantities are floating point numbers, finite precision</span>
+<span class="sd">    effects in the `to_base_units` conversion can still cause two things which</span>
+<span class="sd">    we &quot;know&quot; are equal to evaluate to be unequal.</span>
+
+<span class="sd">    &gt;&gt;&gt; q2 = 0.1 * ureg.m</span>
+<span class="sd">    &gt;&gt;&gt; q3 = 1e5 * ureg.um</span>
+<span class="sd">    &gt;&gt;&gt; q2 == q3</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; q2.to_base_units() == q3.to_base_units()</span>
+<span class="sd">    False</span>
+
+<span class="sd">    `normQuant` handles all of these issues given an appropriate `sigfigs`</span>
+<span class="sd">    argument.</span>
+
+<span class="sd">    &gt;&gt;&gt; q2_normed = normQuant(q2, sigfigs=12)</span>
+<span class="sd">    &gt;&gt;&gt; q3_normed = normQuant(q3, sigfigs=12)</span>
+<span class="sd">    &gt;&gt;&gt; q2_normed == q3_normed</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; hash_obj(q2_normed) == hash_obj(q3_normed)</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#logging.trace(&#39;-&#39;*80)</span>
+    <span class="c1">#logging.trace(&#39;obj: %s&#39;, obj)</span>
+    <span class="c1">#logging.trace(&#39;type(obj): %s&#39;, type(obj))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">full_norm</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="c1"># Nothing to convert for strings, None, ...</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="n">round_result</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">sigfigs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">sigfigs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="n">sigfigs</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sigfigs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`sigfigs` must be an integer &gt; 0.&#39;</span><span class="p">)</span>
+        <span class="n">round_result</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">sigfigs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sigfigs</span><span class="p">)</span>
+
+    <span class="c1"># Store kwargs for easily passing to recursive calls of this function</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">sigfigs</span><span class="o">=</span><span class="n">sigfigs</span><span class="p">,</span> <span class="n">full_norm</span><span class="o">=</span><span class="n">full_norm</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;normalized_state&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">normalized_state</span>
+
+    <span class="c1"># Recurse into dict by its (sorted) keys (or into OrderedDict using keys in</span>
+    <span class="c1"># their defined order) and return an OrderedDict in either case.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="c1">#logging.trace(&#39;Mapping&#39;)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">normed_obj</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">normed_obj</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">normed_obj</span>
+
+    <span class="c1"># Sequences, etc. but NOT numpy arrays (or pint quantities, which are</span>
+    <span class="c1"># iterable) get their elements normalized and populated to a new list for</span>
+    <span class="c1"># returning.</span>
+    <span class="c1"># NOTE/TODO: allowing access across unit registries for pragmatic (if</span>
+    <span class="c1"># incorrect) reasons... may want to revisit this decision.</span>
+    <span class="c1"># pylint: disable=protected-access</span>
+    <span class="n">misbehaving_sequences</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">))</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">misbehaving_sequences</span><span class="p">)):</span>
+        <span class="c1">#logging.trace(&#39;Iterable, Iterator, or Sequence but not ndarray or&#39;</span>
+        <span class="c1">#              &#39; _Qauantity&#39;)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">normQuant</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">]</span>
+
+    <span class="c1"># Must be a numpy array or scalar if we got here...</span>
+
+    <span class="c1"># NOTE: the order in which units (Pint module) and uncertainties</span>
+    <span class="c1"># (uncertainties module) are handled is crucial! Essentially, it appears</span>
+    <span class="c1"># that Pint is aware of uncertainties, but not vice versa. Hence the</span>
+    <span class="c1"># ordering and descriptions used below.</span>
+
+    <span class="c1"># The outermost &quot;wrapper&quot; of a number or numpy array is its Pint units. If</span>
+    <span class="c1"># units are present, convert to base units, record the base units, and</span>
+    <span class="c1"># strip the units off of the quantity by replacing it with its magnitude</span>
+    <span class="c1"># (in the base units).</span>
+
+    <span class="n">has_units</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">pint</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+        <span class="c1">#logging.trace(&#39;is a Quantity, converting to base units&#39;)</span>
+        <span class="n">has_units</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">full_norm</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">to_base_units</span><span class="p">()</span>
+        <span class="n">units</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">units</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">magnitude</span>
+
+    <span class="c1"># The next layer possible for a number or numpy array to have is</span>
+    <span class="c1"># uncertainties. If uncertainties are attached to `obj`, record a</span>
+    <span class="c1"># &quot;snapshot&quot; (losing correlations) of the standard deviations. Then replace</span>
+    <span class="c1"># the number or array solely with its nominal value(s).</span>
+
+    <span class="c1"># NOTE: uncertainties.core.AffineScalarFunc includes such functions *and*</span>
+    <span class="c1"># uncertainties.core.Variable objects</span>
+
+    <span class="n">has_uncertainties</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">AffineScalarFunc</span><span class="p">):</span>
+        <span class="c1">#logging.trace(&#39;type is AffineScalarFunc&#39;)</span>
+        <span class="n">has_uncertainties</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">std_devs</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">std_dev</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">nominal_value</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="c1"># In order to detect an array with uncertainties, assume that the first</span>
+        <span class="c1"># element is representative</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="n">first_element</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">first_element</span><span class="p">,</span> <span class="n">AffineScalarFunc</span><span class="p">):</span>
+                <span class="c1">#logging.trace(&#39;ndarray with elements that are of type AffineScalarFunc&#39;)</span>
+                <span class="n">has_uncertainties</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">std_devs</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+    <span class="c1"># What is done below will convert scalars into arrays, so get this info</span>
+    <span class="c1"># before it is lost.</span>
+    <span class="n">is_scalar</span> <span class="o">=</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">round_result</span><span class="p">:</span>
+        <span class="c1">#logging.trace(&#39;rounding result&#39;)</span>
+        <span class="c1"># frexp returns *binary* fraction (significand) and *binary* exponent</span>
+        <span class="n">bin_significand</span><span class="p">,</span> <span class="n">bin_exponent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frexp</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">exponent</span> <span class="o">=</span> <span class="n">LOG10_2</span> <span class="o">*</span> <span class="n">bin_exponent</span>
+        <span class="n">exponent_integ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">exponent</span><span class="p">)</span>
+        <span class="n">exponent_fract</span> <span class="o">=</span> <span class="n">exponent</span> <span class="o">-</span> <span class="n">exponent_integ</span>
+        <span class="n">significand</span> <span class="o">=</span> <span class="n">bin_significand</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="n">exponent_fract</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">significand</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="n">exponent_integ</span>
+
+    <span class="c1"># Now work our way *up* through the hierarchy: First, reintroduce</span>
+    <span class="c1"># uncertainties</span>
+
+    <span class="k">if</span> <span class="n">has_uncertainties</span> <span class="ow">and</span> <span class="n">round_result</span><span class="p">:</span>
+        <span class="c1">#logging.trace(&#39;uncertainties and rounding&#39;)</span>
+        <span class="n">std_bin_significand</span><span class="p">,</span> <span class="n">std_bin_exponent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frexp</span><span class="p">(</span><span class="n">std_devs</span><span class="p">)</span>
+        <span class="n">std_exponent</span> <span class="o">=</span> <span class="n">LOG10_2</span> <span class="o">*</span> <span class="n">std_bin_exponent</span>
+        <span class="n">std_exponent_integ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">std_exponent</span><span class="p">)</span>
+        <span class="n">std_exponent_fract</span> <span class="o">=</span> <span class="n">std_exponent</span> <span class="o">-</span> <span class="n">std_exponent_integ</span>
+        <span class="c1"># Don&#39;t just scale magnitude by the stddev&#39;s fractional exponent; also</span>
+        <span class="c1"># shift to be on the same scale (power-of-10) as the nominal value</span>
+        <span class="n">delta_order_of_mag</span> <span class="o">=</span> <span class="n">std_exponent_integ</span> <span class="o">-</span> <span class="n">exponent_integ</span>
+        <span class="n">std_significand</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">std_bin_significand</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="n">std_exponent_fract</span> <span class="o">+</span> <span class="n">delta_order_of_mag</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="c1"># Now rounding on the stddev&#39;s significand occurs at the same order of</span>
+        <span class="c1"># magnitude as rounding on the nominal value (and so scaling is done</span>
+        <span class="c1"># with `exponent_integ`, NOT `std_exponent_integ`)</span>
+        <span class="n">std_devs</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">std_significand</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="n">exponent_integ</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">has_uncertainties</span><span class="p">:</span>
+        <span class="c1">#logging.trace(&#39;recreate uncertainties array&#39;)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">std_devs</span><span class="p">)</span>
+        <span class="c1"># If it was a scalar, it has become a len-1 array; extract the scalar</span>
+        <span class="k">if</span> <span class="n">is_scalar</span><span class="p">:</span>
+            <span class="c1">#logging.trace(&#39;converting to scalar&#39;)</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Finally, attach units if they were present</span>
+    <span class="k">if</span> <span class="n">has_units</span><span class="p">:</span>
+        <span class="c1">#logging.trace(&#39;reattaching units&#39;)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span> <span class="o">*</span> <span class="n">units</span>
+
+    <span class="k">return</span> <span class="n">obj</span></div>
+
+
+
+<div class="viewcode-block" id="interpret_quantity">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.interpret_quantity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">interpret_quantity</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpret a value as a pint Quantity via pisa.ureg</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : scalar, Quantity, or sequence interpretable as Quantity</span>
+<span class="sd">    expect_sequence : bool</span>
+<span class="sd">        Specify `True` if you expect a sequence of quantities (or a</span>
+<span class="sd">        pint-Quantity containing a numpy array). This allows interpreting each</span>
+<span class="sd">        element of a passed sequence as a quantity. Otherwise, specify `False`</span>
+<span class="sd">        if you expect a scalar. This allows interpreting a pint.Qauntity tuple</span>
+<span class="sd">        as a ascalar (the first element of the tuple is the magnitude and the</span>
+<span class="sd">        second element contains the units).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value : Quantity</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">expect_sequence</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">isbarenumeric</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Expected a scalar, possibly a 2-sequence passable to&quot;</span>
+                    <span class="s2">&quot;ureg.Quantity.from_tuple; got len-</span><span class="si">{}</span><span class="s2"> of type </span><span class="si">{}</span><span class="s2">&quot;</span>
+                    <span class="s2">&quot;instead&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+                <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">value</span></div>
+
+
+
+<div class="viewcode-block" id="test_isscalar">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.test_isscalar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_isscalar</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for isscalar function&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">isscalar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">isscalar</span><span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">isscalar</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="nb">iter</span><span class="p">([]))</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">({})</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="nb">tuple</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]))</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]))</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">])</span>
+    <span class="n">unp_a</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">pint_a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span>
+    <span class="n">pint_unp_a</span> <span class="o">=</span> <span class="n">unp_a</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">unp_a</span><span class="p">,</span> <span class="n">pint_a</span><span class="p">,</span> <span class="n">pint_unp_a</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; should not evalute to scalar&#39;</span>
+
+    <span class="n">u_fl</span> <span class="o">=</span> <span class="n">ufloat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">p_fl</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span>
+    <span class="n">p_u_fl</span> <span class="o">=</span> <span class="n">ufloat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">u_fl</span><span class="p">,</span> <span class="n">p_fl</span><span class="p">,</span> <span class="n">p_u_fl</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; should evaluate to scalar&#39;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_isscalar &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="test_isunitless">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.test_isunitless">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_isunitless</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `isunitless` function&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">isunitless</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">isunitless</span><span class="p">(</span><span class="s2">&quot;xyz&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">isunitless</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">isunitless</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
+    <span class="k">assert</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">ufloat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.002</span><span class="p">]))</span>
+
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isunitless</span><span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isunitless</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">ufloat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.002</span><span class="p">])</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_isunitless &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="test_recursiveEquality">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.test_recursiveEquality">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_recursiveEquality</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for recursiveEquality function&quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=unused-variable</span>
+    <span class="n">d1</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;one&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;two&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;three&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;four&#39;</span><span class="p">:</span> <span class="s1">&#39;four&#39;</span><span class="p">}</span>
+    <span class="n">d2</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;one&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;two&#39;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s1">&#39;three&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;four&#39;</span><span class="p">:</span> <span class="s1">&#39;four&#39;</span><span class="p">}</span>
+    <span class="n">d3</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;one&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+          <span class="s1">&#39;two&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;three&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;four&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)}},</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]}</span>
+    <span class="n">d4</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;one&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+          <span class="s1">&#39;two&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;three&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;four&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)}},</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]}</span>
+    <span class="n">d5</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;one&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+          <span class="s1">&#39;two&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;three&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;four&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)}},</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]}</span>
+    <span class="n">d6</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;one&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+          <span class="s1">&#39;two&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;three&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;four&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">2.1</span><span class="p">)}},</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]}</span>
+    <span class="n">d7</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">d7</span><span class="p">[</span><span class="s1">&#39;d1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d1</span>
+    <span class="n">d7</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">7.2</span>
+    <span class="n">d8</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">d8</span><span class="p">[</span><span class="s1">&#39;d1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d1</span>
+    <span class="n">d8</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">7.2</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d3</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">d3</span><span class="p">,</span> <span class="n">d4</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">d3</span><span class="p">,</span> <span class="n">d5</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">d4</span><span class="p">,</span> <span class="n">d5</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">d3</span><span class="p">,</span> <span class="n">d6</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">d4</span><span class="p">,</span> <span class="n">d6</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">d7</span><span class="p">,</span> <span class="n">d8</span><span class="p">)</span>
+
+    <span class="c1"># Units and quantities (numbers with units)</span>
+
+    <span class="n">ureg0</span> <span class="o">=</span> <span class="n">pint</span><span class="o">.</span><span class="n">UnitRegistry</span><span class="p">()</span>
+    <span class="n">ureg1</span> <span class="o">=</span> <span class="n">pint</span><span class="o">.</span><span class="n">UnitRegistry</span><span class="p">()</span>
+    <span class="n">u0</span> <span class="o">=</span> <span class="n">ureg0</span><span class="o">.</span><span class="n">GeV</span>
+    <span class="n">u1</span> <span class="o">=</span> <span class="n">ureg0</span><span class="o">.</span><span class="n">MeV</span>
+    <span class="n">u2</span> <span class="o">=</span> <span class="n">ureg1</span><span class="o">.</span><span class="n">GeV</span>
+    <span class="n">u3</span> <span class="o">=</span> <span class="n">ureg1</span><span class="o">.</span><span class="n">gigaelectron_volt</span>
+    <span class="n">u4</span> <span class="o">=</span> <span class="n">ureg1</span><span class="o">.</span><span class="n">foot</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">u0</span><span class="p">,</span> <span class="n">u1</span><span class="p">),</span> <span class="s1">&#39;noneq. of diff. unit, diff. reg&#39;</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">u1</span><span class="p">,</span> <span class="n">u2</span><span class="p">),</span> <span class="s1">&#39;noneq. of diff. unit same reg&#39;</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">u0</span><span class="p">,</span> <span class="n">u2</span><span class="p">),</span> <span class="s1">&#39;eq. of same unit across registries&#39;</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">u2</span><span class="p">,</span> <span class="n">u3</span><span class="p">),</span> <span class="s1">&#39;eq. of same unit in same registry&#39;</span>
+    <span class="n">q0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">*</span> <span class="n">u0</span>
+    <span class="n">q1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1000.0</span> <span class="o">*</span> <span class="n">u1</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="n">q1</span><span class="p">)</span>
+    <span class="n">q2</span> <span class="o">=</span> <span class="mf">1e5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg0</span><span class="o">.</span><span class="n">um</span>
+    <span class="n">q3</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg0</span><span class="o">.</span><span class="n">m</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">q2</span><span class="p">,</span> <span class="n">q3</span><span class="p">)</span>
+    <span class="n">q4</span><span class="p">,</span> <span class="n">q5</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1000.</span> <span class="o">*</span> <span class="n">ureg0</span><span class="o">.</span><span class="n">MeV</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg0</span><span class="o">.</span><span class="n">GeV</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">q4</span><span class="p">,</span> <span class="n">q5</span><span class="p">)</span>
+
+    <span class="c1"># Special numerical values</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_recursiveEquality &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="test_normQuant">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.comparisons.test_normQuant">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_normQuant</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit test for normQuant function&quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=unused-variable</span>
+    <span class="c1"># TODO: test:</span>
+    <span class="c1"># * non-numerical</span>
+    <span class="c1">#   * single non-numerical</span>
+    <span class="c1">#   * sequence (tuple, list) of non-numirical</span>
+    <span class="c1">#   * np.array of non-numerical</span>
+    <span class="c1"># * scalar</span>
+    <span class="c1">#   * bare</span>
+    <span class="c1">#   * with units only</span>
+    <span class="c1">#   * with uncertainties only</span>
+    <span class="c1">#   * with uncertanties and units</span>
+    <span class="c1"># * multi-dimensional array</span>
+    <span class="c1">#   * integers, bare</span>
+    <span class="c1">#   * float32, bare</span>
+    <span class="c1">#   * float64, bare</span>
+    <span class="c1">#   * float64 with units only</span>
+    <span class="c1">#   * float64 with uncertainties only</span>
+    <span class="c1">#   * float64 with both units and uncertainties</span>
+    <span class="c1"># * nested objects... ?</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="mf">1.001</span><span class="p">)</span> <span class="o">!=</span> <span class="n">normQuant</span><span class="p">(</span><span class="mf">1.002</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="mf">1.001</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="mf">1.002</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">s0</span> <span class="o">=</span> <span class="mf">1e5</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">um</span>
+    <span class="n">s1</span> <span class="o">=</span> <span class="mf">1e5</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">um</span>
+    <span class="c1"># ...</span>
+
+    <span class="n">q0</span> <span class="o">=</span> <span class="mf">1e5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">um</span>
+    <span class="n">q1</span> <span class="o">=</span> <span class="mf">0.1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">m</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">q0</span> <span class="o">==</span> <span class="n">q1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">q0</span><span class="o">.</span><span class="n">to_base_units</span><span class="p">()</span> <span class="o">==</span> <span class="n">q1</span><span class="o">.</span><span class="n">to_base_units</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">normQuant</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">q1</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+    <span class="c1"># TODO / NOTE: following line was failing, but not sure the point now...</span>
+    <span class="c1">#assert not np.any(normQuant(q0, 18) == normQuant(q1, 18))</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">normQuant</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">q1</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">normQuant</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">q1</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">normQuant</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">q1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span> <span class="o">==</span> <span class="n">normQuant</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span> <span class="o">!=</span> <span class="n">normQuant</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span> <span class="o">!=</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">sigfigs</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+    <span class="c1"># Dict of dicts</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">normQuant</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;3&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}})</span>
+
+    <span class="c1"># arrays with uncertainties</span>
+    <span class="n">ua1</span> <span class="o">=</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">]))</span>
+    <span class="n">ua2</span> <span class="o">=</span> <span class="n">normQuant</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ufloat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span> <span class="n">ufloat</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)]))</span>
+    <span class="c1"># in the uncertainties package, &quot;objects [...] represent probability</span>
+    <span class="c1"># distributions and not pure numbers&quot;, so we do not expect equality</span>
+    <span class="c1"># here (the following is hence perhaps a consistency check that</span>
+    <span class="c1"># normQuant doesn&#39;t result in one of the &quot;infinitely small number</span>
+    <span class="c1"># of cases&quot; in which the comparison yields True)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ua1</span> <span class="o">!=</span> <span class="n">ua2</span><span class="p">)</span>
+    <span class="c1"># however, here we&#39;re comparing a random variable with itself:</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ua1</span> <span class="o">==</span> <span class="n">ua1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ua2</span> <span class="o">==</span> <span class="n">ua2</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_normQuant &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_interpret_quantity</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for function `interpret_quantity`&quot;&quot;&quot;</span>
+
+    <span class="c1"># -- Scalars and vectors that should be interpreted as vectors -- #</span>
+
+    <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">ref</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">),</span>
+        <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">),</span>
+        <span class="p">(</span>
+            <span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]),</span>
+            <span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">])</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">s</span><span class="p">),</span>
+        <span class="p">(</span>
+            <span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">])</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">cm</span><span class="p">,</span>
+            <span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">])</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">cm</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span>
+            <span class="n">interpret_quantity</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">ref</span>
+        <span class="p">),</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> != </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+
+    <span class="c1"># -- Scalars that should be interpreted as scalars -- #</span>
+
+    <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">ref</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">),</span>
+        <span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="p">()),</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">),</span>
+        <span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="p">((</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">)),</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">ureg</span><span class="o">.</span><span class="n">s</span><span class="p">),</span>
+    <span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span>
+            <span class="n">interpret_quantity</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">ref</span>
+        <span class="p">),</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> != </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_interpret_quantity &gt;&gt;&#39;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_isscalar</span><span class="p">()</span>
+    <span class="n">test_isunitless</span><span class="p">()</span>
+    <span class="n">test_recursiveEquality</span><span class="p">()</span>
+    <span class="n">test_normQuant</span><span class="p">()</span>
+    <span class="n">test_interpret_quantity</span><span class="p">()</span>
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2014–2026, The IceCube Collaboration
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/icecube/pisa" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=c7477ef8"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

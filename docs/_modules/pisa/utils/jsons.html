@@ -1,0 +1,972 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+        <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>pisa.utils.jsons - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=9e02ad1e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Navigation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../stubs/install_stub.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorials.html">Tutorials</a><input aria-label="Toggle navigation of Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/glossary_stub.html">PISA Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../notebooks/IceCube_3y_oscillations_example.html">PISA Example Using Public IceCube Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/howto_perform_fit_redirect.html">Carrying out a custom fitting routine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../notebooks/pisa_modes.html">PISA stage modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/howto_pipeline_config_redirect.html">Pipeline configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/units_uncertainties_stub.html">Units and Uncertainties</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../contributing.html">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/contributing_stub.html">How to contribute to PISA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/howto_service_stub.html">Creating a service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/data_storage_trafo_redirect.html">Data pipeline system (storage &amp; transformation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../stubs/globals_stub.html">Global constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../pisa.html">Python API</a><input aria-label="Toggle navigation of Python API" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../pisa.analysis.html">pisa.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../pisa.stages.html">pisa.stages package</a><input aria-label="Toggle navigation of pisa.stages package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.absorption.html">pisa.stages.absorption package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.aeff.html">pisa.stages.aeff package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.background.html">pisa.stages.background package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.cont_sys.html">pisa.stages.cont_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.data.html">pisa.stages.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.discr_sys.html">pisa.stages.discr_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.flux.html">pisa.stages.flux package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.likelihood.html">pisa.stages.likelihood package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../pisa.stages.osc.html">pisa.stages.osc package</a><input aria-label="Toggle navigation of pisa.stages.osc package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../pisa.stages.osc.prob3numba.html">pisa.stages.osc.prob3numba package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.reco.html">pisa.stages.reco package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.utils.html">pisa.stages.utils package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.stages.xsec.html">pisa.stages.xsec package</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../pisa.utils.html">pisa.utils package</a><input aria-label="Toggle navigation of pisa.utils package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.utils.hypersurface.html">pisa.utils.hypersurface package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../pisa.utils.llh_defs.html">pisa.utils.llh_defs package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../stubs/license_stub.html">License</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for pisa.utils.jsons</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A set of utilities for reading (and instantiating) objects from and writing</span>
+<span class="sd">objects to JSON files.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bz2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Integral</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="n">Real</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">packaging</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">simplejson</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">six</span><span class="w"> </span><span class="kn">import</span> <span class="n">string_types</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;JSON_EXTS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ZIP_EXTS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;XOR_EXTS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;json_string&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;dumps&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;loads&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;from_json&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;to_json&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;NumpyEncoder&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;NumpyDecoder&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;test_to_json_from_json&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Boeser, J.L. Lanfranchi, T. Ehrhardt&#39;</span>
+
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2026, The IceCube Collaboration</span>
+
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> you may not use this file except in compliance with the License.</span>
+<span class="s1"> You may obtain a copy of the License at</span>
+
+<span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
+<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="s1"> See the License for the specific language governing permissions and</span>
+<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+
+
+<span class="n">JSON_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">]</span>
+<span class="n">ZIP_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bz2&#39;</span><span class="p">]</span>
+<span class="n">XOR_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;xor&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="json_string">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.json_string">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">json_string</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode a json string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">string</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="dumps">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.dumps">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dump object to JSON-encoded string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span>
+                      <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="loads">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.loads">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">loads</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load (create) object from JSON-encoded string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyDecoder</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="from_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.from_json">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Open a file in JSON format (optionally compressed with bz2 or</span>
+<span class="sd">    xor-scrambled) and parse the content into Python objects.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">    cls : class (type) object, optional</span>
+<span class="sd">        If provided, the class is attempted to be instantiated as described in</span>
+<span class="sd">        Notes section.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    contents_or_obj : simple Python objects or `cls` instantiated therewith</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    If `cls` is provided as a class (type) object, this function attempts to</span>
+<span class="sd">    instantiate the class with the data loaded from the JSON file, as follows:</span>
+
+<span class="sd">        * if `cls` has a `from_json` method, that is called directly: .. ::</span>
+
+<span class="sd">                cls.from_json(filename)</span>
+
+<span class="sd">        * if the data loaded from the JSON file is a non-string sequence: .. ::</span>
+
+<span class="sd">                cls(*data)</span>
+
+<span class="sd">        * if the data loaded is a Mapping (dict, OrderedDict, etc.): .. ::</span>
+
+<span class="sd">                cls(**data)</span>
+
+<span class="sd">        * for all other types loaded from the JSON: .. ::</span>
+
+<span class="sd">                cls(data)</span>
+
+<span class="sd">    Note that this currently only recognizes files by their extensions. I.e.,</span>
+<span class="sd">    the file must be named .. ::</span>
+
+<span class="sd">        myfile.json</span>
+<span class="sd">        myfile.json.bz2</span>
+<span class="sd">        myfile.json.xor</span>
+
+<span class="sd">    represent a bsic JSON file, a bzip-compressed JSON, and an xor-scrambled</span>
+<span class="sd">    JSON, respectively.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Import here to avoid circular imports</span>
+    <span class="c1"># pylint: disable=import-outside-toplevel</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">open_resource</span>
+
+    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;`cls` should be a class object (type); got </span><span class="si">{}</span><span class="s2"> instead&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">type</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;from_json&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+        <span class="c1"># Otherwise, handle instantiating the class generically (which WILL</span>
+        <span class="c1"># surely fail for many types) based on the type of the object loaded</span>
+        <span class="c1"># from JSON file: Mapping is passed via cls(**data), non-string</span>
+        <span class="c1"># Sequence is passed via cls(*data), and anything else is passed via</span>
+        <span class="c1"># cls(data)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">JSON_EXTS</span> <span class="ow">or</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">ZIP_EXTS</span> <span class="o">+</span> <span class="n">XOR_EXTS</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;bz2&#39;</span><span class="p">:</span>
+            <span class="n">fobj</span> <span class="o">=</span> <span class="n">open_resource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">bz2_content</span> <span class="o">=</span> <span class="n">fobj</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">fobj</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">decompressed</span> <span class="o">=</span> <span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">bz2_content</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+            <span class="k">del</span> <span class="n">bz2_content</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+                <span class="n">decompressed</span><span class="p">,</span>
+                <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyDecoder</span><span class="p">,</span>
+                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">OrderedDict</span>
+            <span class="p">)</span>
+            <span class="k">del</span> <span class="n">decompressed</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;xor&#39;</span><span class="p">:</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
+                <span class="n">encrypted_bytes</span> <span class="o">=</span> <span class="n">infile</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+            <span class="c1"># decrypt with key 42</span>
+            <span class="n">decypted_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">byte</span> <span class="ow">in</span> <span class="n">encrypted_bytes</span><span class="p">:</span>
+                <span class="n">decypted_bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">byte</span> <span class="o">^</span> <span class="mi">42</span><span class="p">)</span>
+
+            <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">decypted_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+                                <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyDecoder</span><span class="p">,</span>
+                                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">OrderedDict</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fobj</span> <span class="o">=</span> <span class="n">open_resource</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+                    <span class="n">fobj</span><span class="p">,</span>
+                    <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyDecoder</span><span class="p">,</span>
+                    <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">OrderedDict</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">fobj</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Failed to load JSON, `filename`=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="k">raise</span>
+
+    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">content</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">content</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string_types</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">content</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">content</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="to_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.to_json">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write `content` to a JSON file at `filename`.</span>
+
+<span class="sd">    Uses a custom parser that automatically converts numpy arrays to lists.</span>
+
+<span class="sd">    If `filename` has a &quot;.bz2&quot; extension, the contents will be compressed</span>
+<span class="sd">    (using bz2 and highest-level of compression, i.e., -9).</span>
+
+<span class="sd">    If `filename` has a &quot;.xor&quot; extension, the contents will be xor-scrambled to</span>
+<span class="sd">    make them human-unreadable (this is useful for, e.g., blind fits).</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    content : obj</span>
+<span class="sd">        Object to be written to file. Tries making use of the object&#39;s own</span>
+<span class="sd">        `to_json` method if it exists.</span>
+
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of the file to be written to. Extension has to be &#39;json&#39; or &#39;bz2&#39;.</span>
+
+<span class="sd">    indent : int</span>
+<span class="sd">        Pretty-printing. Cf. documentation of json.dump() or json.dumps()</span>
+
+<span class="sd">    overwrite : bool</span>
+<span class="sd">        Set to `True` (default) to allow overwriting existing file. Raise</span>
+<span class="sd">        exception and quit otherwise.</span>
+
+<span class="sd">    warn : bool</span>
+<span class="sd">        Issue a warning message if a file is being overwritten (`True`,</span>
+<span class="sd">        default). Suppress warning by setting to `False` (e.g. when overwriting</span>
+<span class="sd">        is the desired behaviour).</span>
+
+<span class="sd">    sort_keys : bool</span>
+<span class="sd">        Output of dictionaries will be sorted by key if set to `True`.</span>
+<span class="sd">        Default is `False`. Cf. json.dump() or json.dumps().</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Import here to avoid circular imports</span>
+    <span class="c1"># pylint: disable=import-outside-toplevel</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_file_exists</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s1">&#39;to_json&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">content</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+                               <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">)</span>
+
+    <span class="n">check_file_exists</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span> <span class="ow">or</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">ZIP_EXTS</span> <span class="o">+</span> <span class="n">XOR_EXTS</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;bz2&#39;</span><span class="p">:</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="n">bz2</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                        <span class="n">content</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span>
+                        <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">False</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;xor&#39;</span><span class="p">:</span>
+            <span class="n">json_bytes</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                <span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span>
+                <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+
+            <span class="c1"># encrypt with key 42</span>
+            <span class="n">encrypted_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">byte</span> <span class="ow">in</span> <span class="n">json_bytes</span><span class="p">:</span>
+                <span class="n">encrypted_bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">byte</span> <span class="o">^</span> <span class="mi">42</span><span class="p">)</span>
+
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">encrypted_bytes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                    <span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span>
+                    <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Wrote </span><span class="si">%.2f</span><span class="s1"> kiB to </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">outfile</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span><span class="o">/</span><span class="mf">1024.</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># TODO: figure out how to serialize / deserialize scalars and arrays with</span>
+<span class="c1"># uncertainties</span>
+
+<div class="viewcode-block" id="NumpyEncoder">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyEncoder">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NumpyEncoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Subclass of `simplejson.JSONEncoder` that overrides `default` method to</span>
+<span class="sd">    allow writing numpy arrays and other special objects PISA uses to JSON</span>
+<span class="sd">    files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="NumpyEncoder.default">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyEncoder.default">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>  <span class="c1"># pylint: disable=method-hidden</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Encode special objects to be representable as JSON.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;serializable_state&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">serializable_state</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+            <span class="n">converted</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">to_tuple</span><span class="p">()]</span>
+            <span class="k">return</span> <span class="n">converted</span>
+
+        <span class="c1"># must have checked for &amp; handled strings prior to this or infinite</span>
+        <span class="c1"># recursion will result</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="c1"># NOTE: np.bool_ is *Numpy* scalar bool type</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="c1"># NOTE: we check for these more generic types _after_ checking for</span>
+        <span class="c1"># np.bool_ since np.bool_ is considered to be both Integral and Real,</span>
+        <span class="c1"># but we want a boolean values (True or False) written out as such</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Integral</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Real</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span>
+
+        <span class="c1"># If we get here, we have a type that cannot be serialized. This call</span>
+        <span class="c1"># should simply raise an exception.</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="NumpyDecoder">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyDecoder">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NumpyDecoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Subclass of `simplejson.JSONDecoder`: decode JSON array(s) as numpy.ndarray;</span>
+<span class="sd">    also returns python strings instead of unicode.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    ------</span>
+<span class="sd">    * simplejson v4 added init parameter `array_hook` to `JSONDecoder`</span>
+
+<span class="sd">      * TODO: does this obviate the need for this custom decoder class?</span>
+<span class="sd">      * -&gt; don&#39;t expose as init parameter for now</span>
+
+<span class="sd">    * simplejson v3.19.0 added init parameter `allow_nan=False` to `JSONDecoder`</span>
+<span class="sd">      (prior default behavior was to allow `NaN`, `Infinity`, `-Infinity`)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">object_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_float</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">object_pairs_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
+        <span class="c1"># Initialize `JSONDecoder` with arguments depending on detected version</span>
+        <span class="n">parsed_version</span> <span class="o">=</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parsed_version</span> <span class="o">&lt;</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;3.19&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_nan</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;simplejson version </span><span class="si">%s</span><span class="s2"> detected, which cannot be prevented&quot;</span>
+                    <span class="s2">&quot; from accepting non-standard float values &#39;NaN&#39;,&quot;</span>
+                    <span class="s2">&quot; &#39;Infinity&#39;, and &#39;-Infinity&#39;!&quot;</span><span class="p">,</span> <span class="n">parsed_version</span>
+                <span class="p">)</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+                <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+                <span class="n">object_hook</span><span class="o">=</span><span class="n">object_hook</span><span class="p">,</span>
+                <span class="n">parse_float</span><span class="o">=</span><span class="n">parse_float</span><span class="p">,</span>
+                <span class="n">parse_int</span><span class="o">=</span><span class="n">parse_int</span><span class="p">,</span>
+                <span class="n">parse_constant</span><span class="o">=</span><span class="n">parse_constant</span><span class="p">,</span>
+                <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
+                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">object_pairs_hook</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">parsed_version</span> <span class="o">&lt;</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;4.0&quot;</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+                <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+                <span class="n">object_hook</span><span class="o">=</span><span class="n">object_hook</span><span class="p">,</span>
+                <span class="n">parse_float</span><span class="o">=</span><span class="n">parse_float</span><span class="p">,</span>
+                <span class="n">parse_int</span><span class="o">=</span><span class="n">parse_int</span><span class="p">,</span>
+                <span class="n">parse_constant</span><span class="o">=</span><span class="n">parse_constant</span><span class="p">,</span>
+                <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
+                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">object_pairs_hook</span><span class="p">,</span>
+                <span class="n">allow_nan</span><span class="o">=</span><span class="n">allow_nan</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Explicitly init with `array_hook=None` in &gt;= v4 for clarity</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+                <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+                <span class="n">object_hook</span><span class="o">=</span><span class="n">object_hook</span><span class="p">,</span>
+                <span class="n">parse_float</span><span class="o">=</span><span class="n">parse_float</span><span class="p">,</span>
+                <span class="n">parse_int</span><span class="o">=</span><span class="n">parse_int</span><span class="p">,</span>
+                <span class="n">parse_constant</span><span class="o">=</span><span class="n">parse_constant</span><span class="p">,</span>
+                <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
+                <span class="n">object_pairs_hook</span><span class="o">=</span><span class="n">object_pairs_hook</span><span class="p">,</span>
+                <span class="n">allow_nan</span><span class="o">=</span><span class="n">allow_nan</span><span class="p">,</span>
+                <span class="n">array_hook</span><span class="o">=</span><span class="kc">None</span>
+            <span class="p">)</span>
+        <span class="c1"># Only need to override the default array handler</span>
+        <span class="c1"># (self.parse_array = JSONArray in JSONDecoder)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_array_numpy</span>
+        <span class="c1"># TODO: Need the following line? Isn&#39;t this precisely the definition of</span>
+        <span class="c1"># the `scan_once` attribute of the base class?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_once</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">py_make_scanner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># Note: in the case of an array, `scan_once` calls our array handler.</span>
+        <span class="c1"># Simplejson v4.0 calls it with three, no longer with two, positional</span>
+        <span class="c1"># arguments, namely with `array_hook` in addition to a state (`s_and_end`)</span>
+        <span class="c1"># and `scan_once`.</span>
+
+<div class="viewcode-block" id="NumpyDecoder.json_array_numpy">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.NumpyDecoder.json_array_numpy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">json_array_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="n">array_hook</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpret arrays (lists by default) as numpy arrays where this does</span>
+<span class="sd">        not yield a string or object array; also handle conversion of</span>
+<span class="sd">        particularly-formatted input to pint Quantities.</span>
+
+<span class="sd">        See `simplejson.decoder.JSONArray` for parameters.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The parameter `array_hook=None` was added for compatibility with</span>
+<span class="sd">        simplejson v4.0 but has no effect. (`*args` would have been an</span>
+<span class="sd">        alternative, but this way forces us to explicitly address changes</span>
+<span class="sd">        of the call signatures in simplejson). A warning is emitted when</span>
+<span class="sd">        it is attempted to be set.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">array_hook</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;The array_hook argument is ignored by this custom array handler!&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Use the default array parser to get list-ified version of the data</span>
+        <span class="n">values</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">JSONArray</span><span class="p">(</span><span class="n">s_and_end</span><span class="p">,</span> <span class="n">scan_once</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Assumption for all below logic is the result is a Sequence (i.e., has</span>
+        <span class="c1"># attribute `__len__`)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># -- Check for pint quantity -- #</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Quantity tuple (`quantity.to_tuple()`) with a scalar produces from</span>
+            <span class="c1"># the raw JSON, e.g.,</span>
+            <span class="c1">#</span>
+            <span class="c1">#       [9.8, [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
+            <span class="c1">#</span>
+            <span class="c1"># or an ndarray (here of shape (2, 3)) produces from the raw JSON,</span>
+            <span class="c1"># e.g.,</span>
+            <span class="c1">#</span>
+            <span class="c1">#       [[[0, 1, 2], [2, 3, 4]], [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]]</span>
+            <span class="c1">#</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Units part of quantity tuple (`quantity.to_tuple()[1]`)</span>
+            <span class="c1"># e.g. m / s**2 is represented as .. ::</span>
+            <span class="c1">#</span>
+            <span class="c1">#       [[&#39;meter&#39;, 1.0], [&#39;second&#39;, -2.0]]</span>
+            <span class="c1">#</span>
+            <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">subval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">subval</span> <span class="ow">in</span> <span class="n">values</span>
+                <span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Individual unit (`quantity.to_tuple()[1][0]`)</span>
+            <span class="c1"># e.g. s^-2 is represented as .. ::</span>
+            <span class="c1">#</span>
+            <span class="c1">#     [&#39;second&#39;, -2.0]</span>
+            <span class="c1">#</span>
+            <span class="c1"># --&gt; Simply return, don&#39;t perform further conversion</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Number</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ndarray_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="c1"># Things like lists of dicts, or mixed types, will result in an</span>
+            <span class="c1"># object array; these are handled in PISA as lists, not numpy</span>
+            <span class="c1"># arrays, so return the pre-converted (list) version of `values`.</span>
+            <span class="c1">#</span>
+            <span class="c1"># Similarly, sequences of strings should stay lists of strings, not</span>
+            <span class="c1"># become numpy arrays.</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">ndarray_values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">object_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span>
+
+            <span class="k">return</span> <span class="n">ndarray_values</span><span class="p">,</span> <span class="n">end</span>
+
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">end</span></div>
+</div>
+
+
+<span class="c1"># TODO: include more basic types in testing (strings, etc.)</span>
+<div class="viewcode-block" id="test_to_json_from_json">
+<a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.test_to_json_from_json">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_to_json_from_json</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for writing various types of objects to and reading from JSON</span>
+<span class="sd">    files (including bz2-compressed and xor-scrambled files)&quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=unused-variable</span>
+    <span class="c1"># pylint: disable=import-outside-toplevel</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">shutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">rmtree</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursiveEquality</span>
+
+    <span class="n">proto_float_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+    <span class="p">)</span>
+    <span class="n">proto_int_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">proto_str_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;ab&#39;</span><span class="p">,</span> <span class="s1">&#39;abc&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+    <span class="n">floating_types</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="nb">set</span><span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">sctypeDict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">)),</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">integer_types</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="nb">set</span><span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">sctypeDict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)),</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">test_info</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">proto_array</span><span class="o">=</span><span class="n">proto_float_array</span><span class="p">,</span>
+            <span class="n">dtypes</span><span class="o">=</span><span class="n">floating_types</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">proto_array</span><span class="o">=</span><span class="n">proto_int_array</span><span class="p">,</span>
+            <span class="n">dtypes</span><span class="o">=</span><span class="n">integer_types</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="c1"># TODO: strings currently do not work</span>
+        <span class="c1">#dict(</span>
+        <span class="c1">#    proto_array=proto_str_array,</span>
+        <span class="c1">#    dtypes=[str, np.str0, np.str_, np.string_],</span>
+        <span class="c1">#),</span>
+    <span class="p">]</span>
+
+    <span class="n">test_data</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+        <span class="n">proto_array</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;proto_array&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;dtypes&#39;</span><span class="p">]:</span>
+            <span class="n">typed_array</span> <span class="o">=</span> <span class="n">proto_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">s_dtype</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">))</span>
+            <span class="n">test_data</span><span class="p">[</span><span class="s2">&quot;array_&quot;</span> <span class="o">+</span> <span class="n">s_dtype</span><span class="p">]</span> <span class="o">=</span> <span class="n">typed_array</span>
+            <span class="n">test_data</span><span class="p">[</span><span class="s2">&quot;scalar_&quot;</span> <span class="o">+</span> <span class="n">s_dtype</span><span class="p">]</span> <span class="o">=</span> <span class="n">dtype</span><span class="p">(</span><span class="n">typed_array</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">test_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Test that the object can be written / read directly</span>
+            <span class="n">base_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;.bz2&#39;</span><span class="p">,</span> <span class="s1">&#39;.xor&#39;</span><span class="p">]:</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="n">base_fname</span> <span class="o">+</span> <span class="n">ext</span>
+                <span class="n">to_json</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+                <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">floating_types</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+                        <span class="n">loaded_data</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">equal_nan</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">),</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">loaded_data</span><span class="p">,</span> <span class="n">fname</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">loaded_data</span> <span class="o">==</span> <span class="n">obj</span><span class="p">),</span> \
+                        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded_nda=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">loaded_data</span><span class="p">,</span> <span class="n">fname</span>
+                        <span class="p">)</span>
+
+            <span class="c1"># Test that the same object can be written / read as a value in a</span>
+            <span class="c1"># dictionary</span>
+            <span class="n">orig</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">),</span> <span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="p">)])</span>
+            <span class="n">base_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="s1">&#39;d.</span><span class="si">{}</span><span class="s1">.json&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;.bz2&#39;</span><span class="p">,</span> <span class="s1">&#39;.xor&#39;</span><span class="p">]:</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="n">base_fname</span> <span class="o">+</span> <span class="n">ext</span>
+                <span class="n">to_json</span><span class="p">(</span><span class="n">orig</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+                <span class="n">loaded</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="n">orig</span><span class="p">),</span> \
+                    <span class="s1">&#39;orig=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">orig</span><span class="p">,</span> <span class="n">loaded</span><span class="p">,</span> <span class="n">fname</span>
+                    <span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">rmtree</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_to_json_from_json &gt;&gt;&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_to_json_from_json</span><span class="p">()</span>
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2014–2026, The IceCube Collaboration
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/icecube/pisa" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=c7477ef8"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

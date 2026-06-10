@@ -1,0 +1,1158 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="pisa.core package" href="pisa.core.html"><link rel="prev" title="pisa package" href="pisa.html">
+        <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>pisa.analysis package - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=9e02ad1e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Navigation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stubs/install_stub.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials.html">Tutorials</a><input aria-label="Toggle navigation of Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="stubs/glossary_stub.html">PISA Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/IceCube_3y_oscillations_example.html">PISA Example Using Public IceCube Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/howto_perform_fit_redirect.html">Carrying out a custom fitting routine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/pisa_modes.html">PISA stage modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/howto_pipeline_config_redirect.html">Pipeline configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/units_uncertainties_stub.html">Units and Uncertainties</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="contributing.html">Contributing</a><input aria-label="Toggle navigation of Contributing" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="stubs/contributing_stub.html">How to contribute to PISA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/howto_service_stub.html">Creating a service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/data_storage_trafo_redirect.html">Data pipeline system (storage &amp; transformation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stubs/globals_stub.html">Global constants</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="pisa.html">Python API</a><input aria-label="Toggle navigation of Python API" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">pisa.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.core.html">pisa.core package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pisa.scripts.html">pisa.scripts package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="pisa.stages.html">pisa.stages package</a><input aria-label="Toggle navigation of pisa.stages package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.absorption.html">pisa.stages.absorption package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.aeff.html">pisa.stages.aeff package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.background.html">pisa.stages.background package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.cont_sys.html">pisa.stages.cont_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.data.html">pisa.stages.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.discr_sys.html">pisa.stages.discr_sys package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.flux.html">pisa.stages.flux package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.likelihood.html">pisa.stages.likelihood package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="pisa.stages.osc.html">pisa.stages.osc package</a><input aria-label="Toggle navigation of pisa.stages.osc package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="pisa.stages.osc.prob3numba.html">pisa.stages.osc.prob3numba package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.reco.html">pisa.stages.reco package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.utils.html">pisa.stages.utils package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.stages.xsec.html">pisa.stages.xsec package</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="pisa.utils.html">pisa.utils package</a><input aria-label="Toggle navigation of pisa.utils package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="pisa.utils.hypersurface.html">pisa.utils.hypersurface package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pisa.utils.llh_defs.html">pisa.utils.llh_defs package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stubs/license_stub.html">License</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/blob/master/docs/source/pisa.analysis.rst?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/icecube/pisa/edit/master/docs/source/pisa.analysis.rst" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="pisa-analysis-package">
+<h1>pisa.analysis package<a class="headerlink" href="#pisa-analysis-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-pisa.analysis.analysis">
+<span id="pisa-analysis-analysis-module"></span><h2>pisa.analysis.analysis module<a class="headerlink" href="#module-pisa.analysis.analysis" title="Link to this heading">¶</a></h2>
+<p>Common tools for performing an analysis collected into the class
+<cite>Analysis</cite> that can be subclassed by specific analyses.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.Analysis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">Analysis</span></span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#Analysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.Analysis" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>An analysis class that performs a flexible (global, local, nested, …) fit of
+a hypothesis to data.</p>
+<p>Full analyses with functionality beyond just fitting, such as scans/profiles,
+are outside the scope of this class and should be defined by the user (for example
+by subclassing this class, see section on custom fitting methods below).</p>
+<p>Every fit is run with the <a class="reference internal" href="#pisa.analysis.analysis.Analysis.fit_recursively" title="pisa.analysis.analysis.Analysis.fit_recursively"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_recursively()</span></code></a> method, where the fit strategy
+is defined by the three arguments <cite>method</cite>, <cite>method_kwargs</cite> and
+<cite>local_fit_kwargs</cite> (see documentation of <a class="reference internal" href="#pisa.analysis.analysis.Analysis.fit_recursively" title="pisa.analysis.analysis.Analysis.fit_recursively"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_recursively()</span></code></a> below for
+other arguments.) The <cite>method</cite> argument determines which sub-routine should be
+run, <cite>method_kwargs</cite> is a dictionary with any keyword arguments of that
+sub-routine, and <cite>local_fit_kwargs</cite> is a dictionary (or list thereof) defining any
+nested sub-routines that are run within the outer sub-routine. A sub-sub-routine
+defined in <cite>local_fit_kwargs</cite> should again be a dictionary with the three keywords
+<cite>method</cite>, <cite>method_kwargs</cite> and <cite>local_fit_kwargs</cite>. In this way, sub-routines
+can be arbitrarily stacked to define complex fit strategies.</p>
+<p>The fit result is returned as a <a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult" title="pisa.analysis.analysis.HypoFitResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">HypoFitResult</span></code></a> instance. By default,
+this does not include the potentially large fit history (empty) or the binned
+metric maps, but they need to be requested from <cite>fit_recursively</cite> explicitly,
+as demonstrated in the examples below.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.Analysis.pprint">
+<span class="sig-name descname"><span class="pre">pprint</span></span><a class="headerlink" href="#pisa.analysis.analysis.Analysis.pprint" title="Link to this definition">¶</a></dt>
+<dd><p>Whether to show live updates of minimizer progress (overridden by
+<a class="reference internal" href="#pisa.analysis.analysis.Analysis.blindness" title="pisa.analysis.analysis.Analysis.blindness"><code class="xref py py-attr docutils literal notranslate"><span class="pre">blindness</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool, default: True</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.Analysis.blindness">
+<span class="sig-name descname"><span class="pre">blindness</span></span><a class="headerlink" href="#pisa.analysis.analysis.Analysis.blindness" title="Link to this definition">¶</a></dt>
+<dd><p>Whether to carry out a blind analysis. If True or 1, this hides actual
+parameter values from display and disallows these (as well as Jacobian,
+Hessian, etc.) from ending up in logfiles. If given an integer &gt; 1, the
+fitted parameters are also prevented from being stored in fit info
+dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool or int, default: False</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric" id="fitting-tutorial">Examples</p>
+<p>A canonical standard oscillation fit fits octants in <cite>theta23</cite> separately and then
+runs a <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/optimize.html#module-scipy.optimize" title="(in SciPy v1.17.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">scipy</span> <span class="pre">minimizer</span></code></a> to optimize
+locally in each octant. The arguments that would produce that result when passed to
+<cite>fit_recursively</cite> are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;octants&quot;</span>
+<span class="n">method_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="s2">&quot;theta23&quot;</span>
+    <span class="s2">&quot;inflection_point&quot;</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span>
+<span class="p">}</span>
+<span class="n">local_fit_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;scipy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="n">minimizer_settings</span><span class="p">,</span>
+    <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="kc">None</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Let’s say we also have a CP violating phase <cite>deltacp24</cite> that we want to fit
+separately per quadrant split at 90 degrees. We want this done within each
+quadrant fit for <cite>theta23</cite>, making 4 fits in total. Then we would nest the
+quadrant fit for <cite>deltacp24</cite> inside the octant fit like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;octants&quot;</span>
+<span class="n">method_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="s2">&quot;theta23&quot;</span>
+    <span class="s2">&quot;inflection_point&quot;</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span>
+<span class="p">}</span>
+<span class="n">local_fit_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;octants&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="s2">&quot;deltacp24&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inflection_point&quot;</span><span class="p">:</span> <span class="mi">90</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;scipy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="n">minimizer_settings</span><span class="p">,</span>
+        <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Let’s suppose we want to apply a grid-scan global fit method to sterile mixing
+parameters <cite>theta24</cite> and <cite>deltam41</cite>, but we want to marginalize over all other
+parameters with a usual 3-flavor fit configuration. That could be achieved as
+follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;grid_scan&quot;</span>
+<span class="n">method_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;grid&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;theta24&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+        <span class="s2">&quot;deltam41&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;eV^2&quot;</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;fix_grid_params&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">local_fit_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;octants&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="s2">&quot;theta23&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inflection_point&quot;</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;scipy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="n">minimizer_settings</span><span class="p">,</span>
+        <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Instead of <cite>scipy</cite>, we can also use <cite>iminuit</cite> and <cite>nlopt</cite> for local minimization or
+global searches by writing a dictionary with <code class="docutils literal notranslate"><span class="pre">&quot;method&quot;:</span> <span class="pre">&quot;iminuit&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;method&quot;:</span>
+<span class="pre">&quot;nlopt&quot;</span></code>, respectively.</p>
+<p><strong>NLOPT Options</strong></p>
+<p>NLOPT can be dropped in place of <cite>scipy</cite> and <cite>iminuit</cite> by writing a dictionary with
+<code class="docutils literal notranslate"><span class="pre">&quot;method&quot;:</span> <span class="pre">&quot;nlopt&quot;</span></code> and choosing the algorithm by its name of the form
+<code class="docutils literal notranslate"><span class="pre">NLOPT_{G,L}{N}_XXXX</span></code>. PISA supports all of the derivative-free global
+(<a class="reference external" href="https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#global-optimization">https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#global-optimization</a>) and
+local
+(<a class="reference external" href="https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#local-derivative-free-optimization">https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#local-derivative-free-optimization</a>)
+algorithms. Algorithms requiring gradients such as BFGS are not supported. To use
+the Nelder-Mead algorithm, for example, the following settings could be used:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nlopt_settings</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;nlopt&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_LN_NELDERMEAD&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ftol_abs&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="s2">&quot;ftol_rel&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="c1"># other options that can be set here:</span>
+        <span class="c1"># xtol_abs, xtol_rel, stopval, maxeval, maxtime</span>
+        <span class="c1"># after maxtime seconds, stop and return best result so far</span>
+        <span class="s2">&quot;maxtime&quot;</span><span class="p">:</span> <span class="mi">60</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="kc">None</span>  <span class="c1"># no further nesting available</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>and then run a <a class="reference internal" href="pisa.utils.html#pisa.utils.stats.chi2" title="pisa.utils.stats.chi2"><code class="xref py py-func docutils literal notranslate"><span class="pre">&quot;chi2&quot;</span></code></a> fit with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">best_fit_info</span> <span class="o">=</span> <span class="n">ana</span><span class="o">.</span><span class="n">fit_recursively</span><span class="p">(</span>
+    <span class="n">data_dist</span><span class="p">,</span>
+    <span class="n">dm</span><span class="p">,</span>
+    <span class="s2">&quot;chi2&quot;</span><span class="p">,</span>
+    <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store_fit_history</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">include_metric_maps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">nlopt_settings</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>, where no fit history will be kept in memory or be part of <cite>best_fit_info</cite>.
+Of course, you can also nest the <cite>nlopt_settings</cite> dictionary in any of the
+<cite>octants</cite>, <cite>ranges</cite> and so on by passing it as <cite>local_fit_kwargs</cite>.</p>
+<p><em>Adding constraints</em></p>
+<p>Adding inequality constraints to algorithms that support it is possible by writing a
+lambda function in a string that expects to get the current parameters as a
+<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParamSet</span></code></a> and returns a float. The result will ensure
+that the passed function stays <em>positive</em> (to be consistent with SciPy, cf. below).
+The string will be passed to <a class="reference external" href="https://docs.python.org/3/library/functions.html#eval" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">eval()</span></code></a> to build the callable function.
+For example, a silly way to bound <cite>delta_index</cite> &gt; 0.1 would be:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_LN_COBYLA&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ftol_abs&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+    <span class="s2">&quot;ftol_rel&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+    <span class="s2">&quot;maxtime&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">&quot;ineq_constraints&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="c1"># be sure to convert parameters to their magnitude</span>
+        <span class="s2">&quot;lambda params: params.delta_index.m - 0.1&quot;</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt>Code example in <a class="reference internal" href="#pisa.analysis.analysis.test_constrained_minimization" title="pisa.analysis.analysis.test_constrained_minimization"><code class="xref py py-func docutils literal notranslate"><span class="pre">test_constrained_minimization()</span></code></a></dt><dd><p>COBYLA fit using example pipeline with inequality constraint on
+theta23</p>
+</dd>
+</dl>
+</div>
+<p>Adding inequality constraints to algorithms that don’t support it can be done by
+either nesting the local fit in the <cite>constrained_fit</cite> method or to use NLOPT’s
+AUGLAG method that adds a penalty for constraint violations internally. For example,
+we could do this to fulfill the same constraint with the PRAXIS algorithm:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_AUGLAG&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ineq_constraints&quot;</span><span class="p">:[</span>
+        <span class="s2">&quot;lambda params: params.delta_index.m - 0.1&quot;</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;local_optimizer&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="c1"># supports all the same options as above</span>
+        <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_LN_PRAXIS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ftol_abs&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="s2">&quot;ftol_rel&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><em>Using global searches with local subsidiary minimizers</em></p>
+<p>Some global searches, like evolutionary strategies, use local subsidiary minimizers.
+These can be defined just as above by passing a dictionary with the settings to the
+<cite>local_optimizer</cite> keyword. Note that, again, only gradient-free methods are
+supported. Here is an example for the “Multi-Level single linkage” (MLSL) algorithm,
+using PRAXIS as the local optimizer:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_G_MLSL_LDS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;local_optimizer&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_LN_PRAXIS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ftol_abs&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="s2">&quot;ftol_rel&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>For some evolutionary strategies such as ISRES, the <cite>population</cite> option  can also
+be set.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_GN_ISRES&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>SciPy Options</strong></p>
+<p>PISA supports the local algorithms in <a class="reference internal" href="#pisa.analysis.analysis.SUPPORTED_LOCAL_SCIPY_MINIMIZERS" title="pisa.analysis.analysis.SUPPORTED_LOCAL_SCIPY_MINIMIZERS"><code class="xref py py-data docutils literal notranslate"><span class="pre">SUPPORTED_LOCAL_SCIPY_MINIMIZERS</span></code></a>.
+It also supports the global algorithms “differential_evolution”, “basinhopping”,
+“dual_annealing”, and “shgo”. Of these, all but “differential_evolution” allow
+configuring local subsidiary algorithms. Both inequality and equality
+<a class="reference external" href="https://docs.scipy.org/doc/scipy/tutorial/optimize.html#tutorial-sqlsp" title="(in SciPy v1.17.0)"><span class="xref std std-ref">constraints</span></a> can be added to
+<a class="reference internal" href="#pisa.analysis.analysis.MINIMIZERS_ACCEPTING_CONSTRS" title="pisa.analysis.analysis.MINIMIZERS_ACCEPTING_CONSTRS"><code class="xref py py-data docutils literal notranslate"><span class="pre">algorithms</span> <span class="pre">that</span> <span class="pre">support</span> <span class="pre">them</span></code></a>.</p>
+<p>Step by step, let us define a strategy consisting of
+<a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.dual_annealing.html#scipy.optimize.dual_annealing" title="(in SciPy v1.17.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">Dual</span> <span class="pre">Annealing</span></code></a> together
+with <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html" title="(in SciPy v1.17.0)"><span class="xref std std-doc">local SLSQP minimization</span></a>,
+with both equality and inequality constraints for some fit parameters.
+First, set up the “global” algorithm only:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">scipy_settings</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;scipy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;global_method&quot;</span><span class="p">:</span> <span class="s2">&quot;dual_annealing&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="c1"># other options that can be set here:</span>
+            <span class="c1"># initial_temp, restart_temp_ratio, visit, accept, maxfun, no_local_search, rng</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Second, load an SLSQP configuration from a file (included in PISA):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">local_settings</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Third, require <cite>theta23</cite> to remain &gt; 42 degrees via an inequality constraint and
+<cite>delta_index</cite> to stay fixed at -0.1 via an equality constraint, by inserting a
+list of constraint dicts into the SLSQP settings:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># constraint function can be callable or string</span>
+<span class="n">constrs_list</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;eq&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;fun&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;lambda params: params.delta_index.m_as(&quot;dimensionless&quot;) + 0.1&#39;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ineq&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;fun&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">params</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;degree&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">42</span><span class="p">}</span>
+<span class="p">]</span>
+<span class="n">local_settings</span><span class="p">[</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">][</span><span class="s2">&quot;constraints&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrs_list</span>
+</pre></div>
+</div>
+<p>Fourth, insert the SLSQP configuration with constraints into the global settings:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">scipy_settings</span><span class="p">[</span><span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">local_settings</span>
+</pre></div>
+</div>
+<p>Finally, run a <a class="reference internal" href="pisa.utils.html#pisa.utils.stats.chi2" title="pisa.utils.stats.chi2"><code class="xref py py-func docutils literal notranslate"><span class="pre">&quot;chi2&quot;</span></code></a> fit with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">best_fit_info</span> <span class="o">=</span> <span class="n">ana</span><span class="o">.</span><span class="n">fit_recursively</span><span class="p">(</span>
+    <span class="n">data_dist</span><span class="p">,</span>
+    <span class="n">dm</span><span class="p">,</span>
+    <span class="s2">&quot;chi2&quot;</span><span class="p">,</span>
+    <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store_fit_history</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">include_metric_maps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">scipy_settings</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>, where no fit history will be kept in memory or be part of <cite>best_fit_info</cite>.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>Non-negligible constraint violations or stepping out of bounds may occur when
+global SciPy optimization is used in combination with constraints! This will
+hopefully get fixed soon.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt>Code examples in <a class="reference internal" href="#pisa.analysis.analysis.test_constrained_minimization" title="pisa.analysis.analysis.test_constrained_minimization"><code class="xref py py-func docutils literal notranslate"><span class="pre">test_constrained_minimization()</span></code></a> and <a class="reference internal" href="#pisa.analysis.analysis.global_scipy_minimization" title="pisa.analysis.analysis.global_scipy_minimization"><code class="xref py py-func docutils literal notranslate"><span class="pre">global_scipy_minimization()</span></code></a></dt><dd><p>Fits using example pipeline and different scipy solvers and constraint types</p>
+</dd>
+</dl>
+</div>
+<p><strong>Custom fitting methods</strong></p>
+<p>Custom fitting methods are added by subclassing the analysis. The fit function
+name has to follow the scheme <cite>_fit_{method}</cite> where <cite>method</cite> is the name of the
+fit method. For instance, the function for <cite>scipy</cite> is called <cite>_fit_scipy</cite> and can
+be called by setting <cite>“method”: “scipy”</cite> in the fit strategy dict.</p>
+<p>The function has to accept the parameters <cite>data_dist</cite>, <cite>hypo_maker</cite>, <cite>metric</cite>,
+<cite>external_priors_penalty</cite>, <cite>method_kwargs</cite>, and <cite>local_fit_kwargs</cite>. See
+<a class="reference internal" href="#pisa.analysis.analysis.Analysis.fit_recursively" title="pisa.analysis.analysis.Analysis.fit_recursively"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_recursively()</span></code></a> for descriptions of these arguments. The return value
+of the function must be a <a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult" title="pisa.analysis.analysis.HypoFitResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">HypoFitResult</span></code></a>. As an example, the following
+sub-class of <cite>Analysis</cite> has a custom fit method that, nonsensically,
+always sets 42 degrees as the starting value for theta23:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SubclassedAnalysis</span><span class="p">(</span><span class="n">Analysis</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fit_nonsense</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">data_dist</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span>
+        <span class="n">external_priors_penalty</span><span class="p">,</span> <span class="n">method_kwargs</span><span class="p">,</span> <span class="n">local_fit_kwargs</span><span class="p">,</span>
+        <span class="n">store_fit_history</span><span class="p">,</span> <span class="n">include_metric_maps</span>
+    <span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting nonsense fit (setting theta23 to 42 deg)...&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="n">hypo_maker</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;theta23&quot;</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">42</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;deg&quot;</span><span class="p">]</span>
+
+        <span class="n">best_fit_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_recursively</span><span class="p">(</span>
+            <span class="n">data_dist</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">external_priors_penalty</span><span class="p">,</span>
+            <span class="n">local_fit_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">],</span> <span class="n">local_fit_kwargs</span><span class="p">[</span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">],</span>
+            <span class="n">local_fit_kwargs</span><span class="p">[</span><span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">],</span>
+            <span class="n">store_fit_history</span><span class="o">=</span><span class="n">store_fit_history</span><span class="p">,</span>
+            <span class="n">include_metric_maps</span><span class="o">=</span><span class="n">include_metric_maps</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">best_fit_info</span>
+</pre></div>
+</div>
+<p>Now, the <cite>nonsense</cite> fit method can be used and nested with any other fit method
+like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ana</span> <span class="o">=</span> <span class="n">SubclassedAnalysis</span><span class="p">()</span>
+<span class="n">local_minuit</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;iminuit&quot;</span><span class="p">,</span>
+    <span class="n">method_kwargs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;tol&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">local_fit_kwargs</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+
+<span class="n">local_nonsense_minuit</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;nonsense&quot;</span><span class="p">,</span>
+    <span class="n">method_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">local_fit_kwargs</span><span class="o">=</span><span class="n">local_minuit</span>
+<span class="p">)</span>
+
+<span class="n">fit_result</span> <span class="o">=</span> <span class="n">ana</span><span class="o">.</span><span class="n">fit_recursively</span><span class="p">(</span>
+    <span class="n">data_dist</span><span class="p">,</span>
+    <span class="n">distribution_maker</span><span class="p">,</span>
+    <span class="s2">&quot;chi2&quot;</span><span class="p">,</span>
+    <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store_fit_history</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">include_metric_maps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">local_nonsense_minuit</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.Analysis.fit_recursively">
+<span class="sig-name descname"><span class="pre">fit_recursively</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external_priors_penalty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_fit_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_fit_history</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_metric_maps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#Analysis.fit_recursively"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.Analysis.fit_recursively" title="Link to this definition">¶</a></dt>
+<dd><p>Recursively apply global search strategies with local sub-fits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_dist</strong> (<em>Sequence</em><em> of </em><em>MapSets</em><em> or </em><a class="reference internal" href="pisa.core.html#pisa.core.map.MapSet" title="pisa.core.map.MapSet"><em>MapSet</em></a>) – Data distribution to be fit. Can be an actual-, Asimov-, or pseudo-data
+distribution (where the latter two are derived from simulation and so
+aren’t technically “data”).</p></li>
+<li><p><strong>hypo_maker</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.detectors.Detectors" title="pisa.core.detectors.Detectors"><em>Detectors</em></a><em> or </em><a class="reference internal" href="pisa.core.html#pisa.core.distribution_maker.DistributionMaker" title="pisa.core.distribution_maker.DistributionMaker"><em>DistributionMaker</em></a>) – Creates the per-bin expectation values per map based on its param values.
+Free params in the <cite>hypo_maker</cite> are modified by the minimizer to achieve a
+“best” fit.</p></li>
+<li><p><strong>metric</strong> (<em>string</em><em> or </em><em>iterable</em><em> of </em><em>strings</em>) – Metric by which to evaluate the fit. See documentation of <a class="reference internal" href="pisa.core.html#pisa.core.map.Map" title="pisa.core.map.Map"><code class="xref py py-class docutils literal notranslate"><span class="pre">Map</span></code></a>.</p></li>
+<li><p><strong>external_priors_penalty</strong> (<em>func</em>) – User defined prior penalty function, which takes <cite>hypo_maker</cite> and
+<cite>metric</cite> as arguments and returns numerical value of penalty to the metric
+value. It is expected sign of the penalty is correctly specified inside the
+<cite>external_priors_penalty</cite> (e.g. negative for llh or positive for chi2).</p></li>
+<li><p><strong>method</strong> (<em>str</em>) – Name of the sub-routine to be run. Currently, the options are <cite>scipy</cite>,
+<cite>octants</cite>, <cite>best_of</cite>, <cite>grid_scan</cite>, <cite>constrained</cite>,
+<cite>ranges</cite>, <cite>condition</cite>, <cite>iminuit</cite>, and <cite>nlopt</cite>.</p></li>
+<li><p><strong>method_kwargs</strong> (<em>dict</em>) – Any keyword arguments taken by the sub-routine. May be <cite>None</cite> if the
+sub-routine takes no additional arguments.</p></li>
+<li><p><strong>local_fit_kwargs</strong> (<em>dict</em><em> or </em><em>list thereof</em>) – A dictionary defining subsidiary sub-routines with the keywords <cite>method</cite>,
+<cite>method_kwargs</cite> and <cite>local_fit_kwargs</cite>. May be <cite>None</cite> if the
+sub-routine is itself a local or global fit that runs no further subsidiary
+fits.</p></li>
+<li><p><strong>store_fit_history</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Whether to keep track of the fit history (sampled metric and parameter
+values) when minimizing, to include it in the result.</p></li>
+<li><p><strong>include_metric_maps</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Whether to include the binned metric contributions at the best fit in the
+result.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.BasicAnalysis">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">BasicAnalysis</span></span><a class="headerlink" href="#pisa.analysis.analysis.BasicAnalysis" title="Link to this definition">¶</a></dt>
+<dd><p>Simple alias of <a class="reference internal" href="#pisa.analysis.analysis.Analysis" title="pisa.analysis.analysis.Analysis"><code class="xref py py-class docutils literal notranslate"><span class="pre">Analysis</span></code></a> for backwards compatibility. Note:
+both <cite>__name__</cite> and <cite>__qualname__</cite> of <cite>BasicAnalysis</cite> evaluate to “Analysis”.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.Counter">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">Counter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#Counter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.Counter" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Simple counter object for use as a minimizer callback.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.Counter.count">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">count</span></span><a class="headerlink" href="#pisa.analysis.analysis.Counter.count" title="Link to this definition">¶</a></dt>
+<dd><p>Current count</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.Counter.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#Counter.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.Counter.reset" title="Link to this definition">¶</a></dt>
+<dd><p>Reset counter</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.HypoFitResult">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">HypoFitResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimizer_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_distributions_generated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimizer_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_history</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_detailed_metric_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_maps_binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#HypoFitResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.HypoFitResult" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Holds all relevant information about a fit result.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.HypoFitResult.deserialize_detailed_metric_info">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">deserialize_detailed_metric_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">info_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#HypoFitResult.deserialize_detailed_metric_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.HypoFitResult.deserialize_detailed_metric_info" title="Link to this definition">¶</a></dt>
+<dd><p>Re-instantiate all PISA objects that used to be in the dictionary.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.HypoFitResult.detailed_metric_info">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">detailed_metric_info</span></span><a class="headerlink" href="#pisa.analysis.analysis.HypoFitResult.detailed_metric_info" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.HypoFitResult.from_state">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#HypoFitResult.from_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.HypoFitResult.from_state" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize a <cite>HypoFitResult</cite> from a dictionary. Requires all entries
+in _state_attrs to be present as keys.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.HypoFitResult.get_detailed_metric_info">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_detailed_metric_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_asimov_dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generalized_poisson_hypo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_maps_binned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#HypoFitResult.get_detailed_metric_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.HypoFitResult.get_detailed_metric_info" title="Link to this definition">¶</a></dt>
+<dd><p>Get detailed fit information, including e.g. maps that yielded the
+metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_dist</strong></p></li>
+<li><p><strong>hypo_maker</strong></p></li>
+<li><p><strong>hypo_asimov_dist</strong></p></li>
+<li><p><strong>params</strong></p></li>
+<li><p><strong>metric</strong></p></li>
+<li><p><strong>generalized_poisson_hypo</strong></p></li>
+<li><p><strong>other_metrics</strong></p></li>
+<li><p><strong>detector_name</strong></p></li>
+<li><p><strong>include_maps_binned</strong></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>detailed_metric_info</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pisa.html#pisa.OrderedDict" title="pisa.OrderedDict">OrderedDict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.HypoFitResult.hypo_asimov_dist">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">hypo_asimov_dist</span></span><a class="headerlink" href="#pisa.analysis.analysis.HypoFitResult.hypo_asimov_dist" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.HypoFitResult.params">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">params</span></span><a class="headerlink" href="#pisa.analysis.analysis.HypoFitResult.params" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.HypoFitResult.serializable_state">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">serializable_state</span></span><a class="headerlink" href="#pisa.analysis.analysis.HypoFitResult.serializable_state" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.HypoFitResult.state">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">state</span></span><a class="headerlink" href="#pisa.analysis.analysis.HypoFitResult.state" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.MINIMIZERS_ACCEPTING_CONSTRS">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">MINIMIZERS_ACCEPTING_CONSTRS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('cobyla',</span> <span class="pre">'slsqp',</span> <span class="pre">'trust-constr',</span> <span class="pre">'cobyqa')</span></span><a class="headerlink" href="#pisa.analysis.analysis.MINIMIZERS_ACCEPTING_CONSTRS" title="Link to this definition">¶</a></dt>
+<dd><p>Minimizers that allow constraints to be passed. All of these accept inequalities,
+and ‘slsqp’ and ‘trust-constr’ in addition accept equalities. As of SciPy 1.16.0,
+slsqp requires dictionaries, whereas trust-constr, cobyla and cobyqa require constraints
+to be passed as <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.LinearConstraint.html#scipy.optimize.LinearConstraint" title="(in SciPy v1.17.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinearConstraint</span></code></a> or
+<a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.NonlinearConstraint.html#scipy.optimize.NonlinearConstraint" title="(in SciPy v1.17.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NonlinearConstraint</span></code></a> instances. However,
+as of now, the conversion to the form required by the minimizer is done internally by
+SciPy. Hence, this global variable merely serves documentation purposes right now. Note
+that cobyqa is only added in SciPy version 1.14.0.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.MINIMIZERS_USING_SYMM_GRAD">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">MINIMIZERS_USING_SYMM_GRAD</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('l-bfgs-b',</span> <span class="pre">'slsqp')</span></span><a class="headerlink" href="#pisa.analysis.analysis.MINIMIZERS_USING_SYMM_GRAD" title="Link to this definition">¶</a></dt>
+<dd><p>Minimizers that use symmetrical steps on either side of a point to compute
+gradients. See <a class="reference external" href="https://github.com/scipy/scipy/issues/4916">https://github.com/scipy/scipy/issues/4916</a></p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.SUPPORTED_LOCAL_SCIPY_MINIMIZERS">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">SUPPORTED_LOCAL_SCIPY_MINIMIZERS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('cobyla',</span> <span class="pre">'l-bfgs-b',</span> <span class="pre">'nelder-mead',</span> <span class="pre">'slsqp',</span> <span class="pre">'trust-constr')</span></span><a class="headerlink" href="#pisa.analysis.analysis.SUPPORTED_LOCAL_SCIPY_MINIMIZERS" title="Link to this definition">¶</a></dt>
+<dd><p>Local SciPy minimizers that PISA currently supports via this interface.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.global_scipy_minimization">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">global_scipy_minimization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#global_scipy_minimization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.global_scipy_minimization" title="Link to this definition">¶</a></dt>
+<dd><p>Test global SciPy solvers with constraints.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.test_analysis">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">test_analysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#test_analysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.test_analysis" title="Link to this definition">¶</a></dt>
+<dd><p>Test recursive fit strategies on an <a class="reference internal" href="#pisa.analysis.analysis.Analysis" title="pisa.analysis.analysis.Analysis"><code class="xref py py-class docutils literal notranslate"><span class="pre">Analysis</span></code></a> sub-class.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.analysis.test_constrained_minimization">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.analysis.</span></span><span class="sig-name descname"><span class="pre">test_constrained_minimization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/analysis.html#test_constrained_minimization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.analysis.test_constrained_minimization" title="Link to this definition">¶</a></dt>
+<dd><p>Test SciPy solvers without or with equality and inequality constraints.
+All are run with default options as set by <a class="reference internal" href="#pisa.analysis.configure_scipy_minimization.set_minimizer_defaults" title="pisa.analysis.configure_scipy_minimization.set_minimizer_defaults"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_minimizer_defaults()</span></code></a>.</p>
+</dd></dl>
+
+</section>
+<section id="module-pisa.analysis.bayesian_analysis">
+<span id="pisa-analysis-bayesian-analysis-module"></span><h2>pisa.analysis.bayesian_analysis module<a class="headerlink" href="#module-pisa.analysis.bayesian_analysis" title="Link to this heading">¶</a></h2>
+<p>Common tools for performing Bayesian analysis.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.bayesian_analysis.MCMC_sampling">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.bayesian_analysis.</span></span><span class="sig-name descname"><span class="pre">MCMC_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burnin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_burn_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/bayesian_analysis.html#MCMC_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.bayesian_analysis.MCMC_sampling" title="Link to this definition">¶</a></dt>
+<dd><p>Performs MCMC sampling. Only supports serial (single CPU) execution at the
+moment. See issue #830.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_dist</strong> (<em>Sequence</em><em> of </em><em>MapSets</em><em> or </em><a class="reference internal" href="pisa.core.html#pisa.core.map.MapSet" title="pisa.core.map.MapSet"><em>MapSet</em></a>) – Data distribution to be fit. Can be an actual-, Asimov-, or pseudo-data
+distribution (where the latter two are derived from simulation and so
+aren’t technically “data”).</p></li>
+<li><p><strong>hypo_maker</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.detectors.Detectors" title="pisa.core.detectors.Detectors"><em>Detectors</em></a><em> or </em><a class="reference internal" href="pisa.core.html#pisa.core.distribution_maker.DistributionMaker" title="pisa.core.distribution_maker.DistributionMaker"><em>DistributionMaker</em></a>) – Creates the per-bin expectation values per map based on its param values.
+Free params in the <cite>hypo_maker</cite> are modified by the minimizer to achieve a
+“best” fit.</p></li>
+<li><p><strong>metric</strong> (<em>string</em><em> or </em><em>iterable</em><em> of </em><em>strings</em>) – Metric by which to evaluate the fit. See documentation of Map.</p></li>
+<li><p><strong>nwalkers</strong> (<em>int</em>) – Number of walkers</p></li>
+<li><p><strong>burnin</strong> (<em>int</em>) – Number of steps in burn in phase</p></li>
+<li><p><strong>nSteps</strong> (<em>int</em>) – Number of steps after burn in</p></li>
+<li><p><strong>pprint</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – Whether to show live updates of the sampling progress.</p></li>
+<li><p><strong>return_burn_in</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Also return the steps of the burn in phase.</p></li>
+<li><p><strong>random_state</strong> (<em>None</em><em> or </em><em>type accepted by utils.random_numbers.get_random_state</em><em> (</em><em>default: None</em><em>)</em>) – Random state of the walker starting points.</p></li>
+<li><p><strong>sampling_algorithm</strong> (<em>None</em><em> or </em><em>emcee.moves object</em><em> (</em><em>default: None</em><em>)</em>) – Sampling algorithm used by the emcee sampler. None means to use the default
+which is a Goodman &amp; Weare “stretch move” with parallelization.
+See <a class="reference external" href="https://emcee.readthedocs.io/en/stable/user/moves/#moves-user">https://emcee.readthedocs.io/en/stable/user/moves/#moves-user</a> to learn
+more about the emcee sampling algorithms.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>scaled_chain</strong> (<em>numpy array</em>) – Array containing all points in the parameter space visited by each walker.
+It is sorted by steps, so all the first steps of all walkers come first.
+To for example get all values of the Nth parameter and the ith walker, use
+scaled_chain[i::nwalkers, N].</p></li>
+<li><p><strong>scaled_chain_burnin</strong> (<em>numpy array (optional)</em>) – Same as scaled_chain, but for the burn in phase.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pisa.analysis.configure_nlopt_minimization">
+<span id="pisa-analysis-configure-nlopt-minimization-module"></span><h2>pisa.analysis.configure_nlopt_minimization module<a class="headerlink" href="#module-pisa.analysis.configure_nlopt_minimization" title="Link to this heading">¶</a></h2>
+<p>Utilities for validating and configuring nlopt minimization.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.configure_nlopt_minimization.get_nlopt_inequality_constraint_funcs">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.configure_nlopt_minimization.</span></span><span class="sig-name descname"><span class="pre">get_nlopt_inequality_constraint_funcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_kwargs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/configure_nlopt_minimization.html#get_nlopt_inequality_constraint_funcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.configure_nlopt_minimization.get_nlopt_inequality_constraint_funcs" title="Link to this definition">¶</a></dt>
+<dd><p>Convert constraints expressions in terms of ParamSets
+into callables for nlopt. Evals expression(s) from <cite>method_kwargs</cite>
+and returns list of callables.</p>
+</dd></dl>
+
+</section>
+<section id="module-pisa.analysis.configure_scipy_minimization">
+<span id="pisa-analysis-configure-scipy-minimization-module"></span><h2>pisa.analysis.configure_scipy_minimization module<a class="headerlink" href="#module-pisa.analysis.configure_scipy_minimization" title="Link to this heading">¶</a></h2>
+<p>Utilities for validating and configuring scipy minimization settings.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.configure_scipy_minimization.make_scipy_constraint_dict">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.configure_scipy_minimization.</span></span><span class="sig-name descname"><span class="pre">make_scipy_constraint_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constr_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/configure_scipy_minimization.html#make_scipy_constraint_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.configure_scipy_minimization.make_scipy_constraint_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Makes a constraint dictionary in the form accepted by scipy,
+see e.g. <a class="reference external" href="https://docs.scipy.org/doc/scipy-1.13.1/reference/generated/scipy.optimize.minimize.html">https://docs.scipy.org/doc/scipy-1.13.1/reference/generated/scipy.optimize.minimize.html</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.configure_scipy_minimization.make_scipy_local_minimizer_kwargs">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.configure_scipy_minimization.</span></span><span class="sig-name descname"><span class="pre">make_scipy_local_minimizer_kwargs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimizer_settings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/configure_scipy_minimization.html#make_scipy_local_minimizer_kwargs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.configure_scipy_minimization.make_scipy_local_minimizer_kwargs" title="Link to this definition">¶</a></dt>
+<dd><p>Small helper function containing common logic for
+creating minimizer keyword args in calls to global
+routines via their scipy interface.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.configure_scipy_minimization.scipy_constraints_to_callables">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.configure_scipy_minimization.</span></span><span class="sig-name descname"><span class="pre">scipy_constraints_to_callables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constr_dicts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/configure_scipy_minimization.html#scipy_constraints_to_callables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.configure_scipy_minimization.scipy_constraints_to_callables" title="Link to this definition">¶</a></dt>
+<dd><p>Convert constraints expressions in terms of ParamSets
+into callables for scipy. Overwrites “fun” entries
+in <cite>constr_dicts</cite>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.configure_scipy_minimization.set_minimizer_defaults">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.configure_scipy_minimization.</span></span><span class="sig-name descname"><span class="pre">set_minimizer_defaults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimizer_settings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/configure_scipy_minimization.html#set_minimizer_defaults"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.configure_scipy_minimization.set_minimizer_defaults" title="Link to this definition">¶</a></dt>
+<dd><p>Fill in default values for minimizer settings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>minimizer_settings</strong> (<em>dict</em>)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>new_minimizer_settings</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.configure_scipy_minimization.validate_minimizer_settings">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.configure_scipy_minimization.</span></span><span class="sig-name descname"><span class="pre">validate_minimizer_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimizer_settings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/configure_scipy_minimization.html#validate_minimizer_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.configure_scipy_minimization.validate_minimizer_settings" title="Link to this definition">¶</a></dt>
+<dd><p>Validate minimizer settings.</p>
+<p>Supported minimizers are the same as in <cite>set_minimizer_defaults</cite>.</p>
+<p>See source for specific thresholds set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>minimizer_settings</strong> (<em>dict</em>)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If any minimizer settings are deemed to be invalid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pisa.analysis.manipulate_params">
+<span id="pisa-analysis-manipulate-params-module"></span><h2>pisa.analysis.manipulate_params module<a class="headerlink" href="#module-pisa.analysis.manipulate_params" title="Link to this heading">¶</a></h2>
+<p>Utilities for manipulating parameters when fitting.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.manipulate_params.get_separate_octant_params">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.manipulate_params.</span></span><span class="sig-name descname"><span class="pre">get_separate_octant_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflection_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/manipulate_params.html#get_separate_octant_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.manipulate_params.get_separate_octant_params" title="Link to this definition">¶</a></dt>
+<dd><p>This function creates versions of the angle param that are confined to
+a single octant. It does this for both octant cases. This is used to allow
+fits to be done where only one of the octants is allowed. The fit can then
+be done for the two octant cases and compared to find the best fit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hypo_maker</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.distribution_maker.DistributionMaker" title="pisa.core.distribution_maker.DistributionMaker"><em>DistributionMaker</em></a><em> or </em><a class="reference internal" href="pisa.core.html#pisa.core.detectors.Detectors" title="pisa.core.detectors.Detectors"><em>Detectors</em></a>) – The hypothesis maker being used by the fitter</p></li>
+<li><p><strong>angle_name</strong> (<em>string</em>) – Name of the angle for which to create separate octant params.</p></li>
+<li><p><strong>inflection_point</strong> (<em>quantity</em>) – Point distinguishing between the two octants, e.g. 45 degrees</p></li>
+<li><p><strong>tolerance</strong> (<em>quantity</em>) – If the starting value is closer to the inflection point than the value of the
+tolerance, it is offset away from the inflection point by this amount.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>angle_orig</strong> (<em>Param</em>) – angle param as it was before applying the octant separation</p></li>
+<li><p><strong>angle_case1</strong> (<em>Param</em>) – angle param confined to first octant</p></li>
+<li><p><strong>angle_case2</strong> (<em>Param</em>) – angle param confined to second octant</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.manipulate_params.update_param_values">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.manipulate_params.</span></span><span class="sig-name descname"><span class="pre">update_param_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_nominal_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_is_fixed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/manipulate_params.html#update_param_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.manipulate_params.update_param_values" title="Link to this definition">¶</a></dt>
+<dd><p>Update just the values of parameters of a DistributionMaker <em>without</em> replacing
+the memory references inside.</p>
+<p>This should be used in place of <cite>hypo_maker.update_params(params)</cite> unless one
+explicitly wants to replace the memory references to which the parameters in
+the DistributionMaker are pointing.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.analysis.manipulate_params.update_param_values_detector">
+<span class="sig-prename descclassname"><span class="pre">pisa.analysis.manipulate_params.</span></span><span class="sig-name descname"><span class="pre">update_param_values_detector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hypo_maker</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_nominal_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_is_fixed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/analysis/manipulate_params.html#update_param_values_detector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.analysis.manipulate_params.update_param_values_detector" title="Link to this definition">¶</a></dt>
+<dd><p>Modification of the update_param_values function to use with the Detectors class.</p>
+</dd></dl>
+
+</section>
+<section id="module-pisa.analysis">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pisa.analysis" title="Link to this heading">¶</a></h2>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="pisa.core.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">pisa.core package</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="pisa.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">pisa package</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2014–2026, The IceCube Collaboration
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/icecube/pisa" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">pisa.analysis package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pisa.analysis.analysis">pisa.analysis.analysis module</a><ul>
+<li><a class="reference internal" href="#pisa.analysis.analysis.Analysis"><code class="docutils literal notranslate"><span class="pre">Analysis</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.analysis.analysis.Analysis.pprint"><code class="docutils literal notranslate"><span class="pre">Analysis.pprint</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.Analysis.blindness"><code class="docutils literal notranslate"><span class="pre">Analysis.blindness</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.Analysis.fit_recursively"><code class="docutils literal notranslate"><span class="pre">Analysis.fit_recursively()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.BasicAnalysis"><code class="docutils literal notranslate"><span class="pre">BasicAnalysis</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.Counter"><code class="docutils literal notranslate"><span class="pre">Counter</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.analysis.analysis.Counter.count"><code class="docutils literal notranslate"><span class="pre">Counter.count</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.Counter.reset"><code class="docutils literal notranslate"><span class="pre">Counter.reset()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult"><code class="docutils literal notranslate"><span class="pre">HypoFitResult</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult.deserialize_detailed_metric_info"><code class="docutils literal notranslate"><span class="pre">HypoFitResult.deserialize_detailed_metric_info()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult.detailed_metric_info"><code class="docutils literal notranslate"><span class="pre">HypoFitResult.detailed_metric_info</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult.from_state"><code class="docutils literal notranslate"><span class="pre">HypoFitResult.from_state()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult.get_detailed_metric_info"><code class="docutils literal notranslate"><span class="pre">HypoFitResult.get_detailed_metric_info()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult.hypo_asimov_dist"><code class="docutils literal notranslate"><span class="pre">HypoFitResult.hypo_asimov_dist</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult.params"><code class="docutils literal notranslate"><span class="pre">HypoFitResult.params</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult.serializable_state"><code class="docutils literal notranslate"><span class="pre">HypoFitResult.serializable_state</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.HypoFitResult.state"><code class="docutils literal notranslate"><span class="pre">HypoFitResult.state</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.MINIMIZERS_ACCEPTING_CONSTRS"><code class="docutils literal notranslate"><span class="pre">MINIMIZERS_ACCEPTING_CONSTRS</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.MINIMIZERS_USING_SYMM_GRAD"><code class="docutils literal notranslate"><span class="pre">MINIMIZERS_USING_SYMM_GRAD</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.SUPPORTED_LOCAL_SCIPY_MINIMIZERS"><code class="docutils literal notranslate"><span class="pre">SUPPORTED_LOCAL_SCIPY_MINIMIZERS</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.global_scipy_minimization"><code class="docutils literal notranslate"><span class="pre">global_scipy_minimization()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.test_analysis"><code class="docutils literal notranslate"><span class="pre">test_analysis()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.analysis.test_constrained_minimization"><code class="docutils literal notranslate"><span class="pre">test_constrained_minimization()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.analysis.bayesian_analysis">pisa.analysis.bayesian_analysis module</a><ul>
+<li><a class="reference internal" href="#pisa.analysis.bayesian_analysis.MCMC_sampling"><code class="docutils literal notranslate"><span class="pre">MCMC_sampling()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.analysis.configure_nlopt_minimization">pisa.analysis.configure_nlopt_minimization module</a><ul>
+<li><a class="reference internal" href="#pisa.analysis.configure_nlopt_minimization.get_nlopt_inequality_constraint_funcs"><code class="docutils literal notranslate"><span class="pre">get_nlopt_inequality_constraint_funcs()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.analysis.configure_scipy_minimization">pisa.analysis.configure_scipy_minimization module</a><ul>
+<li><a class="reference internal" href="#pisa.analysis.configure_scipy_minimization.make_scipy_constraint_dict"><code class="docutils literal notranslate"><span class="pre">make_scipy_constraint_dict()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.configure_scipy_minimization.make_scipy_local_minimizer_kwargs"><code class="docutils literal notranslate"><span class="pre">make_scipy_local_minimizer_kwargs()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.configure_scipy_minimization.scipy_constraints_to_callables"><code class="docutils literal notranslate"><span class="pre">scipy_constraints_to_callables()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.configure_scipy_minimization.set_minimizer_defaults"><code class="docutils literal notranslate"><span class="pre">set_minimizer_defaults()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.configure_scipy_minimization.validate_minimizer_settings"><code class="docutils literal notranslate"><span class="pre">validate_minimizer_settings()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.analysis.manipulate_params">pisa.analysis.manipulate_params module</a><ul>
+<li><a class="reference internal" href="#pisa.analysis.manipulate_params.get_separate_octant_params"><code class="docutils literal notranslate"><span class="pre">get_separate_octant_params()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.manipulate_params.update_param_values"><code class="docutils literal notranslate"><span class="pre">update_param_values()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.analysis.manipulate_params.update_param_values_detector"><code class="docutils literal notranslate"><span class="pre">update_param_values_detector()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-pisa.analysis">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=c7477ef8"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>
