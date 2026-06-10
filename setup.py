@@ -327,6 +327,7 @@ def do_setup():
 
                 # Scripts in scripts dir
                 'pisa-add_flux_to_events_file = pisa.scripts.add_flux_to_events_file:main',
+                'pisa-benchmark_pipeline_performance = pisa.scripts.benchmark_pipeline_performance:main',
                 'pisa-compare = pisa.scripts.compare:main',
                 'pisa-convert_config_format = pisa.scripts.convert_config_format:main',
                 'pisa-create_barr_sys_tables_mceq = pisa.scripts.create_barr_sys_tables_mceq:main',
