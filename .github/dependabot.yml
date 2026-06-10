@@ -13,10 +13,16 @@ updates:
       - dependency-type: "direct"
 
   - package-ecosystem: "github-actions"
-    directory: "/.github/workflows"   # workflows live under .github/workflows
+    directory: "/.github/workflows"   # workflows live under /.github/workflows
     schedule:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
     allow:
       - dependency-type: "direct"
+    # put all updates into a single PR (instead of one per dependency)
+    # see https://docs.github.com/en/code-security/tutorials/secure-your-dependencies/optimizing-pr-creation-version-updates
+    groups:
+      all-actions:
+        patterns:
+          - "*"
