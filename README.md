@@ -72,10 +72,11 @@ Plot them:
 
 
 ```python
+plot_kwargs = {"titlesize": 16, "xlabelsize": 12, "ylabelsize": 12, "cmap": "RdYlBu_r", "vmin": 0, "vmax": 1}
 fig, axes = plt.subplots(figsize=(18, 5), ncols=3)
-outputs['nue_cc'].plot(ax=axes[0], cmap='RdYlBu_r', vmin=0, vmax=1);
-outputs['numu_cc'].plot(ax=axes[1], cmap='RdYlBu_r', vmin=0, vmax=1);
-outputs['nutau_cc'].plot(ax=axes[2], cmap='RdYlBu_r', vmin=0, vmax=1);
+outputs['nue_cc'].plot(ax=axes[0], title=r"$P_{\nu_\mu\to\nu_e}$", **plot_kwargs)
+outputs['numu_cc'].plot(ax=axes[1], title=r"$P_{\nu_\mu\to\nu_\mu}$", **plot_kwargs)
+outputs['nutau_cc'].plot(ax=axes[2], title=r"$P_{\nu_\mu\to\nu_\tau}$", **plot_kwargs);
 ```
 
 
