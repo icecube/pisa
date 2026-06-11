@@ -8,21 +8,21 @@
 
 [Introduction](pisa/README.md) |
 [Installation](INSTALL.md) |
-[Documentation](https://icecube.github.io/pisa/) |
+[Documentation](https://icecube.github.io/pisa/docs) |
 [Terminology](pisa/glossary.md) |
 [Conventions](pisa/general_conventions.md) |
 [License](LICENSE)
 
 PISA is a software written to analyze the results (or expected results) of an experiment based on Monte Carlo (MC) simulation.
 
-In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](https://icecube.wisc.edu/), including the [DeepCore](https://arxiv.org/abs/1109.6096) and the [Upgrade](https://arxiv.org/abs/2509.13066) low-energy in-fill arrays.
+In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](https://icecube.wisc.edu/), including the [DeepCore](https://inspirehep.net/literature/929836) and the [Upgrade](hhttps://inspirehep.net/literature/2970027) low-energy in-fill arrays.
 
 > [!NOTE]
 > However, any experiment can make use of PISA for analyzing expected and actual results.
 
 PISA was originally developed to cope with low-statistics MC by using parameterizations of the MC and operate on histograms of the data rather than directly reweighting the MC. However, PISA's methods apply equally well to high-MC situations, and PISA also performs traditional reweighted-MC analysis as well.
 
-If you use PISA, please cite our publication ([e-Print available here](https://arxiv.org/abs/1803.05390)):
+If you use PISA, please cite our publication ([e-Print available here](https://inspirehep.net/literature/1662485)):
 ```
 Computational Techniques for the Analysis of Small Signals
 in High-Statistics Neutrino Oscillation Experiments
@@ -30,7 +30,6 @@ IceCube Collaboration - M.G. Aartsen et al.
 Mar 14, 2018
 Published in: Nucl.Instrum.Meth.A 977 (2020) 164332
 ```
-
 
 # Quick start
 
@@ -48,9 +47,6 @@ from pisa.core import Pipeline
 import matplotlib.pyplot as plt
 ```
 
-    << PISA is running in single precision (FP32) mode; numba is running on CPU (single core) >>
-
-
 Instantiate a `Pipeline` or multiple pipelines in a `DistributionMaker` using PISA config files
 
 
@@ -65,14 +61,14 @@ Run the pipeline with nominal settings
 template_maker.run()
 ```
 
-Get the oscillation probabilities $P_{\nu_\mu\to\nu_\beta}$
+Get the oscillation probabilities $P_{\nu_\mu\to\nu_\beta}$ (Earth oscillograms)
 
 
 ```python
 outputs = template_maker.data.get_mapset('prob_mu')
 ```
 
-Plot some results
+Plot them
 
 
 ```python
@@ -83,12 +79,20 @@ outputs['nutau_cc'].plot(ax=axes[2], cmap='RdYlBu_r', vmin=0, vmax=1);
 ```
 
 
+    
 ![png](README_files/README_10_0.png)
+    
+
 
 # Containerization
 
-In case you do not want to install PISA, we provide pre-built [Docker](https://docs.docker.com) images [here](https://github.com/orgs/icecube/packages?repo_name=pisa). You can download a given image via `docker pull ghcr.io/icecube/pisa:<tag>`, where `<tag>` has to be replaced by the desired release tag or `master`. Each image is built using the [Dockerfile](Dockerfile) included in PISA.
-You can also use it to containerize PISA yourself (with Docker or [Singularity](https://docs.sylabs.io/guides/latest/user-guide/)). Instructions can be found [here](https://github.com/icecube/wg-oscillations-fridge/blob/master/docs/CONTAINER_INSTRUCTIONS.md) (access restricted).
+In case you do not want to install PISA, we provide pre-built [Docker](https://docs.docker.com) images [here](https://github.com/orgs/icecube/packages?repo_name=pisa).
+
+You can download a given image via `docker pull ghcr.io/icecube/pisa:<tag>`, where `<tag>` has to be replaced by the desired release tag or `master`.
+
+Each image is built using the [Dockerfile](Dockerfile) included in PISA.
+
+You can also use this file to containerize PISA yourself (with Docker or [Singularity](https://docs.sylabs.io/guides/latest/user-guide/)). Instructions can be found [here](https://github.com/icecube/wg-oscillations-fridge/blob/master/docs/CONTAINER_INSTRUCTIONS.md) (access restricted).
 
 # Contributions
 
