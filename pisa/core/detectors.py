@@ -84,7 +84,7 @@ class Detectors(object):
 
         for sp in self.shared_params:
             N, n = 0, 0
-            for distribution_maker in self._distribution_makers:
+            for distribution_maker in self:
                 if sp in distribution_maker.params.names:
                     N += 1
                 if sp in distribution_maker.params.free.names:
@@ -94,6 +94,8 @@ class Detectors(object):
             if n > 0 and n != N:
                 raise NameError(f'Shared param {sp} exists in {N} detectors but only a free param in {n} detectors.')
 
+        self._params_hash = None
+        """Hash value of self._params when checked last time. Note that self._params is its own object."""
         self.init_params()
 
     def __repr__(self):
@@ -118,7 +120,7 @@ class Detectors(object):
         """Report timing information on contained distribution makers.
         See `Pipeline.report_profile` for details.
         """
-        for distribution_maker in self._distribution_makers:
+        for distribution_maker in self:
             print(distribution_maker.detector_name + ':')
             distribution_maker.report_profile(
                 detailed=detailed, format_num_kwargs=format_num_kwargs
@@ -130,19 +132,19 @@ class Detectors(object):
 
     @profile.setter
     def profile(self, value):
-        for d in self.distribution_makers:
-            d.profile = value
+        for distribution_maker in self:
+            distribution_maker.profile = value
         self._profile = value
 
 
     def run(self):
-        for distribution_maker in self._distribution_makers:
+        for distribution_maker in self:
             distribution_maker.run()
 
     def setup(self):
         """Setup (reset) all distribution makers"""
-        for d in self._distribution_makers:
-            d.setup()
+        for distribution_maker in self:
+            distribution_maker.setup()
 
     def get_outputs(self, **kwargs):
         """Compute and return the outputs.
@@ -157,18 +159,29 @@ class Detectors(object):
         List of MapSets if `return_sum=True` or list of lists of MapSets if `return_sum=False`
 
         """
-        new_params_hash = self.get_params_hash()
-        if new_params_hash != self.params_hash:
+        new_params_hash = self._params.hash
+        if new_params_hash != self._params_hash:
             self.update_params(self.params, False)
-            self.params_hash = new_params_hash
+            self._params_hash = new_params_hash
 
         outputs = [distribution_maker.get_outputs(**kwargs) for distribution_maker in self]
         return outputs
 
     def update_params(self, params, init_params=True):
+        """Updates the parameters of the different distribution_maker's with the given ParamSet.
+
+        Parameters
+        ----------
+        params : ParamSet or Param
+            Parameters that should be changed.
+
+        init_params : Bool
+            Should self.init_params be called after changing the parameters. Not needed if update_params
+            is called with self.params.
+        """
         if isinstance(params, Param): params = ParamSet(params)
 
-        for distribution_maker in self.distribution_makers:
+        for distribution_maker in self:
             ps = deepcopy(params)
             for p in ps.names:
                 if distribution_maker.detector_name in p:
@@ -181,7 +194,7 @@ class Detectors(object):
             self.init_params()
 
     def select_params(self, selections, error_on_missing=True):
-        for distribution_maker in self._distribution_makers:
+        for distribution_maker in self:
             distribution_maker.select_params(selections=selections, error_on_missing=error_on_missing)
         self.init_params()
 
@@ -193,25 +206,22 @@ class Detectors(object):
     def params(self):
         return self._params
 
-    def get_params_hash(self):
-        return hash(self._params)
-
     def init_params(self):
-        """Returns a ParamSet including all params of all detectors. First the shared params
+        """Initializes a ParamSet including all params of all detectors. First the shared params
         (if there are some), then all the "single detector" params. If two detectors use a
         parameter with the same name (but not shared), the name of the detector is added to the
         parameter name (except for the first detector).
         """
         params = ParamSet()
         for p_name in self.shared_params:
-            for distribution_maker in self._distribution_makers:
+            for distribution_maker in self:
                 try:
                     params.extend(distribution_maker.params[p_name])
                     break  # shared param found, can continue with the next shared param
                 except:
                     continue # shared param was not in this DistributionMaker, so search in the next one
 
-        for distribution_maker in self._distribution_makers:
+        for distribution_maker in self:
             for param in distribution_maker.params:
                 if param.name in self.shared_params:
                     continue # shared param is already in param set, can continue with the next param
@@ -223,7 +233,7 @@ class Detectors(object):
                 else:
                     params.extend(param)
         self._params = params
-        self.params_hash = self.get_params_hash()
+        self._params_hash = self._params.hash
 
     @property
     def shared_param_ind_list(self):
@@ -234,7 +244,7 @@ class Detectors(object):
         if not self.shared_params: return []
 
         shared_param_ind_list = []
-        for distribution_maker in self._distribution_makers:
+        for distribution_maker in self:
             free_names = distribution_maker.params.free.names
             spi = []
             for p_name in free_names:
@@ -246,7 +256,7 @@ class Detectors(object):
     @property
     def param_selections(self):
         selections = None
-        for distribution_maker in self._distribution_makers:
+        for distribution_maker in self:
             if selections != None and sorted(distribution_maker.param_selections) != selections:
                 raise AssertionError('Different param_selections for different detectors.')
             selections = sorted(distribution_maker.param_selections)
@@ -274,8 +284,8 @@ class Detectors(object):
         pipelines in the respective distribution maker have MC events
         '''
         num_events_per_bin = []
-        for d in self.distribution_makers:
-            num_events_per_bin.append(d.num_events_per_bin)
+        for distribution_maker in self:
+            num_events_per_bin.append(distribution_maker.num_events_per_bin)
 
         return num_events_per_bin
 
@@ -287,7 +297,7 @@ class Detectors(object):
         num_events_per_bin = self.num_events_per_bin
 
         indices = []
-        for i, d in enumerate(self._distribution_makers):
+        for i, distribution_maker in enumerate(self):
             empty_counts = num_events_per_bin[i] == 0
             indices.append(np.where(empty_counts)[0])
         return indices
@@ -301,16 +311,16 @@ class Detectors(object):
         values : a list of quantities
 
         """
-        for dist_maker in self._distribution_makers:
+        for distribution_maker in self:
             dist_values = []
-            for dist_name in dist_maker.params.free.names:
+            for dist_name in distribution_maker.params.free.names:
                 for name, value in zip(self.params.free.names, values):
                     if name == dist_name:
                         v = value
-                    if name == dist_name + '_' + dist_maker.detector_name:
+                    if name == dist_name + '_' + distribution_maker.detector_name:
                         v = value
                 dist_values.append(v)
-            dist_maker.set_free_params(dist_values)
+            distribution_maker.set_free_params(dist_values)
         self.init_params()
 
     def randomize_free_params(self, random_state=None):
@@ -324,20 +334,20 @@ class Detectors(object):
 
     def reset_all(self):
         """Reset both free and fixed parameters to their nominal values."""
-        for d in self._distribution_makers:
-            d.reset_all()
+        for distribution_maker in self:
+            distribution_maker.reset_all()
         self.init_params()
 
     def reset_free(self):
         """Reset only free parameters to their nominal values."""
-        for d in self._distribution_makers:
-            d.reset_free()
+        for distribution_maker in self:
+            distribution_maker.reset_free()
         self.init_params()
 
     def set_nominal_by_current_values(self):
         """Define the nominal values as the parameters' current values."""
-        for d in self._distribution_makers:
-            d.set_nominal_by_current_values()
+        for distribution_maker in self:
+            distribution_maker.set_nominal_by_current_values()
         self.init_params()
 
     def _set_rescaled_free_params(self, rvalues):
@@ -348,11 +358,11 @@ class Detectors(object):
             rvalues = list(rvalues)
 
         if self.shared_params == []:
-            for d in self._distribution_makers:
+            for distribution_maker in self:
                 rp = []
-                for j in range(len(d.params.free)):
+                for j in range(len(distribution_maker.params.free)):
                     rp.append(rvalues.pop(0))
-                d._set_rescaled_free_params(rp)
+                distribution_maker._set_rescaled_free_params(rp)
 
         else:
             sp = [] # first get the shared params
@@ -385,16 +395,14 @@ def test_Detectors():
     logging.info(f'Initializing Detectors')
     model = Detectors([p1_nu, p1_mu, p2_nu, p2_mu], shared_params=['deltam31', 'theta13', 'theta23', 'nue_numu_ratio', 'Barr_uphor_ratio', 'Barr_nu_nubar_ratio', 'delta_index', 'nutau_norm', 'nu_nc_norm', 'opt_eff_overall', 'opt_eff_lateral', 'opt_eff_headon', 'ice_scattering', 'ice_absorption', 'atm_muon_scale'])
 
-    # Get outputs
+    # Change parameters and get outputs
+    logging.info(f'Change parameters')
+    model.params.opt_eff_lateral.value = 20       # shared parameter
+    model.params.aeff_scale.value = 2             # only changes value for detector1
+    model.params.aeff_scale_detector2.value = 0.5 # only changes value for detector2
+
     logging.info(f'Running Detectors to get outputs (takes a bit)')
     model.get_outputs()
-
-    # Change parameters
-    logging.info(f'Change parameters')
-    model.params.opt_eff_lateral.value = 20 # shared parameter
-    model.params.aeff_scale.value = 2       # only changes value for detector1
-
-    model.update_params(model.params, False)
 
     o0 = model.distribution_makers[0].params.opt_eff_lateral.value.magnitude
     o1 = model.distribution_makers[1].params.opt_eff_lateral.value.magnitude
@@ -402,7 +410,7 @@ def test_Detectors():
     a1 = model.distribution_makers[1].params.aeff_scale.value.magnitude
 
     assert o0 == 20 and o1 == 20, f"<< Error when changing shared parameter >>"
-    assert a0 == 2 and a1 == 1, f"<< Error when changing non-shared parameter >>"
+    assert a0 == 2 and a1 == 0.5, f"<< Error when changing non-shared parameter >>"
 
     # Parameter selection
     logging.info(f'Test parameter selection')
