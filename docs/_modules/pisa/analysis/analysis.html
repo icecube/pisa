@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.analysis.analysis - PISA 0+untagged.1.g8942e34 documentation</title>
+        <title>pisa.analysis.analysis - PISA 0+untagged.1.gd6b8a0b documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.gd6b8a0b documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.gd6b8a0b documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -2259,9 +2259,6 @@
         <span class="n">rescaled_pvals</span> <span class="o">=</span> <span class="n">optimize_result</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
         <span class="n">rescaled_pvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">flip_x0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">rescaled_pvals</span><span class="p">,</span> <span class="n">rescaled_pvals</span><span class="p">)</span>
         <span class="n">hypo_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">rescaled_pvals</span><span class="p">)</span> <span class="c1"># pylint: disable=protected-access</span>
-        <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
-            <span class="c1"># updates values for ALL detectors</span>
-            <span class="n">update_param_values_detector</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
 
         <span class="c1"># Get the best-fit metric value</span>
         <span class="n">metric_val</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">optimize_result</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;fun&#39;</span><span class="p">)</span>
@@ -2288,9 +2285,6 @@
             <span class="c1"># Reset to starting value of the fit, rather than nominal values because</span>
             <span class="c1"># the nominal value might be out of range if this is inside an octant check.</span>
             <span class="n">hypo_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span> <span class="c1"># pylint: disable=protected-access</span>
-            <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
-                <span class="c1"># updates values for ALL detectors</span>
-                <span class="n">update_param_values_detector</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
 
         <span class="c1"># TODO: other metrics</span>
         <span class="n">fit_info</span> <span class="o">=</span> <span class="n">HypoFitResult</span><span class="p">(</span>
@@ -2472,9 +2466,6 @@
         <span class="c1"># values from [0,1] back to physical range)</span>
         <span class="n">rescaled_pvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
         <span class="n">hypo_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">rescaled_pvals</span><span class="p">)</span> <span class="c1"># pylint: disable=protected-access</span>
-        <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
-            <span class="c1"># updates values for ALL detectors</span>
-            <span class="n">update_param_values_detector</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
 
         <span class="c1"># Get the best-fit metric value</span>
         <span class="n">metric_val</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">fval</span>
@@ -2513,9 +2504,6 @@
             <span class="c1"># Reset to starting value of the fit, rather than nominal values because</span>
             <span class="c1"># the nominal value might be out of range if this is inside an octant check.</span>
             <span class="n">hypo_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span> <span class="c1"># pylint: disable=protected-access</span>
-            <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
-                <span class="c1"># updates values for ALL detectors</span>
-                <span class="n">update_param_values_detector</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
 
         <span class="c1"># TODO: other metrics</span>
         <span class="n">fit_info</span> <span class="o">=</span> <span class="n">HypoFitResult</span><span class="p">(</span>
@@ -2659,9 +2647,6 @@
         <span class="c1"># values from [0,1] back to physical range)</span>
         <span class="n">rescaled_pvals</span> <span class="o">=</span> <span class="n">xopt</span>
         <span class="n">hypo_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">rescaled_pvals</span><span class="p">)</span> <span class="c1"># pylint: disable=protected-access</span>
-        <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
-            <span class="c1"># updates values for ALL detectors</span>
-            <span class="n">update_param_values_detector</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
 
         <span class="c1"># Get the best-fit metric value</span>
         <span class="n">metric_val</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">opt</span><span class="o">.</span><span class="n">last_optimum_value</span><span class="p">()</span>
@@ -2698,9 +2683,6 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blindness</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only at stricter blindness level</span>
             <span class="n">hypo_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span> <span class="c1"># pylint: disable=protected-access</span>
-            <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
-                <span class="c1"># updates values for ALL detectors</span>
-                <span class="n">update_param_values_detector</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
 
         <span class="c1"># TODO: other metrics</span>
         <span class="n">fit_info</span> <span class="o">=</span> <span class="n">HypoFitResult</span><span class="p">(</span>
@@ -2885,9 +2867,6 @@
         <span class="n">scaled_param_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">flip_x0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">scaled_param_vals</span><span class="p">,</span> <span class="n">scaled_param_vals</span><span class="p">)</span>
         <span class="c1"># Set param values from the scaled versions the minimizer works with</span>
         <span class="n">hypo_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">scaled_param_vals</span><span class="p">)</span> <span class="c1"># pylint: disable=protected-access</span>
-        <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
-            <span class="c1"># updates values for ALL detectors</span>
-            <span class="n">update_param_values_detector</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
 
         <span class="c1"># Get the map set</span>
         <span class="k">try</span><span class="p">:</span>
@@ -3799,7 +3778,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=533ca4eb"></script>
+</div><script src="../../../_static/documentation_options.js?v=7fe011b0"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
