@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781269973150,
+  "lastUpdate": 1781277054393,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -180,6 +180,51 @@ window.BENCHMARK_DATA = {
             "range": "0.004430294036865234",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "32642322+JanWeldert@users.noreply.github.com",
+            "name": "Jan Weldert",
+            "username": "JanWeldert"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d6b8a0b73532a4859056b681051199dd03569bd4",
+          "message": "Move detectors params handling completely in detectors class (#947)\n\n* streamline detectors class test\n\n* Check params hash before produce outputs\n\n* Init detector class params if values change\n\n* Iterate through self, remove get_hash function and adjust test\n\n* Shorten detectors notebook",
+          "timestamp": "2026-06-12T17:07:10+02:00",
+          "tree_id": "00dd394e2f6e3b388d991c9df0fe40b5cf85cf5e",
+          "url": "https://github.com/icecube/pisa/commit/d6b8a0b73532a4859056b681051199dd03569bd4"
+        },
+        "date": 1781277053746,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.8932430841484849,
+            "range": "0.27755260467529297",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.3662520184808848,
+            "range": "0.25457143783569336",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.0005630862956144372,
+            "range": "0.006958484649658203",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
