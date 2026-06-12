@@ -62,21 +62,23 @@ class orca_scale(Stage):  # pylint: disable=invalid-name
 
         ob = self.data['output_binning']
         e_bins = ob.bin_edges[ob.names.index('reco_energy')].m
-        e_width = np.diff(np.log10(e_bins))
-        rel_loss = abs(np.log10(energy_scale)) / e_width
-        assert np.all(rel_loss < 1)
+        scaled_e_bins = energy_scale * e_bins
+        if energy_scale > 1:
+            rel_loss = (scaled_e_bins[1:]-e_bins[1:]) / np.diff(scaled_e_bins)
+        else:
+            rel_loss = (e_bins[:-1]-scaled_e_bins[:-1]) / np.diff(scaled_e_bins)
 
         for container in self.data:
             hist = container.get_hist('weights')[0]
             hist[:,:,0] *= hpt_norm
             hist[:,:,1] *= shower_norm
 
-            keep = (1-rel_loss)[:, np.newaxis, np.newaxis] * hist 
             lose = rel_loss[:, np.newaxis, np.newaxis] * hist
+            keep = hist - lose
             if energy_scale > 1:
                 get = np.roll(lose, 1, axis=0)
                 get[0,:,:] = 0
             else:
                 get = np.roll(lose, -1, axis=0)
                 get[-1,:,:] = 0
-            container['weights'] = keep + get
+            container['weights'] = keep + np.nan_to_num(get)
