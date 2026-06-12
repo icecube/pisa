@@ -20,7 +20,7 @@ In particular, PISA was written by and for the IceCube Collaboration for analyse
 > [!NOTE]
 > However, any experiment can make use of PISA for analyzing expected and actual results.
 
-PISA was originally developed to cope with low-statistics MC by using parameterizations of the MC and operate on histograms of the data rather than directly reweighting the MC. However, PISA's methods apply equally well to high-MC situations, and PISA also performs traditional reweighted-MC analysis as well.
+PISA was originally developed to perform statistical inference on low-statistics Monte Carlo sets using histogram-based operations, parameterizations, and smoothing techniques. The framework has evolved to support traditional event-by-event reweighting as its core capability, while its modular (data pipeline) design still enables complementary analysis techniques.
 
 If you use PISA, please cite our publication ([e-Print available here](https://inspirehep.net/literature/1662485)):
 ```
