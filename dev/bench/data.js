@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781283297710,
+  "lastUpdate": 1781283339830,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -405,6 +405,51 @@ window.BENCHMARK_DATA = {
             "range": "0.0052642822265625",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2cc03215cfb25ec987ce810ef8f1ba6d96a2985e",
+          "message": "Re-synchronise main readme with jupyter notebook generating it and apply some small improvements (#954)\n\n* cosmetic changes\n\n* link to inspirehep instead of arXiv \n\n* improve oscillogram plotting\n\n* refine PISA description",
+          "timestamp": "2026-06-12T18:51:30+02:00",
+          "tree_id": "dcffd964aa5f2185f722b44eeea74304aac3a973",
+          "url": "https://github.com/icecube/pisa/commit/2cc03215cfb25ec987ce810ef8f1ba6d96a2985e"
+        },
+        "date": 1781283338207,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.2162669824094188,
+            "range": "0.2122809886932373",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.8946176645707111,
+            "range": "0.16067099571228027",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.000553199223109654,
+            "range": "0.004629373550415039",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
