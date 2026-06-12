@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781282524183,
+  "lastUpdate": 1781283297710,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -360,6 +360,51 @@ window.BENCHMARK_DATA = {
             "range": "0.005511045455932617",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2cc03215cfb25ec987ce810ef8f1ba6d96a2985e",
+          "message": "Re-synchronise main readme with jupyter notebook generating it and apply some small improvements (#954)\n\n* cosmetic changes\n\n* link to inspirehep instead of arXiv \n\n* improve oscillogram plotting\n\n* refine PISA description",
+          "timestamp": "2026-06-12T18:51:30+02:00",
+          "tree_id": "dcffd964aa5f2185f722b44eeea74304aac3a973",
+          "url": "https://github.com/icecube/pisa/commit/2cc03215cfb25ec987ce810ef8f1ba6d96a2985e"
+        },
+        "date": 1781283296075,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.8471642124409579,
+            "range": "0.1874237060546875",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.3976229064318599,
+            "range": "0.16131854057312012",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.0005512967401621293,
+            "range": "0.0052642822265625",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
