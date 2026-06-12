@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Changelog - PISA 0+untagged.1.g2cc0321 documentation</title>
+        <title>Changelog - PISA 4.3a1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g2cc0321 documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 4.3a1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2cc0321 documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -293,6 +293,108 @@
         <article role="main" id="furo-main-content">
           <section id="changelog">
 <h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
+<section id="release-4-3a1">
+<h2>4.3a1<a class="headerlink" href="#release-4-3a1" title="Link to this heading">¶</a></h2>
+<p><em>Released on 2026-06-12 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/4.3a1">GitHub</a></em></p>
+<p>Pre-release for PISA 4.3.</p>
+<!-- Release notes generated using configuration in .github/release.yml at master -->
+<section id="what-s-changed">
+<h3>What’s Changed<a class="headerlink" href="#what-s-changed" title="Link to this heading">¶</a></h3>
+<section id="new-features">
+<h4>New Features<a class="headerlink" href="#new-features" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Make <code class="docutils literal notranslate"><span class="pre">VarBinning</span></code> accept cut variables that are simultaneously part of a <code class="docutils literal notranslate"><span class="pre">MultiDimBinning</span></code> by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/851">https://github.com/icecube/pisa/pull/851</a></p></li>
+<li><p>Merging minor changes developed as part of the oscNext DynEdge analysis development by &#64;ts4051 in <a class="reference external" href="https://github.com/icecube/pisa/pull/861">https://github.com/icecube/pisa/pull/861</a></p></li>
+<li><p>Decouple DIS sys by &#64;ts4051 in <a class="reference external" href="https://github.com/icecube/pisa/pull/865">https://github.com/icecube/pisa/pull/865</a></p></li>
+<li><p>Ultrasurfaces service: add option of only looking up gradients from neighbours among original (classification) event groupings by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/864">https://github.com/icecube/pisa/pull/864</a></p></li>
+<li><p>Add Dockerfile by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/857">https://github.com/icecube/pisa/pull/857</a></p></li>
+<li><p>add charm correction stage and file with correction by &#64;marialiubarska in <a class="reference external" href="https://github.com/icecube/pisa/pull/856">https://github.com/icecube/pisa/pull/856</a></p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">pipeline._get_outputs</span></code> function for given output binning by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/872">https://github.com/icecube/pisa/pull/872</a></p></li>
+<li><p>Update csv data loader, introduce dedicated csv hypersurfaces service, clean up hypersurfaces docs by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/855">https://github.com/icecube/pisa/pull/855</a></p></li>
+<li><p>Update artificial PID changes by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/884">https://github.com/icecube/pisa/pull/884</a></p></li>
+<li><p>Adding the possibility to choose the calibration file that daemonflux… by &#64;jpyanez in <a class="reference external" href="https://github.com/icecube/pisa/pull/885">https://github.com/icecube/pisa/pull/885</a></p></li>
+<li><p>make CSV loader compatible with older data releases by &#64;philippeller in <a class="reference external" href="https://github.com/icecube/pisa/pull/887">https://github.com/icecube/pisa/pull/887</a></p></li>
+<li><p>Introduce option to use NLO CC matter potential in prob3 and document various physics options by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/886">https://github.com/icecube/pisa/pull/886</a></p></li>
+<li><p>Detector systematics through snowstorm split and hist stage by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/893">https://github.com/icecube/pisa/pull/893</a></p></li>
+<li><p>Add fast workflow for building PISA docker image and publishing to GitHub packages by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/919">https://github.com/icecube/pisa/pull/919</a></p></li>
+<li><p>Share pipeline output binning through new <code class="docutils literal notranslate"><span class="pre">ContainerSet</span></code> global auxiliary data (+ related changes) by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/914">https://github.com/icecube/pisa/pull/914</a></p></li>
+<li><p>Overhaul sphinx docs by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/920">https://github.com/icecube/pisa/pull/920</a></p></li>
+<li><p>Re-introduce true Poissonian log-likelihood as “poisson_llh” metric by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/924">https://github.com/icecube/pisa/pull/924</a></p></li>
+<li><p>Compatibility with Python 3.13 and 3.14 by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/922">https://github.com/icecube/pisa/pull/922</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pisa.core.container</span></code> module documentation by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/935">https://github.com/icecube/pisa/pull/935</a></p></li>
+<li><p>Tolerances for snowstorm additional params by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/936">https://github.com/icecube/pisa/pull/936</a></p></li>
+<li><p>Granular control of PISA fast-histogram threading and more robust numba thread setup by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/939">https://github.com/icecube/pisa/pull/939</a></p></li>
+<li><p>Refactor analysis package by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/916">https://github.com/icecube/pisa/pull/916</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stages.flux.daemon_flux</span></code> module improvements (documentation, speed-up option) and pipeline run duration benchmarking by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/930">https://github.com/icecube/pisa/pull/930</a></p></li>
+<li><p>Refactor write_benchmark_json to comply with github-action-benchmark format and ensure time series creation by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/948">https://github.com/icecube/pisa/pull/948</a></p></li>
+<li><p>Update data representation management at stage and pipeline level and fix service docs by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/934">https://github.com/icecube/pisa/pull/934</a></p></li>
+<li><p>Configuration file for auto-generated changelog by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/952">https://github.com/icecube/pisa/pull/952</a></p></li>
+<li><p>Fetch git tags when checking out repository in actions by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/953">https://github.com/icecube/pisa/pull/953</a></p></li>
+</ul>
+</section>
+<section id="bug-fixes">
+<h4>Bug Fixes<a class="headerlink" href="#bug-fixes" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>remove setuptools and pip caps in setup.py by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/858">https://github.com/icecube/pisa/pull/858</a></p></li>
+<li><p>Fix script for adding fluxes to events files by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/867">https://github.com/icecube/pisa/pull/867</a></p></li>
+<li><p>Fix ultrasurfaces in event-grouping mode and improve debug output by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/873">https://github.com/icecube/pisa/pull/873</a></p></li>
+<li><p>Improved parameter handling of Map.plot() and fixed various issues by &#64;bleaktwig in <a class="reference external" href="https://github.com/icecube/pisa/pull/874">https://github.com/icecube/pisa/pull/874</a></p></li>
+<li><p>Update daemon_flux.py by &#64;jpyanez in <a class="reference external" href="https://github.com/icecube/pisa/pull/879">https://github.com/icecube/pisa/pull/879</a></p></li>
+<li><p>Catch exception and log error message in vbwkde unit tests by &#64;marialiubarska in <a class="reference external" href="https://github.com/icecube/pisa/pull/882">https://github.com/icecube/pisa/pull/882</a></p></li>
+<li><p>Three little changes by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/891">https://github.com/icecube/pisa/pull/891</a></p></li>
+<li><p>generalized_llh_params service: assign 0th and only element to beta &amp; trad_alpha instead of length-1 array by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/912">https://github.com/icecube/pisa/pull/912</a></p></li>
+<li><p>Fix inconsistent densities as a result of repeated changes of electron fractions in prob3  by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/925">https://github.com/icecube/pisa/pull/925</a></p></li>
+<li><p>Move detectors params handling completely in detectors class by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/947">https://github.com/icecube/pisa/pull/947</a></p></li>
+</ul>
+</section>
+<section id="other-changes">
+<h4>Other Changes<a class="headerlink" href="#other-changes" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Remove global statements to fix new flake8 f824 error by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/853">https://github.com/icecube/pisa/pull/853</a></p></li>
+<li><p>Remove cap and explicit pip install from workflow by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/859">https://github.com/icecube/pisa/pull/859</a></p></li>
+<li><p>rerun daemonflux example notebook by &#64;marialiubarska in <a class="reference external" href="https://github.com/icecube/pisa/pull/883">https://github.com/icecube/pisa/pull/883</a></p></li>
+<li><p>Inconsistent treatment of metrics in pisa.core.map.Map and MapSet by &#64;bleaktwig in <a class="reference external" href="https://github.com/icecube/pisa/pull/881">https://github.com/icecube/pisa/pull/881</a></p></li>
+<li><p>remove randomness from hypersurface unit test by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/892">https://github.com/icecube/pisa/pull/892</a></p></li>
+<li><p>update pylintrc file: generate minimal version from existing configuration by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/889">https://github.com/icecube/pisa/pull/889</a></p></li>
+<li><p>Remove old pisa.utils.tests module by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/908">https://github.com/icecube/pisa/pull/908</a></p></li>
+<li><p>Pipeline config parser: in absence of prior on parameter, create ufloat with std_dev of NaN, not 0 by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/918">https://github.com/icecube/pisa/pull/918</a></p></li>
+<li><p>Update Python version to 3.14 in Dockerfile by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/937">https://github.com/icecube/pisa/pull/937</a></p></li>
+<li><p>Run docker-image workflow in response to “published” activity type by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/938">https://github.com/icecube/pisa/pull/938</a></p></li>
+<li><p>ftype and format for range by &#64;JanWeldert in <a class="reference external" href="https://github.com/icecube/pisa/pull/944">https://github.com/icecube/pisa/pull/944</a></p></li>
+<li><p>Remove service data.simple_signal along with associated example pipeline and coverage test script by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/945">https://github.com/icecube/pisa/pull/945</a></p></li>
+<li><p>Add concurrency groups for (relevant) workflows to cancel existing run when new one starts and group dependabot actions updates by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/950">https://github.com/icecube/pisa/pull/950</a></p></li>
+<li><p>Remove YAPF config file by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/949">https://github.com/icecube/pisa/pull/949</a></p></li>
+<li><p>Remove upper python version cap in <code class="docutils literal notranslate"><span class="pre">python_requires</span></code> keyword to <code class="docutils literal notranslate"><span class="pre">setuptools.setup()</span></code> by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/951">https://github.com/icecube/pisa/pull/951</a></p></li>
+<li><p>Re-synchronise main readme with jupyter notebook generating it and apply some small improvements by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/954">https://github.com/icecube/pisa/pull/954</a></p></li>
+</ul>
+</section>
+<section id="dependencies">
+<h4>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>update actions to latest release versions by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/888">https://github.com/icecube/pisa/pull/888</a></p></li>
+<li><p>Add Dependabot configuration (pip + github-actions) by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/895">https://github.com/icecube/pisa/pull/895</a></p></li>
+<li><p>Update cython, simplejson, scikit-learn by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/899">https://github.com/icecube/pisa/pull/899</a></p></li>
+<li><p>Update numpy, pint, python, scipy, versioneer by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/903">https://github.com/icecube/pisa/pull/903</a></p></li>
+<li><p>Remove setuptools cap in build-time dependencies by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/909">https://github.com/icecube/pisa/pull/909</a></p></li>
+<li><p>Bump docker/login-action from 4.0.0 to 4.1.0 in /.github/workflows by &#64;dependabot[bot] in <a class="reference external" href="https://github.com/icecube/pisa/pull/921">https://github.com/icecube/pisa/pull/921</a></p></li>
+<li><p>Bump docker/build-push-action from 7.0.0 to 7.1.0 in /.github/workflows by &#64;dependabot[bot] in <a class="reference external" href="https://github.com/icecube/pisa/pull/926">https://github.com/icecube/pisa/pull/926</a></p></li>
+<li><p>Compatibility fixes for simplejson v4 by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/928">https://github.com/icecube/pisa/pull/928</a></p></li>
+<li><p>Bump docker/metadata-action from 6.0.0 to 6.1.0 in /.github/workflows by &#64;dependabot[bot] in <a class="reference external" href="https://github.com/icecube/pisa/pull/942">https://github.com/icecube/pisa/pull/942</a></p></li>
+<li><p>Bump docker/build-push-action from 7.1.0 to 7.2.0 in /.github/workflows by &#64;dependabot[bot] in <a class="reference external" href="https://github.com/icecube/pisa/pull/941">https://github.com/icecube/pisa/pull/941</a></p></li>
+<li><p>Bump docker/login-action from 4.1.0 to 4.2.0 in /.github/workflows by &#64;dependabot[bot] in <a class="reference external" href="https://github.com/icecube/pisa/pull/940">https://github.com/icecube/pisa/pull/940</a></p></li>
+</ul>
+</section>
+</section>
+<section id="new-contributors">
+<h3>New Contributors<a class="headerlink" href="#new-contributors" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>&#64;bleaktwig made their first contribution in <a class="reference external" href="https://github.com/icecube/pisa/pull/874">https://github.com/icecube/pisa/pull/874</a></p></li>
+<li><p>&#64;jpyanez made their first contribution in <a class="reference external" href="https://github.com/icecube/pisa/pull/879">https://github.com/icecube/pisa/pull/879</a></p></li>
+<li><p>&#64;dependabot[bot] made their first contribution in <a class="reference external" href="https://github.com/icecube/pisa/pull/921">https://github.com/icecube/pisa/pull/921</a></p></li>
+</ul>
+<p><strong>Full Changelog</strong>: <a class="reference external" href="https://github.com/icecube/pisa/compare/4.2...4.3a1">https://github.com/icecube/pisa/compare/4.2…4.3a1</a></p>
+</section>
+</section>
 <section id="release-4-2">
 <h2>4.2<a class="headerlink" href="#release-4-2" title="Link to this heading">¶</a></h2>
 <p><em>Released on 2025-03-18 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/4.2">GitHub</a></em></p>
@@ -464,6 +566,17 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Changelog</a><ul>
+<li><a class="reference internal" href="#release-4-3a1">4.3a1</a><ul>
+<li><a class="reference internal" href="#what-s-changed">What’s Changed</a><ul>
+<li><a class="reference internal" href="#new-features">New Features</a></li>
+<li><a class="reference internal" href="#bug-fixes">Bug Fixes</a></li>
+<li><a class="reference internal" href="#other-changes">Other Changes</a></li>
+<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#new-contributors">New Contributors</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#release-4-2">4.2</a><ul>
 <li><a class="reference internal" href="#what-s-changed">What’s Changed</a></li>
 <li><a class="reference internal" href="#new-contributors">New Contributors</a></li>
@@ -486,7 +599,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=8b8fdcbb"></script>
+</div><script src="_static/documentation_options.js?v=2f437abf"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
