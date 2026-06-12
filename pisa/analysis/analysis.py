@@ -1950,9 +1950,6 @@ class Analysis():
         rescaled_pvals = optimize_result.pop('x')
         rescaled_pvals = np.where(flip_x0, 1 - rescaled_pvals, rescaled_pvals)
         hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
-        if hypo_maker.__class__.__name__ == "Detectors":
-            # updates values for ALL detectors
-            update_param_values_detector(hypo_maker, hypo_maker.params.free)
 
         # Get the best-fit metric value
         metric_val = sign * optimize_result.pop('fun')
@@ -1979,9 +1976,6 @@ class Analysis():
             # Reset to starting value of the fit, rather than nominal values because
             # the nominal value might be out of range if this is inside an octant check.
             hypo_maker._set_rescaled_free_params(x0) # pylint: disable=protected-access
-            if hypo_maker.__class__.__name__ == "Detectors":
-                # updates values for ALL detectors
-                update_param_values_detector(hypo_maker, hypo_maker.params.free)
 
         # TODO: other metrics
         fit_info = HypoFitResult(
@@ -2163,9 +2157,6 @@ class Analysis():
         # values from [0,1] back to physical range)
         rescaled_pvals = np.array(m.values)
         hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
-        if hypo_maker.__class__.__name__ == "Detectors":
-            # updates values for ALL detectors
-            update_param_values_detector(hypo_maker, hypo_maker.params.free)
 
         # Get the best-fit metric value
         metric_val = sign * m.fval
@@ -2204,9 +2195,6 @@ class Analysis():
             # Reset to starting value of the fit, rather than nominal values because
             # the nominal value might be out of range if this is inside an octant check.
             hypo_maker._set_rescaled_free_params(x0) # pylint: disable=protected-access
-            if hypo_maker.__class__.__name__ == "Detectors":
-                # updates values for ALL detectors
-                update_param_values_detector(hypo_maker, hypo_maker.params.free)
 
         # TODO: other metrics
         fit_info = HypoFitResult(
@@ -2350,9 +2338,6 @@ class Analysis():
         # values from [0,1] back to physical range)
         rescaled_pvals = xopt
         hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
-        if hypo_maker.__class__.__name__ == "Detectors":
-            # updates values for ALL detectors
-            update_param_values_detector(hypo_maker, hypo_maker.params.free)
 
         # Get the best-fit metric value
         metric_val = sign * opt.last_optimum_value()
@@ -2389,9 +2374,6 @@ class Analysis():
 
         if self.blindness > 1:  # only at stricter blindness level
             hypo_maker._set_rescaled_free_params(x0) # pylint: disable=protected-access
-            if hypo_maker.__class__.__name__ == "Detectors":
-                # updates values for ALL detectors
-                update_param_values_detector(hypo_maker, hypo_maker.params.free)
 
         # TODO: other metrics
         fit_info = HypoFitResult(
@@ -2576,9 +2558,6 @@ class Analysis():
         scaled_param_vals = np.where(flip_x0, 1 - scaled_param_vals, scaled_param_vals)
         # Set param values from the scaled versions the minimizer works with
         hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
-        if hypo_maker.__class__.__name__ == "Detectors":
-            # updates values for ALL detectors
-            update_param_values_detector(hypo_maker, hypo_maker.params.free)
 
         # Get the map set
         try:
