@@ -27,8 +27,8 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    params
-        Expected params are .. ::
+    params : ParamSet
+        Must have parameters::
 
             nue_numu_ratio : quantity (dimensionless)
             nu_nubar_ratio : quantity (dimensionless)
@@ -36,15 +36,16 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
             Barr_uphor_ratio : quantity (dimensionless)
             Barr_nu_nubar_ratio : quantity (dimensionless)
 
-        Expected container keys are .. ::
+    Notes
+    -----
+    Implements no apply, so assumes implicit caching of nominal fluxes (FIXME).
 
-            "true_energy"
-            "true_coszen"
-            "nu_flux_nominal"
-            "nubar_flux_nominal"
-            "nubar"
+    Expected container keys are::
 
+        "true_energy", "true_coszen", "nu_flux_nominal", "nubar_flux_nominal",
+        "nubar"
     """
+
     def __init__(
         self,
         **std_kwargs,
@@ -56,7 +57,6 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
             "Barr_uphor_ratio",
             "Barr_nu_nubar_ratio",
         )
-
         expected_container_keys = (
             "true_energy",
             "true_coszen",
@@ -64,7 +64,6 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
             "nubar_flux_nominal",
             "nubar"
         )
-
         # init base class
         super().__init__(
             expected_params=expected_params,
@@ -73,13 +72,11 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
         )
 
     def setup_function(self):
-        self.data.representation = self.calc_mode
         for container in self.data:
             container["nu_flux"] = np.empty((container.size, 2), dtype=FTYPE)
 
     @profile
     def compute_function(self):
-        self.data.representation = self.calc_mode
 
         # If a parameter below has not been modified by minimizer,
         # its magnitude below will be a native float, otherwise np.float64,

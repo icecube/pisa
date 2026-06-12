@@ -1,9 +1,9 @@
 """
 A stage to apply nutau cross-section uncertainties as implemented in
-https://github.com/marialiubarska/nutau_xsec
+https://github.com/marialiubarska/nutau_xsec.
 It interpolates between different nutau CC cross section models as compared in this
 paper:
-https://arxiv.org/pdf/1008.2984.pdf?fname=cm&font=TypeI
+https://arxiv.org/pdf/1008.2984.pdf
 """
 
 import pickle
@@ -27,23 +27,25 @@ class nutau_xsec(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    xsec_file : (string)
+    xsec_file : string
         Path to pickled interpolated function. Default is included in PISA in
         `pisa_examples/resources/cross_sections/interp_nutau_xsec_protocol2.pckl`
 
     params : ParamSet or sequence with which to instantiate a ParamSet.
-        Expected params .. ::
+        Must have parameters::
 
             nutau_xsec_scale : quantity (dimensionless)
                 Scaling between different cross-section models. The range [-1, 1]
                 covers all models tested in the paper.
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "true_energy"
-            "weights"
+    Expected container keys are::
 
+        "true_energy", "weights"
     """
+
     def __init__(
         self,
         xsec_file="cross_sections/interp_nutau_xsec_protocol2.pckl",
@@ -53,12 +55,11 @@ class nutau_xsec(Stage):  # pylint: disable=invalid-name
         expected_params = (
             "nutau_xsec_scale",
         )
-
         expected_container_keys = (
             'true_energy',
             'weights',
         )
-
+        #TODO: supported_reps? (temporarily sets rep. to apply_mode in setup_function)
         # init base class
         super(nutau_xsec, self).__init__(
             expected_params=expected_params,
@@ -74,7 +75,6 @@ class nutau_xsec(Stage):  # pylint: disable=invalid-name
         interp_nutau = interp_dict["NuTau"]
         interp_nutaubar = interp_dict["NuTauBar"]
 
-        self.data.representation = self.calc_mode
         for container in self.data:
             if container.name == "nutau_cc":
                 energy = container["true_energy"]

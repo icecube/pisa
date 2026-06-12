@@ -1,5 +1,5 @@
 """
-PISA pi stage for the calculation of earth layers and survival probabilities.
+Stage for the calculation of earth layers and survival probabilities.
 
 The stage calculates first the depth of a water column that is mass-equivalent
 to the path traversed by the neutrino through the earth. This is done
@@ -53,7 +53,7 @@ the string for this neutrino in the ROOT file.
 
 class earth_absorption(Stage):  # pylint: disable=invalid-name
     """
-    earth absorption PISA Pi class
+    earth absorption stage
 
     Parameters
     ----------
@@ -66,6 +66,12 @@ class earth_absorption(Stage):  # pylint: disable=invalid-name
     prop_height : quantity (distance), optional
         height of neutrino production in the atmosphere
 
+    Notes
+    -----
+
+    Expected container keys are::
+
+        "true_coszen", "true_energy", "flav", "nubar", "weights"
     """
     def __init__(
         self,

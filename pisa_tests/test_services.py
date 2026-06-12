@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """
 Try to simply run every existing service by automatically deriving as many
@@ -14,9 +14,11 @@ from __future__ import absolute_import
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from importlib import import_module
+import os
 from os import walk
 from os.path import isfile, join, relpath
 import sys
+from typing import List, Dict, Tuple
 
 import numpy as np
 
@@ -47,7 +49,7 @@ __all__ = [
 
 __author__ = "T. Ehrhardt, J. Weldert"
 
-__license__ = """Copyright (c) 2014-2024, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -202,8 +204,21 @@ def test_services(
     skip_services=SKIP_SERVICES,
     allow_missing=OPTIONAL_MODULES,
     verbosity=Levels.WARN,
+    output_matrix=None
 ):
-    """Modelled after `run_unit_tests.run_unit_tests`"""
+    """Modelled after `run_unit_tests.run_unit_tests`
+
+    Parameters
+    ----------
+    path : str (default: STAGES_PATH)
+    init_test : str (default: INIT_TEST_NAME)
+    skip_services : array-like (default: SKIP_SERVICES)
+    allow_missing : array-like (default: OPTIONAL_MODULES)
+    verbosity : int (default: Levels.WARN)
+    output_matrix : str, optional
+        If provided, write service implementation matrix to this file path.
+        Format controlled by file extension (.md or .csv accepted).
+    """
     if allow_missing is None:
         allow_missing = []
     elif isinstance(allow_missing, str):
@@ -215,6 +230,7 @@ def test_services(
     nsuccesses = 0
     stage_dot_services_failed_ignored = []
     stage_dot_services_failed = []
+    services_info = [] # for collecting service metadata
     set_verbosity(verbosity)
 
     for rel_file_path, service_names in services.items():
@@ -305,6 +321,14 @@ def test_services(
             stage_dot_services_failed.append(stage_dot_service)
             continue
 
+        # Collect service metadata
+        try:
+            services_info.append(collect_service_info(service))
+        except Exception as e:
+            logging.warning(
+                PFX + f"Failed to collect metadata for {stage_dot_service}: {e}"
+            )
+
         if service.data is None:
             # For data services, setup usually adds to `data` attribute
             # (`Pipeline.setup()` assigns empty `ContainerSet`)
@@ -394,6 +418,27 @@ def test_services(
         PFX + f"{nfail_ignored} out of {nfail} failures have been ignored."
     )
     nfail_remain = nfail - nfail_ignored
+
+    # Output matrix file if requested
+    if output_matrix and services_info:
+        rootname, ext = os.path.splitext(output_matrix)
+        logging.info(PFX + f"Generating service matrix ({ext} format)...")
+        try:
+            if ext.lower() == ".csv":
+                matrix_content = generate_csv_matrix(services_info)
+            else:
+                if ext.lower() != ".md":
+                    logging.warning("Unknown service matrix format requested. "
+                        "Will produce markdown format instead.")
+                matrix_content = generate_markdown_matrix(services_info)
+
+            with open(output_matrix, 'w') as f:
+                f.write(matrix_content)
+            logging.info(PFX + f"Service matrix written to {output_matrix}")
+
+        except Exception as e:
+            logging.error(PFX + f"Failed to generate service matrix: {e}")
+
     if nfail_remain > 0:
         sys.stdout.flush()
         sys.stderr.write("\n\n\n")
@@ -403,12 +448,154 @@ def test_services(
         )
 
 
+def format_supported_reps(reps_list) -> str:
+    """Format supported representations for display in the matrix."""
+    if not reps_list:
+        return "None"
+
+    formatted = []
+    for rep in reps_list:
+        if rep is None:
+            formatted.append("None")
+        elif isinstance(rep, str):
+            formatted.append(f'"{rep}"')
+        elif rep is MultiDimBinning:
+            formatted.append("MultiDimBinning")
+        else:
+            formatted.append(str(rep))
+
+    if len(formatted) == 1:
+        return formatted[0]
+    return ", ".join(formatted)
+
+
+def collect_service_info(service) -> Dict:
+    """Extract service implementation info from an instantiated Stage."""
+    return {
+        'stage_name': service.stage_name,
+        'service_name': service.service_name,
+        'has_setup': service.has_setup,
+        'has_compute': service.has_compute,
+        'has_apply': service.has_apply,
+        'calc_mode_support': format_supported_reps(service.supported_reps.get('calc_mode', [])),
+        'apply_mode_support': format_supported_reps(service.supported_reps.get('apply_mode', [])),
+    }
+
+
+def generate_service_notes(info: Dict) -> str:
+    """Auto-detect caching issues and other possible oddities
+    and produce corresponding notes."""
+    notes = []
+    if not info['has_apply']:
+        notes.append("⚠️ **Implicit caching ([#821](https://github.com/icecube/pisa/issues/821))**")
+    if not info['has_setup'] and not info['has_compute'] and not info['has_apply']:
+        notes.append("init. only")
+    elif not info['has_apply'] and not info['has_compute']:
+        notes.append("setup only")
+    notes = ", ".join(notes)
+    return notes
+
+
+#TODO: document expected container keys also?
+def generate_markdown_matrix(services_info: List[Dict]) -> str:
+    """Generate markdown table from collected service information."""
+    # Sort by stage_name, then service_name
+    services_info = sorted(
+        services_info,
+        key=lambda x: (x['stage_name'], x['service_name'])
+    )
+
+    lines = [
+        "## Service implementation reference",
+        "This [auto-generated](https://github.com/icecube/pisa/blob/master/pisa_tests/test_services.py) table"
+        " documents which methods each service implements, which representations it supports, as well as any"
+        " deviant behavior or properties to be aware of.",
+        "It currently only contains services that can be **instantiated without importing optional PISA dependencies**.",
+        "",
+        "**Legend:**",
+        "- **has_setup/compute/apply**: whether the service overrides setup/compute/apply_function (✓ = yes, ✗ = no)",
+        "- **calc_mode support**: allowed representations during setup/compute steps",
+        "- **apply_mode support**: allowed representations during apply step",
+        "- **Notes**: special behaviors, restrictions, problems, etc.",
+        "",
+        "| Service | has_setup | has_compute | has_apply | calc_mode support | apply_mode support | Notes |",
+        "|---------|:---------:|:-----------:|:---------:|:-----------------:|:------------------:|-------|",
+    ]
+
+    for info in services_info:
+        setup_icon = "✓" if info['has_setup'] else "✗"
+        compute_icon = "✓" if info['has_compute'] else "✗"
+        apply_icon = "✓" if info['has_apply'] else "✗"
+
+        service_full_name = f"**{info['stage_name']}.{info['service_name']}**"
+        notes = generate_service_notes(info)
+
+        line = (
+            f"| {service_full_name} | {setup_icon} | {compute_icon} | {apply_icon} | "
+            f"{info['calc_mode_support']} | {info['apply_mode_support']} | {notes} |"
+        )
+        lines.append(line)
+
+    return "\n".join(lines)
+
+
+def generate_csv_matrix(services_info: List[Dict], filepath: str = None) -> str:
+    """Generate CSV table from collected service information (for external processing)."""
+    import csv
+    from io import StringIO
+
+    # Sort by stage_name, then service_name
+    services_info = sorted(
+        services_info,
+        key=lambda x: (x['stage_name'], x['service_name'])
+    )
+
+    output = StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=[
+            'Service', 'has_setup', 'has_compute', 'has_apply',
+            'calc_mode_support', 'apply_mode_support', 'Notes'
+        ]
+    )
+
+    writer.writeheader()
+    for info in services_info:
+        setup_icon = "Yes" if info['has_setup'] else "No"
+        compute_icon = "Yes" if info['has_compute'] else "No"
+        apply_icon = "Yes" if info['has_apply'] else "No"
+
+        notes = generate_service_notes(info)
+
+        writer.writerow({
+            'Service': f"{info['stage_name']}.{info['service_name']}",
+            'has_setup': setup_icon,
+            'has_compute': compute_icon,
+            'has_apply': apply_icon,
+            'calc_mode_support': info['calc_mode_support'],
+            'apply_mode_support': info['apply_mode_support'],
+            'Notes': notes,
+        })
+
+    result = output.getvalue()
+    output.close()
+    return result
+
+
 def parse_args(description=__doc__):
     """Parse command line arguments"""
     parser = ArgumentParser(description=description,
                             formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "-v", action="count", default=Levels.WARN, help="set verbosity level"
+    )
+    parser.add_argument(
+        "--output-matrix",
+        metavar="FILE",
+        default=None,
+        help="""If desired, write a service implementation overview table to
+        this file, giving either .md (markdown) or .csv (comma-separated values)
+        file extension to indicate the desired format for the output table."""
     )
     args = parser.parse_args()
     return args
@@ -419,6 +606,7 @@ def main():
     args = parse_args()
     kwargs = vars(args)
     kwargs["verbosity"] = kwargs.pop("v")
+    kwargs["output_matrix"] = kwargs.pop("output_matrix")
     test_services(**kwargs)
     logging.info(PFX + 'Services testing done.')
 

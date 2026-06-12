@@ -23,7 +23,7 @@ __all__ = [
 
 __author__ = "A. Trettin, L. Fischer, T. Ehrhardt"
 
-__license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -126,6 +126,13 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
     params : ParamSet
         Note that the params required to be in `params` are determined from
         those listed in the `systematics`.
+
+    Notes
+    -----
+
+    Expected container keys are::
+
+        `varnames` + "weights", and, if not already in `varnames`, "true_energy"
     """
 
     def __init__( # pylint: disable=dangerous-default-value
@@ -140,8 +147,6 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         distance_tol=0,
         **std_kwargs,
     ):
-        # evaluation only works on event-by-event basis
-        assert std_kwargs["calc_mode"] == "events"
 
         # Store args
         self.fit_results_file = find_resource(fit_results_file)
@@ -183,10 +188,15 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         if 'true_energy' not in expected_container_keys:
             expected_container_keys.append('true_energy')
 
+        # evaluation only works on event-by-event basis
+        supported_reps = {
+            'calc_mode': "events",
+        }
         # -- Initialize base class -- #
         super().__init__(
             expected_params=param_names,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
 
@@ -196,8 +206,6 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
         # make this an optional dependency
         import pandas as pd
         from sklearn.neighbors import KDTree
-
-        self.data.representation = self.calc_mode
 
         # create containers for scale factors
         for container in self.data:
@@ -301,8 +309,6 @@ class ultrasurfaces(Stage):  # pylint: disable=invalid-name
 
     @profile
     def compute_function(self):
-
-        self.data.representation = self.calc_mode
 
         # Calculate the `delta_p` matrix containing the polynomial features.
         # If requested, these feature may be extrapolated using the strategy defined

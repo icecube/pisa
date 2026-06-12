@@ -386,7 +386,7 @@ class simple_param(Stage):  # pylint: disable=invalid-name
     Parameters
     ----------
     params : ParamSet
-        Must exclusively have parameters:
+        Must have parameters::
 
         perfect_reco : bool
             If True, use "perfect reco": reco == true, numu(bar)_cc -> tracks, rest to cascades
@@ -410,11 +410,13 @@ class simple_param(Stage):  # pylint: disable=invalid-name
         cascade_pid : float
             The numerical 'pid' variable value to assign for cascades
 
-        Expected container keys are .. ::
+    Notes
+    -----
+    Implements no apply.
 
-            "true_energy"
-            "true_coszen"
+    Expected container keys are::
 
+        "true_energy", "true_coszen"
     """
 
     def __init__(self,
@@ -422,19 +424,17 @@ class simple_param(Stage):  # pylint: disable=invalid-name
                 ):
 
         expected_params = (
-            "perfect_reco", #TODO move these to constructor args? (yes, please)
+            "perfect_reco", #FIXME move these to constructor args? (yes, please)
             "reco_energy_params",
             "reco_coszen_params",
             "pid_track_params",
             "track_pid",
             "cascade_pid",
         )
-
         expected_container_keys = (
             'true_energy',
             'true_coszen',
         )
-
         # init base class
         super().__init__(
             expected_params=expected_params,
@@ -445,7 +445,6 @@ class simple_param(Stage):  # pylint: disable=invalid-name
     def setup_function(self):
 
         #TODO Could add a number of discrete cases here that can be selected betweeen, e.g. ICU baseline (LoI?), DeepCore current best, etc...
-
 
         # Get params
         perfect_reco = self.params.perfect_reco.value

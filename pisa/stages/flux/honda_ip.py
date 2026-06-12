@@ -23,15 +23,18 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
-    params
-        Expected params .. ::
+    params : ParamSet
+        Must have parameters::
+
             flux_table : str
 
-        Expected container keys are .. ::
+    Notes
+    -----
+    Implements no apply.
 
-            "true_energy"
-            "true_coszen"
+    Expected container keys are::
 
+        "true_energy", "true_coszen"
     """
 
     def __init__(
@@ -42,12 +45,10 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
         expected_params = (
             'flux_table',
         )
-
         expected_container_keys = (
             'true_energy',
             'true_coszen',
         )
-
         # init base class
         super().__init__(
             expected_params=expected_params,
@@ -59,7 +60,6 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
 
         self.flux_table = load_2d_table(self.params.flux_table.value)
 
-        self.data.representation = self.calc_mode
         if self.data.is_map:
             # speed up calculation by adding links
             # as nominal flux doesn't depend on the (outgoing) flavour
@@ -77,8 +77,6 @@ class honda_ip(Stage):  # pylint: disable=invalid-name
 
     @profile
     def compute_function(self):
-
-        self.data.representation = self.calc_mode
 
         if self.data.is_map:
             # speed up calculation by adding links

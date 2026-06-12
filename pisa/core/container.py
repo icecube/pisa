@@ -37,8 +37,10 @@ for instance generator-level/truth vs. reconstructed) representations may coexis
 When :py:attr:`validity = True <Container.validity>` for multiple representations
 of the same data (e.g., energy), a :py:attr:`~Container.precedence` system determines
 which representation to use as the source for translation, implemented by
-:py:meth:`~pisa.core.container.Container.find_valid_representation`. (As of now, all
-representations have precedence = 0, however!)
+:py:meth:`~pisa.core.container.Container.find_valid_representation`.
+
+.. attention::
+    As of now, all representations have precedence = 0, however!
 
 For each variable, the container tracks which representations have valid (up-to-date)
 copies of that variable:
@@ -64,28 +66,31 @@ in order to ensure that PISA does not attempt to translate from binned → "even
 when event-by-event weights are requested (see below). Instead, the exact
 event-by-event weights will remain available.
 
-When accessing data with an invalid source representation,
+When accessing data in a currently invalid representation,
 :py:meth:`~Container.auto_translate` is triggered, which ensures synchronization
-across representations as needed, i.e., on demand.
+across representations as needed, i.e., on demand. The feasibility and details
+of the translation depend on the **translation mode** assigned to the desired
+variable though: as specified by :py:attr:`~Container.valid_translation_modes`,
+there are two translation modes available, defined on a per-variable basis in the
+:py:attr:`~Container.translation_modes` dictionary attribute:
 
-There are different translation modes available, defined on a per-variable basis
-in the :py:attr:`~Container.tranlation_modes` (sic!) dictionary attribute, with a
-default of "average" (see :py:attr:`~Container.default_translation_mode`):
-
-- "average" mode (default)---for quantities where bin-averaging makes sense
+- "average" mode---select for quantities where bin-averaging makes sense
 
   - examples: oscillation probabilities, energy reconstruction parameters
 
-- "sum" mode---for quantities where summation makes sense
+- "sum" mode---select for quantities where summation makes sense
 
   - examples: event weights, raw counts
 
-Specify translation mode for a given variable::
+By default, when data for some variable is initially entered into the container,
+the translation mode is assumed to be "sum" by PISA only for variables in
+:py:attr:`~pisa.core.container.Container.sum_mode_keys`, otherwise "average".
+This choice can be overridden straightforwardly by specifying::
 
     container.translation_modes['variable_name'] = 'average' # (or 'sum')
 
 
-The `Container` supports *three primary transformation types* (source-target combinations):
+The `Container` supports **three primary transformation types** (**source-target combinations**):
 
 - "events" ↔ "log_events" (requires "average" mode)
 
@@ -123,9 +128,17 @@ The `Container` provides transparent access via
 Access mechanism:
   1. check if data exists in current representation
   2. if not, search for valid representation of this variable
-  3. if valid representation found: auto-translate to current representation
-  4. if no valid representation: raise exception
-  5. return data in current representation
+  3. if valid representation found, and resulting source-target pair supported
+     for chosen translation mode: auto-translate to current representation;
+     otherwise: raise exception
+  4. return data in current representation
+
+.. attention::
+    Keep in mind that the above implies that weight-like data will not be translatable
+    from binned → binned, binned → "events", or binned → "log_events"
+    (unless its translation mode has been explicitly overriden and set to "average").
+    In order to enable such transformations, knowledge of the weight distributions
+    within each bin would have to be assumed/exploited.
 
 For binned representations:
   * binning dimension arrays accessible by dimension name
@@ -150,6 +163,11 @@ For managing multiple related containers via a :py:class:`ContainerSet`::
     container_set.representation = binning  # applied to all containers
     mapset = container_set.get_mapset('variable')  # returns MapSet of all
 
+A `ContainerSet` can store *global auxiliary metadata*::
+
+    container_set['metadata_key'] = arbitrary_python_object # name must be unlike any container's
+    value = container_set['metadata_key']
+
 Features:
   * unified representation management across containers
   * linking containers for treatment as single :py:class:`VirtualContainer`
@@ -166,16 +184,16 @@ from __future__ import absolute_import, print_function
 
 from collections.abc import Sequence
 from collections import defaultdict
+import re
 
 import numpy as np
-import re
 
 from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.map import Map, MapSet
 from pisa.core.translation import histogram, lookup, resample
 from pisa.utils.comparisons import ALLCLOSE_KW
-from pisa.utils.log import logging
+from pisa.utils.log import logging, set_verbosity
 
 
 class ContainerSet():
@@ -466,9 +484,9 @@ class Container():
             Precedence for choosing translation source (lower = higher priority).
             Currently 0 for every representation (TODO).
 
-        tranlation_modes : dict[variable_name] -> str
+        translation_modes : dict[variable_name] -> str
             Translation mode to use for each variable, e.g. for binning or
-            resampling: "average" (default) or "sum".
+            resampling: "average" or "sum".
 
         _representations : dict[representation_hash] -> hashable object, e.g. `str` or :py:class:`.MultiDimBinning`
             Representation storage, organized by hash value
@@ -484,10 +502,12 @@ class Container():
     system.
     """
 
-    default_translation_mode = "average"
-    translation_modes = ("average", "sum")
+    valid_translation_modes = ("average", "sum")
+    """Available translation modes"""
+    sum_mode_keys = () # TODO
+    """Variables for which "sum" is assumed as default translation mode"""
     array_representations = ("events", "log_events")
-
+    """Available unbinned data representations"""
 
     def __init__(self, name, representation='events'):
         self.name = name
@@ -505,7 +525,7 @@ class Container():
 
         # translation mode
         # dict of form [variable]
-        self.tranlation_modes = {}
+        self.translation_modes = {}
 
         # Actual data
         # dict of form [representation_hash][variable]
@@ -625,6 +645,8 @@ class Container():
             
         if key in self.current_data.keys():
             self.mark_valid(key)
+        logging.trace("Marked changed variable '%s' in current representation '%s'.",
+                      key, self.representation)
 
     def mark_valid(self, key):
         '''Validate data as is in current representation, regardless.'''
@@ -635,26 +657,35 @@ class Container():
         return data
     
     def __setitem__(self, key, data):
-        """Set or overwrite data for some variable, validating the current
-        and invalidating all other representations. Also, the default translation
-        mode is adopted for the variable (unless a mode has already been set).
+        """Set `self[key]` to `data`.
+
+        Invalidates all representations but the current one, which is set to
+        valid, and set the translation mode to "average", unless the `key` is
+        part of :py:attr:`~Container.sum_mode_keys`, in which case the
+        translation mode is set to "sum", or unless a mode has already been set.
 
         Parameters
         ----------
         key : string
-            identifier
-        data : ndarray, :py:class:`~.Map` or (array, binning)-tuple
+            data identifier/variable
+        data : ndarray, :py:class:`~.Map` or (binning, array)-tuple
+            data sample to add to the container
         """
         if self.is_map:
             if key in self.representation.names:
-                raise Exception(f'Cannot add variable {key}, as it is a binning dimension')
-        
-        self.__add_data(key, data)                
-        if not key in self.tranlation_modes.keys():
-            self.tranlation_modes[key] = self.default_translation_mode
-        
+                raise Exception(
+                    f'Cannot add variable {key}, as it is a binning dimension'
+                )
+
+        self.__add_data(key, data)
+
+        if not key in self.translation_modes:
+            if key in self.sum_mode_keys:
+                self.translation_modes[key] = "sum"
+            else:
+                self.translation_modes[key] = "average"
         self.mark_changed(key)
-       
+
     def __add_data(self, key, data):
         """Add data for a given variable, after performing consistency checks
         or flattening it.
@@ -662,8 +693,9 @@ class Container():
         Parameters
         ----------
         key : string
-            identifier
-        data : ndarray, :py:class:`~.Map` or (array, binning)-tuple
+            data identifier/variable
+        data : ndarray, :py:class:`~.Map` or (binning, array)-tuple
+            data sample to add to the container
         """
         if isinstance(data, np.ndarray):
             
@@ -722,11 +754,10 @@ class Container():
         if not key in self.keys:
             if key in self.all_keys:
                 self.auto_translate(key)
-                #raise KeyError(f'Data {key} not present in chosen representation')
             else:
                 if key in self._aux_data.keys():
                     return self._aux_data[key]
-                raise KeyError(f'Data {key} not present in Container')
+                raise KeyError(f'Key "{key}" not present in Container "{self.name}"')
         
         valid = self.validity[key][hash(self.representation)]
         if not valid:
@@ -746,7 +777,7 @@ class Container():
         """Return reshaped data as normal n-dimensional histogram"""
         assert self.is_map, 'Cannot retrieve hists from non-map data'
         
-        # retrieve in case needs translation
+        # retrieve in case needs translation (TODO: unnecessary, cf. data = ...?)
         self[key]
 
         binning = self.representation
@@ -771,49 +802,53 @@ class Container():
     def __iter__(self):
         """Iterate over all keys in container"""
         return self.keys
-    
+
     def translate(self, key, src_representation):
-        '''Translate variable from source representation.
-        
+        '''Translate data for variable `key` from source rep. to current rep.
+
+        Afterwards, both source and destination representation will be valid.
+
         Parameters
         ----------
         key : str
-        src_representation : representation present in container
+            data identifier/variable
+        src_representation : hashable object, e.g. str or MultiDimBinning
+            some representation present in container
         '''
         assert hash(src_representation) in self.representation_keys
-        
+
         dest_representation = self.representation
 
         if hash(src_representation) == hash(dest_representation):
             # nothing to do
-            return    
-    
+            return
+
         from_map = isinstance(src_representation, MultiDimBinning)
         to_map = isinstance(dest_representation, MultiDimBinning)
-    
-        if self.tranlation_modes[key] == 'average':            
+
+        if self.translation_modes[key] == 'average':
             if from_map and to_map:
                 out = self.resample(key, src_representation, dest_representation)
                 self.representation = dest_representation
                 self[key] = out
-                
+
             elif to_map:
                 out = self.array_to_binned(key, src_representation, dest_representation)
                 self.representation = dest_representation
                 self[key] = out
-                
+
             elif from_map:
                 out = self.binned_to_array(key, src_representation, dest_representation)
                 self.representation = dest_representation
-                self[key] = out   
-                
+                self[key] = out
+
             elif src_representation == "events" and dest_representation == "log_events":
                 self.representation = "events"
                 logging.trace(f"Container `{self.name}`: taking log of {key}")
                 sample = np.log(self[key])
                 self.representation = dest_representation
                 self[key] = sample
-            
+
             elif src_representation == "log_events" and dest_representation == "events":
                 self.representation = "log_events"
                 sample = np.exp(self[key])
@@ -821,27 +856,37 @@ class Container():
                 self[key] = sample
 
             else:
-                raise NotImplementedError(f"translating {src_representation} to {dest_representation}")
-                
-        elif self.tranlation_modes[key] == 'sum':
+                raise NotImplementedError(
+                    f"Translating {src_representation} to {dest_representation}"
+                    " in 'average' mode!"
+                )
+
+        elif self.translation_modes[key] == 'sum':
             if from_map and to_map:
                 raise NotImplementedError("Map to Map in sum mode needs to integrate over bins.")
 
-            elif to_map:
+            if to_map:
                 out = self.array_to_binned(key, src_representation, dest_representation, averaged=False)
                 self.representation = dest_representation
                 self[key] = out
 
             else:
-                raise NotImplementedError()
+                # destination rep. is an event-by-event rep., no matter the source rep.
+                raise NotImplementedError(
+                    f"Translating {src_representation} to {dest_representation}"
+                    " in 'sum' mode!"
+                )
 
         else:
-            raise NotImplementedError()
-            
+            raise ValueError(
+                f"Unknown translation mode for variable '{key}':"
+                f" '{self.translation_modes[key]}'!"
+            )
+
         # validate source!
         self.validity[key][hash(src_representation)] = True
 
-        
+
     def auto_translate(self, key):
         src_representation = self.find_valid_representation(key)
         if src_representation is None:
@@ -998,6 +1043,9 @@ class Container():
 def test_container():
     """Unit tests for :py:class:`Container` class."""
 
+    # 1st set of tests
+    # ----------------
+
     # NOTE: Right now the numbers are tuned so that the weights are identical
     # per bin. If you change binning that's likely not the case anymore and you
     # inevitably end up with averaged values over bins, which are then not
@@ -1016,7 +1064,7 @@ def test_container():
 
     binning_x = OneDimBinning(name='x', num_bins=100, is_lin=True, domain=[0, 100])
     binning_y = OneDimBinning(name='y', num_bins=100, is_lin=True, domain=[0, 100])
-    binning = MultiDimBinning([binning_x, binning_y])
+    binning = MultiDimBinning(name='xy binning', dimensions=[binning_x, binning_y])
 
     logging.trace('Testing container and translation methods')
 
@@ -1045,6 +1093,42 @@ def test_container():
     a = container['w']
 
     assert np.allclose(a, w, **ALLCLOSE_KW), f'test:\n{a}\n!= ref:\n{w}'
+
+    # 2nd set of tests
+    # ----------------
+    # NOTE: Also uses x, y, w arrays but doesn't depend on numerical values
+
+    logging.trace('Testing container representation and validity management')
+
+    container = Container('nue', 'events')
+    container['x'] = x
+    assert container.translation_modes['x'] == 'average'
+    container['y'] = y
+    assert container.translation_modes['y'] == 'average'
+
+    container.representation = binning
+    binning_hash = hash(binning)
+    for k in container.all_keys:
+        if 'weight' in k:
+            container[k] *= 1.0 # invalidates 'events' rep. when __setitem__ called
+            assert container.validity[k][binning_hash]
+            assert not container.validity[k][hash('events')]
+
+    # Setting invalid mode for binning dimension is irrelevant/ignored
+    # when attempting to get it in the binned rep.
+    container.translation_modes['y'] = 'median'
+    _ = container['y']
+    _ = container['x'] # should work just as well
+
+    # However, for other variables, setting invalid mode needs to fail when
+    # attempting to translate (here from binning -> 'events')
+    container['oneweight'] = w
+    container.translation_modes['oneweight'] = 'division'
+    container.representation = 'events'
+    try:
+        container['oneweight']
+    except ValueError:
+        pass
 
 
 def test_container_set():
@@ -1106,5 +1190,6 @@ def test_container_set():
 
 
 if __name__ == '__main__':
+    set_verbosity(3)
     test_container()
     test_container_set()

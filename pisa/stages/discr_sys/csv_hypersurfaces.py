@@ -1,5 +1,5 @@
 """
-PISA stage to apply hypersurface fits from discrete systematics parameterizations
+Stage to apply hypersurface fits from discrete systematics parameterizations
 """
 
 
@@ -23,7 +23,7 @@ __all__ = ["csv_hypersurfaces",]
 
 __author__ = "B. Benkel, J. Weldert"
 
-__license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -62,7 +62,15 @@ class csv_hypersurfaces(Stage):
     propagate_uncertainty : bool, optional
         Propagate the uncertainties from the hypersurface to the uncertainty of
         the output.
+
+    Notes
+    -----
+
+    Expected container keys are::
+
+        "weights" and, if "error_method" is set, "errors"
     """
+
     def __init__(
         self,
         fit_results_file,
@@ -96,7 +104,7 @@ class csv_hypersurfaces(Stage):
             expected_container_keys.append('errors')
 
         supported_reps = {
-            'calc_mode':  [MultiDimBinning],
+            'calc_mode':  MultiDimBinning,
             'apply_mode': [MultiDimBinning, 'events'],
         }
 
@@ -118,9 +126,6 @@ class csv_hypersurfaces(Stage):
     # pylint: disable=line-too-long
     def setup_function(self):
         """Load the fit results from the file and check compatibility with container names"""
-
-        self.data.representation = self.calc_mode
-
         for f in self.fit_results_file:
             k = os.path.splitext(os.path.basename(f))[0]
             if k.startswith('hs_'): # naming convention

@@ -23,10 +23,12 @@ class hist(Stage):  # pylint: disable=invalid-name
         Return un-weighted event counts in each bin
     apply_unc_weights : bool, default False
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "weights"
-            "unc_weights" (if `apply_unc_weights`)
+    Expected container keys are::
+
+        "weights", "unc_weights" (if `apply_unc_weights`)
     """
 
     def __init__(
@@ -41,11 +43,11 @@ class hist(Stage):  # pylint: disable=invalid-name
         if apply_unc_weights:
             expected_container_keys.append('unc_weights')
 
+        # apply_mode can be detected automatically for convenience
         supported_reps = {
             'calc_mode': [MultiDimBinning, "events"],
             'apply_mode': [None, MultiDimBinning],
         }
-
         # init base class
         super().__init__(
             expected_params=(),

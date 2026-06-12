@@ -42,7 +42,7 @@ __all__ = ["Pipeline", "test_Pipeline", "parse_args", "main"]
 
 __author__ = "J.L. Lanfranchi, P. Eller"
 
-__license__ = """Copyright (c) 2014-2025, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -119,8 +119,6 @@ class Pipeline():
         if isinstance(self.data["output_binning"], VarBinning):
             self.assert_varbinning_compat()
             self.assert_exclusive_varbinning()
-        else:
-            self.assert_apply_modes_consistency()
 
         # check in case someone decided to add a non-daemonflux parameter with daemon_
         # in it, which would potentially make penalty calculation incorrect
@@ -143,9 +141,7 @@ class Pipeline():
         table = []
         for i, s in enumerate(self.stages):
             table.append([i, s.__class__.__name__, s.calc_mode, s.apply_mode])
-            table[-1].append(s.setup_function.__func__.__module__ == s.__class__.__module__)
-            table[-1].append(s.compute_function.__func__.__module__ == s.__class__.__module__)
-            table[-1].append(s.apply_function.__func__.__module__ == s.__class__.__module__)
+            table[-1] += [s.has_setup, s.has_compute, s.has_apply]
             table[-1] += [len(s.params.fixed), len(s.params.free)]
         return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
 
@@ -427,12 +423,12 @@ class Pipeline():
                 if isinstance(output_key, tuple):
                     assert len(output_key) == 2
                     cc[output_key[0]] = c[output_key[0]][keep]
-                    cc.tranlation_modes[output_key[0]] = 'sum'
+                    cc.translation_modes[output_key[0]] = 'sum'
                     cc[output_key[1]] = np.square(c[output_key[0]][keep])
-                    cc.tranlation_modes[output_key[1]] = 'sum'
+                    cc.translation_modes[output_key[1]] = 'sum'
                 else:
                     cc[output_key] = c[output_key][keep]
-                    cc.tranlation_modes[output_key] = 'sum'
+                    cc.translation_modes[output_key] = 'sum'
 
                 containers.append(cc)
 
@@ -481,6 +477,7 @@ class Pipeline():
             outputs = self._get_outputs_varbinning(output_binning, output_key)
 
         if original_binning is not None:
+            # reset (FIXME: overrides all binned apply_modes)
             self.output_binning = original_binning
 
         return outputs
@@ -544,8 +541,6 @@ class Pipeline():
             # possible that stage apply_modes got manipulated in between runs
             if isinstance(self.output_binning, VarBinning):
                 self.assert_varbinning_compat()
-            else:
-                self.assert_apply_modes_consistency()
         if self.profile:
             start_t = time()
             self._run_function()
@@ -687,34 +682,6 @@ class Pipeline():
     def __hash__(self):
         return self.hash
 
-    def assert_apply_modes_consistency(self):
-        """Asserts that pipeline setup does not result in non-sensical
-        transformations between Maps or from Maps to events
-        (cf. Container.translate: rebinning without averaging is not
-        implemented because of lacking benefits, and similarly going
-        from a histogram to events).
-        """
-        ref_binning = None
-        ref_name = None
-        for s in self.stages:
-            # it suffices to start from the first occurrence of a MultiDimBinning
-            if isinstance(s.apply_mode, MultiDimBinning) and ref_binning is None:
-                ref_binning = s.apply_mode
-                ref_name = f"{s.stage_name}.{s.service_name}"
-                if isinstance(self.output_binning, MultiDimBinning) and ref_binning != self.output_binning:
-                    raise ValueError(
-                        f"Stage {ref_name} has '{s.apply_mode}' as apply_mode, which "
-                        f"deviates from the pipeline output binning {self.output_binning}. "
-                        "This configuration would result in an unreliable pipeline output."
-                    )
-            elif ref_binning is not None and s.apply_mode != ref_binning:
-                raise ValueError(
-                    f"Stage {s.stage_name}.{s.service_name} has '{s.apply_mode}'"
-                    " as apply_mode, which deviates from a previously detected "
-                    f"MultiDimBinning apply_mode, of stage {ref_name}. This "
-                    "configuration would result in an unreliable pipeline output."
-                )
-
     def assert_varbinning_compat(self):
         """Asserts that pipeline setup is compatible with `VarBinning`:
         all stages need to apply to events (this precludes use with
@@ -724,11 +691,15 @@ class Pipeline():
         ------
         ValueError
             if at least one stage has apply_mode!='events'
-
         """
         incompat = []
         for s in self.stages:
-            if not s.apply_mode == 'events':
+            # TODO: Check below still allows pipeline setups with any calc_mode,
+            # even though we cannot prevent compute to produce the service's
+            # output in a binned representation. Is this all we can and should
+            # do in terms of validating the general setup?
+            if s.apply_mode is not None and s.apply_mode != 'events':
+                # not None: apply_function is implemented -> require 'events'
                 incompat.append(s)
         if len(incompat) >= 1:
             str_incompat = ", ".join(
@@ -804,7 +775,13 @@ class Pipeline():
         if isinstance(binning, MultiDimBinning):
             for s in self.stages:
                 if isinstance(s.apply_mode, MultiDimBinning):
+                    # FIXME: this was also done to avoid rebinning
+                    logging.warning("Setting apply_mode of service '%s.%s' to"
+                                    " pipeline output binning %s",
+                                    s.stage_name, s.service_name, binning)
                     s.apply_mode = binning
+            # The `ContainerSet` `self.data` has an updated "output_binning",
+            # so re-setup `self` (and all included services).
             self.setup()
 
 
@@ -886,29 +863,56 @@ def test_Pipeline():
         #current_mat = new_mat
 
     #
-    # Test: detection of inconsistent apply_mode combinations
+    # Test: check allowed apply_mode combinations
     #
-    binned_apply_mode = pipeline.output_binning
+    binned_apply_mode = pipeline.stages[2].calc_mode
     assert isinstance(binned_apply_mode, MultiDimBinning)
-    pipeline.stages[1].apply_mode = binned_apply_mode
+    # osc.prob3 apply_mode:
+    pipeline.stages[2].apply_mode = binned_apply_mode
+    assert pipeline.stages[3].apply_mode == "events"
+    # allowed right now: going from a binned output (after osc.) to events
+    # (after aeff)
+    _ = pipeline.get_outputs()
+
+    # reset apply mode
+    pipeline.stages[2].apply_mode = "events"
+
+    #
+    # Test: prevent computing outputs with representations deviating
+    #       from supported ones in simple_data_loader
+    # First, setter mustn't accept apply_mode = None when it was != None
     try:
-        out = pipeline.get_outputs()
+        pipeline.stages[0].apply_mode = None
     except ValueError:
-        # Needs to fail: going from a binned output (after flux) to events
-        # (after osc.)
         pass
     else:
         assert False
+    # now we initialise with simple_data_loader apply_mode set to None (has to work)
+    config = parse_pipeline_config("settings/pipeline/example.cfg")
+    config[list(config.keys())[1]]['apply_mode'] = None
+    invalid_pipeline = Pipeline(config)
+    # try to get outputs: has to fail, as apply_mode = None not supported by
+    # simple_data_loader
+    try:
+        _ = invalid_pipeline.get_outputs()
+    except ValueError:
+        pass
+    else:
+        assert False
+    # need to be able to set from None -> "events" and then get outputs
+    invalid_pipeline.stages[0].apply_mode = "events"
+    _ = invalid_pipeline.get_outputs()
 
     #
     # Test: passing a custom output binning to get_outputs
     #
-    pipeline.stages[1].apply_mode = "events"
     # first get the original event distribution as reference
     out = pipeline.get_outputs()
     counts_tot = sum(out.num_entries.values())
     # use an oversampled output binning instead and ensure identical total count
-    out2 = pipeline.get_outputs(output_binning=pipeline.output_binning.oversample(2))
+    oversampled_binning = MultiDimBinning(pipeline.output_binning).oversample(2)
+    assert oversampled_binning.size == 8 * pipeline.output_binning.size
+    out2 = pipeline.get_outputs(output_binning=oversampled_binning)
     counts_tot2 = sum(out2.num_entries.values())
     assert np.isclose(counts_tot2, counts_tot)
 
@@ -920,7 +924,7 @@ def test_Pipeline():
     # a split into two event selections has to result in two MapSets
     assert len(out) == 2
     # a binned apply_mode has to result in a ValueError
-    # first get a pre-existing binning
+    # first get a pre-existing binning (set calc_mode of osc.prob3 as apply_mode)
     binned_calc_mode = p.stages[2].calc_mode
     assert isinstance(binned_calc_mode, MultiDimBinning)
     p.stages[2].apply_mode = binned_calc_mode

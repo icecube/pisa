@@ -1,5 +1,5 @@
 """
-PISA stage to apply hypersurface fits from discrete systematics parameterizations
+Stage to apply hypersurface fits from discrete systematics parameterizations
 """
 
 #TODO Currently have to defined the `links` value in the stage config to match what the `combine_regex` does in
@@ -24,7 +24,7 @@ __all__ = ["hypersurfaces",]
 
 __author__ = "P. Eller, T. Ehrhardt, T. Stuttard, J.L. Lanfranchi, A. Trettin"
 
-__license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -70,7 +70,14 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
 
     fluctuate_seed : int, default: 12345
 
+    Notes
+    -----
+
+    Expected container keys are::
+
+        "weights" and, if "error_method" is set, "errors"
     """
+
     def __init__(
         self,
         fit_results_file,
@@ -81,8 +88,6 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         fluctuate_seed=12345,
         **std_kwargs,
     ):
-        # -- Only allowed/implemented modes -- #
-        assert isinstance(std_kwargs['calc_mode'], MultiDimBinning)
         # -- Load hypersurfaces -- #
 
         # Store args
@@ -109,12 +114,14 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
                 #TODO: When in a pipeline after utils.hist,
                 # this will cause a warning about missing presence of 'errors'
                 # because hist adds this key during apply
-
-
+        supported_reps = {
+            'calc_mode': MultiDimBinning,
+        }
         # -- Initialize base class -- #
         super().__init__(
             expected_params=self.hypersurface_param_names + self.inter_params,
             expected_container_keys=expected_container_keys,
+            supported_reps=supported_reps,
             **std_kwargs,
         )
         if links is None:
@@ -135,9 +142,6 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
     # pylint: disable=line-too-long
     def setup_function(self):
         """Load the fit results from the file and make some check compatibility"""
-
-        self.data.representation = self.calc_mode
-
         if self.links is not None:
             for key, val in self.links.items():
                 self.data.link_containers(key, val)
@@ -158,9 +162,6 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
     # the linter thinks that "logging" refers to Python's built-in
     # pylint: disable=line-too-long, logging-not-lazy, deprecated-method
     def compute_function(self):
-
-        self.data.representation = self.calc_mode
-
         # Link containers
         if self.links is not None:
             for key, val in self.links.items():

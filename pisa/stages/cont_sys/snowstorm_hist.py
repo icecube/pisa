@@ -39,9 +39,9 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
     Service to apply detector systematics through splitting and histogramming
     of snowstorm simulation.
 
-    Expected container keys are:
-        "weights"
-        All detector systematics that should be used
+    Expected container keys are::
+
+        "weights" + all detector systematics that should be used
 
     The stage also expects that "regularized_output_binning" is part of the global
     auxilary variables of the `data` container set. This key is added by the
@@ -132,9 +132,10 @@ class snowstorm_hist(Stage):  # pylint: disable=invalid-name
         self.central_values = []
         """Central values of the systematic parameters in the snowstorm set."""
 
-        # evaluation only works on event-by-event basis
+        # Evaluation only works on event-by-event basis, and apply_mode can be
+        # detected automatically for convenience
         supported_reps = {
-            'calc_mode': ["events"],
+            'calc_mode': "events",
             'apply_mode': [None, MultiDimBinning],
         }
 

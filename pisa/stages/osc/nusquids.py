@@ -35,7 +35,7 @@ __author__ = "T. Stuttard, T. Ehrhardt, A. Trettin"
 
 class nusquids(Stage):  # pylint: disable=invalid-name
     """
-    PISA Pi stage for weighting events due to the effect of neutrino oscillations, using
+    Stage for weighting events due to the effect of neutrino oscillations, using
     nuSQuIDS as the oscillation probability calculator. One specialty here is that we
     have to specify an additional binning to determine where to place nodes for the
     exact calculation. The points where the actual probability is evaluated is
@@ -45,8 +45,7 @@ class nusquids(Stage):  # pylint: disable=invalid-name
     Parameters
     ----------
 
-    Uses the standard parameters as required by a PISA pi stage
-    (see `pisa/core/stage.py`)
+    Uses the standard parameters as required by a :py:class:`.Stage`
 
     node_mode : MultiDimBinning
         Binning to determine where to place nodes at which the evaluation of interaction
@@ -157,38 +156,43 @@ class nusquids(Stage):  # pylint: disable=invalid-name
         Do not include matter effects. Greatly increases evaluation speed.
 
     params : ParamSet or sequence with which to instantiate a ParamSet.
-        Expected params .. ::
+        Must have parameters::
+
             theta12 : quantity (angle)
             theta13 : quantity (angle)
             theta23 : quantity (angle)
             deltam21 : quantity (mass^2)
             deltam31 : quantity (mass^2)
             deltacp : quantity (angle)
-        Additional expected params if `num_neutrinos == 4` .. ::
+
+        Additional expected params if `num_neutrinos == 4`::
+
             theta14 : quantity (angle)
             theta24 : quantity (angle)
             deltam41 : quantity (mass^2)
             deltacp14 : quantity (angle)
             deltacp24 : quantity (angle)
 
-    Additional ParamSet params expected when using the `use_decoherence` argument:
-        n_energy : quantity (dimensionless)
-        * If using `num_decoherence_gamma` == 1:
+        Additional expected params when using the `use_decoherence` argument::
+
+            n_energy : quantity (dimensionless)
+
+        If using `num_decoherence_gamma` == 1::
+
             gamma : quantity (energy)
-        * If using `num_decoherence_gamma` == 3:
+
+        If using `num_decoherence_gamma` == 3::
+
             gamma12 : quantity (energy)
             gamma13 : quantity (energy)
             gamma23 : quantity (energy)
-            
-        Expected container keys are .. ::
 
-            "true_energy"
-            "true_coszen"
-            "nubar"
-            "flav"
-            "nu_flux"
-            "weights"
+    Notes
+    -----
 
+    Expected container keys are::
+
+        "true_energy", "true_coszen", "nubar", "flav", "nu_flux", "weights"
     """
 
     def __init__(
@@ -337,7 +341,7 @@ class nusquids(Stage):  # pylint: disable=invalid-name
             'nu_flux',
             'weights'
         )
-
+        #TODO: supported_reps?
         # init base class
         super().__init__(
             expected_params=expected_params,

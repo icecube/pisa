@@ -33,10 +33,9 @@ class set_variance(Stage):  # pylint: disable=invalid-name
     ):
 
         supported_reps = {
-            'calc_mode': [MultiDimBinning],
-            'apply_mode': [MultiDimBinning]
+            'calc_mode': MultiDimBinning,
+            'apply_mode': MultiDimBinning
         }
-
         # init base class
         super().__init__(
             expected_params=(),

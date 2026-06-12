@@ -1,5 +1,5 @@
 """
-A Stage to load data from a CSV datarelease format file into a PISA pi ContainerSet
+A Stage to load data from a CSV datarelease format file into a ContainerSet
 """
 
 from __future__ import absolute_import, print_function, division
@@ -16,14 +16,18 @@ __all__ = ['csv_data_hist', 'init_test']
 
 class csv_data_hist(Stage):  # pylint: disable=invalid-name
     """
-    CSV file loader PISA Pi class
+    CSV file loader class
 
     Parameters
     ----------
+    events_file : str
+        csv file path
 
-    events_file : csv file path
-
+    Notes
+    -----
+    Implements no apply.
     """
+
     def __init__(self,
                  events_file,
                  **std_kwargs,
@@ -33,14 +37,13 @@ class csv_data_hist(Stage):  # pylint: disable=invalid-name
         self.events_file = find_resource(events_file)
 
         expected_params = ()
-
+        expected_container_keys = ()
         # init base class
         super().__init__(
             expected_params=expected_params,
-            expected_container_keys=(),
+            expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
-
 
     def setup_function(self):
 

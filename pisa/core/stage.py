@@ -6,7 +6,7 @@ functionality is built-in.
 from __future__ import absolute_import, division
 
 from copy import deepcopy
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 import inspect
 from time import time
 
@@ -56,8 +56,8 @@ class Stage():
     supported_reps : dict
         Dictionary containing the representations allowed for calc_mode and
         apply_mode. If nothing is specified, Container.array_representations
-        plus MultiDimBinning is assumed. Should have keys `calc_mode` and/or
-        `apply_mode`, they will be created if not there.
+        plus MultiDimBinning is assumed. Should have keys "calc_mode" and/or
+        "apply_mode", they will be created if not there.
 
     calc_mode : pisa.core.binning.MultiDimBinning, str, or None
         Specify the default data representation for `setup()` and `compute()`
@@ -148,19 +148,63 @@ class Stage():
         else:
             self._debug_mode = None
 
+        self.has_setup = type(self).setup_function is not Stage.setup_function
+        """Whether subclass overrides :py:meth:`setup_function`"""
+        self.has_compute = type(self).compute_function is not Stage.compute_function
+        """Whether subclass overrides :py:meth:`compute_function`"""
+        self.has_apply = type(self).apply_function is not Stage.apply_function
+        """Whether subclass overrides :py:meth:`apply_function`"""
+
+        # Subclass might not have set supported_reps attribute
         if supported_reps is None:
             supported_reps = {}
-        assert isinstance(supported_reps, Mapping)
-        if 'calc_mode' not in supported_reps:
-            supported_reps['calc_mode'] = list(Container.array_representations) + [MultiDimBinning]
-        if 'apply_mode' not in supported_reps:
-            supported_reps['apply_mode'] = list(Container.array_representations) + [MultiDimBinning]
-        self.supported_reps = supported_reps
 
-        self._check_representation(rep=calc_mode, mode='calc_mode', allow_None=True)
+        assert isinstance(supported_reps, Mapping)
+        mode_keys = ('calc_mode', 'apply_mode')
+        assert set(supported_reps.keys()).issubset(mode_keys)
+        # Default configuration of supported representations, using information
+        # about overridden methods, unless subclass already defined them
+        for mode_str in mode_keys:
+            mode_allowed = (
+                self.has_setup or self.has_compute if mode_str == 'calc_mode'
+                else self.has_apply
+            )
+            if mode_str not in supported_reps:
+                # Reps. for this mode not yet defined -> use information about
+                # overridden methods
+                # either allow all representations or require setting mode to None
+                supported_reps[mode_str] = (
+                    list(Container.array_representations) + [MultiDimBinning]
+                    if mode_allowed else [None]
+                )
+            else:
+                # Reps. for this mode defined by subclass -> listify if needed
+                if (isinstance(supported_reps[mode_str], str)
+                    or not isinstance(supported_reps[mode_str], Sequence)):
+                    supported_reps[mode_str] = [supported_reps[mode_str]]
+
+            if not mode_allowed and supported_reps[mode_str] != [None]:
+                # TODO: Pipeline currently only checks apply_modes
+                # for consistency
+                logging.warning(
+                    "Service %s.%s purports to support %ss=%s,"
+                    " even though it does not implement the corresponding"
+                    " functions. As a result, PISA could be tricked into"
+                    " accepting a pipeline configuration which performs unphysical"
+                    " representation transformations. Only proceed if you understand"
+                    " what you are doing.", self.stage_name, self.service_name,
+                    mode_str, supported_reps[mode_str]
+                )
+
+        self.supported_reps = supported_reps
+        """Dictionary of supported representations. Override in subclass if desired."""
+
+        # Check consistency of requested modes, allowing None in any case
+        # (inconsequential while we're only at initialisation)
+        self._check_representation(rep=calc_mode, mode='calc_mode', always_allow_none=True)
         self._calc_mode = calc_mode
 
-        self._check_representation(rep=apply_mode, mode='apply_mode', allow_None=True)
+        self._check_representation(rep=apply_mode, mode='apply_mode', always_allow_none=True)
         self._apply_mode = apply_mode
 
         self._error_method = error_method
@@ -274,7 +318,8 @@ class Stage():
         in standalone mode, rerun `setup()` if has already been executed at
         least once."""
         if value != self.calc_mode:
-            self._check_representation(rep=value, mode='calc_mode')
+            self._check_representation(rep=value, mode='calc_mode',
+                                       always_allow_none=False)
             self._calc_mode = value
             if self.in_standalone_mode and self.param_hash is not None:
                 # Only in standalone mode: repeat setup automatically only if
@@ -308,27 +353,28 @@ class Stage():
     def apply_mode(self, value):
         """Set `apply_mode` after checking the validity of `value`"""
         if value != self.apply_mode:
-            self._check_representation(rep=value, mode='apply_mode')
+            self._check_representation(rep=value, mode='apply_mode',
+                                       always_allow_none=False)
             self._apply_mode = value
 
-    def _check_representation(self, rep, mode, allow_None=False):
+    def _check_representation(self, rep, mode, always_allow_none=False):
         if rep is None:
-            # allow_None is used to always allow None in the init of a stage.
-            # Should be removed once stages explicitely set modes.
-            if None not in self.supported_reps[mode] and not allow_None:
+            # `always_allow_none` is used to always allow None in the init of a stage
+            # (allows writing init_test functions that don't already decide on modes)
+            if None not in self.supported_reps[mode] and not always_allow_none:
                 raise ValueError(
-                    f"{mode} {rep} is not supported by {self.stage_name}"
+                    f"{mode}='{rep}' is not supported by {self.stage_name}"
                     f".{self.service_name}"
                 )
         elif isinstance(rep, str):
             if rep not in self.supported_reps[mode]:
                 raise ValueError(
-                    f"{mode} {rep} is not supported by {self.stage_name}"
+                    f"{mode}='{rep}' is not supported by {self.stage_name}"
                     f".{self.service_name}"
                 )
         elif type(rep) not in self.supported_reps[mode]:
             raise ValueError(
-                f"{mode} {type(rep)} is not supported by {self.stage_name}"
+                f"{mode} of type {type(rep)} is not supported by {self.stage_name}"
                 f".{self.service_name}"
             )
 
@@ -465,6 +511,9 @@ class Stage():
 
             self._check_exp_keys_in_data(error_on_missing=False)
 
+        # check that current calc_mode is compatible with supported reps. at all
+        self._check_representation(rep=self.calc_mode, mode='calc_mode',
+                                   always_allow_none=False)
         if self.calc_mode is not None:
             self.data.representation = self.calc_mode
 
@@ -492,6 +541,9 @@ class Stage():
             logging.trace("cached output")
             return
 
+        # be overly cautious and check consistency of current calc_mode
+        self._check_representation(rep=self.calc_mode, mode='calc_mode',
+                                   always_allow_none=False)
         if self.calc_mode is not None:
             self.data.representation = self.calc_mode
 
@@ -510,6 +562,9 @@ class Stage():
 
     def apply(self):
 
+        # be overly cautious and check consistency of current apply_mode
+        self._check_representation(rep=self.apply_mode, mode='apply_mode',
+                                   always_allow_none=False)
         if self.apply_mode is not None:
             self.data.representation = self.apply_mode
 

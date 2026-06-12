@@ -1,5 +1,5 @@
 """
-PISA pi stage for the calculation osc. probabilities assuming two-neutrino model
+Stage for the calculation osc. probabilities assuming two-neutrino model
 
 """
 from __future__ import absolute_import, print_function, division
@@ -17,28 +17,28 @@ __all__ = ['two_nu_osc', 'calc_probs', 'apply_probs_vectorized', 'init_test']
 
 class two_nu_osc(Stage):  # pylint: disable=invalid-name
     """
-    two neutrino osc PISA Pi class
+    two neutrino osc class
 
     Parameters
     ----------
-        Expected params .. ::
+    params : ParamSet
+        Must have parameters::
         
             theta : quantity (angle)
             deltam31 : quantity (mass^2)
-    
-        Expected container keys are .. ::
-
-            "true_energy"
-            "true_coszen"
-            "nu_flux"
-            "weights"
 
     Notes
     -----
-    For two-neutrino model, there is only one mass-splitting term
-    Atmospheric mixing angle is approximated by theta (sin^2(2*theta))
+    Implements neither setup nor compute.
 
+    Expected container keys are::
+
+        "true_energy", "true_coszen", "nu_flux", "weights"
+
+    For two-neutrino model, there is only one mass-splitting term.
+    Atmospheric mixing angle is approximated by theta (sin^2(2*theta))
     """
+
     def __init__(self,
                  **std_kwargs,
                 ):
@@ -47,21 +47,18 @@ class two_nu_osc(Stage):  # pylint: disable=invalid-name
             'theta23',
             'deltam31',
         )
-
         expected_container_keys = (
             'true_energy',
             'true_coszen',
             'nu_flux',
             'weights'
         )
-
         # init base class
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
             **std_kwargs,
         )
-
 
     @profile
     def apply_function(self):

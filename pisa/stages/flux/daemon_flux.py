@@ -3,24 +3,7 @@ Implementation of DAEMON flux (https://arxiv.org/abs/2303.00022)
 by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.
 
 Module originally authored by Maria Liubarska, J.P. Yañez 2023
-
-TODO/Notes:
-* does every parameter affect all fluxes (i.e., further caching potential)?
-* remove piecewise (manual) timings for production
-* any benefit from optimising/adapting arguments of fast_interp.interp2d?
-* We only seem to get performance benefits from fast_interp package when
-  its JIT target is "parallel", even when numba.get_num_threads() = 1
-  (PISA_NUM_THREADS=1). The latter is ensured when TARGET="cpu".
-  This parallel compilation happens whenever true_energy.size >
-  fast_interp.fast_interp.serial_cutoffs[2] (default value: 400).
-  Accordingly, the number of events/grid size needs to exceed this.
-  Serial compilation seems to be much slower than not using fast_interp
-  in the first place, at least for the public 3-year event sample with
-  calc_mode="events". However, it could be enforced by calling:
-  fast_interp.set_serial_cutoffs(dimension=2, cutoff=np.inf).
 """
-
-import time
 
 from daemonflux import Flux
 from daemonflux import __version__ as daemon_version
@@ -31,7 +14,7 @@ from packaging.version import Version
 from scipy import interpolate
 
 from pisa import FTYPE, ureg
-from pisa.core.binning import MultiDimBinning, OneDimBinning
+from pisa.core.binning import OneDimBinning
 from pisa.core.param import Param, ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.comparisons import ALLCLOSE_KW
@@ -48,7 +31,21 @@ ENERGY_GRID = np.logspace(-1, 5, 500, dtype=FTYPE) * ureg.GeV
 """Default array of true neutrino energies at which to request fluxes
 from daemonflux"""
 
-
+"""
+TODO/Notes:
+* does every parameter affect all fluxes (i.e., further caching potential)?
+* any benefit from optimising/adapting arguments of fast_interp.interp2d?
+* We only seem to get performance benefits from fast_interp package when
+  its JIT target is "parallel", even when numba.get_num_threads() = 1
+  (PISA_NUM_THREADS=1). The latter is ensured when TARGET="cpu".
+  This parallel compilation happens whenever true_energy.size >
+  fast_interp.fast_interp.serial_cutoffs[2] (default value: 400).
+  Accordingly, the number of events/grid size needs to exceed this.
+  Serial compilation seems to be much slower than not using fast_interp
+  in the first place, at least for the public 3-year event sample with
+  calc_mode="events". However, it could be enforced by calling:
+  fast_interp.set_serial_cutoffs(dimension=2, cutoff=np.inf).
+"""
 class daemon_flux(Stage):  # pylint: disable=invalid-name
     """
     DAEMON flux stage
@@ -98,11 +95,11 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
 
     Notes
     -----
+    Implements no apply.
 
     Expected container keys are::
 
         "true_energy", "true_coszen", "nubar"
-
     """
 
     def __init__(self, calibration_file=None, use_fast_interp=False, energy_grid=None,
@@ -212,16 +209,10 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             'true_coszen',
             'nubar',
         )
-        # event-by-event or binned fluxes; no apply_function
-        supported_reps = {
-            'calc_mode': ["events", MultiDimBinning],
-            'apply_mode': [None],
-        }
 
         super().__init__(
             expected_params=expected_params,
             expected_container_keys=expected_container_keys,
-            supported_reps=supported_reps,
             **std_kwargs,
         )
 
@@ -260,7 +251,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         )
 
         ntot = 0
-        start_t = time.time()
+        #start_t = time.time()
         # Obtain modified fluxes using provided parameters at desired points
         # in true_energy and true_coszen now
         for container in self.data:
@@ -279,8 +270,8 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             container['nu_flux'][:, 1] = numu_flux
             container.mark_changed("nu_flux")
             ntot += len(container['true_energy'])
-        stop_t = time.time()
-        logging.info("PISA spline evaluation time (s, %d events): %s", ntot, f"{stop_t - start_t:.2e}")
+        #stop_t = time.time()
+        #logging.info("PISA spline evaluation time (s, %d events): %s", ntot, f"{stop_t - start_t:.2e}")
 
 
     def make_2d_flux_map(self, particle='numuflux', params=None):
@@ -304,7 +295,7 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
         """
         if params is None:
             params = {}
-        start_t = time.time()
+        #start_t = time.time()
         # Obtain flux from daemonflux: expects ascending zenith angles in deg
         # TODO: Why does flux_obj need these to be handed back to it again?
         flux_ref = self.flux_obj.flux(
@@ -313,13 +304,13 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
             quantity=particle,
             params=params
         )
-        stop_t = time.time()
-        logging.info("daemonflux %s flux generation duration (s): %s", particle, f"{stop_t - start_t:.2e}")
+        #stop_t = time.time()
+        #logging.info("daemonflux %s flux generation duration (s): %s", particle, f"{stop_t - start_t:.2e}")
         # Now flip zenith angle dimension so we can interpolate in costheta
         # with increasing costheta
         flux_ref_lr = np.fliplr(flux_ref)
 
-        start_t = time.time()
+        #start_t = time.time()
         # Return interpolant which can be evaluated later
         if not self.fast_interp:
             fcn = interpolate.RectBivariateSpline(
@@ -336,8 +327,8 @@ class daemon_flux(Stage):  # pylint: disable=invalid-name
                 c=[True, True],
                 e=[0, 0]
             )
-        stop_t = time.time()
-        logging.info("splining duration (s): %s", f"{stop_t - start_t:.2e}")
+        #stop_t = time.time()
+        #logging.info("splining duration (s): %s", f"{stop_t - start_t:.2e}")
         return fcn
 
 

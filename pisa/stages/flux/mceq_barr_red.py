@@ -40,7 +40,7 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
     table_file : pickle file containing pre-generated tables from MCEq
 
     params : ParamSet
-        Must exclusively have parameters: .. ::
+        Must have parameters::
 
             delta_index : quantity (dimensionless)
                 Shift in the spectral index of the neutrino flux. Prior with a mean of 0.
@@ -69,17 +69,16 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
                 Uncertainty on K- and K+ production is assumed to be
                 uncorrelated as the ratio is badly determined.
 
-        Expected container keys are .. ::
-
-            "true_energy"
-            "true_coszen"
-            "nu_flux_nominal"
-            "nubar_flux_nominal"
-            "nubar"
-
     Notes
     -----
-    The nominal flux is calculated ahead of time using the honda_ip stage,
+    Implements no apply, so assumes implicit caching of nominal fluxes (FIXME).
+
+    Expected container keys are::
+
+        "true_energy", "true_coszen", "nu_flux_nominal", "nubar_flux_nominal",
+        "nubar"
+
+    The nominal flux is calculated ahead of time using the :py:class:`.honda_ip` stage,
     then multiplied with a shift in spectral index, and then modifications due
     to meson production (barr variables) are added.
 
@@ -160,7 +159,6 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
             "delta_index",
             "energy_pivot",
         )
-
         expected_container_keys = (
             "true_energy",
             "true_coszen",
@@ -185,9 +183,6 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
 
 
     def setup_function(self):
-
-        self.data.representation = self.calc_mode
-
         #
         # Init arrays
         #
@@ -338,8 +333,6 @@ class mceq_barr_red(Stage):  # pylint: disable=invalid-name
 
     @profile
     def compute_function(self):
-
-        self.data.representation = self.calc_mode
 
         if self.data.is_map:
             # speed up calculation by adding links

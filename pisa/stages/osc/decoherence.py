@@ -249,12 +249,12 @@ def _calc_numu_disappearance_prob_3flav(decoh_params, E, L):
 
 class decoherence(Stage):
     """
-    PISA Pi stage representing oscillations in the presence of decoherence
+    Stage representing oscillations in the presence of decoherence
 
     Parameters
     ----------
-    params
-        Expected contents of `params` ParamSet: .. ::
+    params : ParamSet
+        Must have parameters::
 
             detector_depth : float
             earth_model : PREM file path
@@ -268,20 +268,18 @@ class decoherence(Stage):
             deltam21 : quantity (mass^2)
             deltam31 : quantity (mass^2)
             deltacp : quantity (angle)
-            gamma12 : quantity (energy)
-            gamma13 : quantity (energy)
-            gamma23 : quantity (energy)
+            gamma21 : quantity (energy)
+            gamma31 : quantity (energy)
+            gamma32 : quantity (energy)
 
-        Expected container keys are .. ::
+    Notes
+    -----
 
-            "true_energy"
-            "true_coszen"
-            "weights"
-            "nubar"
-            "flav"
-            "sys_flux"
+    Expected container keys are::
 
+        "true_energy", "true_coszen", "weights", "nubar", "flav", "sys_flux"
     """
+
     def __init__(self,
                  **std_kwargs,
                 ):
@@ -391,9 +389,6 @@ class decoherence(Stage):
 
     @profile
     def compute_function(self):
-
-        # set the correct data mode
-        self.data.representation = self.calc_mode
 
         if self.data.is_map:
             # speed up calculation by adding links

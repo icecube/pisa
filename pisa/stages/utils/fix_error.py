@@ -15,8 +15,16 @@ from pisa.core.stage import Stage
 
 class fix_error(Stage):  # pylint: disable=invalid-name
     """
-    stage to fix the error returned by template_maker.
+    Stage to fix the error returned by template_maker.
+
+    Notes
+    -----
+
+    Expected container keys are::
+
+        "errors"
     """
+
     def __init__(
         self,
         **std_kwargs,
@@ -25,7 +33,6 @@ class fix_error(Stage):  # pylint: disable=invalid-name
         expected_container_keys = (
             'errors',
         )
-
         # init base class
         super().__init__(
             expected_params=(),

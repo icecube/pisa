@@ -16,7 +16,7 @@ from pisa.utils.resources import find_resource
 
 class meows_loader(Stage):  # pylint: disable=invalid-name
     """
-    Docstring incoming...
+    Docstring incoming... (FIXME)
     """
 
     def __init__(self, events_file: str, n_files: int, output_names, **std_kwargs):
