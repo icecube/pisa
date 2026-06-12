@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.core.pipeline - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.core.pipeline - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -325,7 +325,7 @@
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;J.L. Lanfranchi, P. Eller&quot;</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2025, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
 <span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="s2"> you may not use this file except in compliance with the License.</span>
@@ -404,8 +404,6 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;output_binning&quot;</span><span class="p">],</span> <span class="n">VarBinning</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assert_varbinning_compat</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assert_exclusive_varbinning</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">assert_apply_modes_consistency</span><span class="p">()</span>
 
         <span class="c1"># check in case someone decided to add a non-daemonflux parameter with daemon_</span>
         <span class="c1"># in it, which would potentially make penalty calculation incorrect</span>
@@ -430,9 +428,7 @@
         <span class="n">table</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">):</span>
             <span class="n">table</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">])</span>
-            <span class="n">table</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">setup_function</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
-            <span class="n">table</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">compute_function</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
-            <span class="n">table</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">apply_function</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
+            <span class="n">table</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">has_setup</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">has_compute</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">has_apply</span><span class="p">]</span>
             <span class="n">table</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">fixed</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)]</span>
         <span class="k">return</span> <span class="n">tabulate</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">tablefmt</span><span class="p">,</span> <span class="n">colalign</span><span class="o">=</span><span class="n">colalign</span><span class="p">)</span></div>
 
@@ -523,6 +519,8 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stages</span><span class="p">)</span>
 
+<div class="viewcode-block" id="Pipeline.__getitem__">
+<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.__getitem__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span>
@@ -533,7 +531,8 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s1">&#39;Cannot locate stage &quot;</span><span class="si">%s</span><span class="s1">&quot; in pipeline. Stages&#39;</span>
             <span class="s2">&quot; available are </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stage_names</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
@@ -724,12 +723,12 @@
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
                     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
                     <span class="n">cc</span><span class="p">[</span><span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">keep</span><span class="p">]</span>
-                    <span class="n">cc</span><span class="o">.</span><span class="n">tranlation_modes</span><span class="p">[</span><span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;sum&#39;</span>
+                    <span class="n">cc</span><span class="o">.</span><span class="n">translation_modes</span><span class="p">[</span><span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;sum&#39;</span>
                     <span class="n">cc</span><span class="p">[</span><span class="n">output_key</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">keep</span><span class="p">])</span>
-                    <span class="n">cc</span><span class="o">.</span><span class="n">tranlation_modes</span><span class="p">[</span><span class="n">output_key</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;sum&#39;</span>
+                    <span class="n">cc</span><span class="o">.</span><span class="n">translation_modes</span><span class="p">[</span><span class="n">output_key</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;sum&#39;</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">cc</span><span class="p">[</span><span class="n">output_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="n">output_key</span><span class="p">][</span><span class="n">keep</span><span class="p">]</span>
-                    <span class="n">cc</span><span class="o">.</span><span class="n">tranlation_modes</span><span class="p">[</span><span class="n">output_key</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sum&#39;</span>
+                    <span class="n">cc</span><span class="o">.</span><span class="n">translation_modes</span><span class="p">[</span><span class="n">output_key</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sum&#39;</span>
 
                 <span class="n">containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cc</span><span class="p">)</span>
 
@@ -778,6 +777,7 @@
             <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_outputs_varbinning</span><span class="p">(</span><span class="n">output_binning</span><span class="p">,</span> <span class="n">output_key</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">original_binning</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># reset (FIXME: overrides all binned apply_modes)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">output_binning</span> <span class="o">=</span> <span class="n">original_binning</span>
 
         <span class="k">return</span> <span class="n">outputs</span>
@@ -846,8 +846,6 @@
             <span class="c1"># possible that stage apply_modes got manipulated in between runs</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_binning</span><span class="p">,</span> <span class="n">VarBinning</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">assert_varbinning_compat</span><span class="p">()</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">assert_apply_modes_consistency</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">:</span>
             <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_run_function</span><span class="p">()</span>
@@ -999,37 +997,6 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span>
 
-<div class="viewcode-block" id="Pipeline.assert_apply_modes_consistency">
-<a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.assert_apply_modes_consistency">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">assert_apply_modes_consistency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Asserts that pipeline setup does not result in non-sensical</span>
-<span class="sd">        transformations between Maps or from Maps to events</span>
-<span class="sd">        (cf. Container.translate: rebinning without averaging is not</span>
-<span class="sd">        implemented because of lacking benefits, and similarly going</span>
-<span class="sd">        from a histogram to events).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">ref_binning</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">ref_name</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
-            <span class="c1"># it suffices to start from the first occurrence of a MultiDimBinning</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ref_binning</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">ref_binning</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span>
-                <span class="n">ref_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ref_binning</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_binning</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Stage </span><span class="si">{</span><span class="n">ref_name</span><span class="si">}</span><span class="s2"> has &#39;</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span><span class="si">}</span><span class="s2">&#39; as apply_mode, which &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;deviates from the pipeline output binning </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_binning</span><span class="si">}</span><span class="s2">. &quot;</span>
-                        <span class="s2">&quot;This configuration would result in an unreliable pipeline output.&quot;</span>
-                    <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">ref_binning</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">!=</span> <span class="n">ref_binning</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Stage </span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2"> has &#39;</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-                    <span class="s2">&quot; as apply_mode, which deviates from a previously detected &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;MultiDimBinning apply_mode, of stage </span><span class="si">{</span><span class="n">ref_name</span><span class="si">}</span><span class="s2">. This &quot;</span>
-                    <span class="s2">&quot;configuration would result in an unreliable pipeline output.&quot;</span>
-                <span class="p">)</span></div>
-
-
 <div class="viewcode-block" id="Pipeline.assert_varbinning_compat">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.pipeline.Pipeline.assert_varbinning_compat">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">assert_varbinning_compat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1041,11 +1008,15 @@
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
 <span class="sd">            if at least one stage has apply_mode!=&#39;events&#39;</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">incompat</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">==</span> <span class="s1">&#39;events&#39;</span><span class="p">:</span>
+            <span class="c1"># TODO: Check below still allows pipeline setups with any calc_mode,</span>
+            <span class="c1"># even though we cannot prevent compute to produce the service&#39;s</span>
+            <span class="c1"># output in a binned representation. Is this all we can and should</span>
+            <span class="c1"># do in terms of validating the general setup?</span>
+            <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">!=</span> <span class="s1">&#39;events&#39;</span><span class="p">:</span>
+                <span class="c1"># not None: apply_function is implemented -&gt; require &#39;events&#39;</span>
                 <span class="n">incompat</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">incompat</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">str_incompat</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
@@ -1125,7 +1096,13 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
+                    <span class="c1"># FIXME: this was also done to avoid rebinning</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Setting apply_mode of service &#39;</span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">&#39; to&quot;</span>
+                                    <span class="s2">&quot; pipeline output binning </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                                    <span class="n">s</span><span class="o">.</span><span class="n">stage_name</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">service_name</span><span class="p">,</span> <span class="n">binning</span><span class="p">)</span>
                     <span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">binning</span>
+            <span class="c1"># The `ContainerSet` `self.data` has an updated &quot;output_binning&quot;,</span>
+            <span class="c1"># so re-setup `self` (and all included services).</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span></div>
 
 
@@ -1210,29 +1187,56 @@
         <span class="c1">#current_mat = new_mat</span>
 
     <span class="c1">#</span>
-    <span class="c1"># Test: detection of inconsistent apply_mode combinations</span>
+    <span class="c1"># Test: check allowed apply_mode combinations</span>
     <span class="c1">#</span>
-    <span class="n">binned_apply_mode</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">output_binning</span>
+    <span class="n">binned_apply_mode</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">calc_mode</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binned_apply_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
-    <span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">binned_apply_mode</span>
+    <span class="c1"># osc.prob3 apply_mode:</span>
+    <span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">binned_apply_mode</span>
+    <span class="k">assert</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span>
+    <span class="c1"># allowed right now: going from a binned output (after osc.) to events</span>
+    <span class="c1"># (after aeff)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
+
+    <span class="c1"># reset apply mode</span>
+    <span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Test: prevent computing outputs with representations deviating</span>
+    <span class="c1">#       from supported ones in simple_data_loader</span>
+    <span class="c1"># First, setter mustn&#39;t accept apply_mode = None when it was != None</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
+        <span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="c1"># Needs to fail: going from a binned output (after flux) to events</span>
-        <span class="c1"># (after osc.)</span>
         <span class="k">pass</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">assert</span> <span class="kc">False</span>
+    <span class="c1"># now we initialise with simple_data_loader apply_mode set to None (has to work)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">parse_pipeline_config</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/example.cfg&quot;</span><span class="p">)</span>
+    <span class="n">config</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">1</span><span class="p">]][</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">invalid_pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="c1"># try to get outputs: has to fail, as apply_mode = None not supported by</span>
+    <span class="c1"># simple_data_loader</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">invalid_pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="kc">False</span>
+    <span class="c1"># need to be able to set from None -&gt; &quot;events&quot; and then get outputs</span>
+    <span class="n">invalid_pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">invalid_pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
 
     <span class="c1">#</span>
     <span class="c1"># Test: passing a custom output binning to get_outputs</span>
     <span class="c1">#</span>
-    <span class="n">pipeline</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
     <span class="c1"># first get the original event distribution as reference</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
     <span class="n">counts_tot</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">num_entries</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
     <span class="c1"># use an oversampled output binning instead and ensure identical total count</span>
-    <span class="n">out2</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">output_binning</span><span class="o">=</span><span class="n">pipeline</span><span class="o">.</span><span class="n">output_binning</span><span class="o">.</span><span class="n">oversample</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">oversampled_binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">pipeline</span><span class="o">.</span><span class="n">output_binning</span><span class="p">)</span><span class="o">.</span><span class="n">oversample</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">oversampled_binning</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">output_binning</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">out2</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">output_binning</span><span class="o">=</span><span class="n">oversampled_binning</span><span class="p">)</span>
     <span class="n">counts_tot2</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">out2</span><span class="o">.</span><span class="n">num_entries</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">counts_tot2</span><span class="p">,</span> <span class="n">counts_tot</span><span class="p">)</span>
 
@@ -1244,7 +1248,7 @@
     <span class="c1"># a split into two event selections has to result in two MapSets</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
     <span class="c1"># a binned apply_mode has to result in a ValueError</span>
-    <span class="c1"># first get a pre-existing binning</span>
+    <span class="c1"># first get a pre-existing binning (set calc_mode of osc.prob3 as apply_mode)</span>
     <span class="n">binned_calc_mode</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">calc_mode</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">binned_calc_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
     <span class="n">p</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">binned_calc_mode</span>
@@ -1589,7 +1593,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="../../../_static/documentation_options.js?v=533ca4eb"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.flux package - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.flux package - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -301,7 +301,7 @@
 </section>
 <section id="module-pisa.stages.flux.astrophysical">
 <span id="pisa-stages-flux-astrophysical-module"></span><h2>pisa.stages.flux.astrophysical module<a class="headerlink" href="#module-pisa.stages.flux.astrophysical" title="Link to this heading">¶</a></h2>
-<p>stage to implement getting the contribution to fluxes from astrophysical neutrino sources</p>
+<p>Stage to implement getting the contribution to fluxes from astrophysical neutrino sources</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.flux.astrophysical.apply_sys_loop">
 <span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.astrophysical.</span></span><span class="sig-name descname"><span class="pre">apply_sys_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_coszen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">astroflux_nominal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#apply_sys_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.apply_sys_loop" title="Link to this definition">¶</a></dt>
@@ -332,23 +332,20 @@ B = num flavors in flux (=3, e.g. e, mu, tau)</p>
 <p>Stage to apply power law astrophysical fluxes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>params</strong> – <p>Expected params are ..</p>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">astro_delta</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
 <span class="n">astro_norm</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;true_coszen&quot;</span>
-<span class="s2">&quot;initial_weights&quot;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>TODO</strong> (<em>flavor ratio as a parameter? Save for later.</em>)</p></li>
-</ul>
+</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span> <span class="s2">&quot;initial_weights&quot;</span>
+</pre></div>
+</div>
+<p>TODO: flavor ratio as a parameter? Save for later.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.astrophysical.astrophysical.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/astrophysical.html#astrophysical.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.astrophysical.astrophysical.apply_function" title="Link to this definition">¶</a></dt>
@@ -417,7 +414,7 @@ shift in spectral index, applied about a user-defined energy pivot.</p>
 uses parameterisations of plots from Barr 2006 paper</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> – <p>Expected params are ..</p>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nue_numu_ratio</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
 <span class="n">nu_nubar_ratio</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
 <span class="n">delta_index</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
@@ -425,17 +422,16 @@ uses parameterisations of plots from Barr 2006 paper</p>
 <span class="n">Barr_nu_nubar_ratio</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;true_coszen&quot;</span>
-<span class="s2">&quot;nu_flux_nominal&quot;</span>
-<span class="s2">&quot;nubar_flux_nominal&quot;</span>
-<span class="s2">&quot;nubar&quot;</span>
-</pre></div>
-</div>
 </p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Implements no apply, so assumes implicit caching of nominal fluxes (FIXME).</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span> <span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">,</span> <span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">,</span>
+<span class="s2">&quot;nubar&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.barr_simple.barr_simple.compute_function">
 <span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/barr_simple.html#barr_simple.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.barr_simple.barr_simple.compute_function" title="Link to this definition">¶</a></dt>
@@ -468,22 +464,6 @@ uses parameterisations of plots from Barr 2006 paper</p>
 <p>Implementation of DAEMON flux (<a class="reference external" href="https://arxiv.org/abs/2303.00022">https://arxiv.org/abs/2303.00022</a>)
 by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</p>
 <p>Module originally authored by Maria Liubarska, J.P. Yañez 2023</p>
-<p>TODO/Notes:
-* does every parameter affect all fluxes (i.e., further caching potential)?
-* remove piecewise (manual) timings for production
-* any benefit from optimising/adapting arguments of fast_interp.interp2d?
-* We only seem to get performance benefits from fast_interp package when</p>
-<blockquote>
-<div><p>its JIT target is “parallel”, even when numba.get_num_threads() = 1
-(PISA_NUM_THREADS=1). The latter is ensured when TARGET=”cpu”.
-This parallel compilation happens whenever true_energy.size &gt;
-fast_interp.fast_interp.serial_cutoffs[2] (default value: 400).
-Accordingly, the number of events/grid size needs to exceed this.
-Serial compilation seems to be much slower than not using fast_interp
-in the first place, at least for the public 3-year event sample with
-calc_mode=”events”. However, it could be enforced by calling:
-fast_interp.set_serial_cutoffs(dimension=2, cutoff=np.inf).</p>
-</div></blockquote>
 <dl class="py data">
 <dt class="sig sig-object py" id="pisa.stages.flux.daemon_flux.ENERGY_GRID">
 <span class="sig-prename descclassname"><span class="pre">pisa.stages.flux.daemon_flux.</span></span><span class="sig-name descname"><span class="pre">ENERGY_GRID</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Quantity([1.00000000e-01</span> <span class="pre">1.02807322e-01</span> <span class="pre">1.05693455e-01</span> <span class="pre">1.08660611e-01</span>&#160; <span class="pre">1.11711065e-01</span> <span class="pre">1.14847155e-01</span> <span class="pre">1.18071285e-01</span> <span class="pre">1.21385926e-01</span>&#160; <span class="pre">1.24793621e-01</span> <span class="pre">1.28296980e-01</span> <span class="pre">1.31898690e-01</span> <span class="pre">1.35601511e-01</span>&#160; <span class="pre">1.39408283e-01</span> <span class="pre">1.43321923e-01</span> <span class="pre">1.47345431e-01</span> <span class="pre">1.51481892e-01</span>&#160; <span class="pre">1.55734477e-01</span> <span class="pre">1.60106446e-01</span> <span class="pre">1.64601150e-01</span> <span class="pre">1.69222035e-01</span>&#160; <span class="pre">1.73972643e-01</span> <span class="pre">1.78856616e-01</span> <span class="pre">1.83877698e-01</span> <span class="pre">1.89039738e-01</span>&#160; <span class="pre">1.94346693e-01</span> <span class="pre">1.99802631e-01</span> <span class="pre">2.05411735e-01</span> <span class="pre">2.11178304e-01</span>&#160; <span class="pre">2.17106760e-01</span> <span class="pre">2.23201647e-01</span> <span class="pre">2.29467637e-01</span> <span class="pre">2.35909533e-01</span>&#160; <span class="pre">2.42532274e-01</span> <span class="pre">2.49340937e-01</span> <span class="pre">2.56340741e-01</span> <span class="pre">2.63537052e-01</span>&#160; <span class="pre">2.70935387e-01</span> <span class="pre">2.78541416e-01</span> <span class="pre">2.86360972e-01</span> <span class="pre">2.94400048e-01</span>&#160; <span class="pre">3.02664806e-01</span> <span class="pre">3.11161583e-01</span> <span class="pre">3.19896892e-01</span> <span class="pre">3.28877429e-01</span>&#160; <span class="pre">3.38110078e-01</span> <span class="pre">3.47601918e-01</span> <span class="pre">3.57360225e-01</span> <span class="pre">3.67392478e-01</span>&#160; <span class="pre">3.77706369e-01</span> <span class="pre">3.88309805e-01</span> <span class="pre">3.99210913e-01</span> <span class="pre">4.10418050e-01</span>&#160; <span class="pre">4.21939808e-01</span> <span class="pre">4.33785019e-01</span> <span class="pre">4.45962763e-01</span> <span class="pre">4.58482375e-01</span>&#160; <span class="pre">4.71353453e-01</span> <span class="pre">4.84585864e-01</span> <span class="pre">4.98189752e-01</span> <span class="pre">5.12175544e-01</span>&#160; <span class="pre">5.26553963e-01</span> <span class="pre">5.41336030e-01</span> <span class="pre">5.56533078e-01</span> <span class="pre">5.72156756e-01</span>&#160; <span class="pre">5.88219040e-01</span> <span class="pre">6.04732245e-01</span> <span class="pre">6.21709029e-01</span> <span class="pre">6.39162405e-01</span>&#160; <span class="pre">6.57105755e-01</span> <span class="pre">6.75552832e-01</span> <span class="pre">6.94517777e-01</span> <span class="pre">7.14015130e-01</span>&#160; <span class="pre">7.34059837e-01</span> <span class="pre">7.54667263e-01</span> <span class="pre">7.75853206e-01</span> <span class="pre">7.97633907e-01</span>&#160; <span class="pre">8.20026062e-01</span> <span class="pre">8.43046837e-01</span> <span class="pre">8.66713880e-01</span> <span class="pre">8.91045332e-01</span>&#160; <span class="pre">9.16059848e-01</span> <span class="pre">9.41776601e-01</span> <span class="pre">9.68215306e-01</span> <span class="pre">9.95396231e-01</span>&#160; <span class="pre">1.02334021e+00</span> <span class="pre">1.05206867e+00</span> <span class="pre">1.08160363e+00</span> <span class="pre">1.11196773e+00</span>&#160; <span class="pre">1.14318425e+00</span> <span class="pre">1.17527712e+00</span> <span class="pre">1.20827094e+00</span> <span class="pre">1.24219100e+00</span>&#160; <span class="pre">1.27706330e+00</span> <span class="pre">1.31291459e+00</span> <span class="pre">1.34977233e+00</span> <span class="pre">1.38766479e+00</span>&#160; <span class="pre">1.42662102e+00</span> <span class="pre">1.46667087e+00</span> <span class="pre">1.50784505e+00</span> <span class="pre">1.55017512e+00</span>&#160; <span class="pre">1.59369353e+00</span> <span class="pre">1.63843365e+00</span> <span class="pre">1.68442976e+00</span> <span class="pre">1.73171713e+00</span>&#160; <span class="pre">1.78033202e+00</span> <span class="pre">1.83031168e+00</span> <span class="pre">1.88169442e+00</span> <span class="pre">1.93451965e+00</span>&#160; <span class="pre">1.98882786e+00</span> <span class="pre">2.04466067e+00</span> <span class="pre">2.10206088e+00</span> <span class="pre">2.16107251e+00</span>&#160; <span class="pre">2.22174078e+00</span> <span class="pre">2.28411221e+00</span> <span class="pre">2.34823460e+00</span> <span class="pre">2.41415712e+00</span>&#160; <span class="pre">2.48193029e+00</span> <span class="pre">2.55160607e+00</span> <span class="pre">2.62323788e+00</span> <span class="pre">2.69688063e+00</span>&#160; <span class="pre">2.77259076e+00</span> <span class="pre">2.85042632e+00</span> <span class="pre">2.93044698e+00</span> <span class="pre">3.01271407e+00</span>&#160; <span class="pre">3.09729067e+00</span> <span class="pre">3.18424160e+00</span> <span class="pre">3.27363353e+00</span> <span class="pre">3.36553498e+00</span>&#160; <span class="pre">3.46001639e+00</span> <span class="pre">3.55715021e+00</span> <span class="pre">3.65701088e+00</span> <span class="pre">3.75967497e+00</span>&#160; <span class="pre">3.86522116e+00</span> <span class="pre">3.97373038e+00</span> <span class="pre">4.08528580e+00</span> <span class="pre">4.19997295e+00</span>&#160; <span class="pre">4.31787973e+00</span> <span class="pre">4.43909653e+00</span> <span class="pre">4.56371628e+00</span> <span class="pre">4.69183451e+00</span>&#160; <span class="pre">4.82354943e+00</span> <span class="pre">4.95896201e+00</span> <span class="pre">5.09817606e+00</span> <span class="pre">5.24129830e+00</span>&#160; <span class="pre">5.38843844e+00</span> <span class="pre">5.53970928e+00</span> <span class="pre">5.69522678e+00</span> <span class="pre">5.85511016e+00</span>&#160; <span class="pre">6.01948197e+00</span> <span class="pre">6.18846824e+00</span> <span class="pre">6.36219849e+00</span> <span class="pre">6.54080591e+00</span>&#160; <span class="pre">6.72442742e+00</span> <span class="pre">6.91320378e+00</span> <span class="pre">7.10727970e+00</span> <span class="pre">7.30680395e+00</span>&#160; <span class="pre">7.51192949e+00</span> <span class="pre">7.72281357e+00</span> <span class="pre">7.93961785e+00</span> <span class="pre">8.16250851e+00</span>&#160; <span class="pre">8.39165644e+00</span> <span class="pre">8.62723729e+00</span> <span class="pre">8.86943166e+00</span> <span class="pre">9.11842520e+00</span>&#160; <span class="pre">9.37440879e+00</span> <span class="pre">9.63757866e+00</span> <span class="pre">9.90813657e+00</span> <span class="pre">1.01862899e+01</span>&#160; <span class="pre">1.04722519e+01</span> <span class="pre">1.07662418e+01</span> <span class="pre">1.10684849e+01</span> <span class="pre">1.13792129e+01</span>&#160; <span class="pre">1.16986641e+01</span> <span class="pre">1.20270833e+01</span> <span class="pre">1.23647224e+01</span> <span class="pre">1.27118400e+01</span>&#160; <span class="pre">1.30687023e+01</span> <span class="pre">1.34355829e+01</span> <span class="pre">1.38127630e+01</span> <span class="pre">1.42005318e+01</span>&#160; <span class="pre">1.45991865e+01</span> <span class="pre">1.50090328e+01</span> <span class="pre">1.54303847e+01</span> <span class="pre">1.58635653e+01</span>&#160; <span class="pre">1.63089068e+01</span> <span class="pre">1.67667503e+01</span> <span class="pre">1.72374471e+01</span> <span class="pre">1.77213578e+01</span>&#160; <span class="pre">1.82188534e+01</span> <span class="pre">1.87303154e+01</span> <span class="pre">1.92561357e+01</span> <span class="pre">1.97967175e+01</span>&#160; <span class="pre">2.03524752e+01</span> <span class="pre">2.09238348e+01</span> <span class="pre">2.15112343e+01</span> <span class="pre">2.21151240e+01</span>&#160; <span class="pre">2.27359668e+01</span> <span class="pre">2.33742387e+01</span> <span class="pre">2.40304289e+01</span> <span class="pre">2.47050406e+01</span>&#160; <span class="pre">2.53985907e+01</span> <span class="pre">2.61116110e+01</span> <span class="pre">2.68446481e+01</span> <span class="pre">2.75982639e+01</span>&#160; <span class="pre">2.83730362e+01</span> <span class="pre">2.91695588e+01</span> <span class="pre">2.99884423e+01</span> <span class="pre">3.08303146e+01</span>&#160; <span class="pre">3.16958209e+01</span> <span class="pre">3.25856248e+01</span> <span class="pre">3.35004083e+01</span> <span class="pre">3.44408728e+01</span>&#160; <span class="pre">3.54077391e+01</span> <span class="pre">3.64017485e+01</span> <span class="pre">3.74236629e+01</span> <span class="pre">3.84742658e+01</span>&#160; <span class="pre">3.95543624e+01</span> <span class="pre">4.06647809e+01</span> <span class="pre">4.18063724e+01</span> <span class="pre">4.29800121e+01</span>&#160; <span class="pre">4.41865996e+01</span> <span class="pre">4.54270599e+01</span> <span class="pre">4.67023439e+01</span> <span class="pre">4.80134292e+01</span>&#160; <span class="pre">4.93613210e+01</span> <span class="pre">5.07470524e+01</span> <span class="pre">5.21716858e+01</span> <span class="pre">5.36363132e+01</span>&#160; <span class="pre">5.51420574e+01</span> <span class="pre">5.66900727e+01</span> <span class="pre">5.82815458e+01</span> <span class="pre">5.99176967e+01</span>&#160; <span class="pre">6.15997796e+01</span> <span class="pre">6.33290840e+01</span> <span class="pre">6.51069356e+01</span> <span class="pre">6.69346971e+01</span>&#160; <span class="pre">6.88137699e+01</span> <span class="pre">7.07455942e+01</span> <span class="pre">7.27316511e+01</span> <span class="pre">7.47734631e+01</span>&#160; <span class="pre">7.68725952e+01</span> <span class="pre">7.90306568e+01</span> <span class="pre">8.12493021e+01</span> <span class="pre">8.35302320e+01</span>&#160; <span class="pre">8.58751948e+01</span> <span class="pre">8.82859884e+01</span> <span class="pre">9.07644607e+01</span> <span class="pre">9.33125118e+01</span>&#160; <span class="pre">9.59320948e+01</span> <span class="pre">9.86252179e+01</span> <span class="pre">1.01393946e+02</span> <span class="pre">1.04240401e+02</span>&#160; <span class="pre">1.07166765e+02</span> <span class="pre">1.10175281e+02</span> <span class="pre">1.13268257e+02</span> <span class="pre">1.16448062e+02</span>&#160; <span class="pre">1.19717134e+02</span> <span class="pre">1.23077980e+02</span> <span class="pre">1.26533176e+02</span> <span class="pre">1.30085370e+02</span>&#160; <span class="pre">1.33737286e+02</span> <span class="pre">1.37491723e+02</span> <span class="pre">1.41351558e+02</span> <span class="pre">1.45319752e+02</span>&#160; <span class="pre">1.49399346e+02</span> <span class="pre">1.53593468e+02</span> <span class="pre">1.57905331e+02</span> <span class="pre">1.62338243e+02</span>&#160; <span class="pre">1.66895601e+02</span> <span class="pre">1.71580899e+02</span> <span class="pre">1.76397728e+02</span> <span class="pre">1.81349780e+02</span>&#160; <span class="pre">1.86440853e+02</span> <span class="pre">1.91674849e+02</span> <span class="pre">1.97055780e+02</span> <span class="pre">2.02587771e+02</span>&#160; <span class="pre">2.08275063e+02</span> <span class="pre">2.14122015e+02</span> <span class="pre">2.20133111e+02</span> <span class="pre">2.26312957e+02</span>&#160; <span class="pre">2.32666291e+02</span> <span class="pre">2.39197984e+02</span> <span class="pre">2.45913043e+02</span> <span class="pre">2.52816614e+02</span>&#160; <span class="pre">2.59913992e+02</span> <span class="pre">2.67210616e+02</span> <span class="pre">2.74712079e+02</span> <span class="pre">2.82424133e+02</span>&#160; <span class="pre">2.90352688e+02</span> <span class="pre">2.98503825e+02</span> <span class="pre">3.06883789e+02</span> <span class="pre">3.15499006e+02</span>&#160; <span class="pre">3.24356081e+02</span> <span class="pre">3.33461802e+02</span> <span class="pre">3.42823149e+02</span> <span class="pre">3.52447300e+02</span>&#160; <span class="pre">3.62341632e+02</span> <span class="pre">3.72513730e+02</span> <span class="pre">3.82971391e+02</span> <span class="pre">3.93722633e+02</span>&#160; <span class="pre">4.04775697e+02</span> <span class="pre">4.16139055e+02</span> <span class="pre">4.27821420e+02</span> <span class="pre">4.39831747e+02</span>&#160; <span class="pre">4.52179242e+02</span> <span class="pre">4.64873371e+02</span> <span class="pre">4.77923865e+02</span> <span class="pre">4.91340729e+02</span>&#160; <span class="pre">5.05134247e+02</span> <span class="pre">5.19314994e+02</span> <span class="pre">5.33893840e+02</span> <span class="pre">5.48881961e+02</span>&#160; <span class="pre">5.64290847e+02</span> <span class="pre">5.80132310e+02</span> <span class="pre">5.96418495e+02</span> <span class="pre">6.13161884e+02</span>&#160; <span class="pre">6.30375315e+02</span> <span class="pre">6.48071983e+02</span> <span class="pre">6.66265452e+02</span> <span class="pre">6.84969672e+02</span>&#160; <span class="pre">7.04198979e+02</span> <span class="pre">7.23968114e+02</span> <span class="pre">7.44292233e+02</span> <span class="pre">7.65186915e+02</span>&#160; <span class="pre">7.86668179e+02</span> <span class="pre">8.08752491e+02</span> <span class="pre">8.31456781e+02</span> <span class="pre">8.54798453e+02</span>&#160; <span class="pre">8.78795401e+02</span> <span class="pre">9.03466021e+02</span> <span class="pre">9.28829225e+02</span> <span class="pre">9.54904456e+02</span>&#160; <span class="pre">9.81711702e+02</span> <span class="pre">1.00927151e+03</span> <span class="pre">1.03760502e+03</span> <span class="pre">1.06673394e+03</span>&#160; <span class="pre">1.09668060e+03</span> <span class="pre">1.12746796e+03</span> <span class="pre">1.15911962e+03</span> <span class="pre">1.19165984e+03</span>&#160; <span class="pre">1.22511358e+03</span> <span class="pre">1.25950646e+03</span> <span class="pre">1.29486487e+03</span> <span class="pre">1.33121590e+03</span>&#160; <span class="pre">1.36858742e+03</span> <span class="pre">1.40700809e+03</span> <span class="pre">1.44650734e+03</span> <span class="pre">1.48711546e+03</span>&#160; <span class="pre">1.52886359e+03</span> <span class="pre">1.57178372e+03</span> <span class="pre">1.61590875e+03</span> <span class="pre">1.66127252e+03</span>&#160; <span class="pre">1.70790980e+03</span> <span class="pre">1.75585633e+03</span> <span class="pre">1.80514888e+03</span> <span class="pre">1.85582523e+03</span>&#160; <span class="pre">1.90792422e+03</span> <span class="pre">1.96148581e+03</span> <span class="pre">2.01655104e+03</span> <span class="pre">2.07316213e+03</span>&#160; <span class="pre">2.13136247e+03</span> <span class="pre">2.19119669e+03</span> <span class="pre">2.25271064e+03</span> <span class="pre">2.31595149e+03</span>&#160; <span class="pre">2.38096772e+03</span> <span class="pre">2.44780916e+03</span> <span class="pre">2.51652705e+03</span> <span class="pre">2.58717408e+03</span>&#160; <span class="pre">2.65980440e+03</span> <span class="pre">2.73447368e+03</span> <span class="pre">2.81123917e+03</span> <span class="pre">2.89015972e+03</span>&#160; <span class="pre">2.97129582e+03</span> <span class="pre">3.05470967e+03</span> <span class="pre">3.14046522e+03</span> <span class="pre">3.22862820e+03</span>&#160; <span class="pre">3.31926620e+03</span> <span class="pre">3.41244871e+03</span> <span class="pre">3.50824714e+03</span> <span class="pre">3.60673495e+03</span>&#160; <span class="pre">3.70798763e+03</span> <span class="pre">3.81208280e+03</span> <span class="pre">3.91910025e+03</span> <span class="pre">4.02912203e+03</span>&#160; <span class="pre">4.14223247e+03</span> <span class="pre">4.25851829e+03</span> <span class="pre">4.37806863e+03</span> <span class="pre">4.50097513e+03</span>&#160; <span class="pre">4.62733201e+03</span> <span class="pre">4.75723614e+03</span> <span class="pre">4.89078709e+03</span> <span class="pre">5.02808725e+03</span>&#160; <span class="pre">5.16924187e+03</span> <span class="pre">5.31435916e+03</span> <span class="pre">5.46355035e+03</span> <span class="pre">5.61692982e+03</span>&#160; <span class="pre">5.77461515e+03</span> <span class="pre">5.93672722e+03</span> <span class="pre">6.10339029e+03</span> <span class="pre">6.27473213e+03</span>&#160; <span class="pre">6.45088409e+03</span> <span class="pre">6.63198120e+03</span> <span class="pre">6.81816229e+03</span> <span class="pre">7.00957009e+03</span>&#160; <span class="pre">7.20635132e+03</span> <span class="pre">7.40865683e+03</span> <span class="pre">7.61664172e+03</span> <span class="pre">7.83046540e+03</span>&#160; <span class="pre">8.05029181e+03</span> <span class="pre">8.27628946e+03</span> <span class="pre">8.50863158e+03</span> <span class="pre">8.74749630e+03</span>&#160; <span class="pre">8.99306672e+03</span> <span class="pre">9.24553110e+03</span> <span class="pre">9.50508296e+03</span> <span class="pre">9.77192128e+03</span>&#160; <span class="pre">1.00462506e+04</span> <span class="pre">1.03282813e+04</span> <span class="pre">1.06182294e+04</span> <span class="pre">1.09163173e+04</span>&#160; <span class="pre">1.12227736e+04</span> <span class="pre">1.15378330e+04</span> <span class="pre">1.18617372e+04</span> <span class="pre">1.21947344e+04</span>&#160; <span class="pre">1.25370799e+04</span> <span class="pre">1.28890361e+04</span> <span class="pre">1.32508729e+04</span> <span class="pre">1.36228676e+04</span>&#160; <span class="pre">1.40053055e+04</span> <span class="pre">1.43984795e+04</span> <span class="pre">1.48026913e+04</span> <span class="pre">1.52182505e+04</span>&#160; <span class="pre">1.56454759e+04</span> <span class="pre">1.60846948e+04</span> <span class="pre">1.65362441e+04</span> <span class="pre">1.70004698e+04</span>&#160; <span class="pre">1.74777277e+04</span> <span class="pre">1.79683839e+04</span> <span class="pre">1.84728144e+04</span> <span class="pre">1.89914058e+04</span>&#160; <span class="pre">1.95245558e+04</span> <span class="pre">2.00726730e+04</span> <span class="pre">2.06361777e+04</span> <span class="pre">2.12155017e+04</span>&#160; <span class="pre">2.18110892e+04</span> <span class="pre">2.24233968e+04</span> <span class="pre">2.30528939e+04</span> <span class="pre">2.37000629e+04</span>&#160; <span class="pre">2.43654001e+04</span> <span class="pre">2.50494154e+04</span> <span class="pre">2.57526333e+04</span> <span class="pre">2.64755927e+04</span>&#160; <span class="pre">2.72188479e+04</span> <span class="pre">2.79829688e+04</span> <span class="pre">2.87685409e+04</span> <span class="pre">2.95761666e+04</span>&#160; <span class="pre">3.04064649e+04</span> <span class="pre">3.12600724e+04</span> <span class="pre">3.21376434e+04</span> <span class="pre">3.30398507e+04</span>&#160; <span class="pre">3.39673858e+04</span> <span class="pre">3.49209598e+04</span> <span class="pre">3.59013038e+04</span> <span class="pre">3.69091691e+04</span>&#160; <span class="pre">3.79453285e+04</span> <span class="pre">3.90105762e+04</span> <span class="pre">4.01057288e+04</span> <span class="pre">4.12316259e+04</span>&#160; <span class="pre">4.23891306e+04</span> <span class="pre">4.35791301e+04</span> <span class="pre">4.48025368e+04</span> <span class="pre">4.60602884e+04</span>&#160; <span class="pre">4.73533492e+04</span> <span class="pre">4.86827104e+04</span> <span class="pre">5.00493910e+04</span> <span class="pre">5.14544388e+04</span>&#160; <span class="pre">5.28989308e+04</span> <span class="pre">5.43839743e+04</span> <span class="pre">5.59107078e+04</span> <span class="pre">5.74803016e+04</span>&#160; <span class="pre">5.90939590e+04</span> <span class="pre">6.07529169e+04</span> <span class="pre">6.24584471e+04</span> <span class="pre">6.42118571e+04</span>&#160; <span class="pre">6.60144909e+04</span> <span class="pre">6.78677305e+04</span> <span class="pre">6.97729965e+04</span> <span class="pre">7.17317494e+04</span>&#160; <span class="pre">7.37454909e+04</span> <span class="pre">7.58157646e+04</span> <span class="pre">7.79441575e+04</span> <span class="pre">8.01323013e+04</span>&#160; <span class="pre">8.23818733e+04</span> <span class="pre">8.46945981e+04</span> <span class="pre">8.70722485e+04</span> <span class="pre">8.95166472e+04</span>&#160; <span class="pre">9.20296681e+04</span> <span class="pre">9.46132376e+04</span> <span class="pre">9.72693362e+04</span> <span class="pre">1.00000000e+05],</span> <span class="pre">'gigaelectron_volt')&gt;</span></span><a class="headerlink" href="#pisa.stages.flux.daemon_flux.ENERGY_GRID" title="Link to this definition">¶</a></dt>
@@ -543,6 +523,7 @@ will be used.</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
+<p>Implements no apply.</p>
 <p>Expected container keys are:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span> <span class="s2">&quot;nubar&quot;</span>
 </pre></div>
@@ -652,18 +633,19 @@ units.</p>
 <p>stage to generate nominal flux</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> – <p>Expected params ..</p>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">flux_table</span> <span class="p">:</span> <span class="nb">str</span>
-</pre></div>
-</div>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;true_coszen&quot;</span>
 </pre></div>
 </div>
 </p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Implements no apply.</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.hillasg.hillasg.compute_function">
 <span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/hillasg.html#hillasg.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.hillasg.hillasg.compute_function" title="Link to this definition">¶</a></dt>
@@ -695,18 +677,19 @@ units.</p>
 <p>stage to generate nominal flux</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> – <dl class="simple">
-<dt>Expected params .. ::</dt><dd><p>flux_table : str</p>
-</dd>
-</dl>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;true_coszen&quot;</span>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">flux_table</span> <span class="p">:</span> <span class="nb">str</span>
 </pre></div>
 </div>
 </p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Implements no apply.</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.flux.honda_ip.honda_ip.compute_function">
 <span class="sig-name descname"><span class="pre">compute_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/flux/honda_ip.html#honda_ip.compute_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.flux.honda_ip.honda_ip.compute_function" title="Link to this definition">¶</a></dt>
@@ -785,7 +768,7 @@ atmospheric nutau flux, this only makes sense if the pickle file contains a prom
 <li><p><strong>use_relative_gradients</strong> (<em>bool</em>) – If True, gradients from Barr params are scaled by the ratio of the chosen nominal flux to the MCEq
 nominal flux (since MCEq isued to derive these gradients). This is only relevent if using a
 different nominal flux, e.g. Honda et al 2025</p></li>
-<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must exclusively have parameters: ..</p>
+<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">delta_index</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
     <span class="n">Shift</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">spectral</span> <span class="n">index</span> <span class="n">of</span> <span class="n">the</span> <span class="n">neutrino</span> <span class="n">flux</span><span class="o">.</span> <span class="n">Prior</span> <span class="k">with</span> <span class="n">a</span> <span class="n">mean</span> <span class="n">of</span> <span class="mf">0.</span>
 
@@ -814,18 +797,16 @@ different nominal flux, e.g. Honda et al 2025</p></li>
     <span class="n">uncorrelated</span> <span class="k">as</span> <span class="n">the</span> <span class="n">ratio</span> <span class="ow">is</span> <span class="n">badly</span> <span class="n">determined</span><span class="o">.</span>
 </pre></div>
 </div>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;true_coszen&quot;</span>
-<span class="s2">&quot;nubar_flux_nominal&quot;</span>
-<span class="s2">&quot;nubar&quot;</span>
-</pre></div>
-</div>
 </p></li>
 </ul>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
+<p>Implements no apply, so assumes implicit caching of nominal fluxes (FIXME).</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span> <span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">,</span> <span class="s2">&quot;nubar&quot;</span>
+</pre></div>
+</div>
 <p>The nominal flux is calculated ahead of time using MCEq,
 then multiplied with a shift in spectral index, and then modifications due
 to meson production (barr variables) are added.</p>
@@ -924,7 +905,7 @@ fully correlated way.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>table_file</strong> (<em>pickle file containing pre-generated tables from MCEq</em>)</p></li>
-<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must exclusively have parameters: ..</p>
+<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">delta_index</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
     <span class="n">Shift</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">spectral</span> <span class="n">index</span> <span class="n">of</span> <span class="n">the</span> <span class="n">neutrino</span> <span class="n">flux</span><span class="o">.</span> <span class="n">Prior</span> <span class="k">with</span> <span class="n">a</span> <span class="n">mean</span> <span class="n">of</span> <span class="mf">0.</span>
 
@@ -953,20 +934,18 @@ fully correlated way.</p>
     <span class="n">uncorrelated</span> <span class="k">as</span> <span class="n">the</span> <span class="n">ratio</span> <span class="ow">is</span> <span class="n">badly</span> <span class="n">determined</span><span class="o">.</span>
 </pre></div>
 </div>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;true_coszen&quot;</span>
-<span class="s2">&quot;nu_flux_nominal&quot;</span>
-<span class="s2">&quot;nubar_flux_nominal&quot;</span>
-<span class="s2">&quot;nubar&quot;</span>
-</pre></div>
-</div>
 </p></li>
 </ul>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>The nominal flux is calculated ahead of time using the honda_ip stage,
+<p>Implements no apply, so assumes implicit caching of nominal fluxes (FIXME).</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span> <span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">,</span> <span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">,</span>
+<span class="s2">&quot;nubar&quot;</span>
+</pre></div>
+</div>
+<p>The nominal flux is calculated ahead of time using the <a class="reference internal" href="#pisa.stages.flux.honda_ip.honda_ip" title="pisa.stages.flux.honda_ip.honda_ip"><code class="xref py py-class docutils literal notranslate"><span class="pre">honda_ip</span></code></a> stage,
 then multiplied with a shift in spectral index, and then modifications due
 to meson production (barr variables) are added.</p>
 <p>The MCEq-table has 2 solutions of the cascade equation per Barr variable (12)
@@ -1169,7 +1148,7 @@ shift in spectral index, applied about a user-defined energy pivot.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="_static/documentation_options.js?v=533ca4eb"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

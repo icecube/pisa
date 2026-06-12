@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>PISA stage modes - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>PISA stage modes - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -175,7 +175,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -286,7 +286,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
@@ -297,16 +297,390 @@
 <p>More specifically, <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code> by default defines the representation during the <code class="docutils literal notranslate"><span class="pre">setup()</span></code>and <code class="docutils literal notranslate"><span class="pre">compute()</span></code> steps, and <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code> that during the <code class="docutils literal notranslate"><span class="pre">apply</span></code> step, see the <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/stages/README.md" rel="noreferer noopener" target="_blank">stages readme</a>. The latter two steps are executed successively whenever a given stage instance is <code class="docutils literal notranslate"><span class="pre">run()</span></code>, during the pipeline output calculation. Like this, complex event-by-event calculations (e.g., oscillation probabilities) can for example be executed during the <code class="docutils literal notranslate"><span class="pre">compute()</span></code> step, which also has a basic caching mechanism to avoid redundant calculations. The <code class="docutils literal notranslate"><span class="pre">apply()</span></code> step typically performs simple transformations (using results of a preceding <code class="docutils literal notranslate"><span class="pre">compute()</span></code> step or not) of the data in the representation determined by <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>. Take a look at different stage implementations (“services”) and example pipeline configuration files to get a better feel for the concept.</p>
 <p>Note that you can change the modes on runtime, but after doing so need to <code class="docutils literal notranslate"><span class="pre">setup()</span></code> the stage or pipeline again (exercise: can you find a service which only defines its <code class="docutils literal notranslate"><span class="pre">setup()</span></code> step, but neither <code class="docutils literal notranslate"><span class="pre">compute()</span></code> nor <code class="docutils literal notranslate"><span class="pre">apply()</span></code>?).</p>
 <p>If the output representation of a stage is different than what, for example, the next stage needs to have as input, the output is automatically translated by PISA (translation between data representations). So you can mix and match, but be aware that translations will introduce computational cost and hence may slow things down.</p>
+<section id="service-implementation-reference">
+<h2>Service implementation reference<a class="headerlink" href="#service-implementation-reference" title="Link to this heading">¶</a></h2>
+<p>This <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa_tests/test_services.py" rel="noreferer noopener" target="_blank">auto-generated</a> table documents which methods each service implements, which representations it supports, as well as any deviant behavior or properties to be aware of.
+It currently only contains services that can be <strong>instantiated without importing optional PISA dependencies</strong>.</p>
+<p><strong>Legend:</strong></p>
+<ul class="simple">
+<li><p><strong>has_setup/compute/apply</strong>: whether the service overrides setup/compute/apply_function (✓ = yes, ✗ = no)</p></li>
+<li><p><strong>calc_mode support</strong>: allowed representations during setup/compute steps</p></li>
+<li><p><strong>apply_mode support</strong>: allowed representations during apply step</p></li>
+<li><p><strong>Notes</strong>: special behaviors, restrictions, problems, etc.</p></li>
+</ul>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Service</p></th>
+<th class="head text-center"><p>has_setup</p></th>
+<th class="head text-center"><p>has_compute</p></th>
+<th class="head text-center"><p>has_apply</p></th>
+<th class="head text-center"><p>calc_mode support</p></th>
+<th class="head text-center"><p>apply_mode support</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>absorption.earth_absorption</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>aeff.aeff</strong></p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>None</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>aeff.param</strong></p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>None</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>aeff.weight</strong></p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>None</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>aeff.weight_hnl</strong></p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>None</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>background.atm_muons</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>cont_sys.snowstorm_hist</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>None, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>data.csv_data_hist</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>None</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>data.csv_icc_hist</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>data.csv_loader</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>data.grid</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>data.meows_loader</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>data.simple_data_loader</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>None</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>data.sqlite_loader</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>data.toy_event_generator</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>discr_sys.csv_hypersurfaces</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>MultiDimBinning</p></td>
+<td class="text-center"><p>MultiDimBinning, “events”</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>discr_sys.hypersurfaces</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>discr_sys.ultrasurfaces</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>flux.astrophysical</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>flux.barr_simple</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>None</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>flux.daemon_flux</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>None</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>flux.hillasg</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>None</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>flux.honda_ip</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>None</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>flux.mceq_barr</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>None</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>flux.mceq_barr_red</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>None</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>likelihood.generalized_llh_params</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>osc.decoherence</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>osc.globes</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>osc.prob3</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>osc.two_nu_osc</strong></p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>None</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>reco.resolutions</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>None</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>reco.simple_param</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>None</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>utils.add_indices</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>MultiDimBinning</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>utils.adhoc_sys</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>utils.bootstrap</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>utils.fix_error</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>utils.hist</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>MultiDimBinning, “events”</p></td>
+<td class="text-center"><p>None, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>utils.kde</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>utils.kfold</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>utils.set_variance</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>MultiDimBinning</p></td>
+<td class="text-center"><p>MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>xsec.correct_charm_y</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>xsec.dis_sys</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>xsec.genie_sys</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✗</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>xsec.nutau_xsec</strong></p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>✓</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;&lt; PISA is running in double precision (FP64) mode; numba is running on CPU (single core) &gt;&gt;
 </pre></div>
 </div>
 </div>
@@ -319,16 +693,14 @@
 </ul>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mixed_modes_model</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">)</span>
-<span class="n">mixed_modes_model</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="kc">True</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mixed_modes_model</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">events_modes_model</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">)</span>
-<span class="n">events_modes_model</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="kc">True</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">events_modes_model</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">events_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
 <span class="n">events_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
@@ -341,19 +713,20 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">grid_modes_model</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">)</span>
-<span class="n">grid_modes_model</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="kc">True</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">grid_modes_model</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">true_binning</span> <span class="o">=</span> <span class="n">grid_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">calc_mode</span>
 
-<span class="n">grid_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">true_binning</span>
-<span class="n">grid_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">true_binning</span>
-<span class="n">grid_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">true_binning</span>
-<span class="n">grid_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">true_binning</span>
-<span class="n">grid_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">true_binning</span>
-<span class="n">grid_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">=</span> <span class="n">true_binning</span>
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">grid_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">=</span> <span class="n">true_binning</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="n">true_binning</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
 <span class="n">grid_modes_model</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">=</span> <span class="n">true_binning</span>
-
 <span class="n">grid_modes_model</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -372,17 +745,17 @@
 </thead>
 <tbody>
 <tr><td style="text-align: right;">             0</td><td style="text-align: center;"> csv_loader  </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
-<tr><td style="text-align: right;">             1</td><td style="text-align: center;">  honda_ip   </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       0       </td></tr>
-<tr><td style="text-align: right;">             2</td><td style="text-align: center;"> barr_simple </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       4       </td></tr>
-<tr><td style="text-align: right;">             3</td><td style="text-align: center;">    prob3    </td><td style="text-align: center;">      "true_allsky_fine":
+<tr><td style="text-align: right;">             1</td><td style="text-align: center;">  honda_ip   </td><td style="text-align: center;">      &quot;true_allsky_fine&quot;:
+200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">            </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       0       </td></tr>
+<tr><td style="text-align: right;">             2</td><td style="text-align: center;"> barr_simple </td><td style="text-align: center;">      &quot;true_allsky_fine&quot;:
+200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">            </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       4       </td></tr>
+<tr><td style="text-align: right;">             3</td><td style="text-align: center;">    prob3    </td><td style="text-align: center;">      &quot;true_allsky_fine&quot;:
 200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       9        </td><td style="text-align: center;">       3       </td></tr>
-<tr><td style="text-align: right;">             4</td><td style="text-align: center;">    aeff     </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   False   </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       2        </td><td style="text-align: center;">       3       </td></tr>
-<tr><td style="text-align: right;">             5</td><td style="text-align: center;">    hist     </td><td style="text-align: center;">  events   </td><td style="text-align: center;">      "dragon_datarelease":
+<tr><td style="text-align: right;">             4</td><td style="text-align: center;">    aeff     </td><td style="text-align: center;">           </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   False   </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       2        </td><td style="text-align: center;">       3       </td></tr>
+<tr><td style="text-align: right;">             5</td><td style="text-align: center;">    hist     </td><td style="text-align: center;">  events   </td><td style="text-align: center;">      &quot;dragon_datarelease&quot;:
 8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
-<tr><td style="text-align: right;">             6</td><td style="text-align: center;">hypersurfaces</td><td style="text-align: center;">      "dragon_datarelease":
-8 (reco_energy) x 8 (reco_coszen) x 2 (pid)      </td><td style="text-align: center;">      "dragon_datarelease":
+<tr><td style="text-align: right;">             6</td><td style="text-align: center;">hypersurfaces</td><td style="text-align: center;">      &quot;dragon_datarelease&quot;:
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)      </td><td style="text-align: center;">      &quot;dragon_datarelease&quot;:
 8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       5       </td></tr>
 </tbody>
 </table></div></div>
@@ -400,14 +773,14 @@
 </thead>
 <tbody>
 <tr><td style="text-align: right;">             0</td><td style="text-align: center;"> csv_loader  </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
-<tr><td style="text-align: right;">             1</td><td style="text-align: center;">  honda_ip   </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       0       </td></tr>
-<tr><td style="text-align: right;">             2</td><td style="text-align: center;"> barr_simple </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       4       </td></tr>
+<tr><td style="text-align: right;">             1</td><td style="text-align: center;">  honda_ip   </td><td style="text-align: center;">  events   </td><td style="text-align: center;">            </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       0       </td></tr>
+<tr><td style="text-align: right;">             2</td><td style="text-align: center;"> barr_simple </td><td style="text-align: center;">  events   </td><td style="text-align: center;">            </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       4       </td></tr>
 <tr><td style="text-align: right;">             3</td><td style="text-align: center;">    prob3    </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       9        </td><td style="text-align: center;">       3       </td></tr>
-<tr><td style="text-align: right;">             4</td><td style="text-align: center;">    aeff     </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   False   </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       2        </td><td style="text-align: center;">       3       </td></tr>
-<tr><td style="text-align: right;">             5</td><td style="text-align: center;">    hist     </td><td style="text-align: center;">  events   </td><td style="text-align: center;">      "dragon_datarelease":
+<tr><td style="text-align: right;">             4</td><td style="text-align: center;">    aeff     </td><td style="text-align: center;">           </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   False   </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       2        </td><td style="text-align: center;">       3       </td></tr>
+<tr><td style="text-align: right;">             5</td><td style="text-align: center;">    hist     </td><td style="text-align: center;">  events   </td><td style="text-align: center;">      &quot;dragon_datarelease&quot;:
 8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
-<tr><td style="text-align: right;">             6</td><td style="text-align: center;">hypersurfaces</td><td style="text-align: center;">      "dragon_datarelease":
-8 (reco_energy) x 8 (reco_coszen) x 2 (pid)      </td><td style="text-align: center;">      "dragon_datarelease":
+<tr><td style="text-align: right;">             6</td><td style="text-align: center;">hypersurfaces</td><td style="text-align: center;">      &quot;dragon_datarelease&quot;:
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)      </td><td style="text-align: center;">      &quot;dragon_datarelease&quot;:
 8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       5       </td></tr>
 </tbody>
 </table></div></div>
@@ -424,30 +797,27 @@
 <tr><th style="text-align: right;">  stage number</th><th style="text-align: center;">    name     </th><th style="text-align: center;"> calc_mode </th><th style="text-align: center;"> apply_mode </th><th style="text-align: center;"> has setup </th><th style="text-align: center;"> has compute </th><th style="text-align: center;"> has apply </th><th style="text-align: center;"> # fixed params </th><th style="text-align: center;"> # free params </th></tr>
 </thead>
 <tbody>
-<tr><td style="text-align: right;">             0</td><td style="text-align: center;"> csv_loader  </td><td style="text-align: center;">  events   </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
-<tr><td style="text-align: right;">             1</td><td style="text-align: center;">  honda_ip   </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       0       </td></tr>
-<tr><td style="text-align: right;">             2</td><td style="text-align: center;"> barr_simple </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       4       </td></tr>
-<tr><td style="text-align: right;">             3</td><td style="text-align: center;">    prob3    </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">      "true_allsky_fine":
+<tr><td style="text-align: right;">             0</td><td style="text-align: center;"> csv_loader  </td><td style="text-align: center;">  events   </td><td style="text-align: center;">   events   </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
+<tr><td style="text-align: right;">             1</td><td style="text-align: center;">  honda_ip   </td><td style="text-align: center;">      &quot;true_allsky_fine&quot;:
+200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">            </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       0       </td></tr>
+<tr><td style="text-align: right;">             2</td><td style="text-align: center;"> barr_simple </td><td style="text-align: center;">      &quot;true_allsky_fine&quot;:
+200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">            </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   False   </td><td style="text-align: center;">       1        </td><td style="text-align: center;">       4       </td></tr>
+<tr><td style="text-align: right;">             3</td><td style="text-align: center;">    prob3    </td><td style="text-align: center;">      &quot;true_allsky_fine&quot;:
+200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">      &quot;true_allsky_fine&quot;:
 200 (true_energy) x 200 (true_coszen)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       9        </td><td style="text-align: center;">       3       </td></tr>
-<tr><td style="text-align: right;">             4</td><td style="text-align: center;">    aeff     </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">      "true_allsky_fine":
+<tr><td style="text-align: right;">             4</td><td style="text-align: center;">    aeff     </td><td style="text-align: center;">           </td><td style="text-align: center;">      &quot;true_allsky_fine&quot;:
 200 (true_energy) x 200 (true_coszen)       </td><td style="text-align: center;">   False   </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       2        </td><td style="text-align: center;">       3       </td></tr>
-<tr><td style="text-align: right;">             5</td><td style="text-align: center;">    hist     </td><td style="text-align: center;">      "true_allsky_fine":
-200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">      "dragon_datarelease":
+<tr><td style="text-align: right;">             5</td><td style="text-align: center;">    hist     </td><td style="text-align: center;">      &quot;true_allsky_fine&quot;:
+200 (true_energy) x 200 (true_coszen)      </td><td style="text-align: center;">      &quot;dragon_datarelease&quot;:
 8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    False    </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       0       </td></tr>
-<tr><td style="text-align: right;">             6</td><td style="text-align: center;">hypersurfaces</td><td style="text-align: center;">      "dragon_datarelease":
-8 (reco_energy) x 8 (reco_coszen) x 2 (pid)      </td><td style="text-align: center;">      "dragon_datarelease":
+<tr><td style="text-align: right;">             6</td><td style="text-align: center;">hypersurfaces</td><td style="text-align: center;">      &quot;dragon_datarelease&quot;:
+8 (reco_energy) x 8 (reco_coszen) x 2 (pid)      </td><td style="text-align: center;">      &quot;dragon_datarelease&quot;:
 8 (reco_energy) x 8 (reco_coszen) x 2 (pid)       </td><td style="text-align: center;">   True    </td><td style="text-align: center;">    True     </td><td style="text-align: center;">   True    </td><td style="text-align: center;">       0        </td><td style="text-align: center;">       5       </td></tr>
 </tbody>
 </table></div></div>
 </div>
 <p>We can compare timings. Event-by-event it takes around 8 minutes! The two other modes around 25 seconds.</p>
+<p><strong>Note</strong>: To speed up the following <code class="docutils literal notranslate"><span class="pre">get_outputs()</span></code> calls, consider running this notebook after having set the environment variables <code class="docutils literal notranslate"><span class="pre">PISA_TARGET=&quot;parallel&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">PISA_NUM_THREADS</span> <span class="pre">=</span> <span class="pre">&lt;some</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">threads</span> <span class="pre">&gt;</span> <span class="pre">1&gt;</span></code>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
@@ -456,8 +826,8 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 7min 28s, sys: 349 ms, total: 7min 28s
-Wall time: 7min 28s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 6min 42s, sys: 36.8 ms, total: 6min 42s
+Wall time: 6min 42s
 </pre></div>
 </div>
 </div>
@@ -470,8 +840,8 @@ Wall time: 7min 28s
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 23.5 s, sys: 51.9 ms, total: 23.6 s
-Wall time: 23.6 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 25.2 s, sys: 15.8 ms, total: 25.2 s
+Wall time: 25.4 s
 </pre></div>
 </div>
 </div>
@@ -484,8 +854,8 @@ Wall time: 23.6 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 26.5 s, sys: 3.95 s, total: 30.4 s
-Wall time: 23.7 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 21.8 s, sys: 8.19 ms, total: 21.8 s
+Wall time: 21.5 s
 </pre></div>
 </div>
 </div>
@@ -511,7 +881,13 @@ Wall time: 23.7 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/9ceb823acf75a5d68054e5d0c9640799933d56916087640ae1177af8e33b7d02.png" src="../_images/9ceb823acf75a5d68054e5d0c9640799933d56916087640ae1177af8e33b7d02.png" />
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(&lt;Figure size 2000x700 with 18 Axes&gt;,
+ &lt;Axes: title={&#39;center&#39;: &#39;${\\nu_{\\rm all}} + {\\bar\\nu_{\\rm all}},{\\;}{\\rm PID}{\\;}bin{\\;}0$&#39;}, xlabel=&#39;$E_{\\rm reco} \\; \\left( \\mathrm{GeV} \\right)$&#39;, ylabel=&#39;$\\cos{\\theta}_{\\rm reco}$&#39;&gt;,
+ &lt;matplotlib.collections.QuadMesh at 0x7f760edadd10&gt;,
+ None)
+</pre></div>
+</div>
+<img alt="../_images/5fe623a088a76a2589ff4e42f6d1e8d062cf8d075c0a9f7395057786da4d68b7.png" src="../_images/5fe623a088a76a2589ff4e42f6d1e8d062cf8d075c0a9f7395057786da4d68b7.png" />
 </div>
 </div>
 <p>In depth comparison of single maps:</p>
@@ -529,7 +905,7 @@ Wall time: 23.7 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/a5b8d451ac794573738472d7cc530d3725521d68c623a910da35fca4fff87bff.png" src="../_images/a5b8d451ac794573738472d7cc530d3725521d68c623a910da35fca4fff87bff.png" />
+<img alt="../_images/ab1c5349a6bcfed64cffe45ef510c401f3e1c4c1cc07ab2052abbbafb9cb26b5.png" src="../_images/ab1c5349a6bcfed64cffe45ef510c401f3e1c4c1cc07ab2052abbbafb9cb26b5.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -546,9 +922,10 @@ Wall time: 23.7 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/ec98848016f300a7e5b7a3e1291221ae26646688cbf31d818daa528d8fbbad1d.png" src="../_images/ec98848016f300a7e5b7a3e1291221ae26646688cbf31d818daa528d8fbbad1d.png" />
+<img alt="../_images/25c066f1623ec7669f594372c1f08b43aa8996ac4a3296f3de3b6fad26ee9b8e.png" src="../_images/25c066f1623ec7669f594372c1f08b43aa8996ac4a3296f3de3b6fad26ee9b8e.png" />
 </div>
 </div>
+</section>
 </section>
 
         </article>
@@ -601,13 +978,32 @@ Wall time: 23.7 s
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">PISA stage modes</a><ul>
+<li><a class="reference internal" href="#service-implementation-reference">Service implementation reference</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="../_static/documentation_options.js?v=533ca4eb"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

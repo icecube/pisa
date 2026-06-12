@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.reco package - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.reco package - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -309,12 +309,12 @@
 <dt class="sig sig-object py" id="pisa.stages.reco.resolutions.resolutions">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.reco.resolutions.</span></span><span class="sig-name descname"><span class="pre">resolutions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">relative_pid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/resolutions.html#resolutions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.resolutions.resolutions" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>stage to change the reconstructed information by a given amount
-This can be used to esimate the impact of improved recosntruction
-resolutions for instance</p>
+<p>Stage to change the reconstructed information by a given amount.
+This can be used to estimate the impact of improved reconstruction
+resolutions for instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> – <p>Expected params ..</p>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">energy_improvement</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
    <span class="n">scale</span> <span class="n">the</span> <span class="n">reco</span> <span class="n">error</span> <span class="n">down</span> <span class="n">by</span> <span class="n">this</span> <span class="n">fraction</span>
 <span class="n">coszen_improvement</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
@@ -324,17 +324,15 @@ resolutions for instance</p>
     <span class="n">scales</span> <span class="n">the</span> <span class="n">pid</span> <span class="n">error</span> <span class="n">down</span> <span class="n">by</span> <span class="n">this</span> <span class="n">fraction</span> <span class="p">[</span><span class="k">if</span> <span class="n">relative_pid</span><span class="o">=</span><span class="kc">True</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;true_coszen&quot;</span>
-<span class="s2">&quot;reco_energy&quot;</span>
-<span class="s2">&quot;reco_coszen&quot;</span>
-<span class="s2">&quot;pid&quot;</span>
-</pre></div>
-</div>
 </p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Implements no apply.</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span> <span class="s2">&quot;reco_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;reco_coszen&quot;</span><span class="p">,</span> <span class="s2">&quot;pid&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.reco.resolutions.resolutions.setup_function">
 <span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/resolutions.html#resolutions.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.resolutions.resolutions.setup_function" title="Link to this definition">¶</a></dt>
@@ -446,33 +444,39 @@ input reconstructed events.</p>
 <p>Can easily be tuned to any desired physics case, rught now repesent a DeepCore/ICU-like detector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must exclusively have parameters:</p>
-<dl class="simple">
-<dt>perfect_reco<span class="classifier">bool</span></dt><dd><p>If True, use “perfect reco”: reco == true, numu(bar)_cc -&gt; tracks, rest to cascades
-If False, use the parametrised reco energy, coszen and pid functions</p>
-</dd>
-<dt>reco_energy_params<span class="classifier">dict</span></dt><dd><p>Dict defining the <cite>params</cite> argument to <cite>simple_reco_energy_parameterization</cite>
-See <cite>simple_reco_energy_parameterization</cite> documentatio for more details</p>
-</dd>
-<dt>reco_coszen_params<span class="classifier">dict</span></dt><dd><p>Dict defining the <cite>params</cite> argument to <cite>simple_reco_coszen_parameterization</cite>
-See <cite>simple_reco_coszen_parameterization</cite> documentatio for more details</p>
-</dd>
-<dt>pid_track_params<span class="classifier">dict</span></dt><dd><p>Dict defining the <cite>params</cite> argument to <cite>simple_pid_parameterization</cite>
-See <cite>simple_pid_parameterization</cite> documentatio for more details</p>
-</dd>
-<dt>track_pid<span class="classifier">float</span></dt><dd><p>The numerical ‘pid’ variable value to assign for tracks</p>
-</dd>
-<dt>cascade_pid<span class="classifier">float</span></dt><dd><p>The numerical ‘pid’ variable value to assign for cascades</p>
-</dd>
-</dl>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;true_coszen&quot;</span>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>perfect_reco : bool
+    If True, use &quot;perfect reco&quot;: reco == true, numu(bar)_cc -&gt; tracks, rest to cascades
+    If False, use the parametrised reco energy, coszen and pid functions
+
+reco_energy_params : dict
+    Dict defining the `params` argument to `simple_reco_energy_parameterization`
+    See `simple_reco_energy_parameterization` documentatio for more details
+
+reco_coszen_params : dict
+    Dict defining the `params` argument to `simple_reco_coszen_parameterization`
+    See `simple_reco_coszen_parameterization` documentatio for more details
+
+pid_track_params : dict
+    Dict defining the `params` argument to `simple_pid_parameterization`
+    See `simple_pid_parameterization` documentatio for more details
+
+track_pid : float
+    The numerical &#39;pid&#39; variable value to assign for tracks
+
+cascade_pid : float
+    The numerical &#39;pid&#39; variable value to assign for cascades
 </pre></div>
 </div>
 </p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Implements no apply.</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;true_coszen&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.reco.simple_param.simple_param.setup_function">
 <span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/reco/simple_param.html#simple_param.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.reco.simple_param.simple_param.setup_function" title="Link to this definition">¶</a></dt>
@@ -696,7 +700,7 @@ or stochastics, but either way not reproducing this here.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="_static/documentation_options.js?v=533ca4eb"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

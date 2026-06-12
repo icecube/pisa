@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.flux.daemon_flux - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.flux.daemon_flux - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -286,24 +286,7 @@
 <span class="sd">by Juan Pablo Yañez and Anatoli Fedynitch for use in PISA.</span>
 
 <span class="sd">Module originally authored by Maria Liubarska, J.P. Yañez 2023</span>
-
-<span class="sd">TODO/Notes:</span>
-<span class="sd">* does every parameter affect all fluxes (i.e., further caching potential)?</span>
-<span class="sd">* remove piecewise (manual) timings for production</span>
-<span class="sd">* any benefit from optimising/adapting arguments of fast_interp.interp2d?</span>
-<span class="sd">* We only seem to get performance benefits from fast_interp package when</span>
-<span class="sd">  its JIT target is &quot;parallel&quot;, even when numba.get_num_threads() = 1</span>
-<span class="sd">  (PISA_NUM_THREADS=1). The latter is ensured when TARGET=&quot;cpu&quot;.</span>
-<span class="sd">  This parallel compilation happens whenever true_energy.size &gt;</span>
-<span class="sd">  fast_interp.fast_interp.serial_cutoffs[2] (default value: 400).</span>
-<span class="sd">  Accordingly, the number of events/grid size needs to exceed this.</span>
-<span class="sd">  Serial compilation seems to be much slower than not using fast_interp</span>
-<span class="sd">  in the first place, at least for the public 3-year event sample with</span>
-<span class="sd">  calc_mode=&quot;events&quot;. However, it could be enforced by calling:</span>
-<span class="sd">  fast_interp.set_serial_cutoffs(dimension=2, cutoff=np.inf).</span>
 <span class="sd">&quot;&quot;&quot;</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">daemonflux</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flux</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">daemonflux</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">daemon_version</span>
@@ -314,7 +297,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">interpolate</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span><span class="p">,</span> <span class="n">ureg</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span><span class="p">,</span> <span class="n">OneDimBinning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
@@ -331,7 +314,21 @@
 <span class="sd">&quot;&quot;&quot;Default array of true neutrino energies at which to request fluxes</span>
 <span class="sd">from daemonflux&quot;&quot;&quot;</span>
 
-
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">TODO/Notes:</span>
+<span class="sd">* does every parameter affect all fluxes (i.e., further caching potential)?</span>
+<span class="sd">* any benefit from optimising/adapting arguments of fast_interp.interp2d?</span>
+<span class="sd">* We only seem to get performance benefits from fast_interp package when</span>
+<span class="sd">  its JIT target is &quot;parallel&quot;, even when numba.get_num_threads() = 1</span>
+<span class="sd">  (PISA_NUM_THREADS=1). The latter is ensured when TARGET=&quot;cpu&quot;.</span>
+<span class="sd">  This parallel compilation happens whenever true_energy.size &gt;</span>
+<span class="sd">  fast_interp.fast_interp.serial_cutoffs[2] (default value: 400).</span>
+<span class="sd">  Accordingly, the number of events/grid size needs to exceed this.</span>
+<span class="sd">  Serial compilation seems to be much slower than not using fast_interp</span>
+<span class="sd">  in the first place, at least for the public 3-year event sample with</span>
+<span class="sd">  calc_mode=&quot;events&quot;. However, it could be enforced by calling:</span>
+<span class="sd">  fast_interp.set_serial_cutoffs(dimension=2, cutoff=np.inf).</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="daemon_flux">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.daemon_flux.daemon_flux">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">daemon_flux</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
@@ -383,11 +380,11 @@
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
+<span class="sd">    Implements no apply.</span>
 
 <span class="sd">    Expected container keys are::</span>
 
 <span class="sd">        &quot;true_energy&quot;, &quot;true_coszen&quot;, &quot;nubar&quot;</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calibration_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_fast_interp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">energy_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -497,16 +494,10 @@
             <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
             <span class="s1">&#39;nubar&#39;</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="c1"># event-by-event or binned fluxes; no apply_function</span>
-        <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">],</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">],</span>
-        <span class="p">}</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
             <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
-            <span class="n">supported_reps</span><span class="o">=</span><span class="n">supported_reps</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -550,7 +541,7 @@
         <span class="p">)</span>
 
         <span class="n">ntot</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="c1">#start_t = time.time()</span>
         <span class="c1"># Obtain modified fluxes using provided parameters at desired points</span>
         <span class="c1"># in true_energy and true_coszen now</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
@@ -568,10 +559,10 @@
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nu_flux&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">nue_flux</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nu_flux&#39;</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">numu_flux</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">)</span>
-            <span class="n">ntot</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span>
-        <span class="n">stop_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;PISA spline evaluation time (s, </span><span class="si">%d</span><span class="s2"> events): </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ntot</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stop_t</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_t</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="n">ntot</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span></div>
 
+        <span class="c1">#stop_t = time.time()</span>
+        <span class="c1">#logging.info(&quot;PISA spline evaluation time (s, %d events): %s&quot;, ntot, f&quot;{stop_t - start_t:.2e}&quot;)</span>
 
 
 <div class="viewcode-block" id="daemon_flux.make_2d_flux_map">
@@ -597,7 +588,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="c1">#start_t = time.time()</span>
         <span class="c1"># Obtain flux from daemonflux: expects ascending zenith angles in deg</span>
         <span class="c1"># TODO: Why does flux_obj need these to be handed back to it again?</span>
         <span class="n">flux_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flux_obj</span><span class="o">.</span><span class="n">flux</span><span class="p">(</span>
@@ -606,13 +597,13 @@
             <span class="n">quantity</span><span class="o">=</span><span class="n">particle</span><span class="p">,</span>
             <span class="n">params</span><span class="o">=</span><span class="n">params</span>
         <span class="p">)</span>
-        <span class="n">stop_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;daemonflux </span><span class="si">%s</span><span class="s2"> flux generation duration (s): </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">particle</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stop_t</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_t</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1">#stop_t = time.time()</span>
+        <span class="c1">#logging.info(&quot;daemonflux %s flux generation duration (s): %s&quot;, particle, f&quot;{stop_t - start_t:.2e}&quot;)</span>
         <span class="c1"># Now flip zenith angle dimension so we can interpolate in costheta</span>
         <span class="c1"># with increasing costheta</span>
         <span class="n">flux_ref_lr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">flux_ref</span><span class="p">)</span>
 
-        <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="c1">#start_t = time.time()</span>
         <span class="c1"># Return interpolant which can be evaluated later</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fast_interp</span><span class="p">:</span>
             <span class="n">fcn</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RectBivariateSpline</span><span class="p">(</span>
@@ -629,8 +620,8 @@
                 <span class="n">c</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
                 <span class="n">e</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
             <span class="p">)</span>
-        <span class="n">stop_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;splining duration (s): </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stop_t</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_t</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1">#stop_t = time.time()</span>
+        <span class="c1">#logging.info(&quot;splining duration (s): %s&quot;, f&quot;{stop_t - start_t:.2e}&quot;)</span>
         <span class="k">return</span> <span class="n">fcn</span></div>
 
 
@@ -720,7 +711,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="../../../../_static/documentation_options.js?v=533ca4eb"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

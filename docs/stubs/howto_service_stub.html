@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Creating a service - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>Creating a service - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -365,33 +365,44 @@ Refer to the <a class="reference external" href="https://github.com/icecube/pisa
 <span class="sd">    What is the purpose of this stage? Short 1-2 sentence description</span>
 
 
-<span class="sd">    Parameters:</span>
-<span class="sd">    -----------</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
 <span class="sd">    params : ParamSet</span>
-<span class="sd">      Expected parameters are .. ::</span>
+<span class="sd">      Must have parameters::</span>
+
 <span class="sd">        a : dimensionless Quantity</span>
 <span class="sd">        b : dimensionless Quantity</span>
 
 <span class="sd">    something_else : float</span>
 <span class="sd">        Description</span>
 
+<span class="sd">    some_arg_with_default : bool (default: True)</span>
+<span class="sd">        Description</span>
 
-<span class="sd">    Notes:</span>
-<span class="sd">    ------</span>
-<span class="sd">    If you want to use both foo and bar, blah blah. More info, etc...</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    If you want to use both foo and bar, blah blah.</span>
+<span class="sd">    Does not implement setup/compute/apply because ...</span>
+<span class="sd">    Only allowed apply_mode is ...</span>
+<span class="sd">    More info, etc...</span>
+
+<span class="sd">    Expected container keys are::</span>
+
+<span class="sd">        &#39;true_energy&#39;, &#39;true_coszen&#39;, &#39;weights&#39;</span>
 
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    Einstein, Albert. &quot;The photoelectric effect.&quot; Ann. Phys 17.132 (1905): 4.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 </pre></div>
 </div>
 <p>Note that the “Parameters” section has parameter names optionally followed by <code class="docutils literal notranslate"><span class="pre">:</span></code> and then a list of types that the parameter can be.
 This turns out to be quite useful for both developers and users, so include what type(s) your code expects here!
 The further-indented line(s) beneath the <code class="docutils literal notranslate"><span class="pre">name</span> <span class="pre">:</span> <span class="pre">type</span></code> specification then describe the parameters (arguments) for instantiating the class.
-This same convention is followed for method docstrings.</p>
+This same convention is followed for method docstrings.
+How to determine which parameters belong to the <code class="docutils literal notranslate"><span class="pre">ParamSet</span></code> (<code class="docutils literal notranslate"><span class="pre">params</span></code>) and which ones serve as class instantiation arguments is outlined below.</p>
 </section>
 <section id="the-init-method-definition">
 <h3>The <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method definition<a class="headerlink" href="#the-init-method-definition" title="Link to this heading">¶</a></h3>
@@ -400,80 +411,100 @@ This same convention is followed for method docstrings.</p>
 
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)</span>
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;true_energy&#39;</span><span class="p">,</span> <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span> <span class="s1">&#39;weights&#39;</span><span class="p">)</span>
+        <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="n">MultiDimBinning</span><span class="p">,</span>
+            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;events&#39;</span>
+        <span class="p">}</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
             <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
+            <span class="n">supported_reps</span><span class="o">=</span><span class="n">supported_reps</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">foo</span> <span class="o">=</span> <span class="n">something_else</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Description&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bar</span> <span class="o">=</span> <span class="n">some_arg_with_default</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Description&quot;&quot;&quot;</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">std_kwargs</span></code> can only contain <code class="docutils literal notranslate"><span class="pre">data</span></code>, <code class="docutils literal notranslate"><span class="pre">params</span></code>, <code class="docutils literal notranslate"><span class="pre">expected_params</span></code>, <code class="docutils literal notranslate"><span class="pre">debug_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">error_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>, and <code class="docutils literal notranslate"><span class="pre">profile</span></code>.
-Of these, <code class="docutils literal notranslate"><span class="pre">data</span></code> and <code class="docutils literal notranslate"><span class="pre">params</span></code> will be automatically populated.</p>
-<p>This means that a minimal example for the code instantiating the service will look something like</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">std_kwargs</span></code> can only contain <code class="docutils literal notranslate"><span class="pre">data</span></code>, <code class="docutils literal notranslate"><span class="pre">params</span></code>, <code class="docutils literal notranslate"><span class="pre">expected_params</span></code>, <code class="docutils literal notranslate"><span class="pre">expected_container_keys</span></code>, <code class="docutils literal notranslate"><span class="pre">debug_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">error_method</span></code>, <code class="docutils literal notranslate"><span class="pre">supported_reps</span></code>, <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">profile</span></code>, and <code class="docutils literal notranslate"><span class="pre">in_standalone_mode</span></code>. Of these, <code class="docutils literal notranslate"><span class="pre">data</span></code> and <code class="docutils literal notranslate"><span class="pre">params</span></code> will be automatically populated when a <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> containing the service is instantiated.</p>
+<p>In turn, a minimal example for the code instantiating the service will look something like</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.dummy</span><span class="w"> </span><span class="kn">import</span> <span class="n">dummy</span> <span class="k">as</span> <span class="n">osc_dummy</span>
 <span class="n">instantiated_dummy</span> <span class="o">=</span> <span class="n">osc_dummy</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">my_paramset</span><span class="p">,</span> <span class="n">something_else</span><span class="o">=</span><span class="mf">0.42</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>(of course there’s code that would have to be written to instantiate <code class="docutils literal notranslate"><span class="pre">my_paramset</span></code>).
 In fact, we expect you to instantiate the service with some reasonable assumptions about params it expects in a test function at the bottom of the file (more on that below).</p>
-<p>Note two important things about how this service is being instantiated above:</p>
+<p>Note a few important things about how this service is being instantiated above:</p>
 <ol class="arabic simple">
 <li><p>All arguments are passed by keyword. Python allows you to just send arguments in order (positional args), but <em><strong>don’t do this</strong></em>. It’s far better to be explicit than to save a few keystrokes. With a “duck-typed” language like Python, using the names explicitly provides a useful check that what the user sends to a function/method is what the user intends, and that the function/method receives what it expects to get.</p></li>
 <li><p>Arguments like <code class="docutils literal notranslate"><span class="pre">some_arg_with_default=True</span></code> have default values set in the definition of init. These needn’t be specified by the user (since they have default values set), but can be, for the user to override the defaults. The arguments without defaults (such as <code class="docutils literal notranslate"><span class="pre">something_else</span></code>) <em>must</em> be specified by the user.</p></li>
+<li><p>Since the superclass <code class="docutils literal notranslate"><span class="pre">Stage</span></code> exclusively has keyword arguments, with default values of <code class="docutils literal notranslate"><span class="pre">None</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code>, and since the service is not part of a pipeline, <code class="docutils literal notranslate"><span class="pre">instantiated_dummy.data</span></code> returns <code class="docutils literal notranslate"><span class="pre">None</span></code>. (We could in principle choose to pass <code class="docutils literal notranslate"><span class="pre">data</span></code> as an instantiation argument to <code class="docutils literal notranslate"><span class="pre">osc_dummy</span></code>, but it isn’t required at <code class="docutils literal notranslate"><span class="pre">__init__</span></code> time).</p></li>
 </ol>
-<p>The init method body is broken down into four parts in the example to hopefully make it easier to see what you have to do to implement your own. For example, you don’t <em>need</em> to create the temporary variables of steps 1 and 2, but this format makes it very clear what’s going on and makes the code much cleaner than trying to stuff those tuples into step 3 where they are passed to the superclass’s init method.</p>
+<p>The init method body is broken down into four parts in the example to hopefully make it easier to see what you have to do to implement your own. For example, you don’t <em>need</em> to create the temporary variables of steps 1, 2, 3, but this format makes it very clear what’s going on and makes the code much cleaner than trying to stuff those objects into step 4 where they are passed to the superclass’s init method.</p>
 <ol class="arabic simple">
 <li><p>Define a temporary variable containing <code class="docutils literal notranslate"><span class="pre">expected_params</span></code>, the parameter names your service requires to be passed via the <code class="docutils literal notranslate"><span class="pre">params</span></code> argument.</p></li>
 <li><p>Define a temporary variable <code class="docutils literal notranslate"><span class="pre">expected_container_keys</span></code>, the container keys expected to be present in each container in the <code class="docutils literal notranslate"><span class="pre">data</span></code> object assigned to this service.</p></li>
-<li><p>Call the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method of the superclass (the service’s superclass is <code class="docutils literal notranslate"><span class="pre">Stage</span></code>). See the <code class="docutils literal notranslate"><span class="pre">Stage</span></code>’s init method definition (and corresponding class docstring) in <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/stage.py" rel="noreferer noopener" target="_blank">stage.py</a> for details of the arguments it expects.</p></li>
+<li><p>If desired, define a temporary variable <code class="docutils literal notranslate"><span class="pre">supported_reps</span></code>, containing the data representations (<code class="docutils literal notranslate"><span class="pre">calc_mode</span></code> and <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>) you want to allow. If you don’t, PISA will populate <code class="docutils literal notranslate"><span class="pre">supported_reps</span></code> with sensible defaults.</p></li>
+<li><p>Call the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method of the superclass (<code class="docutils literal notranslate"><span class="pre">Stage</span></code>). Don’t forget to pass the above arguments. For details of all the arguments it accepts, see the <code class="docutils literal notranslate"><span class="pre">Stage</span></code>’s init method definition (and corresponding class docstring) in <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/stage.py" rel="noreferer noopener" target="_blank">stage.py</a>.</p></li>
 <li><p>Do any custom things that your class requires for setting itself up.</p></li>
 </ol>
+<section id="defining-service-parameters-instantiation-argument-or-param-object">
+<h4>Defining service parameters: instantiation argument or <code class="docutils literal notranslate"><span class="pre">Param</span></code> object?<a class="headerlink" href="#defining-service-parameters-instantiation-argument-or-param-object" title="Link to this heading">¶</a></h4>
+<p>Instantiation arguments (<code class="docutils literal notranslate"><span class="pre">something_else</span></code> and <code class="docutils literal notranslate"><span class="pre">some_arg_with_default</span></code> in the dummy service above) configure the service and will <em>never</em> be passed to a fitter (minimizer, sampling algorithm, etc.). Within the corresponding section of a pipeline config file, they are specified simply by <code class="docutils literal notranslate"><span class="pre">name</span> <span class="pre">=</span> <span class="pre">value</span></code> or <code class="docutils literal notranslate"><span class="pre">name</span> <span class="pre">=</span> <span class="pre">value</span> <span class="pre">*</span> <span class="pre">units.xyz</span></code>.</p>
+<p>In contrast, <code class="docutils literal notranslate"><span class="pre">Param</span></code> objects <em>are modified</em> by a fitter. They correspond to the entries of <code class="docutils literal notranslate"><span class="pre">expected_params</span></code> (<code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> in the dummy service above). They are characterized by (at least) a name, a value with units, a finite range, a flag indicating whether they are to be kept fixed or not, and a prior. In the pipeline config file, these properties are specified with a <code class="docutils literal notranslate"><span class="pre">param.name</span></code> prefix.</p>
+</section>
 </section>
 <section id="implementing-the-physics-three-functions">
 <h3>Implementing the physics: three <code class="docutils literal notranslate"><span class="pre">{...}_function</span></code>s<a class="headerlink" href="#implementing-the-physics-three-functions" title="Link to this heading">¶</a></h3>
 <p>There are three abstract methods provided by the <code class="docutils literal notranslate"><span class="pre">Stage</span></code> class where the actual work of computing things should be implemented:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">setup_function</span></code> : executed upon instantiation</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">compute_function</span></code> : executed in a run if parameters changed (and first run)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">compute_function</span></code> : executed in the first run and then only <em>whenever parameters change</em> (<strong>caching</strong>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">apply_function</span></code> : executed in every run</p></li>
 </ul>
 <p>The <code class="docutils literal notranslate"><span class="pre">Stage</span></code> class implements some default logic before or after the execution of each of these methods, but for any service at least one of the above will need to be implemented (i.e. implemented in the service you’re writing) in order to do anything non-trivial.
-More specifically, the <code class="docutils literal notranslate"><span class="pre">Stage</span></code> class by default sets the data representation to <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code> before calling the first two, and to <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code> before the third.</p>
+More specifically, the <code class="docutils literal notranslate"><span class="pre">Stage</span></code> class by default sets the data representation to <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code> before calling each of the first two, and to <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code> before the third.</p>
 <p>Considering which of the abstract methods above should perform a given task for your service to output correct physics results in an efficient manner whenever parameter values change is of paramount importance.
-In the following, “transform” shall refer to the result of any computation (e.g., multidimensional function based on external simulation, based on a parameterisation, etc.) with which the contents of the <code class="docutils literal notranslate"><span class="pre">data</span></code> object passed to the service are modified (create new arrays representing some physical quantities, manipulate existing ones, etc.).</p>
+In the following, “transform” shall refer to the result of any computation (e.g., multidimensional function based on external simulation, based on a parameterization, etc.) with which the contents of the <code class="docutils literal notranslate"><span class="pre">data</span></code> object passed to the service are modified (create new arrays representing some physical quantities, manipulate existing ones, etc.).</p>
 <section id="services-that-use-nominal-transforms">
 <h4>Services that use nominal transforms<a class="headerlink" href="#services-that-use-nominal-transforms" title="Link to this heading">¶</a></h4>
-<p>Implement <strong><code class="docutils literal notranslate"><span class="pre">setup_function</span></code></strong> and <strong><code class="docutils literal notranslate"><span class="pre">apply_function</span></code></strong> in your service’s class</p>
+<p>🠚 Implement <strong><code class="docutils literal notranslate"><span class="pre">setup_function</span></code></strong> and <strong><code class="docutils literal notranslate"><span class="pre">apply_function</span></code></strong> in your service’s class</p>
 <p>Nominal transforms are generated e.g. when all params (if any) are set to their nominal values.
 It is useful to generate nominal transforms if it is slow to compute them or read them from a file, and the params modify these in some comparably cheap way to arrive at the final transform.</p>
 </section>
 <section id="services-that-use-transforms">
 <h4>Services that use transforms<a class="headerlink" href="#services-that-use-transforms" title="Link to this heading">¶</a></h4>
-<p>Implement <strong><code class="docutils literal notranslate"><span class="pre">compute_function</span></code></strong> and <strong><code class="docutils literal notranslate"><span class="pre">apply_function</span></code></strong> in your service’s class</p>
+<p>🠚 Implement <strong><code class="docutils literal notranslate"><span class="pre">compute_function</span></code></strong> and <strong><code class="docutils literal notranslate"><span class="pre">apply_function</span></code></strong> in your service’s class</p>
 <p>Even when there are no nominal transforms, it might be efficient to transfer any universal parts of the calculation to the <code class="docutils literal notranslate"><span class="pre">setup_function</span></code> and to store the results in <code class="docutils literal notranslate"><span class="pre">data</span></code> for use by the other two methods.</p>
 </section>
 <section id="services-that-do-not-use-transforms">
 <h4>Services that do not use transforms<a class="headerlink" href="#services-that-do-not-use-transforms" title="Link to this heading">¶</a></h4>
-<p>Implement <strong><code class="docutils literal notranslate"><span class="pre">apply_function</span></code></strong> in your service’s class</p>
+<p>🠚 Implement <strong><code class="docutils literal notranslate"><span class="pre">apply_function</span></code></strong> in your service’s class</p>
 <p>Consider an example in which the params of the service are directly applied to some contents of <code class="docutils literal notranslate"><span class="pre">data</span></code>, for instance as scaling factors.</p>
-<p>An example of such an above function could look like:</p>
+</section>
+<section id="apply-function-example">
+<h4><code class="docutils literal notranslate"><span class="pre">apply_function</span></code> example<a class="headerlink" href="#apply-function-example" title="Link to this heading">¶</a></h4>
+<p>An example of an <code class="docutils literal notranslate"><span class="pre">apply_function</span></code>—which performs some non-sensical scaling of ‘weights’—could look like this:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">a_magnitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+        <span class="n">a_magnitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
         <span class="n">b_magnitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">a_magnitude</span> <span class="o">*</span> <span class="n">b_magnitude</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span>
             <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>N.B.:</strong> If you use in-place array operations on your containers (e.g. <code class="docutils literal notranslate"><span class="pre">container['weights'][mask]</span> <span class="pre">=</span> <span class="pre">0.0</span></code>, you need to mark theses changes via <code class="docutils literal notranslate"><span class="pre">container.mark_changed('weights')</span></code>)</p>
+<div class="important admonition">
+<p class="admonition-title">Marking changes</p>
+<p>If you use operations on your containers that do not result in execution of the <code class="docutils literal notranslate"><span class="pre">Container.__setitem__</span></code> dunder method (e.g. <code class="docutils literal notranslate"><span class="pre">container['weights'][mask]</span> <span class="pre">=</span> <span class="pre">0.0</span></code>), you need to <em>mark these changes</em> via <code class="docutils literal notranslate"><span class="pre">container.mark_changed('weights')</span></code> <em>manually</em>. This will ensure that the variable ‘weights’ is invalidated in all other representations than the current one (namely that given by <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code> in the case of the <code class="docutils literal notranslate"><span class="pre">apply_function</span></code> example). If ‘weights’ are ever requested in another representation, a transformation from a valid source representation to the target representation will first be performed. If in doubt, there is no harm in performing the manual call as in the example above. Alternatively, look for messages about marked changes in trace-level log outputs.</p>
+</div>
 </section>
 </section>
-<section id="service-testing">
-<h3>Service testing<a class="headerlink" href="#service-testing" title="Link to this heading">¶</a></h3>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h2>
 <p>At the bottom of the file, add a function called <code class="docutils literal notranslate"><span class="pre">init_test</span></code> which successfully creates and returns an instance of the service (consider this an important part of its documentation).
 This will be detected and called by the service-testing script that attempts to run every service existing within PISA.
 In case the service instantiation requires reading from some input file: if the file is generally useful, doesn’t contain non-public information, and is not too large, consider adding it to PISA; otherwise, consider creating a correctly formatted dummy file on the fly within the function below with which the service is instantiable.</p>
@@ -487,7 +518,6 @@ In case the service instantiation requires reading from some input file: if the 
     <span class="k">return</span> <span class="n">dummy</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">,</span> <span class="n">something_else</span><span class="o">=</span><span class="mf">0.42</span><span class="p">)</span>
 </pre></div>
 </div>
-</section>
 </section>
 </section>
 
@@ -560,16 +590,20 @@ In case the service instantiation requires reading from some input file: if the 
 <li><a class="reference internal" href="#imports">Imports</a></li>
 <li><a class="reference internal" href="#class-definition">Class definition</a></li>
 <li><a class="reference internal" href="#class-docstring">Class docstring</a></li>
-<li><a class="reference internal" href="#the-init-method-definition">The <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method definition</a></li>
+<li><a class="reference internal" href="#the-init-method-definition">The <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method definition</a><ul>
+<li><a class="reference internal" href="#defining-service-parameters-instantiation-argument-or-param-object">Defining service parameters: instantiation argument or <code class="docutils literal notranslate"><span class="pre">Param</span></code> object?</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#implementing-the-physics-three-functions">Implementing the physics: three <code class="docutils literal notranslate"><span class="pre">{...}_function</span></code>s</a><ul>
 <li><a class="reference internal" href="#services-that-use-nominal-transforms">Services that use nominal transforms</a></li>
 <li><a class="reference internal" href="#services-that-use-transforms">Services that use transforms</a></li>
 <li><a class="reference internal" href="#services-that-do-not-use-transforms">Services that do not use transforms</a></li>
+<li><a class="reference internal" href="#apply-function-example"><code class="docutils literal notranslate"><span class="pre">apply_function</span></code> example</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#service-testing">Service testing</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
 </ul>
 </li>
 </ul>
@@ -581,7 +615,7 @@ In case the service instantiation requires reading from some input file: if the 
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="../_static/documentation_options.js?v=533ca4eb"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

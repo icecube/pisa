@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.data.simple_data_loader - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.data.simple_data_loader - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -282,7 +282,7 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.data.simple_data_loader</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">A Stage to load data from a PISA style hdf5 file into a PISA pi ContainerSet</span>
+<span class="sd">A Stage to load data from a PISA style hdf5 file into a ContainerSet</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="c1">#TODO This class has become decreasingly &quot;simple&quot;! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task</span>
@@ -304,11 +304,10 @@
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">simple_data_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    HDF5 file loader PISA Pi class</span>
+<span class="sd">    HDF5 file loader class</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-
 <span class="sd">    events_file : hdf5 file path</span>
 <span class="sd">        output from make_events, including flux weights</span>
 <span class="sd">        and Genie systematics coefficients</span>
@@ -352,8 +351,9 @@
 <span class="sd">    Looks for `initial_weights` fields in events file, which will serve</span>
 <span class="sd">    as nominal weights for all events included.</span>
 <span class="sd">    No fields named `weights` may already be present.</span>
-
+<span class="sd">    Setting of `calc_mode` is not accepted.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">events_file</span><span class="p">,</span>
                  <span class="n">mc_cuts</span><span class="p">,</span>
@@ -388,9 +388,13 @@
         <span class="c1"># their values</span>
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">()</span>
 
+        <span class="c1"># Even though service implements setup_function (recording event</span>
+        <span class="c1"># properties), representations of new containers in there are explicitly</span>
+        <span class="c1"># set to &quot;events&quot; (naturally). Hence, choice of calc_mode has no impact.</span>
+        <span class="c1"># Make decision not to accept setting calc_mode.</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">],</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;events&quot;</span><span class="p">],</span>
+            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># init base class</span>
@@ -612,7 +616,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="../../../../_static/documentation_options.js?v=533ca4eb"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

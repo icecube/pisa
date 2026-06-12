@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.xsec package - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.xsec package - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -315,12 +315,15 @@ kills most charm events.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nu_cc_container_keys</strong> (<em>list</em><em> of </em><em>strings</em>) – list of all neutrino charged current container keys</p></li>
 <li><p><strong>nubar_cc_container_keys</strong> (<em>list</em><em> of </em><em>strings</em>) – list of all anti-neutrino charged current container keys</p></li>
-<li><p><strong>Notes</strong></p></li>
-<li><p><strong>------</strong></p></li>
-<li><p><strong>analysis!!!</strong> (<em>THIS STAGE IS FOR MC TESTING ONLY - do NOT use in real</em>)</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>THIS STAGE IS FOR MC TESTING ONLY - do <em>NOT</em> use in real analysis!!!</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;true_energy&#39;</span><span class="p">,</span> <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span> <span class="s1">&#39;bjorken_y&#39;</span><span class="p">,</span> <span class="s1">&#39;weights&#39;</span>
+</pre></div>
+</div>
 <p class="rubric">References</p>
 <p>Slides summarizing the bug (osc. call, 28 Nov 2022):
 <a class="reference external" href="https://drive.google.com/file/d/16tF_ofjI-YTxnxSsuZD4W2X52xND1CAM/view?usp=drive_link">https://drive.google.com/file/d/16tF_ofjI-YTxnxSsuZD4W2X52xND1CAM/view?usp=drive_link</a></p>
@@ -361,47 +364,26 @@ ToDo: tech note being written, link here as soon as available</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong></p></li>
-<li><p><strong>params</strong> – <dl class="simple">
-<dt>Must contain ::</dt><dd><p>dis_csms : quantity (dimensionless)  [if combine_components=True]
-or
-dis_csms_tot, dis_csms_diff : quantity (dimensionless)  [if combine_components=False]</p>
-</dd>
-</dl>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;bjorken_y&quot;</span>
-<span class="s2">&quot;dis&quot;</span>
-<span class="s2">&quot;nubar&quot;</span>
-<span class="s2">&quot;weights&quot;</span>
+<li><p><strong>combine_components</strong> (<em>bool</em>) – False -&gt; allow the total and differential components to fit individually (params will then be: dis_csms_tot, dis_csms_diff)
+True -&gt; vary the total and differential components together (param will then be: dis_csms)</p></li>
+<li><p><strong>extrapolation_type</strong> (<em>string</em>) – choice of [‘constant’, ‘linear’, ‘higher’]</p></li>
+<li><p><strong>extrapolation_energy_threshold</strong> (<em>float</em>) – Below what energy (in GeV) to extrapolate
+Defaults to 100. CSMS not considered reliable below 50-100 GeV</p></li>
+<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dis_csms</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>  <span class="p">[</span><span class="k">if</span> <span class="n">combine_components</span><span class="o">=</span><span class="kc">True</span><span class="p">]</span>
+<span class="ow">or</span>
+<span class="n">dis_csms_tot</span><span class="p">,</span> <span class="n">dis_csms_diff</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>  <span class="p">[</span><span class="k">if</span> <span class="n">combine_components</span><span class="o">=</span><span class="kc">False</span><span class="p">]</span>
 </pre></div>
 </div>
 </p></li>
 </ul>
 </dd>
 </dl>
-<dl class="simple">
-<dt>combine_components<span class="classifier">bool</span></dt><dd><p>False -&gt; allow the total and differential components to fit individually (params will then be: dis_csms_tot, dis_csms_diff)
-True -&gt; vary the total and differential components together (param will then be: dis_csms)</p>
-</dd>
-<dt>extrapolation_type<span class="classifier">string</span></dt><dd><p>choice of [‘constant’, ‘linear’, ‘higher’]</p>
-</dd>
-<dt>extrapolation_energy_threshold<span class="classifier">float</span></dt><dd><p>Below what energy (in GeV) to extrapolate
-Defaults to 100. CSMS not considered reliable below 50-100 GeV</p>
-</dd>
-</dl>
 <p class="rubric">Notes</p>
-<dl class="simple">
-<dt>Requires the events have the following keys ::</dt><dd><dl class="simple">
-<dt>true_energy</dt><dd><p>Neutrino energy in GeV</p>
-</dd>
-<dt>bjorken_y</dt><dd><p>Inelasticity</p>
-</dd>
-<dt>dis</dt><dd><p>1 if event is DIS, else 0</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;bjorken_y&quot;</span><span class="p">,</span> <span class="s2">&quot;dis&quot;</span><span class="p">,</span> <span class="s2">&quot;nubar&quot;</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.xsec.dis_sys.dis_sys.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/dis_sys.html#dis_sys.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.dis_sys.dis_sys.apply_function" title="Link to this definition">¶</a></dt>
@@ -438,19 +420,18 @@ Defaults to 100. CSMS not considered reliable below 50-100 GeV</p>
 <p>Stage to apply pre-calculated Genie systematics.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> – <p>Must contain</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span> <span class="n">specified</span> <span class="ow">in</span> <span class="n">interactions</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>parameters specified in `interactions` (dimensionless)
 </pre></div>
 </div>
 </p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>Requires the events have the following keys for each included interaction</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">linear_fit_</span><span class="p">{</span><span class="n">name</span><span class="p">}</span>
-    <span class="n">Genie</span> <span class="n">linear</span> <span class="n">coefficient</span> <span class="k">for</span> <span class="n">interaction</span> <span class="p">{</span><span class="n">name</span><span class="p">}</span>
-<span class="n">quad_fit_</span><span class="p">{</span><span class="n">name</span><span class="p">}</span>
-    <span class="n">Genie</span> <span class="n">quadratic</span> <span class="n">coefficient</span> <span class="k">for</span> <span class="n">interaction</span> <span class="p">{</span><span class="n">name</span><span class="p">}</span>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;linear_fit_</span><span class="si">{name}</span><span class="s2">&quot;</span> <span class="p">(</span><span class="n">Genie</span> <span class="n">linear</span> <span class="n">coefficient</span> <span class="k">for</span> <span class="n">interaction</span> <span class="p">{</span><span class="n">name</span><span class="p">}),</span>
+<span class="s2">&quot;quad_fit_</span><span class="si">{name}</span><span class="s2">&quot;</span> <span class="p">(</span><span class="n">Genie</span> <span class="n">quadratic</span> <span class="n">coefficient</span> <span class="k">for</span> <span class="n">interaction</span> <span class="p">{</span><span class="n">name</span><span class="p">}),</span>
+<span class="s2">&quot;weights&quot;</span>
 </pre></div>
 </div>
 <dl class="py method">
@@ -477,10 +458,10 @@ Defaults to 100. CSMS not considered reliable below 50-100 GeV</p>
 <section id="module-pisa.stages.xsec.nutau_xsec">
 <span id="pisa-stages-xsec-nutau-xsec-module"></span><h2>pisa.stages.xsec.nutau_xsec module<a class="headerlink" href="#module-pisa.stages.xsec.nutau_xsec" title="Link to this heading">¶</a></h2>
 <p>A stage to apply nutau cross-section uncertainties as implemented in
-<a class="reference external" href="https://github.com/marialiubarska/nutau_xsec">https://github.com/marialiubarska/nutau_xsec</a>
+<a class="reference external" href="https://github.com/marialiubarska/nutau_xsec">https://github.com/marialiubarska/nutau_xsec</a>.
 It interpolates between different nutau CC cross section models as compared in this
 paper:
-<a class="reference external" href="https://arxiv.org/pdf/1008.2984.pdf?fname=cm&amp;font=TypeI">https://arxiv.org/pdf/1008.2984.pdf?fname=cm&amp;font=TypeI</a></p>
+<a class="reference external" href="https://arxiv.org/pdf/1008.2984.pdf">https://arxiv.org/pdf/1008.2984.pdf</a></p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.xsec.nutau_xsec.init_test">
 <span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.nutau_xsec.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/nutau_xsec.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.nutau_xsec.init_test" title="Link to this definition">¶</a></dt>
@@ -497,23 +478,23 @@ Maria Liubarska: <a class="reference external" href="https://github.com/marialiu
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>xsec_file</strong> (<em>(</em><em>string</em><em>)</em>) – Path to pickled interpolated function. Default is included in PISA in
+<li><p><strong>xsec_file</strong> (<em>string</em>) – Path to pickled interpolated function. Default is included in PISA in
 <cite>pisa_examples/resources/cross_sections/interp_nutau_xsec_protocol2.pckl</cite></p></li>
-<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a><em> or </em><em>sequence with which to instantiate a ParamSet.</em>) – <p>Expected params ..</p>
+<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a><em> or </em><em>sequence with which to instantiate a ParamSet.</em>) – <p>Must have parameters:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nutau_xsec_scale</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
     <span class="n">Scaling</span> <span class="n">between</span> <span class="n">different</span> <span class="n">cross</span><span class="o">-</span><span class="n">section</span> <span class="n">models</span><span class="o">.</span> <span class="n">The</span> <span class="nb">range</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
     <span class="n">covers</span> <span class="nb">all</span> <span class="n">models</span> <span class="n">tested</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">paper</span><span class="o">.</span>
-</pre></div>
-</div>
-<p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span>
-<span class="s2">&quot;weights&quot;</span>
 </pre></div>
 </div>
 </p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;true_energy&quot;</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.xsec.nutau_xsec.nutau_xsec.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/nutau_xsec.html#nutau_xsec.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.nutau_xsec.nutau_xsec.apply_function" title="Link to this definition">¶</a></dt>
@@ -654,7 +635,7 @@ Maria Liubarska: <a class="reference external" href="https://github.com/marialiu
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="_static/documentation_options.js?v=533ca4eb"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

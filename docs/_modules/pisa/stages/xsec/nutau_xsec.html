@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.xsec.nutau_xsec - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.xsec.nutau_xsec - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -283,10 +283,10 @@
           <h1>Source code for pisa.stages.xsec.nutau_xsec</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">A stage to apply nutau cross-section uncertainties as implemented in</span>
-<span class="sd">https://github.com/marialiubarska/nutau_xsec</span>
+<span class="sd">https://github.com/marialiubarska/nutau_xsec.</span>
 <span class="sd">It interpolates between different nutau CC cross section models as compared in this</span>
 <span class="sd">paper:</span>
-<span class="sd">https://arxiv.org/pdf/1008.2984.pdf?fname=cm&amp;font=TypeI</span>
+<span class="sd">https://arxiv.org/pdf/1008.2984.pdf</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
@@ -312,23 +312,25 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    xsec_file : (string)</span>
+<span class="sd">    xsec_file : string</span>
 <span class="sd">        Path to pickled interpolated function. Default is included in PISA in</span>
 <span class="sd">        `pisa_examples/resources/cross_sections/interp_nutau_xsec_protocol2.pckl`</span>
 
 <span class="sd">    params : ParamSet or sequence with which to instantiate a ParamSet.</span>
-<span class="sd">        Expected params .. ::</span>
+<span class="sd">        Must have parameters::</span>
 
 <span class="sd">            nutau_xsec_scale : quantity (dimensionless)</span>
 <span class="sd">                Scaling between different cross-section models. The range [-1, 1]</span>
 <span class="sd">                covers all models tested in the paper.</span>
 
-<span class="sd">        Expected container keys are .. ::</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
 
-<span class="sd">            &quot;true_energy&quot;</span>
-<span class="sd">            &quot;weights&quot;</span>
+<span class="sd">    Expected container keys are::</span>
 
+<span class="sd">        &quot;true_energy&quot;, &quot;weights&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">xsec_file</span><span class="o">=</span><span class="s2">&quot;cross_sections/interp_nutau_xsec_protocol2.pckl&quot;</span><span class="p">,</span>
@@ -338,12 +340,11 @@
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
             <span class="s2">&quot;nutau_xsec_scale&quot;</span><span class="p">,</span>
         <span class="p">)</span>
-
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
             <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
             <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
         <span class="p">)</span>
-
+        <span class="c1">#TODO: supported_reps? (temporarily sets rep. to apply_mode in setup_function)</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">nutau_xsec</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
@@ -361,7 +362,6 @@
         <span class="n">interp_nutau</span> <span class="o">=</span> <span class="n">interp_dict</span><span class="p">[</span><span class="s2">&quot;NuTau&quot;</span><span class="p">]</span>
         <span class="n">interp_nutaubar</span> <span class="o">=</span> <span class="n">interp_dict</span><span class="p">[</span><span class="s2">&quot;NuTauBar&quot;</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nutau_cc&quot;</span><span class="p">:</span>
                 <span class="n">energy</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">]</span>
@@ -472,7 +472,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="../../../../_static/documentation_options.js?v=533ca4eb"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

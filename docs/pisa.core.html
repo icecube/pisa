@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.core package - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.core package - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -417,6 +417,40 @@ object follows the order in which dimensions are provided.</p>
 <span class="go">       [1., 1., 1.]]))</span>
 </pre></div>
 </div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.binning.MultiDimBinning.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/binning.html#MultiDimBinning.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.binning.MultiDimBinning.__getitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Interpret indices as indexing bins and <em>not</em> bin edges.
+Indices refer to dimensions in same order they were specified at
+instantiation, and all dimensions must be present.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> (<em>str</em><em>, </em><em>int</em><em>, </em><em>len-N-sequence</em><em> of </em><em>ints</em><em>, or </em><em>len-N-sequence</em><em> of </em><em>slices</em>) – <p>If str is passed: Return the binning corresponding to the named
+dimension</p>
+<dl class="simple">
+<dt>If an integer is passed:</dt><dd><ul class="simple">
+<li><p>If num_dims is 4, <cite>index</cite> indexes into the bins of the sole
+OneDimBinning. The bin is returned.</p></li>
+<li><p>If num_dims &gt; 1, <cite>index</cite> indexes which contained OneDimBinning
+object to return.</p></li>
+</ul>
+</dd>
+</dl>
+<p>If a len-N-sequence of integers or slices is passed, dimensions are
+indexed by these in the order in which dimensions are stored
+internally.</p>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>A MultiDimBinning object new Binning object but with the bins specified</em></p></li>
+<li><p>by <cite>index</cite>. Whether or not behavior is logarithmic is unchanged.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.binning.MultiDimBinning.assert_array_fits">
 <span class="sig-name descname"><span class="pre">assert_array_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/binning.html#MultiDimBinning.assert_array_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.binning.MultiDimBinning.assert_array_fits" title="Link to this definition">¶</a></dt>
@@ -1488,6 +1522,22 @@ depending on the <code class="docutils literal notranslate"><span class="pre">pi
 </pre></div>
 </div>
 <dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.binning.OneDimBinning.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/binning.html#OneDimBinning.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.binning.OneDimBinning.__getitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Return a new OneDimBinning, sub-selected by <cite>index</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> (<em>int</em><em>, </em><em>slice</em><em>, </em><em>ellipsis</em><em>, </em><em>str</em><em>, or </em><em>length-one Sequence</em>) – The <em>bin indices</em> (not bin-edge indices) to return. Generated
+OneDimBinning object must obey the usual rules (monotonic, etc.).
+If a str is supplied it must match a name in bin_names</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new OneDimBinning but only with bins selected by <cite>index</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.binning.OneDimBinning.assert_compat">
 <span class="sig-name descname"><span class="pre">assert_compat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/binning.html#OneDimBinning.assert_compat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.binning.OneDimBinning.assert_compat" title="Link to this definition">¶</a></dt>
 <dd><p>Assert that this binning is compatible with <cite>other</cite>.</p>
@@ -2224,13 +2274,16 @@ for instance generator-level/truth vs. reconstructed) representations may coexis
 <p>When <a class="reference internal" href="#pisa.core.container.Container.validity" title="pisa.core.container.Container.validity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">validity</span> <span class="pre">=</span> <span class="pre">True</span></code></a> for multiple representations
 of the same data (e.g., energy), a <a class="reference internal" href="#pisa.core.container.Container.precedence" title="pisa.core.container.Container.precedence"><code class="xref py py-attr docutils literal notranslate"><span class="pre">precedence</span></code></a> system determines
 which representation to use as the source for translation, implemented by
-<a class="reference internal" href="#pisa.core.container.Container.find_valid_representation" title="pisa.core.container.Container.find_valid_representation"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_valid_representation()</span></code></a>. (As of now, all
-representations have precedence = 0, however!)</p>
+<a class="reference internal" href="#pisa.core.container.Container.find_valid_representation" title="pisa.core.container.Container.find_valid_representation"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_valid_representation()</span></code></a>.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>As of now, all representations have precedence = 0, however!</p>
+</div>
 <p>For each variable, the container tracks which representations have valid (up-to-date)
 copies of that variable:
 <code class="docutils literal notranslate"><span class="pre">self.validity['variable_name'][representation_hash]</span> <span class="pre">=</span> <span class="pre">True/False</span></code></p>
 <p>When data for some variable is modified in one representation—through the
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">__setitem__()</span></code> dunder method
+<a class="reference internal" href="#pisa.core.container.Container.__setitem__" title="pisa.core.container.Container.__setitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__setitem__()</span></code></a> dunder method
 (cf. <a class="reference external" href="https://docs.python.org/3/reference/datamodel.html#object.__setitem__" title="(in Python v3.14)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Python</span> <span class="pre">docs</span></code></a>)—</p>
 <ol class="arabic simple">
 <li><p>that representation is marked as <em>valid</em> for that variable, and</p></li>
@@ -2248,29 +2301,33 @@ invalidate the weights in the ‘events’ representation. Hence, one can set:</
 <p>in order to ensure that PISA does not attempt to translate from binned → “events”
 when event-by-event weights are requested (see below). Instead, the exact
 event-by-event weights will remain available.</p>
-<p>When accessing data with an invalid source representation,
+<p>When accessing data in a currently invalid representation,
 <a class="reference internal" href="#pisa.core.container.Container.auto_translate" title="pisa.core.container.Container.auto_translate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">auto_translate()</span></code></a> is triggered, which ensures synchronization
-across representations as needed, i.e., on demand.</p>
-<p>There are different translation modes available, defined on a per-variable basis
-in the <a class="reference internal" href="#pisa.core.container.Container.tranlation_modes" title="pisa.core.container.Container.tranlation_modes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tranlation_modes</span></code></a> (sic!) dictionary attribute, with a
-default of “average” (see <a class="reference internal" href="#pisa.core.container.Container.default_translation_mode" title="pisa.core.container.Container.default_translation_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">default_translation_mode</span></code></a>):</p>
+across representations as needed, i.e., on demand. The feasibility and details
+of the translation depend on the <strong>translation mode</strong> assigned to the desired
+variable though: as specified by <a class="reference internal" href="#pisa.core.container.Container.valid_translation_modes" title="pisa.core.container.Container.valid_translation_modes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">valid_translation_modes</span></code></a>,
+there are two translation modes available, defined on a per-variable basis in the
+<a class="reference internal" href="#pisa.core.container.Container.translation_modes" title="pisa.core.container.Container.translation_modes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">translation_modes</span></code></a> dictionary attribute:</p>
 <ul class="simple">
-<li><p>“average” mode (default)—for quantities where bin-averaging makes sense</p>
+<li><p>“average” mode—select for quantities where bin-averaging makes sense</p>
 <ul>
 <li><p>examples: oscillation probabilities, energy reconstruction parameters</p></li>
 </ul>
 </li>
-<li><p>“sum” mode—for quantities where summation makes sense</p>
+<li><p>“sum” mode—select for quantities where summation makes sense</p>
 <ul>
 <li><p>examples: event weights, raw counts</p></li>
 </ul>
 </li>
 </ul>
-<p>Specify translation mode for a given variable:</p>
+<p>By default, when data for some variable is initially entered into the container,
+the translation mode is assumed to be “sum” by PISA only for variables in
+<a class="reference internal" href="#pisa.core.container.Container.sum_mode_keys" title="pisa.core.container.Container.sum_mode_keys"><code class="xref py py-attr docutils literal notranslate"><span class="pre">sum_mode_keys</span></code></a>, otherwise “average”.
+This choice can be overridden straightforwardly by specifying:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">container</span><span class="o">.</span><span class="n">translation_modes</span><span class="p">[</span><span class="s1">&#39;variable_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;average&#39;</span> <span class="c1"># (or &#39;sum&#39;)</span>
 </pre></div>
 </div>
-<p>The <cite>Container</cite> supports <em>three primary transformation types</em> (source-target combinations):</p>
+<p>The <cite>Container</cite> supports <strong>three primary transformation types</strong> (<strong>source-target combinations</strong>):</p>
 <ul class="simple">
 <li><p>“events” ↔ “log_events” (requires “average” mode)</p>
 <ul>
@@ -2306,7 +2363,7 @@ recover new histogram with different binnings in the same dimensions</p></li>
 </li>
 </ul>
 <p>The <cite>Container</cite> provides transparent access via
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code>:</p>
+<a class="reference internal" href="#pisa.core.container.Container.__getitem__" title="pisa.core.container.Container.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span> <span class="c1"># set desired representation</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;variable_name&#39;</span><span class="p">]</span>   <span class="c1"># auto-translates if needed</span>
 </pre></div>
@@ -2315,11 +2372,22 @@ recover new histogram with different binnings in the same dimensions</p></li>
 <dt>Access mechanism:</dt><dd><ol class="arabic simple">
 <li><p>check if data exists in current representation</p></li>
 <li><p>if not, search for valid representation of this variable</p></li>
-<li><p>if valid representation found: auto-translate to current representation</p></li>
-<li><p>if no valid representation: raise exception</p></li>
+<li><p>if valid representation found, and resulting source-target pair supported
+for chosen translation mode: auto-translate to current representation;
+otherwise: raise exception</p></li>
 <li><p>return data in current representation</p></li>
 </ol>
 </dd>
+</dl>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Keep in mind that the above implies that weight-like data will not be translatable
+from binned → binned, binned → “events”, or binned → “log_events”
+(unless its translation mode has been explicitly overriden and set to “average”).
+In order to enable such transformations, knowledge of the weight distributions
+within each bin would have to be assumed/exploited.</p>
+</div>
+<dl class="simple">
 <dt>For binned representations:</dt><dd><ul class="simple">
 <li><p>binning dimension arrays accessible by dimension name</p></li>
 <li><p>example: <code class="docutils literal notranslate"><span class="pre">container['energy']</span></code> returns energy bin coordinates (if ‘energy’
@@ -2345,6 +2413,11 @@ is a binning dimension)</p></li>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">container_set</span> <span class="o">=</span> <span class="n">ContainerSet</span><span class="p">(</span><span class="s1">&#39;dataset_name&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">container1</span><span class="p">,</span> <span class="n">container2</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
 <span class="n">container_set</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">binning</span>  <span class="c1"># applied to all containers</span>
 <span class="n">mapset</span> <span class="o">=</span> <span class="n">container_set</span><span class="o">.</span><span class="n">get_mapset</span><span class="p">(</span><span class="s1">&#39;variable&#39;</span><span class="p">)</span>  <span class="c1"># returns MapSet of all</span>
+</pre></div>
+</div>
+<p>A <cite>ContainerSet</cite> can store <em>global auxiliary metadata</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">container_set</span><span class="p">[</span><span class="s1">&#39;metadata_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">arbitrary_python_object</span> <span class="c1"># name must be unlike any container&#39;s</span>
+<span class="n">value</span> <span class="o">=</span> <span class="n">container_set</span><span class="p">[</span><span class="s1">&#39;metadata_key&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -2435,10 +2508,10 @@ Currently 0 for every representation (TODO).</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="pisa.core.container.Container.tranlation_modes">
-<span class="sig-name descname"><span class="pre">tranlation_modes</span></span><a class="headerlink" href="#pisa.core.container.Container.tranlation_modes" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="pisa.core.container.Container.translation_modes">
+<span class="sig-name descname"><span class="pre">translation_modes</span></span><a class="headerlink" href="#pisa.core.container.Container.translation_modes" title="Link to this definition">¶</a></dt>
 <dd><p>Translation mode to use for each variable, e.g. for binning or
-resampling: “average” (default) or “sum”.</p>
+resampling: “average” or “sum”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict[variable_name] -&gt; str</p>
@@ -2469,6 +2542,29 @@ resampling: “average” (default) or “sum”.</p>
 <p class="rubric">Notes</p>
 <p>See <a class="reference internal" href="#module-pisa.core.container" title="pisa.core.container"><code class="xref py py-mod docutils literal notranslate"><span class="pre">module</span> <span class="pre">docstring</span></code></a> for an overview of the whole representation-transformation
 system.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.container.Container.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#Container.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.Container.__getitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.container.Container.__setitem__">
+<span class="sig-name descname"><span class="pre">__setitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#Container.__setitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.Container.__setitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Set <cite>self[key]</cite> to <cite>data</cite>.</p>
+<p>Invalidates all representations but the current one, which is set to
+valid, and set the translation mode to “average”, unless the <cite>key</cite> is
+part of <a class="reference internal" href="#pisa.core.container.Container.sum_mode_keys" title="pisa.core.container.Container.sum_mode_keys"><code class="xref py py-attr docutils literal notranslate"><span class="pre">sum_mode_keys</span></code></a>, in which case the
+translation mode is set to “sum”, or unless a mode has already been set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<em>string</em>) – data identifier/variable</p></li>
+<li><p><strong>data</strong> (ndarray, <a class="reference internal" href="#pisa.core.map.Map" title="pisa.core.map.Map"><code class="xref py py-class docutils literal notranslate"><span class="pre">Map</span></code></a> or (binning, array)-tuple) – data sample to add to the container</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="pisa.core.container.Container.all_keys">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">all_keys</span></span><a class="headerlink" href="#pisa.core.container.Container.all_keys" title="Link to this definition">¶</a></dt>
@@ -2484,7 +2580,8 @@ system.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pisa.core.container.Container.array_representations">
 <span class="sig-name descname"><span class="pre">array_representations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('events',</span> <span class="pre">'log_events')</span></span><a class="headerlink" href="#pisa.core.container.Container.array_representations" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Available unbinned data representations</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.container.Container.array_to_binned">
@@ -2515,11 +2612,6 @@ per bin</p></li>
 <span class="sig-name descname"><span class="pre">binned_to_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_representation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest_representation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#Container.binned_to_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.Container.binned_to_array" title="Link to this definition">¶</a></dt>
 <dd><p>Augmented binned data to array data</p>
 </dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pisa.core.container.Container.default_translation_mode">
-<span class="sig-name descname"><span class="pre">default_translation_mode</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'average'</span></span><a class="headerlink" href="#pisa.core.container.Container.default_translation_mode" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.container.Container.find_valid_representation">
@@ -2646,29 +2738,37 @@ tied to a specific representation.</p>
 <dd><p>Return array size of current rep.</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.core.container.Container.sum_mode_keys">
+<span class="sig-name descname"><span class="pre">sum_mode_keys</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#pisa.core.container.Container.sum_mode_keys" title="Link to this definition">¶</a></dt>
+<dd><p>Variables for which “sum” is assumed as default translation mode</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.container.Container.translate">
 <span class="sig-name descname"><span class="pre">translate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_representation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#Container.translate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.Container.translate" title="Link to this definition">¶</a></dt>
-<dd><p>Translate variable from source representation.</p>
+<dd><p>Translate data for variable <cite>key</cite> from source rep. to current rep.</p>
+<p>Afterwards, both source and destination representation will be valid.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>key</strong> (<em>str</em>)</p></li>
-<li><p><strong>src_representation</strong> (<em>representation present in container</em>)</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – data identifier/variable</p></li>
+<li><p><strong>src_representation</strong> (<em>hashable object</em><em>, </em><em>e.g. str</em><em> or </em><a class="reference internal" href="#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning"><em>MultiDimBinning</em></a>) – some representation present in container</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pisa.core.container.Container.translation_modes">
-<span class="sig-name descname"><span class="pre">translation_modes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('average',</span> <span class="pre">'sum')</span></span><a class="headerlink" href="#pisa.core.container.Container.translation_modes" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.container.Container.unroll_binning">
 <span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">unroll_binning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binning</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#Container.unroll_binning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.Container.unroll_binning" title="Link to this definition">¶</a></dt>
 <dd><p>Get an Array containing the unrolled binning</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.core.container.Container.valid_translation_modes">
+<span class="sig-name descname"><span class="pre">valid_translation_modes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('average',</span> <span class="pre">'sum')</span></span><a class="headerlink" href="#pisa.core.container.Container.valid_translation_modes" title="Link to this definition">¶</a></dt>
+<dd><p>Available translation modes</p>
 </dd></dl>
 
 </dd></dl>
@@ -2687,6 +2787,16 @@ tied to a specific representation.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.container.ContainerSet.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#ContainerSet.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.ContainerSet.__getitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.container.ContainerSet.__setitem__">
+<span class="sig-name descname"><span class="pre">__setitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#ContainerSet.__setitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.ContainerSet.__setitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.container.ContainerSet.add_container">
 <span class="sig-name descname"><span class="pre">add_container</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">container</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#ContainerSet.add_container"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.ContainerSet.add_container" title="Link to this definition">¶</a></dt>
@@ -2788,6 +2898,16 @@ which should just behave like a normal container.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.container.VirtualContainer.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#VirtualContainer.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.VirtualContainer.__getitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.container.VirtualContainer.__setitem__">
+<span class="sig-name descname"><span class="pre">__setitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#VirtualContainer.__setitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.VirtualContainer.__setitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.container.VirtualContainer.mark_changed">
 <span class="sig-name descname"><span class="pre">mark_changed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/container.html#VirtualContainer.mark_changed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.container.VirtualContainer.mark_changed" title="Link to this definition">¶</a></dt>
@@ -3273,6 +3393,18 @@ with arbitrary Monte Carlo and datasets</p>
 (‘runs’, [620, 621, 622])]</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.events.Data.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/events.html#Data.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.events.Data.__getitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Return self[key].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.events.Data.__setitem__">
+<span class="sig-name descname"><span class="pre">__setitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/events.html#Data.__setitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.events.Data.__setitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Set self[key] to value.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.events.Data.applyCut">
 <span class="sig-name descname"><span class="pre">applyCut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keep_criteria</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/events.html#Data.applyCut"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.events.Data.applyCut" title="Link to this definition">¶</a></dt>
@@ -3830,6 +3962,16 @@ equality of this map with another. See <cite>__eq__</cite> method.</p></li>
 <span class="go">(17.85 GeV, -0.70 ): 0.0</span>
 </pre></div>
 </div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.map.Map.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.__getitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.map.Map.__setitem__">
+<span class="sig-name descname"><span class="pre">__setitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.__setitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.__setitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.map.Map.allclose">
 <span class="sig-name descname"><span class="pre">allclose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#Map.allclose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.Map.allclose" title="Link to this definition">¶</a></dt>
@@ -4673,6 +4815,20 @@ comparisons are sought with their progenitors with the original
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.map.MapSet.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#MapSet.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.MapSet.__getitem__" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieve a map by name or retrieve maps’ histogram values by index
+or slice.</p>
+<p>If <cite>item</cite> is a string, retrieve map by name.
+If <cite>item is an integer or one-dim slice, retrieve maps by index/slice
+If `item</cite> is length-2 tuple or two-dim slice, retrieve value(s) of all</p>
+<blockquote>
+<div><p>contained maps, each indexed by map[<cite>item</cite>]. The output is returned
+in an ordered dict with format {&lt;map name&gt;: &lt;values&gt;, …}</p>
+</div></blockquote>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.map.MapSet.allclose">
 <span class="sig-name descname"><span class="pre">allclose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/map.html#MapSet.allclose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.map.MapSet.allclose" title="Link to this definition">¶</a></dt>
@@ -5678,6 +5834,16 @@ See ..</p>
 </pre></div>
 </div>
 <dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.param.ParamSet.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pisa.core.param.Param" title="pisa.core.param.Param"><span class="pre">Param</span></a></span></span><a class="reference internal" href="_modules/pisa/core/param.html#ParamSet.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.param.ParamSet.__getitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.param.ParamSet.__setitem__">
+<span class="sig-name descname"><span class="pre">__setitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/param.html#ParamSet.__setitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.param.ParamSet.__setitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.param.ParamSet.add_covariance">
 <span class="sig-name descname"><span class="pre">add_covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">covmat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pisa/core/param.html#ParamSet.add_covariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.param.ParamSet.add_covariance" title="Link to this definition">¶</a></dt>
 <dd><dl class="simple">
@@ -6105,6 +6271,11 @@ OrderedDict. If <cite>OrderedDict</cite>, use directly as pipeline configuration
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/pipeline.html#Pipeline.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.pipeline.Pipeline.__getitem__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.add_covariance">
 <span class="sig-name descname"><span class="pre">add_covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">covmat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/pipeline.html#Pipeline.add_covariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.pipeline.Pipeline.add_covariance" title="Link to this definition">¶</a></dt>
 <dd><p>Incorporates covariance between parameters.
@@ -6114,16 +6285,6 @@ This is done by replacing relevant correlated parameters with “DerivedParams�
 </div></blockquote>
 <p>The parameters are all updated, but this doesn’t add the new parameters in
 So we go to the first stage we find that has one of the original parameters and manually add this in</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pisa.core.pipeline.Pipeline.assert_apply_modes_consistency">
-<span class="sig-name descname"><span class="pre">assert_apply_modes_consistency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/core/pipeline.html#Pipeline.assert_apply_modes_consistency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.core.pipeline.Pipeline.assert_apply_modes_consistency" title="Link to this definition">¶</a></dt>
-<dd><p>Asserts that pipeline setup does not result in non-sensical
-transformations between Maps or from Maps to events
-(cf. Container.translate: rebinning without averaging is not
-implemented because of lacking benefits, and similarly going
-from a histogram to events).</p>
 </dd></dl>
 
 <dl class="py method">
@@ -6543,8 +6704,8 @@ attribute.</p></li>
 for the stage transforms or outputs</p></li>
 <li><p><strong>supported_reps</strong> (<em>dict</em>) – Dictionary containing the representations allowed for calc_mode and
 apply_mode. If nothing is specified, Container.array_representations
-plus MultiDimBinning is assumed. Should have keys <cite>calc_mode</cite> and/or
-<cite>apply_mode</cite>, they will be created if not there.</p></li>
+plus MultiDimBinning is assumed. Should have keys “calc_mode” and/or
+“apply_mode”, they will be created if not there.</p></li>
 <li><p><strong>calc_mode</strong> (<a class="reference internal" href="#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning"><em>pisa.core.binning.MultiDimBinning</em></a><em>, </em><em>str</em><em>, or </em><em>None</em>) – Specify the default data representation for <cite>setup()</cite> and <cite>compute()</cite></p></li>
 <li><p><strong>apply_mode</strong> (<a class="reference internal" href="#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning"><em>pisa.core.binning.MultiDimBinning</em></a><em>, </em><em>str</em><em>, or </em><em>None</em>) – Specify the default data representation for <cite>apply()</cite></p></li>
 <li><p><strong>profile</strong> (<em>bool</em>) – If True, perform timings for the setup, compute, and apply functions.</p></li>
@@ -6627,6 +6788,24 @@ container within <cite>data</cite></p>
 <dt class="sig sig-object py" id="pisa.core.stage.Stage.full_hash">
 <span class="sig-name descname"><span class="pre">full_hash</span></span><a class="headerlink" href="#pisa.core.stage.Stage.full_hash" title="Link to this definition">¶</a></dt>
 <dd><p>Whether to do full hashing if true, otherwise do fast hashing</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.core.stage.Stage.has_apply">
+<span class="sig-name descname"><span class="pre">has_apply</span></span><a class="headerlink" href="#pisa.core.stage.Stage.has_apply" title="Link to this definition">¶</a></dt>
+<dd><p>Whether subclass overrides <a class="reference internal" href="#pisa.core.stage.Stage.apply_function" title="pisa.core.stage.Stage.apply_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_function()</span></code></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.core.stage.Stage.has_compute">
+<span class="sig-name descname"><span class="pre">has_compute</span></span><a class="headerlink" href="#pisa.core.stage.Stage.has_compute" title="Link to this definition">¶</a></dt>
+<dd><p>Whether subclass overrides <a class="reference internal" href="#pisa.core.stage.Stage.compute_function" title="pisa.core.stage.Stage.compute_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_function()</span></code></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.core.stage.Stage.has_setup">
+<span class="sig-name descname"><span class="pre">has_setup</span></span><a class="headerlink" href="#pisa.core.stage.Stage.has_setup" title="Link to this definition">¶</a></dt>
+<dd><p>Whether subclass overrides <a class="reference internal" href="#pisa.core.stage.Stage.setup_function" title="pisa.core.stage.Stage.setup_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setup_function()</span></code></a></p>
 </dd></dl>
 
 <dl class="py property">
@@ -6744,6 +6923,12 @@ an object stored to disk that were produced by a Stage.</p>
 <dt class="sig sig-object py" id="pisa.core.stage.Stage.stage_name">
 <span class="sig-name descname"><span class="pre">stage_name</span></span><a class="headerlink" href="#pisa.core.stage.Stage.stage_name" title="Link to this definition">¶</a></dt>
 <dd><p>Name of the stage (flux, osc, aeff, reco, pid, etc.)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pisa.core.stage.Stage.supported_reps">
+<span class="sig-name descname"><span class="pre">supported_reps</span></span><a class="headerlink" href="#pisa.core.stage.Stage.supported_reps" title="Link to this definition">¶</a></dt>
+<dd><p>Dictionary of supported representations. Override in subclass if desired.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -6978,6 +7163,7 @@ numpy.histogramdd.</p>
 </li>
 <li><a class="reference internal" href="#module-pisa.core.binning">pisa.core.binning module</a><ul>
 <li><a class="reference internal" href="#pisa.core.binning.MultiDimBinning"><code class="docutils literal notranslate"><span class="pre">MultiDimBinning</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.core.binning.MultiDimBinning.__getitem__"><code class="docutils literal notranslate"><span class="pre">MultiDimBinning.__getitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.binning.MultiDimBinning.assert_array_fits"><code class="docutils literal notranslate"><span class="pre">MultiDimBinning.assert_array_fits()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.binning.MultiDimBinning.assert_compat"><code class="docutils literal notranslate"><span class="pre">MultiDimBinning.assert_compat()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.binning.MultiDimBinning.basename_binning"><code class="docutils literal notranslate"><span class="pre">MultiDimBinning.basename_binning</span></code></a></li>
@@ -7040,6 +7226,7 @@ numpy.histogramdd.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#pisa.core.binning.OneDimBinning"><code class="docutils literal notranslate"><span class="pre">OneDimBinning</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.core.binning.OneDimBinning.__getitem__"><code class="docutils literal notranslate"><span class="pre">OneDimBinning.__getitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.binning.OneDimBinning.assert_compat"><code class="docutils literal notranslate"><span class="pre">OneDimBinning.assert_compat()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.binning.OneDimBinning.basename"><code class="docutils literal notranslate"><span class="pre">OneDimBinning.basename</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.binning.OneDimBinning.basename_binning"><code class="docutils literal notranslate"><span class="pre">OneDimBinning.basename_binning</span></code></a></li>
@@ -7107,15 +7294,16 @@ numpy.histogramdd.</p>
 <li><a class="reference internal" href="#pisa.core.container.Container._aux_data"><code class="docutils literal notranslate"><span class="pre">Container._aux_data</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.validity"><code class="docutils literal notranslate"><span class="pre">Container.validity</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.precedence"><code class="docutils literal notranslate"><span class="pre">Container.precedence</span></code></a></li>
-<li><a class="reference internal" href="#pisa.core.container.Container.tranlation_modes"><code class="docutils literal notranslate"><span class="pre">Container.tranlation_modes</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.container.Container.translation_modes"><code class="docutils literal notranslate"><span class="pre">Container.translation_modes</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container._representations"><code class="docutils literal notranslate"><span class="pre">Container._representations</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.container.Container.__getitem__"><code class="docutils literal notranslate"><span class="pre">Container.__getitem__()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.container.Container.__setitem__"><code class="docutils literal notranslate"><span class="pre">Container.__setitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.all_keys"><code class="docutils literal notranslate"><span class="pre">Container.all_keys</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.all_keys_incl_aux_data"><code class="docutils literal notranslate"><span class="pre">Container.all_keys_incl_aux_data</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.array_representations"><code class="docutils literal notranslate"><span class="pre">Container.array_representations</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.array_to_binned"><code class="docutils literal notranslate"><span class="pre">Container.array_to_binned()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.auto_translate"><code class="docutils literal notranslate"><span class="pre">Container.auto_translate()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.binned_to_array"><code class="docutils literal notranslate"><span class="pre">Container.binned_to_array()</span></code></a></li>
-<li><a class="reference internal" href="#pisa.core.container.Container.default_translation_mode"><code class="docutils literal notranslate"><span class="pre">Container.default_translation_mode</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.find_valid_representation"><code class="docutils literal notranslate"><span class="pre">Container.find_valid_representation()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.get_hist"><code class="docutils literal notranslate"><span class="pre">Container.get_hist()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.get_keep_mask"><code class="docutils literal notranslate"><span class="pre">Container.get_keep_mask()</span></code></a></li>
@@ -7133,12 +7321,15 @@ numpy.histogramdd.</p>
 <li><a class="reference internal" href="#pisa.core.container.Container.set_aux_data"><code class="docutils literal notranslate"><span class="pre">Container.set_aux_data()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.shape"><code class="docutils literal notranslate"><span class="pre">Container.shape</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.size"><code class="docutils literal notranslate"><span class="pre">Container.size</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.container.Container.sum_mode_keys"><code class="docutils literal notranslate"><span class="pre">Container.sum_mode_keys</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.translate"><code class="docutils literal notranslate"><span class="pre">Container.translate()</span></code></a></li>
-<li><a class="reference internal" href="#pisa.core.container.Container.translation_modes"><code class="docutils literal notranslate"><span class="pre">Container.translation_modes</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.Container.unroll_binning"><code class="docutils literal notranslate"><span class="pre">Container.unroll_binning()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.container.Container.valid_translation_modes"><code class="docutils literal notranslate"><span class="pre">Container.valid_translation_modes</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#pisa.core.container.ContainerSet"><code class="docutils literal notranslate"><span class="pre">ContainerSet</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.core.container.ContainerSet.__getitem__"><code class="docutils literal notranslate"><span class="pre">ContainerSet.__getitem__()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.container.ContainerSet.__setitem__"><code class="docutils literal notranslate"><span class="pre">ContainerSet.__setitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.ContainerSet.add_container"><code class="docutils literal notranslate"><span class="pre">ContainerSet.add_container()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.ContainerSet.get_mapset"><code class="docutils literal notranslate"><span class="pre">ContainerSet.get_mapset()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.ContainerSet.get_shared_keys"><code class="docutils literal notranslate"><span class="pre">ContainerSet.get_shared_keys()</span></code></a></li>
@@ -7151,6 +7342,8 @@ numpy.histogramdd.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#pisa.core.container.VirtualContainer"><code class="docutils literal notranslate"><span class="pre">VirtualContainer</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.core.container.VirtualContainer.__getitem__"><code class="docutils literal notranslate"><span class="pre">VirtualContainer.__getitem__()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.container.VirtualContainer.__setitem__"><code class="docutils literal notranslate"><span class="pre">VirtualContainer.__setitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.VirtualContainer.mark_changed"><code class="docutils literal notranslate"><span class="pre">VirtualContainer.mark_changed()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.VirtualContainer.mark_valid"><code class="docutils literal notranslate"><span class="pre">VirtualContainer.mark_valid()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.container.VirtualContainer.representation"><code class="docutils literal notranslate"><span class="pre">VirtualContainer.representation</span></code></a></li>
@@ -7227,6 +7420,8 @@ numpy.histogramdd.</p>
 </li>
 <li><a class="reference internal" href="#module-pisa.core.events">pisa.core.events module</a><ul>
 <li><a class="reference internal" href="#pisa.core.events.Data"><code class="docutils literal notranslate"><span class="pre">Data</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.core.events.Data.__getitem__"><code class="docutils literal notranslate"><span class="pre">Data.__getitem__()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.events.Data.__setitem__"><code class="docutils literal notranslate"><span class="pre">Data.__setitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.events.Data.applyCut"><code class="docutils literal notranslate"><span class="pre">Data.applyCut()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.events.Data.data_eq"><code class="docutils literal notranslate"><span class="pre">Data.data_eq()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.events.Data.digitize"><code class="docutils literal notranslate"><span class="pre">Data.digitize()</span></code></a></li>
@@ -7274,6 +7469,8 @@ numpy.histogramdd.</p>
 </li>
 <li><a class="reference internal" href="#module-pisa.core.map">pisa.core.map module</a><ul>
 <li><a class="reference internal" href="#pisa.core.map.Map"><code class="docutils literal notranslate"><span class="pre">Map</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.core.map.Map.__getitem__"><code class="docutils literal notranslate"><span class="pre">Map.__getitem__()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.map.Map.__setitem__"><code class="docutils literal notranslate"><span class="pre">Map.__setitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.map.Map.allclose"><code class="docutils literal notranslate"><span class="pre">Map.allclose()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.map.Map.assert_compat"><code class="docutils literal notranslate"><span class="pre">Map.assert_compat()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.map.Map.barlow_llh"><code class="docutils literal notranslate"><span class="pre">Map.barlow_llh()</span></code></a></li>
@@ -7328,6 +7525,7 @@ numpy.histogramdd.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#pisa.core.map.MapSet"><code class="docutils literal notranslate"><span class="pre">MapSet</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.core.map.MapSet.__getitem__"><code class="docutils literal notranslate"><span class="pre">MapSet.__getitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.map.MapSet.allclose"><code class="docutils literal notranslate"><span class="pre">MapSet.allclose()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.map.MapSet.apply_to_maps"><code class="docutils literal notranslate"><span class="pre">MapSet.apply_to_maps()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.map.MapSet.chi2_per_map"><code class="docutils literal notranslate"><span class="pre">MapSet.chi2_per_map()</span></code></a></li>
@@ -7424,6 +7622,8 @@ numpy.histogramdd.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#pisa.core.param.ParamSet"><code class="docutils literal notranslate"><span class="pre">ParamSet</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.core.param.ParamSet.__getitem__"><code class="docutils literal notranslate"><span class="pre">ParamSet.__getitem__()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.param.ParamSet.__setitem__"><code class="docutils literal notranslate"><span class="pre">ParamSet.__setitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.param.ParamSet.add_covariance"><code class="docutils literal notranslate"><span class="pre">ParamSet.add_covariance()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.param.ParamSet.are_discrete"><code class="docutils literal notranslate"><span class="pre">ParamSet.are_discrete</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.param.ParamSet.are_fixed"><code class="docutils literal notranslate"><span class="pre">ParamSet.are_fixed</span></code></a></li>
@@ -7476,8 +7676,8 @@ numpy.histogramdd.</p>
 </li>
 <li><a class="reference internal" href="#module-pisa.core.pipeline">pisa.core.pipeline module</a><ul>
 <li><a class="reference internal" href="#pisa.core.pipeline.Pipeline"><code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.core.pipeline.Pipeline.__getitem__"><code class="docutils literal notranslate"><span class="pre">Pipeline.__getitem__()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.pipeline.Pipeline.add_covariance"><code class="docutils literal notranslate"><span class="pre">Pipeline.add_covariance()</span></code></a></li>
-<li><a class="reference internal" href="#pisa.core.pipeline.Pipeline.assert_apply_modes_consistency"><code class="docutils literal notranslate"><span class="pre">Pipeline.assert_apply_modes_consistency()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.pipeline.Pipeline.assert_exclusive_varbinning"><code class="docutils literal notranslate"><span class="pre">Pipeline.assert_exclusive_varbinning()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.pipeline.Pipeline.assert_varbinning_compat"><code class="docutils literal notranslate"><span class="pre">Pipeline.assert_varbinning_compat()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.pipeline.Pipeline.config"><code class="docutils literal notranslate"><span class="pre">Pipeline.config</span></code></a></li>
@@ -7532,6 +7732,9 @@ numpy.histogramdd.</p>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.expected_container_keys"><code class="docutils literal notranslate"><span class="pre">Stage.expected_container_keys</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.expected_params"><code class="docutils literal notranslate"><span class="pre">Stage.expected_params</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.full_hash"><code class="docutils literal notranslate"><span class="pre">Stage.full_hash</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.stage.Stage.has_apply"><code class="docutils literal notranslate"><span class="pre">Stage.has_apply</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.stage.Stage.has_compute"><code class="docutils literal notranslate"><span class="pre">Stage.has_compute</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.stage.Stage.has_setup"><code class="docutils literal notranslate"><span class="pre">Stage.has_setup</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.hash"><code class="docutils literal notranslate"><span class="pre">Stage.hash</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.in_standalone_mode"><code class="docutils literal notranslate"><span class="pre">Stage.in_standalone_mode</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.include_attrs_for_hashes"><code class="docutils literal notranslate"><span class="pre">Stage.include_attrs_for_hashes()</span></code></a></li>
@@ -7548,6 +7751,7 @@ numpy.histogramdd.</p>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.setup_function"><code class="docutils literal notranslate"><span class="pre">Stage.setup_function()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.source_code_hash"><code class="docutils literal notranslate"><span class="pre">Stage.source_code_hash</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.stage_name"><code class="docutils literal notranslate"><span class="pre">Stage.stage_name</span></code></a></li>
+<li><a class="reference internal" href="#pisa.core.stage.Stage.supported_reps"><code class="docutils literal notranslate"><span class="pre">Stage.supported_reps</span></code></a></li>
 <li><a class="reference internal" href="#pisa.core.stage.Stage.validate_params"><code class="docutils literal notranslate"><span class="pre">Stage.validate_params()</span></code></a></li>
 </ul>
 </li>
@@ -7575,7 +7779,7 @@ numpy.histogramdd.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="_static/documentation_options.js?v=533ca4eb"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

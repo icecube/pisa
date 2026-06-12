@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.utils package - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.utils package - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -298,7 +298,7 @@
 </section>
 <section id="module-pisa.stages.utils.add_indices">
 <span id="pisa-stages-utils-add-indices-module"></span><h2>pisa.stages.utils.add_indices module<a class="headerlink" href="#module-pisa.stages.utils.add_indices" title="Link to this heading">¶</a></h2>
-<p>PISA module to prep incoming data into formats that are
+<p>Module to prep incoming data into formats that are
 compatible with the mc_uncertainty likelihood formulation</p>
 <p>This module takes in events containers from the pipeline, and
 introduces an additional array giving the indices where each
@@ -308,21 +308,16 @@ event falls into.</p>
 <dt class="sig sig-object py" id="pisa.stages.utils.add_indices.add_indices">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.add_indices.</span></span><span class="sig-name descname"><span class="pre">add_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/add_indices.html#add_indices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.add_indices.add_indices" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>PISA Pi stage to map out the index of the analysis
+<p>Stage to map out the index of the analysis
 binning where each event falls into.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>params</strong> – foo : Quantity
-bar : Quanitiy with time dimension</p></li>
-<li><p><strong>Notes</strong></p></li>
-<li><p><strong>------</strong></p></li>
-<li><p><strong>module</strong> (<em>- input and calc specs are predetermined in the</em>) – (inputs from the config files will be disregarded)</p></li>
-<li><p><strong>bin_indices</strong> (<em>- stage appends an array quantity called</em>)</p></li>
-<li><p><strong>by</strong> (<em>- stage also appends an array mask to access events</em>) – bin index later in the pipeline</p></li>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>input and calc specs are predetermined in the module
+(inputs from the config files will be disregarded)</p></li>
+<li><p>stage appends an array quantity called bin_indices</p></li>
+<li><p>stage also appends an array mask to access events by
+bin index later in the pipeline</p></li>
 </ul>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.utils.add_indices.add_indices.setup_function">
 <span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/add_indices.html#add_indices.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.add_indices.add_indices.setup_function" title="Link to this definition">¶</a></dt>
@@ -357,6 +352,11 @@ an array of factors. This file is produced externally from PISA.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&quot;weights&quot;, `variable_name`
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.utils.adhoc_sys.adhoc_sys.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/adhoc_sys.html#adhoc_sys.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.adhoc_sys.adhoc_sys.apply_function" title="Link to this definition">¶</a></dt>
@@ -395,6 +395,11 @@ events.</p>
 <dd class="field-odd"><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Seed for the random number generator.</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;weights&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.utils.bootstrap.bootstrap.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/bootstrap.html#bootstrap.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.bootstrap.bootstrap.apply_function" title="Link to this definition">¶</a></dt>
@@ -454,7 +459,12 @@ for all minimization.</p>
 <dt class="sig sig-object py" id="pisa.stages.utils.fix_error.fix_error">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.utils.fix_error.</span></span><span class="sig-name descname"><span class="pre">fix_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/fix_error.html#fix_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.fix_error.fix_error" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>stage to fix the error returned by template_maker.</p>
+<p>Stage to fix the error returned by template_maker.</p>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;errors&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.utils.fix_error.fix_error.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/fix_error.html#fix_error.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.fix_error.fix_error.apply_function" title="Link to this definition">¶</a></dt>
@@ -489,15 +499,15 @@ that represent event counts</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>unweighted</strong> (<em>bool</em><em>, </em><em>default False</em>) – Return un-weighted event counts in each bin</p></li>
-<li><p><strong>apply_unc_weights</strong> (<em>bool</em><em>, </em><em>default False</em>) – <p>Expected container keys are ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&quot;weights&quot;
-&quot;unc_weights&quot; (if `apply_unc_weights`)
-</pre></div>
-</div>
-</p></li>
+<li><p><strong>apply_unc_weights</strong> (<em>bool</em><em>, </em><em>default False</em>)</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&quot;weights&quot;, &quot;unc_weights&quot; (if `apply_unc_weights`)
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.utils.hist.hist.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/hist.html#hist.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.hist.hist.apply_function" title="Link to this definition">¶</a></dt>
@@ -617,6 +627,11 @@ zero.</p>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;weights&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.utils.kfold.kfold.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/utils/kfold.html#kfold.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.utils.kfold.kfold.apply_function" title="Link to this definition">¶</a></dt>
@@ -834,7 +849,7 @@ zero.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="_static/documentation_options.js?v=533ca4eb"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

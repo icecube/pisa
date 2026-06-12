@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.discr_sys.csv_hypersurfaces - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.discr_sys.csv_hypersurfaces - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -282,7 +282,7 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.discr_sys.csv_hypersurfaces</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">PISA stage to apply hypersurface fits from discrete systematics parameterizations</span>
+<span class="sd">Stage to apply hypersurface fits from discrete systematics parameterizations</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -306,7 +306,7 @@
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;B. Benkel, J. Weldert&quot;</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2025, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
 <span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="s2"> you may not use this file except in compliance with the License.</span>
@@ -347,7 +347,15 @@
 <span class="sd">    propagate_uncertainty : bool, optional</span>
 <span class="sd">        Propagate the uncertainties from the hypersurface to the uncertainty of</span>
 <span class="sd">        the output.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    Expected container keys are::</span>
+
+<span class="sd">        &quot;weights&quot; and, if &quot;error_method&quot; is set, &quot;errors&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">fit_results_file</span><span class="p">,</span>
@@ -381,7 +389,7 @@
             <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">)</span>
 
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">],</span>
+            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span>  <span class="n">MultiDimBinning</span><span class="p">,</span>
             <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">,</span> <span class="s1">&#39;events&#39;</span><span class="p">],</span>
         <span class="p">}</span>
 
@@ -405,9 +413,6 @@
 <a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the fit results from the file and check compatibility with container names&quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
-
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span><span class="p">:</span>
             <span class="n">k</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;hs_&#39;</span><span class="p">):</span> <span class="c1"># naming convention</span>
@@ -612,7 +617,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="../../../../_static/documentation_options.js?v=533ca4eb"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

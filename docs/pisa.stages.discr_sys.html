@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.discr_sys package - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.discr_sys package - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -298,7 +298,7 @@
 </section>
 <section id="module-pisa.stages.discr_sys.csv_hypersurfaces">
 <span id="pisa-stages-discr-sys-csv-hypersurfaces-module"></span><h2>pisa.stages.discr_sys.csv_hypersurfaces module<a class="headerlink" href="#module-pisa.stages.discr_sys.csv_hypersurfaces" title="Link to this heading">¶</a></h2>
-<p>PISA stage to apply hypersurface fits from discrete systematics parameterizations</p>
+<p>Stage to apply hypersurface fits from discrete systematics parameterizations</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.discr_sys.csv_hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">csv_hypersurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_results_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nominal_systematics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inter_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">propagate_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/csv_hypersurfaces.html#csv_hypersurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces" title="Link to this definition">¶</a></dt>
@@ -319,6 +319,11 @@ the output.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;weights&quot;</span> <span class="ow">and</span><span class="p">,</span> <span class="k">if</span> <span class="s2">&quot;error_method&quot;</span> <span class="ow">is</span> <span class="nb">set</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/csv_hypersurfaces.html#csv_hypersurfaces.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.apply_function" title="Link to this definition">¶</a></dt>
@@ -349,7 +354,7 @@ and depend on the shift in each systematic parameter.</p>
 </section>
 <section id="module-pisa.stages.discr_sys.hypersurfaces">
 <span id="pisa-stages-discr-sys-hypersurfaces-module"></span><h2>pisa.stages.discr_sys.hypersurfaces module<a class="headerlink" href="#module-pisa.stages.discr_sys.hypersurfaces" title="Link to this heading">¶</a></h2>
-<p>PISA stage to apply hypersurface fits from discrete systematics parameterizations</p>
+<p>Stage to apply hypersurface fits from discrete systematics parameterizations</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.discr_sys.hypersurfaces.hypersurfaces">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.discr_sys.hypersurfaces.</span></span><span class="sig-name descname"><span class="pre">hypersurfaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit_results_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">propagate_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fluctuate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fluctuate_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12345</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/hypersurfaces.html#hypersurfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.hypersurfaces.hypersurfaces" title="Link to this definition">¶</a></dt>
@@ -374,6 +379,11 @@ Keys must be a sub-set of the loaded hypersurfaces.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;weights&quot;</span> <span class="ow">and</span><span class="p">,</span> <span class="k">if</span> <span class="s2">&quot;error_method&quot;</span> <span class="ow">is</span> <span class="nb">set</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.discr_sys.hypersurfaces.hypersurfaces.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/hypersurfaces.html#hypersurfaces.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.hypersurfaces.hypersurfaces.apply_function" title="Link to this definition">¶</a></dt>
@@ -466,6 +476,11 @@ those listed in the <cite>systematics</cite>.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>`varnames` + &quot;weights&quot;, and, if not already in `varnames`, &quot;true_energy&quot;
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/discr_sys/ultrasurfaces.html#ultrasurfaces.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.discr_sys.ultrasurfaces.ultrasurfaces.apply_function" title="Link to this definition">¶</a></dt>
@@ -598,7 +613,7 @@ those listed in the <cite>systematics</cite>.</p></li>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="_static/documentation_options.js?v=533ca4eb"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

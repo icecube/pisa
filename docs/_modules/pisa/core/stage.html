@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.core.stage - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.core.stage - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -289,7 +289,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">time</span>
 
@@ -341,8 +341,8 @@
 <span class="sd">    supported_reps : dict</span>
 <span class="sd">        Dictionary containing the representations allowed for calc_mode and</span>
 <span class="sd">        apply_mode. If nothing is specified, Container.array_representations</span>
-<span class="sd">        plus MultiDimBinning is assumed. Should have keys `calc_mode` and/or</span>
-<span class="sd">        `apply_mode`, they will be created if not there.</span>
+<span class="sd">        plus MultiDimBinning is assumed. Should have keys &quot;calc_mode&quot; and/or</span>
+<span class="sd">        &quot;apply_mode&quot;, they will be created if not there.</span>
 
 <span class="sd">    calc_mode : pisa.core.binning.MultiDimBinning, str, or None</span>
 <span class="sd">        Specify the default data representation for `setup()` and `compute()`</span>
@@ -433,19 +433,63 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_debug_mode</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_setup</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setup_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Stage</span><span class="o">.</span><span class="n">setup_function</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether subclass overrides :py:meth:`setup_function`&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_compute</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">compute_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Stage</span><span class="o">.</span><span class="n">compute_function</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether subclass overrides :py:meth:`compute_function`&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_apply</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">apply_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Stage</span><span class="o">.</span><span class="n">apply_function</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether subclass overrides :py:meth:`apply_function`&quot;&quot;&quot;</span>
+
+        <span class="c1"># Subclass might not have set supported_reps attribute</span>
         <span class="k">if</span> <span class="n">supported_reps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">supported_reps</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s1">&#39;calc_mode&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_reps</span><span class="p">:</span>
-            <span class="n">supported_reps</span><span class="p">[</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Container</span><span class="o">.</span><span class="n">array_representations</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s1">&#39;apply_mode&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_reps</span><span class="p">:</span>
-            <span class="n">supported_reps</span><span class="p">[</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Container</span><span class="o">.</span><span class="n">array_representations</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">supported_reps</span> <span class="o">=</span> <span class="n">supported_reps</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">,</span> <span class="n">allow_None</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">supported_reps</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+        <span class="n">mode_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_mode&#39;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">supported_reps</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">mode_keys</span><span class="p">)</span>
+        <span class="c1"># Default configuration of supported representations, using information</span>
+        <span class="c1"># about overridden methods, unless subclass already defined them</span>
+        <span class="k">for</span> <span class="n">mode_str</span> <span class="ow">in</span> <span class="n">mode_keys</span><span class="p">:</span>
+            <span class="n">mode_allowed</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">has_setup</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_compute</span> <span class="k">if</span> <span class="n">mode_str</span> <span class="o">==</span> <span class="s1">&#39;calc_mode&#39;</span>
+                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_apply</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">mode_str</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_reps</span><span class="p">:</span>
+                <span class="c1"># Reps. for this mode not yet defined -&gt; use information about</span>
+                <span class="c1"># overridden methods</span>
+                <span class="c1"># either allow all representations or require setting mode to None</span>
+                <span class="n">supported_reps</span><span class="p">[</span><span class="n">mode_str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">list</span><span class="p">(</span><span class="n">Container</span><span class="o">.</span><span class="n">array_representations</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">mode_allowed</span> <span class="k">else</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Reps. for this mode defined by subclass -&gt; listify if needed</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">supported_reps</span><span class="p">[</span><span class="n">mode_str</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">supported_reps</span><span class="p">[</span><span class="n">mode_str</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">)):</span>
+                    <span class="n">supported_reps</span><span class="p">[</span><span class="n">mode_str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">supported_reps</span><span class="p">[</span><span class="n">mode_str</span><span class="p">]]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">mode_allowed</span> <span class="ow">and</span> <span class="n">supported_reps</span><span class="p">[</span><span class="n">mode_str</span><span class="p">]</span> <span class="o">!=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+                <span class="c1"># TODO: Pipeline currently only checks apply_modes</span>
+                <span class="c1"># for consistency</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Service </span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2"> purports to support </span><span class="si">%s</span><span class="s2">s=</span><span class="si">%s</span><span class="s2">,&quot;</span>
+                    <span class="s2">&quot; even though it does not implement the corresponding&quot;</span>
+                    <span class="s2">&quot; functions. As a result, PISA could be tricked into&quot;</span>
+                    <span class="s2">&quot; accepting a pipeline configuration which performs unphysical&quot;</span>
+                    <span class="s2">&quot; representation transformations. Only proceed if you understand&quot;</span>
+                    <span class="s2">&quot; what you are doing.&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stage_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">service_name</span><span class="p">,</span>
+                    <span class="n">mode_str</span><span class="p">,</span> <span class="n">supported_reps</span><span class="p">[</span><span class="n">mode_str</span><span class="p">]</span>
+                <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">supported_reps</span> <span class="o">=</span> <span class="n">supported_reps</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary of supported representations. Override in subclass if desired.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Check consistency of requested modes, allowing None in any case</span>
+        <span class="c1"># (inconsequential while we&#39;re only at initialisation)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">,</span> <span class="n">always_allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_calc_mode</span> <span class="o">=</span> <span class="n">calc_mode</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">,</span> <span class="n">allow_None</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">,</span> <span class="n">always_allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_apply_mode</span> <span class="o">=</span> <span class="n">apply_mode</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_error_method</span> <span class="o">=</span> <span class="n">error_method</span>
@@ -565,7 +609,8 @@
 <span class="sd">        in standalone mode, rerun `setup()` if has already been executed at</span>
 <span class="sd">        least once.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">,</span>
+                                       <span class="n">always_allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_calc_mode</span> <span class="o">=</span> <span class="n">value</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_standalone_mode</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_hash</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># Only in standalone mode: repeat setup automatically only if</span>
@@ -599,27 +644,28 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set `apply_mode` after checking the validity of `value`&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">,</span>
+                                       <span class="n">always_allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_apply_mode</span> <span class="o">=</span> <span class="n">value</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_check_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rep</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">allow_None</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rep</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">always_allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">rep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># allow_None is used to always allow None in the init of a stage.</span>
-            <span class="c1"># Should be removed once stages explicitely set modes.</span>
-            <span class="k">if</span> <span class="kc">None</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_reps</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">allow_None</span><span class="p">:</span>
+            <span class="c1"># `always_allow_none` is used to always allow None in the init of a stage</span>
+            <span class="c1"># (allows writing init_test functions that don&#39;t already decide on modes)</span>
+            <span class="k">if</span> <span class="kc">None</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_reps</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">always_allow_none</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">rep</span><span class="si">}</span><span class="s2"> is not supported by </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">=&#39;</span><span class="si">{</span><span class="n">rep</span><span class="si">}</span><span class="s2">&#39; is not supported by </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rep</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">rep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_reps</span><span class="p">[</span><span class="n">mode</span><span class="p">]:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">rep</span><span class="si">}</span><span class="s2"> is not supported by </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">=&#39;</span><span class="si">{</span><span class="n">rep</span><span class="si">}</span><span class="s2">&#39; is not supported by </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">rep</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_reps</span><span class="p">[</span><span class="n">mode</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">rep</span><span class="p">)</span><span class="si">}</span><span class="s2"> is not supported by </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">rep</span><span class="p">)</span><span class="si">}</span><span class="s2"> is not supported by </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">stage_name</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
@@ -764,6 +810,9 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_check_exp_keys_in_data</span><span class="p">(</span><span class="n">error_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
+        <span class="c1"># check that current calc_mode is compatible with supported reps. at all</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">,</span>
+                                   <span class="n">always_allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
 
@@ -797,6 +846,9 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;cached output&quot;</span><span class="p">)</span>
             <span class="k">return</span>
 
+        <span class="c1"># be overly cautious and check consistency of current calc_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;calc_mode&#39;</span><span class="p">,</span>
+                                   <span class="n">always_allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
 
@@ -821,6 +873,9 @@
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.stage.Stage.apply">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
+        <span class="c1"># be overly cautious and check consistency of current apply_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_representation</span><span class="p">(</span><span class="n">rep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">,</span>
+                                   <span class="n">always_allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
 
@@ -887,7 +942,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="../../../_static/documentation_options.js?v=533ca4eb"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.flux.barr_simple - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.flux.barr_simple - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -312,8 +312,8 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    params</span>
-<span class="sd">        Expected params are .. ::</span>
+<span class="sd">    params : ParamSet</span>
+<span class="sd">        Must have parameters::</span>
 
 <span class="sd">            nue_numu_ratio : quantity (dimensionless)</span>
 <span class="sd">            nu_nubar_ratio : quantity (dimensionless)</span>
@@ -321,15 +321,16 @@
 <span class="sd">            Barr_uphor_ratio : quantity (dimensionless)</span>
 <span class="sd">            Barr_nu_nubar_ratio : quantity (dimensionless)</span>
 
-<span class="sd">        Expected container keys are .. ::</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Implements no apply, so assumes implicit caching of nominal fluxes (FIXME).</span>
 
-<span class="sd">            &quot;true_energy&quot;</span>
-<span class="sd">            &quot;true_coszen&quot;</span>
-<span class="sd">            &quot;nu_flux_nominal&quot;</span>
-<span class="sd">            &quot;nubar_flux_nominal&quot;</span>
-<span class="sd">            &quot;nubar&quot;</span>
+<span class="sd">    Expected container keys are::</span>
 
+<span class="sd">        &quot;true_energy&quot;, &quot;true_coszen&quot;, &quot;nu_flux_nominal&quot;, &quot;nubar_flux_nominal&quot;,</span>
+<span class="sd">        &quot;nubar&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
@@ -341,7 +342,6 @@
             <span class="s2">&quot;Barr_uphor_ratio&quot;</span><span class="p">,</span>
             <span class="s2">&quot;Barr_nu_nubar_ratio&quot;</span><span class="p">,</span>
         <span class="p">)</span>
-
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
             <span class="s2">&quot;true_energy&quot;</span><span class="p">,</span>
             <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span>
@@ -349,7 +349,6 @@
             <span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">,</span>
             <span class="s2">&quot;nubar&quot;</span>
         <span class="p">)</span>
-
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
@@ -360,7 +359,6 @@
 <div class="viewcode-block" id="barr_simple.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
 
@@ -369,7 +367,6 @@
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple.compute_function">[docs]</a>
     <span class="nd">@profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
 
         <span class="c1"># If a parameter below has not been modified by minimizer,</span>
         <span class="c1"># its magnitude below will be a native float, otherwise np.float64,</span>
@@ -581,7 +578,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="../../../../_static/documentation_options.js?v=533ca4eb"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

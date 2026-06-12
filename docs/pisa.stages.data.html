@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.data package - PISA 0+untagged.1.g2c5f2b2 documentation</title>
+        <title>pisa.stages.data package - PISA 0+untagged.1.g8942e34 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g2c5f2b2 documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g8942e34 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g2c5f2b2 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g8942e34 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -298,17 +298,19 @@
 </section>
 <section id="module-pisa.stages.data.csv_data_hist">
 <span id="pisa-stages-data-csv-data-hist-module"></span><h2>pisa.stages.data.csv_data_hist module<a class="headerlink" href="#module-pisa.stages.data.csv_data_hist" title="Link to this heading">¶</a></h2>
-<p>A Stage to load data from a CSV datarelease format file into a PISA pi ContainerSet</p>
+<p>A Stage to load data from a CSV datarelease format file into a ContainerSet</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.data.csv_data_hist.csv_data_hist">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.csv_data_hist.</span></span><span class="sig-name descname"><span class="pre">csv_data_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/csv_data_hist.html#csv_data_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.csv_data_hist.csv_data_hist" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>CSV file loader PISA Pi class</p>
+<p>CSV file loader class</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>events_file</strong> (<em>csv file path</em>)</p>
+<dd class="field-odd"><p><strong>events_file</strong> (<em>str</em>) – csv file path</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Implements no apply.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.data.csv_data_hist.csv_data_hist.setup_function">
 <span class="sig-name descname"><span class="pre">setup_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/csv_data_hist.html#csv_data_hist.setup_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.csv_data_hist.csv_data_hist.setup_function" title="Link to this definition">¶</a></dt>
@@ -326,15 +328,22 @@
 </section>
 <section id="module-pisa.stages.data.csv_icc_hist">
 <span id="pisa-stages-data-csv-icc-hist-module"></span><h2>pisa.stages.data.csv_icc_hist module<a class="headerlink" href="#module-pisa.stages.data.csv_icc_hist" title="Link to this heading">¶</a></h2>
-<p>A Stage to load data from a CSV datarelease format file into a PISA pi ContainerSet</p>
+<p>A Stage to load data from a CSV datarelease format file into a ContainerSet</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.data.csv_icc_hist.csv_icc_hist">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.csv_icc_hist.</span></span><span class="sig-name descname"><span class="pre">csv_icc_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/csv_icc_hist.html#csv_icc_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.csv_icc_hist.csv_icc_hist" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>CSV file loader PISA class</p>
+<p>CSV file loader class</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>events_file</strong> (<em>csv file path</em>)</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>events_file</strong> (<em>str</em>) – csv file path</p></li>
+<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">atm_muon_scale</span> <span class="p">:</span> <span class="n">quantity</span> <span class="p">(</span><span class="n">dimensionless</span><span class="p">)</span>
+</pre></div>
+</div>
+</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -360,12 +369,12 @@
 </section>
 <section id="module-pisa.stages.data.csv_loader">
 <span id="pisa-stages-data-csv-loader-module"></span><h2>pisa.stages.data.csv_loader module<a class="headerlink" href="#module-pisa.stages.data.csv_loader" title="Link to this heading">¶</a></h2>
-<p>A Stage to load data from a CSV datarelease format file into a PISA pi ContainerSet</p>
+<p>A Stage to load data from a CSV datarelease format file into a ContainerSet</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pisa.stages.data.csv_loader.csv_loader">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.csv_loader.</span></span><span class="sig-name descname"><span class="pre">csv_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neutrinos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dis_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_aeff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/csv_loader.html#csv_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.csv_loader.csv_loader" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>CSV file loader PISA Pi class</p>
+<p>CSV file loader class</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -421,12 +430,11 @@ if given in cm^2.</p></li>
 <p>Create a grid of events</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>generated</strong> (<em>Binning object defining the grid to be</em>)</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>entity<span class="classifier">str</span></dt><dd><p><cite>entity</cite> arg to be passed to <cite>MultiDimBinning.meshgrid</cite> (see that
-fucntion docs for details)</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid_binning</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.binning.MultiDimBinning" title="pisa.core.binning.MultiDimBinning"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiDimBinning</span></code></a>) – Binning object defining the grid to be generated</p></li>
+<li><p><strong>entity</strong> (<em>str</em>) – <cite>entity</cite> arg to be passed to <a class="reference internal" href="pisa.core.html#pisa.core.binning.MultiDimBinning.meshgrid" title="pisa.core.binning.MultiDimBinning.meshgrid"><code class="xref py py-meth docutils literal notranslate"><span class="pre">meshgrid()</span></code></a></p></li>
+<li><p><strong>output_names</strong> (<em>array_like</em>) – List of output names (event types)</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -466,7 +474,7 @@ fucntion docs for details)</p>
 <dt class="sig sig-object py" id="pisa.stages.data.meows_loader.meows_loader">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.meows_loader.</span></span><span class="sig-name descname"><span class="pre">meows_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_files</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/meows_loader.html#meows_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.meows_loader.meows_loader" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>Docstring incoming…</p>
+<p>Docstring incoming… (FIXME)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.data.meows_loader.meows_loader.apply_function">
 <span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/meows_loader.html#meows_loader.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.meows_loader.meows_loader.apply_function" title="Link to this definition">¶</a></dt>
@@ -485,7 +493,7 @@ fucntion docs for details)</p>
 </section>
 <section id="module-pisa.stages.data.simple_data_loader">
 <span id="pisa-stages-data-simple-data-loader-module"></span><h2>pisa.stages.data.simple_data_loader module<a class="headerlink" href="#module-pisa.stages.data.simple_data_loader" title="Link to this heading">¶</a></h2>
-<p>A Stage to load data from a PISA style hdf5 file into a PISA pi ContainerSet</p>
+<p>A Stage to load data from a PISA style hdf5 file into a ContainerSet</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.stages.data.simple_data_loader.init_test">
 <span class="sig-prename descclassname"><span class="pre">pisa.stages.data.simple_data_loader.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/simple_data_loader.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.simple_data_loader.init_test" title="Link to this definition">¶</a></dt>
@@ -496,7 +504,7 @@ fucntion docs for details)</p>
 <dt class="sig sig-object py" id="pisa.stages.data.simple_data_loader.simple_data_loader">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.simple_data_loader.</span></span><span class="sig-name descname"><span class="pre">simple_data_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mc_cuts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neutrinos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fraction_events_to_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events_subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">123456</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/simple_data_loader.html#simple_data_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.simple_data_loader.simple_data_loader" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>HDF5 file loader PISA Pi class</p>
+<p>HDF5 file loader class</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -526,7 +534,8 @@ needs to be a subset of names in <cite>events_file</cite>.</p></li>
 <p class="rubric">Notes</p>
 <p>Looks for <cite>initial_weights</cite> fields in events file, which will serve
 as nominal weights for all events included.
-No fields named <cite>weights</cite> may already be present.</p>
+No fields named <cite>weights</cite> may already be present.
+Setting of <cite>calc_mode</cite> is not accepted.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.data.simple_data_loader.simple_data_loader.apply_cuts_to_events">
 <span class="sig-name descname"><span class="pre">apply_cuts_to_events</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/simple_data_loader.html#simple_data_loader.apply_cuts_to_events"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.simple_data_loader.simple_data_loader.apply_cuts_to_events" title="Link to this definition">¶</a></dt>
@@ -576,10 +585,16 @@ service initialisation. Cf. <cite>Stage</cite> docs.</p>
 <dt class="sig sig-object py" id="pisa.stages.data.sqlite_loader.sqlite_loader">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.sqlite_loader.</span></span><span class="sig-name descname"><span class="pre">sqlite_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">post_fix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'_pred'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/sqlite_loader.html#sqlite_loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.sqlite_loader.sqlite_loader" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>SQLite loader PISA Pi class
-:param database:
-:type database: path to sqlite database
-:param **kwargs: Passed to Stage</p>
+<p>SQLite loader class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>database</strong> (<em>path to sqlite database</em>)</p></li>
+<li><p><strong>output_names</strong> (<em>array_like</em>) – List of output names (event types)</p></li>
+<li><p><strong>post_fix</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pisa.stages.data.sqlite_loader.sqlite_loader.add_aeff_weight">
 <span class="sig-name descname"><span class="pre">add_aeff_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/sqlite_loader.html#sqlite_loader.add_aeff_weight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.sqlite_loader.sqlite_loader.add_aeff_weight" title="Link to this definition">¶</a></dt>
@@ -641,12 +656,12 @@ service initialisation. Cf. <cite>Stage</cite> docs.</p>
 <dt class="sig sig-object py" id="pisa.stages.data.toy_event_generator.toy_event_generator">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.data.toy_event_generator.</span></span><span class="sig-name descname"><span class="pre">toy_event_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/data/toy_event_generator.html#toy_event_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.data.toy_event_generator.toy_event_generator" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
-<p>random toy event generator PISA Pi class</p>
+<p>random toy event generator class</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>output_names</strong> (<em>str</em>) – list of output names</p></li>
-<li><p><strong>params</strong> – <p>Expected params ..</p>
+<li><p><strong>output_names</strong> (<em>array_like</em>) – List of output names (event types)</p></li>
+<li><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <p>Must have parameters:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">n_events</span> <span class="p">:</span> <span class="nb">int</span>
     <span class="n">Number</span> <span class="n">of</span> <span class="n">events</span> <span class="n">to</span> <span class="n">be</span> <span class="n">generated</span> <span class="n">per</span> <span class="n">output</span> <span class="n">name</span>
 <span class="n">random</span>
@@ -835,7 +850,7 @@ service initialisation. Cf. <cite>Stage</cite> docs.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c7477ef8"></script>
+</div><script src="_static/documentation_options.js?v=533ca4eb"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
