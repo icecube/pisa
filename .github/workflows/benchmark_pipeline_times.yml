@@ -41,7 +41,7 @@ jobs:
           - { target: "cpu", nthreads: 1 }
           - { target: "parallel", nthreads: 4 } # each free ubuntu-latest runner provides 4 cpus
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-tags: true
 
