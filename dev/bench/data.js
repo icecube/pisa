@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782219653195,
+  "lastUpdate": 1782219720536,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -495,6 +495,51 @@ window.BENCHMARK_DATA = {
             "range": "0.0047168731689453125",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2d8cd56ab53c65b329e0473fb86aa20d9aa21107",
+          "message": "Bump actions/checkout in /.github/workflows in the all-actions group (#958)\n\nBumps the all-actions group in /.github/workflows with 1 update: [actions/checkout](https://github.com/actions/checkout).\n\n\nUpdates `actions/checkout` from 6 to 7\n- [Release notes](https://github.com/actions/checkout/releases)\n- [Changelog](https://github.com/actions/checkout/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/actions/checkout/compare/v6...v7)\n\n---\nupdated-dependencies:\n- dependency-name: actions/checkout\n  dependency-version: '7'\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n  dependency-group: all-actions\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-06-23T14:57:58+02:00",
+          "tree_id": "7d6d9ce3ffa3617630a4101737150484d2831c69",
+          "url": "https://github.com/icecube/pisa/commit/2d8cd56ab53c65b329e0473fb86aa20d9aa21107"
+        },
+        "date": 1782219719727,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.1903884264887596,
+            "range": "0.19089579582214355",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.8951258805333352,
+            "range": "0.16402721405029297",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.00054694195182956,
+            "range": "0.0046918392181396484",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
