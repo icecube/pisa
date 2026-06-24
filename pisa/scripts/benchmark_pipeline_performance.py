@@ -141,20 +141,21 @@ def write_benchmark_json(results, output_path, commit_sha=None, commit_msg=None)
     -------
     Path
         Path to written JSON file
+
+    Notes
+    -----
+    The github-action-benchmark tool expects the JSON file to contain
+    only the array of results, not a wrapper object. Timestamp and commit
+    information are not included in the output file but can be added back
+    if needed for other purposes.
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    data = {
-        "timestamp": datetime.datetime.now(datetime.UTC).isoformat() + "Z",
-        "results": results,
-    }
+    timestamp = datetime.datetime.now(datetime.UTC).isoformat() + "Z"
 
-    if commit_sha:
-        data["commit_sha"] = commit_sha
-    if commit_msg:
-        data["commit_msg"] = commit_msg
-
+    # Write only the results array, as expected by github-action-benchmark
+    data = results
     to_file(data, output_path)
 
     return output_path
@@ -227,7 +228,8 @@ def main():
         f"results_target_{TARGET}_nthreads_{PISA_NUM_THREADS}.json"
     )
 
-    # Enrich with commit information
+    # Enrich with commit information (currently not written to file as
+    # github-action-benchmark expects only the results array)
     commit_sha = os.environ.get("GITHUB_SHA")
     commit_msg = os.environ.get("GITHUB_COMMIT_MSG")
 

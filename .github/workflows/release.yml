@@ -15,9 +15,10 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          fetch-tags: true
       - name: Set up Python
         uses: actions/setup-python@v6
         with:

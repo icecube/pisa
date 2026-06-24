@@ -514,8 +514,10 @@ class Container():
 
     valid_translation_modes = ("average", "sum")
     """Available translation modes"""
+
     sum_mode_keys = ("weights", "initial_weights")
     """Variables for which "sum" is assumed as default translation mode"""
+
     array_representations = ("events", "log_events")
     """Available unbinned data representations"""
 
@@ -722,6 +724,7 @@ class Container():
             self.validity[key][rep_hash] = True
             logging.trace("Re-validated variable '%s' in representation '%s'.",
                           key, self._representations[rep_hash])
+        self.mark_changed(key)
 
     def __add_data(self, key, data):
         """Add data for a given variable, after performing consistency checks
@@ -855,6 +858,7 @@ class Container():
             some representation present in container
         '''
         assert hash(src_representation) in self.representation_keys
+
         if not self.translation_modes[key] in self.valid_translation_modes:
             raise ValueError(
                 f"Unknown translation mode for variable '{key}':"
@@ -874,29 +878,19 @@ class Container():
         if from_map and to_map:
             if self.translation_modes[key] == 'average':
                 out = self.resample(key, src_representation, dest_representation)
-                self.representation = dest_representation
-                self.set_item_no_invalidate(key=key, data=out)
             elif self.translation_modes[key] == 'sum':
                 raise NotImplementedError(
                     "Map to Map in sum mode needs to integrate over bins."
                 )
-
         elif to_map:
             if self.translation_modes[key] == 'average':
                 out = self.array_to_binned(key, src_representation, dest_representation)
-                self.representation = dest_representation
-                self.set_item_no_invalidate(key=key, data=out)
             elif self.translation_modes[key] == 'sum':
                 out = self.array_to_binned(key, src_representation, dest_representation,
                                            averaged=False)
-                self.representation = dest_representation
-                self.set_item_no_invalidate(key=key, data=out)
-
         elif from_map:
             if self.translation_modes[key] == 'average':
                 out = self.binned_to_array(key, src_representation, dest_representation)
-                self.representation = dest_representation
-                self.set_item_no_invalidate(key=key, data=out)
             elif self.translation_modes[key] == 'sum':
                 # Destination rep. is from map to an event-by-event rep., which would
                 # require using information about weight distribution (TODO)
@@ -904,27 +898,23 @@ class Container():
                     f"Translating {src_representation} to {dest_representation}"
                     " in 'sum' mode!"
                 )
-
         # Do not distinguish between average and sum modes in case of one-to-one
         # relationship
         elif src_representation == "events" and dest_representation == "log_events":
             self.representation = "events"
             logging.trace(f"Container `{self.name}`: taking log of {key}")
-            sample = np.log(self[key])
-            self.representation = dest_representation
-            self.set_item_no_invalidate(key=key, data=sample)
-
+            out = np.log(self[key])
         elif src_representation == "log_events" and dest_representation == "events":
             self.representation = "log_events"
-            sample = np.exp(self[key])
-            self.representation = dest_representation
-            self.set_item_no_invalidate(key=key, data=sample)
-
+            out = np.exp(self[key])
         else:
             raise NotImplementedError(
                 f"Translating from {src_representation} to {dest_representation}"
                 " is not implemented!"
             )
+
+        self.representation = dest_representation
+        self.set_item_no_invalidate(key=key, data=out)
 
     def auto_translate(self, key):
         '''Auto translate to current representation after auto-determining a

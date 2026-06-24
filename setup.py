@@ -302,7 +302,7 @@ def do_setup():
         author_email='analysis@icecube.wisc.edu',
         url='https://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=3.8,<3.15', # daemonflux 0.8.0 requires Py>=3.8
+        python_requires='>=3.8', # daemonflux 0.8.0 requires Py>=3.8
         setup_requires=SETUP_REQUIRES,
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRAS_REQUIRE,
@@ -327,6 +327,7 @@ def do_setup():
 
                 # Scripts in scripts dir
                 'pisa-add_flux_to_events_file = pisa.scripts.add_flux_to_events_file:main',
+                'pisa-benchmark_pipeline_performance = pisa.scripts.benchmark_pipeline_performance:main',
                 'pisa-compare = pisa.scripts.compare:main',
                 'pisa-convert_config_format = pisa.scripts.convert_config_format:main',
                 'pisa-create_barr_sys_tables_mceq = pisa.scripts.create_barr_sys_tables_mceq:main',

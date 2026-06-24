@@ -1,0 +1,22 @@
+# Configure automatically generated release notes.
+# See https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
+# Automatically create the following categories and populate with pull requests with certain labels
+changelog:
+  categories:
+    - title: New Features
+      labels:
+        - enhancement
+    - title: Bug Fixes
+      labels:
+        - bug
+    - title: Other Changes
+      labels:
+        - "*"
+      exclude:
+        labels:
+          - dependencies
+    - title: Dependencies
+      labels:
+        - dependencies # used by dependabot automated pull requests for example
+
