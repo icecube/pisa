@@ -195,7 +195,7 @@ def run_unit_tests(
                 err_name = err.name  # pylint: disable=no-member
                 module_pypaths_failed_ignored.append(module_pypath)
                 logging.warning(
-                    f"{PFX}module {err_name} failed to import wile importing"
+                    f"{PFX}module {err_name} failed to import while importing"
                     f" {module_pypath}, but ok to ignore"
                 )
                 continue

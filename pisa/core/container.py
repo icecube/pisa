@@ -724,7 +724,6 @@ class Container():
             self.validity[key][rep_hash] = True
             logging.trace("Re-validated variable '%s' in representation '%s'.",
                           key, self._representations[rep_hash])
-        self.mark_changed(key)
 
     def __add_data(self, key, data):
         """Add data for a given variable, after performing consistency checks
@@ -895,7 +894,7 @@ class Container():
                 # Destination rep. is from map to an event-by-event rep., which would
                 # require using information about weight distribution (TODO)
                 raise NotImplementedError(
-                    f"Translating {src_representation} to {dest_representation}"
+                    f"Translating from {src_representation} to {dest_representation}"
                     " in 'sum' mode!"
                 )
         # Do not distinguish between average and sum modes in case of one-to-one

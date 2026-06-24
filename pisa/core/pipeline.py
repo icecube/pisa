@@ -870,9 +870,14 @@ def test_Pipeline():
     # osc.prob3 apply_mode:
     pipeline.stages[2].apply_mode = binned_apply_mode
     assert pipeline.stages[3].apply_mode == "events"
-    # allowed right now: going from a binned output (after osc.) to events
+    # not allowed: going from a binned output (after osc.) to events
     # (after aeff)
-    _ = pipeline.get_outputs()
+    try:
+        _ = pipeline.get_outputs()
+    except NotImplementedError:
+        pass
+    else:
+        assert False
 
     # reset apply mode
     pipeline.stages[2].apply_mode = "events"
