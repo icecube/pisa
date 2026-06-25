@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782407297027,
+  "lastUpdate": 1782407333720,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -585,6 +585,51 @@ window.BENCHMARK_DATA = {
             "range": "0.0048656463623046875",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "037293d63017102e4f84b84c9df7357174bc6115",
+          "message": "make map plotting compatible with matplotlib 3.11 and add rudimentary unit test (#956)",
+          "timestamp": "2026-06-25T19:04:41+02:00",
+          "tree_id": "ea8e36df9d5617869c95fec9457d159eb14e7f2f",
+          "url": "https://github.com/icecube/pisa/commit/037293d63017102e4f84b84c9df7357174bc6115"
+        },
+        "date": 1782407332945,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.256635417743605,
+            "range": "0.2167809009552002",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.9469128092940973,
+            "range": "0.16960501670837402",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.0005954868939458107,
+            "range": "0.005952119827270508",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
