@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782219720536,
+  "lastUpdate": 1782407297027,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -540,6 +540,51 @@ window.BENCHMARK_DATA = {
             "range": "0.0046918392181396484",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "037293d63017102e4f84b84c9df7357174bc6115",
+          "message": "make map plotting compatible with matplotlib 3.11 and add rudimentary unit test (#956)",
+          "timestamp": "2026-06-25T19:04:41+02:00",
+          "tree_id": "ea8e36df9d5617869c95fec9457d159eb14e7f2f",
+          "url": "https://github.com/icecube/pisa/commit/037293d63017102e4f84b84c9df7357174bc6115"
+        },
+        "date": 1782407295795,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.9018552935853297,
+            "range": "0.20969247817993164",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.3981450333887217,
+            "range": "0.1595752239227295",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.0005391957808514031,
+            "range": "0.0048656463623046875",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
