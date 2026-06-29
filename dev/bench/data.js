@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782407333720,
+  "lastUpdate": 1782726161570,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -630,6 +630,51 @@ window.BENCHMARK_DATA = {
             "range": "0.005952119827270508",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8d8ed231fb5b13ce0297f6b40180ec1dbced2d68",
+          "message": "Use `ParamSet.priors_penalty` attribute to obtain correct penalty total in all cases (that don't constitute a `Detectors` fit result) (#957)",
+          "timestamp": "2026-06-29T11:39:42+02:00",
+          "tree_id": "5025f0604ae18c34f2d5fa8f188daba4ff27bc71",
+          "url": "https://github.com/icecube/pisa/commit/8d8ed231fb5b13ce0297f6b40180ec1dbced2d68"
+        },
+        "date": 1782726159759,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.7090497406161561,
+            "range": "0.21901679039001465",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.2862099336118114,
+            "range": "0.18301725387573242",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.00040111736375458384,
+            "range": "0.004757404327392578",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
