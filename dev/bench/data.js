@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782726161570,
+  "lastUpdate": 1782726222895,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -675,6 +675,51 @@ window.BENCHMARK_DATA = {
             "range": "0.004757404327392578",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8d8ed231fb5b13ce0297f6b40180ec1dbced2d68",
+          "message": "Use `ParamSet.priors_penalty` attribute to obtain correct penalty total in all cases (that don't constitute a `Detectors` fit result) (#957)",
+          "timestamp": "2026-06-29T11:39:42+02:00",
+          "tree_id": "5025f0604ae18c34f2d5fa8f188daba4ff27bc71",
+          "url": "https://github.com/icecube/pisa/commit/8d8ed231fb5b13ce0297f6b40180ec1dbced2d68"
+        },
+        "date": 1782726222086,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.2311979848511365,
+            "range": "0.18818092346191406",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.9253183238360346,
+            "range": "0.1714932918548584",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.00054287423892897,
+            "range": "0.004860401153564453",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
