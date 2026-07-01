@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782726222895,
+  "lastUpdate": 1782912400993,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -720,6 +720,51 @@ window.BENCHMARK_DATA = {
             "range": "0.004860401153564453",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "74fadc6de62f7ba523dffe88accb8801845e7d76",
+          "message": "transition to major release tags in docker workflow for consistency (#961)",
+          "timestamp": "2026-07-01T15:23:22+02:00",
+          "tree_id": "e4464ac8ca79259b9256b211ab7d4b9fcfe2400d",
+          "url": "https://github.com/icecube/pisa/commit/74fadc6de62f7ba523dffe88accb8801845e7d76"
+        },
+        "date": 1782912400099,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.8908254078456334,
+            "range": "0.18492531776428223",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.3957405090332031,
+            "range": "0.15308022499084473",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.000545934754974988,
+            "range": "0.004652261734008789",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
