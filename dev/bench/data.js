@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782991945144,
+  "lastUpdate": 1782991992196,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -855,6 +855,51 @@ window.BENCHMARK_DATA = {
             "range": "0.00030231475830078125",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "32642322+JanWeldert@users.noreply.github.com",
+            "name": "Jan Weldert",
+            "username": "JanWeldert"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "902322bcf3e821a5f7a07b019e1fd7ab35329b25",
+          "message": "Merge pull request #963 from icecube/mec_sys\n\nMEC sys stage",
+          "timestamp": "2026-07-02T13:29:02+02:00",
+          "tree_id": "2d25388847835ef764298cce2cd7350355fda36e",
+          "url": "https://github.com/icecube/pisa/commit/902322bcf3e821a5f7a07b019e1fd7ab35329b25"
+        },
+        "date": 1782991990098,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.2905659480970733,
+            "range": "0.23096776008605957",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.8788976863938935,
+            "range": "0.191375732421875",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.0005228081528021364,
+            "range": "0.0065114498138427734",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
