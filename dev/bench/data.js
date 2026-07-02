@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782991992196,
+  "lastUpdate": 1782999283139,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -900,6 +900,51 @@ window.BENCHMARK_DATA = {
             "range": "0.0065114498138427734",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d5783d5823ede141425dc428c43b5cf09ac78e3b",
+          "message": "prevent vbwkde module test functions from being found by unit testing script (#965)",
+          "timestamp": "2026-07-02T15:31:26+02:00",
+          "tree_id": "f3497ebe452bb9abe75ade2c5f5bd8b1fde76dc4",
+          "url": "https://github.com/icecube/pisa/commit/d5783d5823ede141425dc428c43b5cf09ac78e3b"
+        },
+        "date": 1782999281679,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.8770950375771036,
+            "range": "0.19463062286376953",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.3754215970331309,
+            "range": "0.152726411819458",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.0003995652101477798,
+            "range": "0.00021004676818847656",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
