@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.xsec package - PISA 0+untagged.1.g74fadc6 documentation</title>
+        <title>pisa.stages.xsec package - PISA 0+untagged.1.g902322b.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 0+untagged.1.g74fadc6 documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 0+untagged.1.g902322b.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 0+untagged.1.g74fadc6 documentation</span>
+  <span class="sidebar-brand-text">PISA 0+untagged.1.g902322b.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -455,6 +455,48 @@ Defaults to 100. CSMS not considered reliable below 50-100 GeV</p></li>
 </dd></dl>
 
 </section>
+<section id="module-pisa.stages.xsec.mec_sys">
+<span id="pisa-stages-xsec-mec-sys-module"></span><h2>pisa.stages.xsec.mec_sys module<a class="headerlink" href="#module-pisa.stages.xsec.mec_sys" title="Link to this heading">¶</a></h2>
+<p>Systematic uncertainty model for Meson Exchange Current (MEC) events.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pisa.stages.xsec.mec_sys.init_test">
+<span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.mec_sys.</span></span><span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">param_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/mec_sys.html#init_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.mec_sys.init_test" title="Link to this definition">¶</a></dt>
+<dd><p>Instantiation example</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pisa.stages.xsec.mec_sys.mec_sys">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pisa.stages.xsec.mec_sys.</span></span><span class="sig-name descname"><span class="pre">mec_sys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">std_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/mec_sys.html#mec_sys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.mec_sys.mec_sys" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pisa.core.html#pisa.core.stage.Stage" title="pisa.core.stage.Stage"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stage</span></code></a></p>
+<p>Stage to apply MEC event systematic uncertainties</p>
+<p>This is currently just a normalization parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><em>ParamSet</em></a>) – <dl class="simple">
+<dt>Must have parameters::</dt><dd><dl class="simple">
+<dt>mec_scale<span class="classifier">quantity (dimensionless)</span></dt><dd><p>A normalization to be applied to all MEC events</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Expected container keys are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;mec&quot;</span> <span class="o">-</span> <span class="n">a</span> <span class="n">boolean</span> <span class="n">flag</span> <span class="n">indicating</span> <span class="k">if</span> <span class="n">the</span> <span class="n">event</span> <span class="ow">is</span> <span class="n">an</span> <span class="n">MEC</span> <span class="n">interaction</span>
+<span class="s2">&quot;weights&quot;</span> <span class="o">-</span> <span class="n">the</span> <span class="n">event</span> <span class="n">weight</span> <span class="n">that</span> <span class="n">will</span> <span class="n">be</span> <span class="n">modified</span> <span class="n">by</span> <span class="n">this</span> <span class="n">stage</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pisa.stages.xsec.mec_sys.mec_sys.apply_function">
+<span class="sig-name descname"><span class="pre">apply_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/stages/xsec/mec_sys.html#mec_sys.apply_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.stages.xsec.mec_sys.mec_sys.apply_function" title="Link to this definition">¶</a></dt>
+<dd><p>Implement in services (subclasses of Stage)</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-pisa.stages.xsec.nutau_xsec">
 <span id="pisa-stages-xsec-nutau-xsec-module"></span><h2>pisa.stages.xsec.nutau_xsec module<a class="headerlink" href="#module-pisa.stages.xsec.nutau_xsec" title="Link to this heading">¶</a></h2>
 <p>A stage to apply nutau cross-section uncertainties as implemented in
@@ -613,6 +655,14 @@ Maria Liubarska: <a class="reference external" href="https://github.com/marialiu
 <li><a class="reference internal" href="#pisa.stages.xsec.genie_sys.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#module-pisa.stages.xsec.mec_sys">pisa.stages.xsec.mec_sys module</a><ul>
+<li><a class="reference internal" href="#pisa.stages.xsec.mec_sys.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
+<li><a class="reference internal" href="#pisa.stages.xsec.mec_sys.mec_sys"><code class="docutils literal notranslate"><span class="pre">mec_sys</span></code></a><ul>
+<li><a class="reference internal" href="#pisa.stages.xsec.mec_sys.mec_sys.apply_function"><code class="docutils literal notranslate"><span class="pre">mec_sys.apply_function()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-pisa.stages.xsec.nutau_xsec">pisa.stages.xsec.nutau_xsec module</a><ul>
 <li><a class="reference internal" href="#pisa.stages.xsec.nutau_xsec.init_test"><code class="docutils literal notranslate"><span class="pre">init_test()</span></code></a></li>
 <li><a class="reference internal" href="#pisa.stages.xsec.nutau_xsec.nutau_xsec"><code class="docutils literal notranslate"><span class="pre">nutau_xsec</span></code></a><ul>
@@ -635,7 +685,7 @@ Maria Liubarska: <a class="reference external" href="https://github.com/marialiu
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=fc6bae24"></script>
+</div><script src="_static/documentation_options.js?v=762e2ed4"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

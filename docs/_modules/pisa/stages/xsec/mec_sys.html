@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.data.toy_event_generator - PISA 0+untagged.1.g902322b.dirty documentation</title>
+        <title>pisa.stages.xsec.mec_sys - PISA 0+untagged.1.g902322b.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -280,132 +280,88 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <h1>Source code for pisa.stages.data.toy_event_generator</h1><div class="highlight"><pre>
+          <h1>Source code for pisa.stages.xsec.mec_sys</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Stage to generate some random data</span>
+<span class="sd">Systematic uncertainty model for Meson Exchange Current (MEC) events.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.container</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;toy_event_generator&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mec_sys&quot;</span><span class="p">,</span> <span class="s2">&quot;init_test&quot;</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="toy_event_generator">
-<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.toy_event_generator.toy_event_generator">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">toy_event_generator</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<div class="viewcode-block" id="mec_sys">
+<a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.mec_sys.mec_sys">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">mec_sys</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    random toy event generator class</span>
+<span class="sd">    Stage to apply MEC event systematic uncertainties</span>
+
+<span class="sd">    This is currently just a normalization parameter.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    output_names : array_like</span>
-<span class="sd">        List of output names (event types)</span>
 
 <span class="sd">    params : ParamSet</span>
 <span class="sd">        Must have parameters::</span>
+<span class="sd">            mec_scale : quantity (dimensionless)</span>
+<span class="sd">                A normalization to be applied to all MEC events</span>
 
-<span class="sd">            n_events : int</span>
-<span class="sd">                Number of events to be generated per output name</span>
-<span class="sd">            random</span>
-<span class="sd">            seed : int</span>
-<span class="sd">                Seed to be used for random</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    Expected container keys are::</span>
+
+<span class="sd">        &quot;mec&quot; - a boolean flag indicating if the event is an MEC interaction</span>
+<span class="sd">        &quot;weights&quot; - the event weight that will be modified by this stage</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">output_names</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;mec_scale&quot;</span><span class="p">,)</span>
 
-        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;n_events&#39;</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;seed&#39;</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="o">=</span> <span class="n">output_names</span>
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;weights&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mec&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="n">expected_params</span><span class="p">,</span>
-            <span class="n">expected_container_keys</span><span class="o">=</span><span class="p">(),</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="n">expected_container_keys</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="toy_event_generator.setup_function">
-<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.toy_event_generator.toy_event_generator.setup_function">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-
-        <span class="n">n_events</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">n_events</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
-        <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">seed</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">:</span>
-
-            <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">representation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">)</span>
-
-            <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s1">&#39;bar&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">flav</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="s1">&#39;mu&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">flav</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="s1">&#39;tau&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">flav</span> <span class="o">=</span> <span class="mi">2</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
-                <span class="c1"># Generate some events in the array representation just to have them</span>
-                <span class="c1"># here we add those explicitly in the array representation</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_events</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_events</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
-
-            <span class="n">size</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">size</span>
-
-            <span class="c1"># make some initial weights</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-
-            <span class="c1"># other necessary info</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;nubar&#39;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;flav&#39;</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weighted_aeff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-
-            <span class="n">flux_nue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">flux_numu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">flux_nue</span><span class="p">,</span> <span class="n">flux_numu</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nu_flux_nominal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar_flux_nominal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="toy_event_generator.apply_function">
-<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.toy_event_generator.toy_event_generator.apply_function">[docs]</a>
+<div class="viewcode-block" id="mec_sys.apply_function">
+<a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.mec_sys.mec_sys.apply_function">[docs]</a>
+    <span class="nd">@profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># reset weights</span>
+
+        <span class="c1"># Get the normalization parameter, and use it to scale the weights of all events that</span>
+        <span class="c1"># are marked by the &quot;mec&quot; flag.</span>
+
+        <span class="n">mec_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">mec_scale</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">)</span>
+
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
+            <span class="n">mec</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;mec&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mec</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">][</span><span class="n">mec</span><span class="p">]</span> <span class="o">*=</span> <span class="n">mec_scale</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">)</span></div>
 </div>
 
 
 
 <div class="viewcode-block" id="init_test">
-<a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.toy_event_generator.init_test">[docs]</a>
+<a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.mec_sys.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
-    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;n_events&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;seed&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">666</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-    <span class="p">])</span>
-    <span class="k">return</span> <span class="n">toy_event_generator</span><span class="p">(</span><span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;numu&#39;</span><span class="p">,</span> <span class="s1">&#39;nue_bar&#39;</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span><span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;mec_scale&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)])</span>
+
+    <span class="k">return</span> <span class="n">mec_sys</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
 </pre></div>
         </article>

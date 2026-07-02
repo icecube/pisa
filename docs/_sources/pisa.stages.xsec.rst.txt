@@ -28,6 +28,14 @@ pisa.stages.xsec.genie\_sys module
    :show-inheritance:
    :undoc-members:
 
+pisa.stages.xsec.mec\_sys module
+--------------------------------
+
+.. automodule:: pisa.stages.xsec.mec_sys
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 pisa.stages.xsec.nutau\_xsec module
 -----------------------------------
 
