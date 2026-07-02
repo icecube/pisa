@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782999283139,
+  "lastUpdate": 1782999339919,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -945,6 +945,51 @@ window.BENCHMARK_DATA = {
             "range": "0.00021004676818847656",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d5783d5823ede141425dc428c43b5cf09ac78e3b",
+          "message": "prevent vbwkde module test functions from being found by unit testing script (#965)",
+          "timestamp": "2026-07-02T15:31:26+02:00",
+          "tree_id": "f3497ebe452bb9abe75ade2c5f5bd8b1fde76dc4",
+          "url": "https://github.com/icecube/pisa/commit/d5783d5823ede141425dc428c43b5cf09ac78e3b"
+        },
+        "date": 1782999338457,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.2994441888770278,
+            "range": "0.23590612411499023",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.8798423008042939,
+            "range": "0.20758438110351562",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.000518502021322445,
+            "range": "0.0066034793853759766",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
