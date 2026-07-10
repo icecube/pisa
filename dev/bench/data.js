@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782999339919,
+  "lastUpdate": 1783687945198,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -990,6 +990,51 @@ window.BENCHMARK_DATA = {
             "range": "0.0066034793853759766",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e40f7a6782d4b8de1b1785905ebb504edbc8c8d0",
+          "message": "ensure pisa version is correctly detected when building documentation, not just for tagged commits (#962)",
+          "timestamp": "2026-07-10T14:49:03+02:00",
+          "tree_id": "2ee49ebce3e7254702cbcc8f2e04d49f51418cb6",
+          "url": "https://github.com/icecube/pisa/commit/e40f7a6782d4b8de1b1785905ebb504edbc8c8d0"
+        },
+        "date": 1783687944107,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.8962589088751345,
+            "range": "0.20939159393310547",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.38419560510285045,
+            "range": "0.15701723098754883",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.00054931640625,
+            "range": "0.005742073059082031",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
