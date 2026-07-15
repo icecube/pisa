@@ -732,6 +732,7 @@ class Map(object):
             fig, ax = plt.subplots(**fig_kw)
             full_ax = ax
 
+        map_min, map_max = self.vmin, self.vmax
         # 2D by arraying them as 1D slices in the smallest dimension(s).
         if len(self.binning) == 3:
             smallest_dim = self.binning.names[np.argmin(self.binning.shape)]
@@ -745,11 +746,16 @@ class Map(object):
                 ))
                 small_axes[-1].yaxis.set_visible(False)
 
+            pcmeshs = []
+            colorbar_to_return = None
             for bin_idx, to_plot in enumerate(self.split(
                 smallest_dim, pure_bin_names=pure_bin_names
             )):
+                # colorbar = None whenever bin_idx > 0
                 _, _, pcmesh, colorbar = to_plot.plot(
-                    symm=symm, logz=logz, vmin=vmin, vmax=vmax,
+                    symm=symm, logz=logz,
+                    vmin=map_min if vmin is None else vmin,
+                    vmax=map_max if vmax is None else vmax,
                     ax=small_axes[bin_idx], cmap=cmap, clabel=clabel,
                     clabelsize=clabelsize, xlabelsize=xlabelsize,
                     ylabelsize=ylabelsize, titlesize=titlesize,
@@ -761,6 +767,9 @@ class Map(object):
                     binlabel_stripzeros=binlabel_stripzeros,
                     bin_id=bin_idx, full_ax=full_ax
                 )
+                if bin_idx == 0:
+                    colorbar_to_return = colorbar
+                pcmeshs.append(pcmesh)
 
             if fmt is not None:
                 for fmt_ in fmt:
@@ -768,7 +777,7 @@ class Map(object):
                     fig.savefig(path, dpi=dpi)
                     logging.debug('>>>> Plot for inspection saved at %s', path)
 
-            return fig, full_ax, pcmesh, colorbar
+            return fig, full_ax, pcmeshs, colorbar_to_return
 
         if len(self.binning) == 2:
             to_plot = self
@@ -890,7 +899,7 @@ class Map(object):
                                 color=txtcolor,
                                 fontsize=10)
 
-        # Plot colorbar.
+        # Plot colorbar
         if bin_id == 0 or bin_id is None:
             if symm and logz:
                 # Generate logarithmic ticks
@@ -1269,6 +1278,16 @@ class Map(object):
     def num_entries(self):
         """int : total number of weighted entries in all bins"""
         return np.sum(valid_nominal_values(self.hist))
+
+    @property
+    def vmin(self):
+        """float : minimum valid bin count"""
+        return np.min(valid_nominal_values(self.hist))
+
+    @property
+    def vmax(self):
+        """float : maximum valid bin count"""
+        return np.max(valid_nominal_values(self.hist))
 
     @property
     def serializable_state(self):
