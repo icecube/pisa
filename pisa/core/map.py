@@ -3267,9 +3267,11 @@ def test_Map():
             shutil.rmtree(testdir, ignore_errors=True)
         assert isinstance(test_return[0], mpl.figure.Figure)
         assert isinstance(test_return[1], mpl.axes._axes.Axes)
-        assert isinstance(test_return[2], mpl.collections.QuadMesh)
-        # TODO: 3d case returns colormap=None
-        assert test_return[3] is None or isinstance(test_return[3], mpl.colorbar.Colorbar)
+        assert isinstance(test_return[2], (mpl.collections.QuadMesh, list))
+        if isinstance(test_return[2], list):
+            for qm in test_return[2]:
+                assert isinstance(qm, mpl.collections.QuadMesh)
+        assert isinstance(test_return[3], mpl.colorbar.Colorbar)
 
     logging.info(str(('<< PASS : test_Map >>')))
 
