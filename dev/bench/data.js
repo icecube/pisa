@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783687980699,
+  "lastUpdate": 1784207719413,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1080,6 +1080,51 @@ window.BENCHMARK_DATA = {
             "range": "0.00805044174194336",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0301b5bb58fd272b6d6ebed30154a3e499f9115",
+          "message": "Add new Map properties vmin and vmax and use these to define default colorbar range when 3d map is plotted (#966)\n\n* also adapt Map unit tests",
+          "timestamp": "2026-07-16T15:11:47+02:00",
+          "tree_id": "cf62efd33a4addf0e6c0816749103a6c3c7cc351",
+          "url": "https://github.com/icecube/pisa/commit/a0301b5bb58fd272b6d6ebed30154a3e499f9115"
+        },
+        "date": 1784207717514,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.8964997651625652,
+            "range": "0.23303532600402832",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.3854067422905747,
+            "range": "0.17256951332092285",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.000561514679266482,
+            "range": "0.006415843963623047",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
