@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784207719413,
+  "lastUpdate": 1784207735940,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1125,6 +1125,51 @@ window.BENCHMARK_DATA = {
             "range": "0.006415843963623047",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0301b5bb58fd272b6d6ebed30154a3e499f9115",
+          "message": "Add new Map properties vmin and vmax and use these to define default colorbar range when 3d map is plotted (#966)\n\n* also adapt Map unit tests",
+          "timestamp": "2026-07-16T15:11:47+02:00",
+          "tree_id": "cf62efd33a4addf0e6c0816749103a6c3c7cc351",
+          "url": "https://github.com/icecube/pisa/commit/a0301b5bb58fd272b6d6ebed30154a3e499f9115"
+        },
+        "date": 1784207733738,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.102866216581695,
+            "range": "0.273775577545166",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.8000082872351821,
+            "range": "0.16198253631591797",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.0004444122314453125,
+            "range": "0.00537109375",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
