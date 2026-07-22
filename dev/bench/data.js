@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784755643973,
+  "lastUpdate": 1784755696787,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1215,6 +1215,51 @@ window.BENCHMARK_DATA = {
             "range": "0.007082939147949219",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4f80b5f0392312dcb9002139e4eb61976edc7f36",
+          "message": "Bump actions/setup-python in /.github/workflows in the all-actions group (#967)\n\nBumps the all-actions group in /.github/workflows with 1 update: [actions/setup-python](https://github.com/actions/setup-python).\n\n\nUpdates `actions/setup-python` from 6 to 7\n- [Release notes](https://github.com/actions/setup-python/releases)\n- [Commits](https://github.com/actions/setup-python/compare/v6...v7)\n\n---\nupdated-dependencies:\n- dependency-name: actions/setup-python\n  dependency-version: '7'\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n  dependency-group: all-actions\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-07-22T23:23:58+02:00",
+          "tree_id": "b3a7199fc0e9f728419131d65c6b6b0835920b57",
+          "url": "https://github.com/icecube/pisa/commit/4f80b5f0392312dcb9002139e4eb61976edc7f36"
+        },
+        "date": 1784755694810,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.2331021124002886,
+            "range": "0.223311185836792",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.9022296350829455,
+            "range": "0.17517828941345215",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.0005478129094960738,
+            "range": "0.005466938018798828",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
