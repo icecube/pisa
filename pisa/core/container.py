@@ -842,6 +842,43 @@ class Container():
         """Iterate over all keys in container"""
         return self.keys
 
+    def _events_to_log_events(self, key):
+        '''One-to-one translation: take (guarded) log of per-event quantities
+
+        Rejects negative values, zeros produce -inf, and raises if NaNs are
+        present.
+        '''
+        arr = self[key]
+        if np.any(np.isnan(arr)):
+            raise ValueError(f"Cannot take log of NaNs for '{key}'.")
+        if np.any(arr < 0):
+            raise ValueError(f"Cannot take log of negative values for '{key}'.")
+        # use numpy.errstate to avoid noisy warnings for log(0) -> -inf
+        with np.errstate(divide='ignore'):
+            log_arr = np.log(arr)
+        return log_arr
+
+    def _log_events_to_events(self, key):
+        '''One-to-one translation: (guarded) exponentiation of per-event quantities.
+
+        Rejects NaNs in the log array, -inf produces 0, and warns when
+        exponentiation yields +inf.
+        '''
+        log_arr = self[key]
+        if np.any(np.isnan(log_arr)):
+            raise ValueError(f"Cannot exponentiate NaNs for '{key}'.")
+        with np.errstate(over='ignore'):
+            # an overflow is treated afterwards
+            arr = np.exp(log_arr)
+        pos_inf_mask = np.isposinf(arr)
+        if np.any(pos_inf_mask):
+            logging.warning(
+                "Container `%s`: exponentiation produced +inf for variable '%s'"
+                " in %d element(s). Check input values in 'log_events'"
+                " representation!", self.name, key, int(pos_inf_mask.sum())
+            )
+        return arr
+
     def translate(self, key, src_representation):
         '''Translate data for variable `key` from source rep. to current rep.
 
@@ -901,11 +938,10 @@ class Container():
         # relationship
         elif src_representation == "events" and dest_representation == "log_events":
             self.representation = "events"
-            logging.trace(f"Container `{self.name}`: taking log of {key}")
-            out = np.log(self[key])
+            out = self._events_to_log_events(key)
         elif src_representation == "log_events" and dest_representation == "events":
             self.representation = "log_events"
-            out = np.exp(self[key])
+            out = self._log_events_to_events(key)
         else:
             raise NotImplementedError(
                 f"Translating from {src_representation} to {dest_representation}"
