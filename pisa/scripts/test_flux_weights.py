@@ -7,12 +7,10 @@ A set of tests on the flux weights calculated by PISA.
 
 from __future__ import absolute_import, division
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import os
 
 import numpy as np
 from matplotlib import pyplot as plt
-plt.rcParams['text.usetex'] = True
 import matplotlib.colors as colors
 
 from pisa.utils.log import logging, set_verbosity
@@ -1460,6 +1458,15 @@ def do_2d_3d_honda_test(spline_dict, flux_dict, outdir, oversample, save_name,
 
 
 def main():
+    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+    import shutil
+    print(shutil.which('latex'))
+    # only use LaTeX rendering if an engine is actually available
+    if shutil.which('latex'):
+        plt.rcParams['text.usetex'] = True
+    else:
+        plt.rcParams['text.usetex'] = False
+
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('--flux-file-2d', type=str,
                         default=None,
