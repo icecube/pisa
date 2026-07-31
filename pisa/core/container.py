@@ -702,7 +702,8 @@ class Container():
 
     def set_item_no_invalidate(self, key, data):
         """Set `self[key]` to `data`, but without invalidating representations
-        that aren't already invalid.
+        that aren't already invalid. If the variable `key` is new, no other
+        representations than the current one are involved.
 
         Parameters
         ----------
@@ -718,7 +719,10 @@ class Container():
         logging.trace("Found %d currently valid representation(s) for variable '%s'",
                       len(valid_rep_hashs_for_key), key)
 
-        self[key] = data # causes all but current rep. to become invalid
+        # We want this call to __setitem__ to reuse its checks, assignments,
+        # and bookkeeping, even though it will initially cause all but the
+        # current representation to become invalid.
+        self[key] = data
 
         for rep_hash in valid_rep_hashs_for_key:
             self.validity[key][rep_hash] = True
@@ -893,7 +897,16 @@ class Container():
         src_representation : hashable object, e.g. str or MultiDimBinning
             some representation present in container
         '''
-        assert hash(src_representation) in self.representation_keys
+        src_hash = hash(src_representation)
+        assert src_hash in self.representation_keys
+
+        # ensure src is actually valid
+        if not self.validity[key].get(src_hash, False):
+            raise ValueError(
+                f"Source representation {src_representation} for variable '{key}'"
+                " is not valid; call auto_translate() or provide a valid"
+                " representation before calling translate()!"
+            )
 
         if not self.translation_modes[key] in self.valid_translation_modes:
             raise ValueError(
@@ -902,8 +915,9 @@ class Container():
             )
 
         dest_representation = self.representation
+        dest_hash = hash(dest_representation)
 
-        if hash(src_representation) == hash(dest_representation):
+        if src_hash == dest_hash:
             logging.trace("Attempting to translate from one representation to"
                           " itself, so there is nothing to do.")
             return
@@ -950,6 +964,9 @@ class Container():
 
         self.representation = dest_representation
         self.set_item_no_invalidate(key=key, data=out)
+        # Sanity check on source and dest
+        assert self.validity[key][src_hash]
+        assert self.validity[key][dest_hash]
 
     def auto_translate(self, key):
         '''Auto translate to current representation after auto-determining a
@@ -1104,7 +1121,6 @@ class Container():
         return eval(keep_criteria)  # pylint: disable=eval-used
 
 
-
 def test_container():
     """Unit tests for :py:class:`Container` class."""
 
@@ -1226,6 +1242,17 @@ def test_container():
     # because no translation is necessary
     container.validity[Container.sum_mode_keys[0]][hash('events')] = True
     _ = container[Container.sum_mode_keys[0]]
+
+    # Also try to set a previously unseen variable via `set_item_no_invalidate`
+    new_key = 'newkey'
+    assert new_key not in container.all_keys
+    container.set_item_no_invalidate(key=new_key, data=data)
+    assert 'newkey' in container.all_keys
+    assert container.translation_modes['newkey'] == 'average'
+    # only current "events" rep. should be valid
+    valid_flags = container.validity['newkey']
+    assert valid_flags.get(hash('events'), False)
+    assert sum(1 for v in valid_flags.values() if v) == 1
 
 
 def test_container_set():
