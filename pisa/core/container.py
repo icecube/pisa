@@ -193,6 +193,7 @@ from __future__ import absolute_import, print_function
 
 from collections.abc import Sequence
 from collections import defaultdict
+from copy import deepcopy
 import re
 
 import numpy as np
@@ -1190,29 +1191,77 @@ def test_container():
     container['y'] = y
     assert container.translation_modes['y'] == 'average'
 
+    # Test translation logic for variables transforming in sum mode
     container.representation = binning
     binning_hash = hash(binning)
-    for k in container.all_keys:
-        if 'weight' in k:
-            # First artificially invalidate current rep., so a translation is required
-            container.validity[k][binning_hash] = False
-            data = container[k] * 1.01
-            # Should already have been translated to binned rep due to statement
-            # `container[k]`, without invalidating anything
-            assert container.validity[k][binning_hash]
-            assert container.validity[k][hash('events')]
-            # But entry not yet rescaled
-            assert not np.allclose(container[k], data, **ALLCLOSE_KW)
-            # Test modification via method that doesn't invalidate reps.
-            container.set_item_no_invalidate(key=k, data=data)
-            assert container.validity[k][binning_hash]
-            # 'events' rep again needs to remain valid
-            assert container.validity[k][hash('events')]
-            assert np.allclose(container[k], data, **ALLCLOSE_KW)
-            # Now test "traditional" in-place modification
-            container[k] *= 1.0 # invalidates 'events' rep. when __setitem__ called
-            assert container.validity[k][binning_hash]
-            assert not container.validity[k][hash('events')]
+    # Just pick last weight key from above
+    k = weight_key
+    # Artificially invalidate current (=binned) rep., so a translation to it
+    # will be required
+    container.validity[k][binning_hash] = False
+    data = container[k] * 1.01
+    # Should now already have been translated to binned rep due to statement
+    # `container[k]`, without invalidating anything (e.g. 'events')
+    assert container.validity[k][binning_hash]
+    assert container.validity[k][hash('events')]
+    # But entry not yet rescaled
+    assert not np.allclose(container[k], data, **ALLCLOSE_KW)
+
+    # 1. Test modification via method that doesn't invalidate reps.
+    container.set_item_no_invalidate(key=k, data=data)
+    assert container.validity[k][binning_hash]
+    # 'events' rep again needs to remain valid
+    assert container.validity[k][hash('events')]
+    # Entry has to be the rescaled one
+    assert np.allclose(container[k], data, **ALLCLOSE_KW)
+
+    # 2. "Traditional" subscription augmented assignment
+    # (triggers __setitem__ and therefore mark_changed)
+    container[k] *= 1.0
+    assert container.validity[k][binning_hash]
+    assert not container.validity[k][hash('events')]
+
+    # 3. Mutating returned object in-place (here: in binned rep.)
+    # Re-validate 'events' manually, so we can check for invalidation
+    container.validity[k][hash('events')] = True
+    assert container.representation == binning
+    arr = container[k]
+    orig_arr = deepcopy(arr)
+    arr += 5.
+    # -> Local reference mutated - the container data should have been modified
+    assert np.allclose(container[k] - orig_arr, 5., **ALLCLOSE_KW)
+    # But without marking the data as changed!
+    assert container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+    container.mark_changed(k)
+    assert not container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+
+    # 4. Overwrite an index into the returned array (same outcome as in 3.)
+    # Re-validate 'events' manually, so we can check for invalidation
+    container.validity[k][hash('events')] = True
+    orig_arr = deepcopy(container[k])
+    container[k][0] = np.inf
+    assert container[k][0] != orig_arr[0]
+    assert container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+    container.mark_changed(k)
+    assert not container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+
+    # 5. Directly manipulate internal storage (same outcome as in 3.+4.)
+    # Re-validate 'events' manually, so we can check for invalidation
+    container.validity[k][hash('events')] = True
+    new_data = np.ones_like(orig_arr)
+    # Instead of `current_data[k]`, could also set `data[hash(rep)][k]` here
+    container.current_data[k] = new_data
+    assert np.allclose(container[k], new_data, **ALLCLOSE_KW)
+    assert container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+    container.mark_changed(k)
+    assert not container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+
 
     # Setting invalid mode for binning dimension is irrelevant/ignored
     # when attempting to get it in the binned rep.
@@ -1243,13 +1292,17 @@ def test_container():
     container.validity[Container.sum_mode_keys[0]][hash('events')] = True
     _ = container[Container.sum_mode_keys[0]]
 
-    # Also try to set a previously unseen variable via `set_item_no_invalidate`
+
+    # 3rd set of tests
+    # ----------------
+    # Assumes `container` and `data` exist and that we are in 'events' rep.
+    # Try to set a previously unseen variable via `set_item_no_invalidate`
     new_key = 'newkey'
     assert new_key not in container.all_keys
     container.set_item_no_invalidate(key=new_key, data=data)
     assert 'newkey' in container.all_keys
     assert container.translation_modes['newkey'] == 'average'
-    # only current "events" rep. should be valid
+    # only current "events" rep. should be valid, no others
     valid_flags = container.validity['newkey']
     assert valid_flags.get(hash('events'), False)
     assert sum(1 for v in valid_flags.values() if v) == 1
