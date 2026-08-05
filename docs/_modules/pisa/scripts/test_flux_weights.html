@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.scripts.test_flux_weights - PISA 4.3a1+10.g4f80b5f0.dirty documentation</title>
+        <title>pisa.scripts.test_flux_weights - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+10.g4f80b5f0.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+10.g4f80b5f0.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -292,20 +292,21 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ArgumentDefaultsHelpFormatter</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;text.usetex&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">colors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">colors</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.flux_weights</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">load_2d_table</span><span class="p">,</span> <span class="n">calculate_2d_flux_weights</span><span class="p">,</span>
                                      <span class="n">PRIMARIES</span><span class="p">,</span> <span class="n">TEXPRIMARIES</span><span class="p">,</span> <span class="n">load_3d_table</span><span class="p">,</span>
                                      <span class="n">calculate_3d_flux_weights</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Wren&#39;</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
 <span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
@@ -1775,6 +1776,11 @@
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.test_flux_weights.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># only use LaTeX for rendering if an engine is actually available</span>
+    <span class="k">if</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;latex&#39;</span><span class="p">):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;text.usetex&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;text.usetex&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">formatter_class</span><span class="o">=</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--flux-file-2d&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
                         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1976,11 +1982,30 @@
                         <span class="s1">&#39;Bartol 2004 SNO 2D tables regardless of what you set &#39;</span>
                         <span class="s1">&#39;in the flux_file argument(s).&#39;</span><span class="p">)</span>
 
+        <span class="n">fname_honda</span> <span class="o">=</span> <span class="s1">&#39;honda-2015-sno-solmax-aa.d&#39;</span>
+        <span class="c1"># Following should be the URL of the file in question (accessed 1 Aug 2026,</span>
+        <span class="c1"># and inferred from the fact that the contents of spl-ally-20-01-solmax.d.gz</span>
+        <span class="c1"># on that website agreed with those of honda-2015-spl-solmax-aa.d in the</span>
+        <span class="c1"># PISA package)</span>
+        <span class="n">url_honda</span> <span class="o">=</span> <span class="s1">&#39;http://www-rccn.icrr.u-tokyo.ac.jp/mhonda/public/nflx2014/sno-ally-20-01-solmax.d.gz&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">resource_path</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="n">fname_honda</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="c1"># Let&#39;s not just go ahead and download the file, but provide instructions</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot perform comparisons, because Honda 2015 &#39;</span>
+                <span class="s1">&#39;SNO 2D table could not be found. Download and unpack </span><span class="si">%s</span><span class="s1"> first, &#39;</span>
+                <span class="s1">&#39;rename it to &quot;</span><span class="si">%s</span><span class="s1">&quot;, and add its location to your &#39;</span>
+                <span class="s1">&#39;PISA_RESOURCES environment variable.&#39;</span><span class="p">,</span> <span class="n">url_honda</span><span class="p">,</span> <span class="n">fname_honda</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
         <span class="n">honda_spline_dict_2d</span> <span class="o">=</span> <span class="n">load_2d_table</span><span class="p">(</span>
-            <span class="s1">&#39;flux/honda-2015-sno-solmax-aa.d&#39;</span><span class="p">,</span>
+            <span class="n">resource_path</span><span class="p">,</span>
             <span class="n">enpow</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">enpow</span>
         <span class="p">)</span>
 
+        <span class="c1"># this is part of PISA package</span>
         <span class="n">bartol_spline_dict_2d</span> <span class="o">=</span> <span class="n">load_2d_table</span><span class="p">(</span>
             <span class="s1">&#39;flux/bartol-2004-sno-solmax-aa.d&#39;</span><span class="p">,</span>
             <span class="n">enpow</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">enpow</span>
@@ -2037,7 +2062,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=d525a220"></script>
+</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
