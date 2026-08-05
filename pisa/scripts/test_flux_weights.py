@@ -9,20 +9,21 @@ from __future__ import absolute_import, division
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import os
+import shutil
 
 import numpy as np
 from matplotlib import pyplot as plt
-plt.rcParams['text.usetex'] = True
-import matplotlib.colors as colors
+from matplotlib import colors
 
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.flux_weights import (load_2d_table, calculate_2d_flux_weights,
                                      PRIMARIES, TEXPRIMARIES, load_3d_table,
                                      calculate_3d_flux_weights)
+from pisa.utils.resources import find_resource
 
 __author__ = 'S. Wren'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -1460,6 +1461,11 @@ def do_2d_3d_honda_test(spline_dict, flux_dict, outdir, oversample, save_name,
 
 
 def main():
+    # only use LaTeX for rendering if an engine is actually available
+    if shutil.which('latex'):
+        plt.rcParams['text.usetex'] = True
+    else:
+        plt.rcParams['text.usetex'] = False
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('--flux-file-2d', type=str,
                         default=None,
@@ -1661,11 +1667,30 @@ def main():
                         'Bartol 2004 SNO 2D tables regardless of what you set '
                         'in the flux_file argument(s).')
 
+        fname_honda = 'honda-2015-sno-solmax-aa.d'
+        # Following should be the URL of the file in question (accessed 1 Aug 2026,
+        # and inferred from the fact that the contents of spl-ally-20-01-solmax.d.gz
+        # on that website agreed with those of honda-2015-spl-solmax-aa.d in the
+        # PISA package)
+        url_honda = 'http://www-rccn.icrr.u-tokyo.ac.jp/mhonda/public/nflx2014/sno-ally-20-01-solmax.d.gz'
+        try:
+            resource_path = find_resource(fname_honda)
+        except OSError:
+            # Let's not just go ahead and download the file, but provide instructions
+            logging.error(
+                'Cannot perform comparisons, because Honda 2015 '
+                'SNO 2D table could not be found. Download and unpack %s first, '
+                'rename it to "%s", and add its location to your '
+                'PISA_RESOURCES environment variable.', url_honda, fname_honda
+            )
+            return
+
         honda_spline_dict_2d = load_2d_table(
-            'flux/honda-2015-sno-solmax-aa.d',
+            resource_path,
             enpow=args.enpow
         )
 
+        # this is part of PISA package
         bartol_spline_dict_2d = load_2d_table(
             'flux/bartol-2004-sno-solmax-aa.d',
             enpow=args.enpow
