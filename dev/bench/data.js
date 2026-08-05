@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785939978050,
+  "lastUpdate": 1785940002855,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1305,6 +1305,51 @@ window.BENCHMARK_DATA = {
             "range": "0.006608247756958008",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4f4b9a5efd60ebf3637485cdffb3d91fc2d3f8ad",
+          "message": "matplotlib usetex config in main function of scripts.test_flux_weights instead of globally and fall back to mathtext in absence of LaTeX; handle 2015 SNO flux not being part of PISA package (#970)",
+          "timestamp": "2026-08-05T16:22:42+02:00",
+          "tree_id": "6d7869474b3d87579da9d3d8a168adce21928ea3",
+          "url": "https://github.com/icecube/pisa/commit/4f4b9a5efd60ebf3637485cdffb3d91fc2d3f8ad"
+        },
+        "date": 1785940001766,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.2516897211269455,
+            "range": "0.2096412181854248",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.8890880030028674,
+            "range": "0.15626049041748047",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.0005353567551593391,
+            "range": "0.005141019821166992",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
