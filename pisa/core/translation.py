@@ -54,9 +54,9 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
     ----------
     weights : np.ndarray
     old_sample : list of np.ndarray
-    old_binning : PISA MultiDimBinning
+    old_binning : MultiDimBinning
     new_sample : list of np.ndarray
-    new_binning : PISA MultiDimBinning
+    new_binning : MultiDimBinning
 
     Returns
     -------
@@ -96,7 +96,7 @@ def histogram(sample, weights, binning, averaged, apply_weights=True):
 
     weights : np.ndarray
 
-    binning : PISA MultiDimBinning
+    binning : MultiDimBinning
 
     averaged : bool
         If True, the histogram entries are averages of the numbers that end up
@@ -107,6 +107,10 @@ def histogram(sample, weights, binning, averaged, apply_weights=True):
     apply_weights : bool
         wether to use weights or not
 
+    Returns
+    -------
+    flat_hist : np.ndarray
+        1D array of length `binning.size`
     """
     if not isinstance(binning, MultiDimBinning):
         raise ValueError("Binning should be a PISA MultiDimBinning")

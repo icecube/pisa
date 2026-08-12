@@ -15,13 +15,16 @@ __all__ = ['hist', 'init_test']
 
 
 class hist(Stage):  # pylint: disable=invalid-name
-    """Stage to histogram events
+    """Stage to histogram events.
 
     Parameters
     ----------
     unweighted : bool, default False
         Return un-weighted event counts in each bin
     apply_unc_weights : bool, default False
+        The corresponding "unc_weights" (see notes) will be used to rescale
+        the "weights". If, in addition, error_method="sumw2", they will be
+        used in computing "errors" and "bin_unc2".
 
     Notes
     -----
@@ -29,6 +32,17 @@ class hist(Stage):  # pylint: disable=invalid-name
     Expected container keys are::
 
         "weights", "unc_weights" (if `apply_unc_weights`)
+
+    In case `calc_mode` is a :py:class:`~.core.binning.MultiDimBinning`, a transfer
+    matrix containing fractions/probabilities is computed, which distributes weights
+    from the `calc_mode` bins to the `apply_mode` bins proportionally. Hence, weights
+    in `calc_mode` representation are expected to correspond to *summed* weights.
+    In contrast, the translation mode for "unc_weights" is explicitly set to "average"
+    by this service, i.e., before they are obtained in binned `calc_mode`.
+
+    In case `error_method = "sumw2", variables "errors" and "bin_unc2" will be added
+    to the containers. The variable "unc_weights" is not required for this, but is
+    in case of `apply_unc_weights` and will then modify "errors" and "bin_unc2".
     """
 
     def __init__(
@@ -68,20 +82,35 @@ class hist(Stage):  # pylint: disable=invalid-name
 
         if isinstance(self.calc_mode, MultiDimBinning):
 
-            # The two binning must be exclusive
+            # The two binnings must be exclusive
             assert len(set(self.calc_mode.names) & set(self.apply_mode.names)) == 0
 
             transform_binning = self.calc_mode + self.apply_mode
 
-            # go to "events" mode to create the transforms
-
+            # Create a transfer matrix: transform[i,j] = fraction of calc_bin_i's
+            # events that go to apply_bin_j
             for container in self.data:
                 self.data.representation = "events"
+                # Get all binning variables in event-by-event representation
                 sample = [container[name] for name in transform_binning.names]
-                hist = histogram(sample, None, transform_binning, averaged=False)
-                transform = hist.reshape(self.calc_mode.shape + (-1,))
+                # Unweighted histogram: no. events in each [calc_bin_i, apply_bin_j]
+                joint_counts = histogram(sample, None, transform_binning, averaged=False)
+                # Automatically determine size of final dimension (apply_mode.size)
+                joint_counts_reshaped = joint_counts.reshape(self.calc_mode.shape + (-1,))
+                assert joint_counts_reshaped.shape[-1] == self.apply_mode.size
+                # Sum along apply_bins to get total event no. per calc_bin
+                calc_bin_totals = joint_counts_reshaped.sum(axis=-1, keepdims=True)
+                # Normalize to these totals (replace NaN -> 0 in case of 0/0)
+                # (-> 1 along apply_bin axis for each populated calc_bin, otherwise 0)
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    transform = joint_counts_reshaped / calc_bin_totals
+                    transform = np.nan_to_num(transform)
+                assert transform.shape == tuple(self.calc_mode.num_bins + [self.apply_mode.size])
+
                 self.data.representation = self.calc_mode
                 container["hist_transform"] = transform
+                # calc_mode dimensions now flattened by Container.__add_data
+                assert container["hist_transform"].shape == (self.calc_mode.size, self.apply_mode.size)
 
         elif self.calc_mode == "events":
             # For dimensions where the binning is irregular, we pre-compute the
@@ -143,15 +172,27 @@ class hist(Stage):  # pylint: disable=invalid-name
                 else:
                     weights = container["weights"]
                 if self.apply_unc_weights:
+                    # These need to be bin-averaged, otherwise we are double counting
+                    container.translation_modes["unc_weights"] = "average"
                     unc_weights = container["unc_weights"]
                 else:
                     unc_weights = np.ones(weights.shape)
+                logging.trace("Using 'unc_weights' histogram %s for '%s'",
+                              unc_weights, container.name)
                 transform = container["hist_transform"]
 
-                hist = (unc_weights*weights) @ transform
+                weights_to_transform = unc_weights * weights
+                hist = weights_to_transform @ transform
+                logging.trace(
+                    "Performed matrix multiplication of 'weights' with shape"
+                    " %s with transform with shape %s to yield histogram with"
+                    " shape %s.", weights_to_transform.shape, transform.shape,
+                    hist.shape
+                )
+
                 if self.error_method == "sumw2":
-                    sumw2 = np.square(unc_weights*weights) @ transform
-                    bin_unc2 = (np.square(unc_weights)*weights) @ transform
+                    sumw2 = np.square(weights_to_transform) @ transform
+                    bin_unc2 = (np.square(unc_weights) * weights) @ transform
 
                 container.representation = self.apply_mode
                 container["weights"] = hist
@@ -192,20 +233,23 @@ class hist(Stage):  # pylint: disable=invalid-name
                     unc_weights = container["unc_weights"]
                 else:
                     unc_weights = np.ones(weights.shape)
+                logging.trace("Using 'unc_weights' array %s for '%s'",
+                              unc_weights, container.name)
 
+                full_weights = unc_weights * weights
                 # The hist is now computed using a binning that is completely linear
                 # and regular
                 hist = histogram(
                     sample,
-                    unc_weights*weights,
+                    full_weights,
                     self.data["regularized_output_binning"],
                     averaged=False
                 )
 
                 if self.error_method == "sumw2":
-                    sumw2 = histogram(sample, np.square(unc_weights*weights),
+                    sumw2 = histogram(sample, np.square(full_weights),
                         self.data["regularized_output_binning"], averaged=False)
-                    bin_unc2 = histogram(sample, np.square(unc_weights)*weights,
+                    bin_unc2 = histogram(sample, np.square(unc_weights) * weights,
                         self.data["regularized_output_binning"], averaged=False)
 
                 container.representation = self.apply_mode
