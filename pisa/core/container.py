@@ -53,6 +53,20 @@ When data for some variable is modified in one representation---through the
 1. that representation is marked as *valid* for that variable, and
 2. all other representations are marked as *invalid*.
 
+.. caution::
+    Not all modifications will result in a call to `__setitem__()` and therefore
+    trigger the above automatic representation validation/invalidation
+    management. The following ways of modifying the data *will* do so:
+
+    - direct assignment to variable subscript (``container[key] = new_data``)
+    - augmented assignment to variable subscript (e.g. ``container[key] *= 2``)
+
+    The following ways *will not* do so (among others):
+
+    - in-place modification of returned object (e.g. ``data = container[key]; data *= 2`` for mutable types)
+    - assignment to particular index/subscript of the data (e.g. ``container[key][0] = 0``)
+    - bypassing user interface/direct manipulation of internal storage (e.g. ``container.current_data[key] = new_data``)
+
 If custom validity configuration is required, the methods
 :py:meth:`~Container.mark_changed` and :py:meth:`~Container.mark_valid` may be
 called and the attribute :py:attr:`~Container.validity` manipulated as desired.
@@ -74,6 +88,11 @@ Hence, when one is certain that invalidation is unnecessary, one can call::
     container.set_item_no_invalidate(key, data)
 
 which does not invalidate any representations.
+
+.. tip::
+    In case of uncertainty, in particular when devising a new service which
+    modifies data in some representation, include an explicit call to
+    :py:meth:`~Container.mark_changed`.
 
 When accessing data in a currently invalid representation,
 :py:meth:`~Container.auto_translate` is triggered, which ensures synchronization
