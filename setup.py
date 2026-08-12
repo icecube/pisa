@@ -91,7 +91,7 @@ INSTALL_REQUIRES = [
     'h5py',
     'iminuit>=2',
     'line_profiler',
-    'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
+    'matplotlib>=3.5', # 3.5.0: matplotlib.colormaps[name]
     'numba>=0.53', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
     'numpy>=1.17',
     'pint>=0.20', # property pint.quantity._Quantity no longer exists in 0.20 (TODO: test whether versions >=0.20 actually required)

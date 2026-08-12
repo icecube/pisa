@@ -48,7 +48,7 @@ __all__ = ['FLUCTUATE_METHODS', 'type_error', 'reduceToHist', 'rebin',
 
 __author__ = 'J.L. Lanfranchi'
 
-__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2026, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -732,6 +732,7 @@ class Map(object):
             fig, ax = plt.subplots(**fig_kw)
             full_ax = ax
 
+        map_min, map_max = self.vmin, self.vmax
         # 2D by arraying them as 1D slices in the smallest dimension(s).
         if len(self.binning) == 3:
             smallest_dim = self.binning.names[np.argmin(self.binning.shape)]
@@ -745,11 +746,16 @@ class Map(object):
                 ))
                 small_axes[-1].yaxis.set_visible(False)
 
+            pcmeshs = []
+            colorbar_to_return = None
             for bin_idx, to_plot in enumerate(self.split(
                 smallest_dim, pure_bin_names=pure_bin_names
             )):
+                # colorbar = None whenever bin_idx > 0
                 _, _, pcmesh, colorbar = to_plot.plot(
-                    symm=symm, logz=logz, vmin=vmin, vmax=vmax,
+                    symm=symm, logz=logz,
+                    vmin=map_min if vmin is None else vmin,
+                    vmax=map_max if vmax is None else vmax,
                     ax=small_axes[bin_idx], cmap=cmap, clabel=clabel,
                     clabelsize=clabelsize, xlabelsize=xlabelsize,
                     ylabelsize=ylabelsize, titlesize=titlesize,
@@ -761,6 +767,9 @@ class Map(object):
                     binlabel_stripzeros=binlabel_stripzeros,
                     bin_id=bin_idx, full_ax=full_ax
                 )
+                if bin_idx == 0:
+                    colorbar_to_return = colorbar
+                pcmeshs.append(pcmesh)
 
             if fmt is not None:
                 for fmt_ in fmt:
@@ -768,7 +777,7 @@ class Map(object):
                     fig.savefig(path, dpi=dpi)
                     logging.debug('>>>> Plot for inspection saved at %s', path)
 
-            return fig, full_ax, pcmesh, colorbar
+            return fig, full_ax, pcmeshs, colorbar_to_return
 
         if len(self.binning) == 2:
             to_plot = self
@@ -784,15 +793,17 @@ class Map(object):
         # Set cmap.
         if cmap is None:
             if symm:
-                cmap = mpl.cm.get_cmap("RdBu_r").copy()
-                cmap.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
+                cmap = mpl.colormaps["RdBu_r"].with_extremes(
+                    bad=((0.5, 0.9, 0.5), 1)
+                )
             else:
-                cmap = mpl.cm.get_cmap("Spectral_r").copy()
-                cmap.set_bad(color=(0.0, 0.2, 0.0), alpha=1)
+                cmap = mpl.colormaps["Spectral_r"].with_extremes(
+                    bad=((0.0, 0.2, 0.0), 1)
+                )
         if isinstance(cmap, str):
-            cmap = mpl.cm.get_cmap(cmap)
+            cmap = mpl.colormaps[cmap]
         if bad_color is not None:
-            cmap.set_bad(bad_color)
+            cmap = cmap.with_extremes(bad=bad_color)
 
         # Set cmap range.
         if symm: # symm = True.
@@ -888,7 +899,7 @@ class Map(object):
                                 color=txtcolor,
                                 fontsize=10)
 
-        # Plot colorbar.
+        # Plot colorbar
         if bin_id == 0 or bin_id is None:
             if symm and logz:
                 # Generate logarithmic ticks
@@ -1267,6 +1278,16 @@ class Map(object):
     def num_entries(self):
         """int : total number of weighted entries in all bins"""
         return np.sum(valid_nominal_values(self.hist))
+
+    @property
+    def vmin(self):
+        """float : minimum valid bin count"""
+        return np.min(valid_nominal_values(self.hist))
+
+    @property
+    def vmax(self):
+        """float : maximum valid bin count"""
+        return np.max(valid_nominal_values(self.hist))
 
     @property
     def serializable_state(self):
@@ -3041,6 +3062,7 @@ class MapSet(object):
 def test_Map():
     """Unit tests for Map class"""
     import pickle
+    import matplotlib as mpl
     n_ebins = 10
     n_czbins = 5
     n_azbins = 2
@@ -3056,6 +3078,10 @@ def test_Map():
     m1 = Map(name='x',
              hist=unp.uarray(np.ones(shape), np.sqrt(np.ones(shape))),
              binning=(e_binning, cz_binning))
+
+    # make a copy of this one for use with plotting further down
+    map_2d_for_plotting = deepcopy(m1)
+
     # or call init poisson error afterwards
     m1 = Map(name='x', hist=np.ones((n_ebins, n_czbins)), hash=23,
              binning=(e_binning, cz_binning))
@@ -3127,6 +3153,9 @@ def test_Map():
              binning=(e_binning, cz_binning))
     m3 = Map(name='z', hist=4*np.ones((n_ebins, n_czbins, n_azbins)),
              binning=(e_binning, cz_binning, az_binning))
+
+    # make a copy of this one for use with plotting further down
+    map_3d_for_plotting = deepcopy(m3)
 
     assert m3[0, 0, 0] == 4, 'm3[0, 0, 0] = %s' % m3[0, 0, 0]
     testdir = tempfile.mkdtemp()
@@ -3226,17 +3255,23 @@ def test_Map():
 
     deepcopy(m_orig)
 
-    #FIXME: Add unit test for plot function:
-        # - test 3D *and* 2D case
-        # - test saving option works
-        # - test return types
-
-        # start implementing some
-        # test_return = xx.plot()
-        # assert test_return[0] == matplotlib.figure.Figure
-        # assert test_return[1] == matplotlib.axes._subplots.AxesSubplot
-        # assert test_return[2] == matplotlib.collections.QuadMesh
-        # assert test_return[3] == matplotlib.colorbar.Colorbar
+    #FIXME: extend unit test for plot function
+    for m, fname in zip(
+        (map_2d_for_plotting, map_3d_for_plotting), ("test_map_2d", "test_map_3d")
+    ):
+        testdir = tempfile.mkdtemp()
+        try:
+            # make plot and store as png and pfd
+            test_return = m.plot(fname=fname, fmt=("png", "pdf"), outdir=testdir)
+        finally:
+            shutil.rmtree(testdir, ignore_errors=True)
+        assert isinstance(test_return[0], mpl.figure.Figure)
+        assert isinstance(test_return[1], mpl.axes._axes.Axes)
+        assert isinstance(test_return[2], (mpl.collections.QuadMesh, list))
+        if isinstance(test_return[2], list):
+            for qm in test_return[2]:
+                assert isinstance(qm, mpl.collections.QuadMesh)
+        assert isinstance(test_return[3], mpl.colorbar.Colorbar)
 
     logging.info(str(('<< PASS : test_Map >>')))
 
