@@ -871,6 +871,10 @@ class Container():
 
         Rejects negative values, zeros produce -inf, and raises if NaNs are
         present.
+
+        Raises
+        ------
+        ValueError : if NaNs or negative values are present in data for `key`
         '''
         arr = self[key]
         if np.any(np.isnan(arr)):
@@ -887,6 +891,10 @@ class Container():
 
         Rejects NaNs in the log array, -inf produces 0, and warns when
         exponentiation yields +inf.
+
+        Raises
+        ------
+        ValueError : if NaNs are present in data for `key`
         '''
         log_arr = self[key]
         if np.any(np.isnan(log_arr)):
