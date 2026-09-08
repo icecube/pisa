@@ -1,0 +1,4 @@
+{
+  "nuebar_cc": "lambda E: np.ones_like(E)",
+  "nue_cc + numu_cc + numubar_cc + nutau_cc + nutaubar_cc + nuall_nc + nuallbar_nc": "lambda E: np.ones_like(E)"
+}

@@ -1,0 +1,24 @@
+{
+  "nuebar_cc": {
+    "coszen": [
+      {
+        "dist": "uniform",
+        "fraction": "lambda E: np.ones_like(E)",
+        "kwargs": {
+          "loc": "lambda E: np.zeros_like(E)",
+          "scale": "lambda E: 0.5 * np.ones_like(E)"
+        }
+      }
+    ],
+    "energy": [
+      {
+        "dist": "norm",
+        "fraction": "lambda E: np.ones_like(E)",
+        "kwargs": {
+          "loc": "lambda E: np.zeros_like(E)",
+          "scale": "lambda E: 0.03 * np.sqrt(E*1000 - 0.8) / 1000"
+        }
+      }
+    ]
+  }
+}

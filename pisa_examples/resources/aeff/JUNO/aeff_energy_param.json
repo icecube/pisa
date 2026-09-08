@@ -1,0 +1,4 @@
+{
+  "nuebar_cc": "lambda E: 1.54 * 1e33 * 9.61 * 10**-44 * (E*1000-1.29) * np.sqrt((E*1000-1.29)**2 - 0.26)",
+  "nue_cc + numu_cc + numubar_cc + nutau_cc + nutaubar_cc + nuall_nc + nuallbar_nc": "lambda E: np.zeros_like(E)"
+}
