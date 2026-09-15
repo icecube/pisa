@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785940002855,
+  "lastUpdate": 1789487164966,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1348,6 +1348,51 @@ window.BENCHMARK_DATA = {
             "name": "IceCube_3y_muons (cpu, nthreads=1)",
             "value": 0.0005353567551593391,
             "range": "0.005141019821166992",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bbd8d073a04b74092f02c50ac1473f56289ee518",
+          "message": "Remove service `data.licloader_weighter` because it is unfinished and unused (#972)\n\n* remove unfinished and unused service data.licloader_weighter\n\n* remove remaining mentions of data.licloader_weighter service",
+          "timestamp": "2026-09-15T17:42:54+02:00",
+          "tree_id": "de7ca4c2e8668ed04411047df89efd9c2f094b3f",
+          "url": "https://github.com/icecube/pisa/commit/bbd8d073a04b74092f02c50ac1473f56289ee518"
+        },
+        "date": 1789487163113,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 0.8878894630743532,
+            "range": "0.19660091400146484",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.6375314946077308,
+            "range": "0.14342761039733887",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.00037748473031180244,
+            "range": "0.0049822330474853516",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
           }
