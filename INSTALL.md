@@ -228,7 +228,6 @@ Some of the following optional dependencies must be installed manually prior to 
 * [GLoBES wrapper](https://github.com/atrettin/GLoBES_wrapper) Required for `osc.globes` service.
 * [intersphinx-registry](https://github.com/Quansight-labs/intersphinx_registry) Registry of Python ecosystem project docs to link to using the Intersphinx Sphinx extension. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
-* [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for `data.licloader_weighter` service.
 * [linkify-it-py](https://github.com/tsutsu3/linkify-it-py) MyST-Parser extension for converting bare URLs into hyperlinks. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [MCEq](https://github.com/mceq-project/MCEq) Required for `create_barr_sys_tables_mceq.py` script.
