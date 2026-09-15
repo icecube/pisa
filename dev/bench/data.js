@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789487164966,
+  "lastUpdate": 1789487183212,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1395,6 +1395,51 @@ window.BENCHMARK_DATA = {
             "range": "0.0049822330474853516",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bbd8d073a04b74092f02c50ac1473f56289ee518",
+          "message": "Remove service `data.licloader_weighter` because it is unfinished and unused (#972)\n\n* remove unfinished and unused service data.licloader_weighter\n\n* remove remaining mentions of data.licloader_weighter service",
+          "timestamp": "2026-09-15T17:42:54+02:00",
+          "tree_id": "de7ca4c2e8668ed04411047df89efd9c2f094b3f",
+          "url": "https://github.com/icecube/pisa/commit/bbd8d073a04b74092f02c50ac1473f56289ee518"
+        },
+        "date": 1789487181895,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.8986203865129121,
+            "range": "0.2702634334564209",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.3854060902887461,
+            "range": "0.18454790115356445",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.0006531501302913744,
+            "range": "0.008802652359008789",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
