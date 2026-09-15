@@ -47,7 +47,6 @@ Also note that where a service implements `FTYPE` and relies on C extension code
 | `data.csv_loader`             | ✗ | ✗ | ✓ | ✗ |
 | `data.freedom_hdf5_loader`    | ✗ | ✗ | ✓ | ✗ |
 | `data.grid`                   | ✗ | ✗ | ✓ | ✗ |
-| `data.licloader_weighter`     | ✗ | ✗ | ✓ | ✗ |
 | `data.meows_loader`           | ✗ | ✗ | ✓ | ✗ |
 | `data.simple_data_loader`     | ✗ | ✗ | ✓ | ✗ |
 | `data.sqlite_loader`          | ✗ | ✗ | ✓ | ✗ |
